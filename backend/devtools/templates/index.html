@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Agent</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<h1>Your agent</h1>
+
+{% if latest %}
+  <div class="card">
+    <p><strong>Goal:</strong> {{ latest.goal }}</p>
+    <div class="right-now">
+      <strong>Right now:</strong>
+      {% if latest.plan is mapping %}
+        {{ latest.plan.right_now }}
+      {% else %}
+        {{ latest.plan }}
+      {% endif %}
+    </div>
+
+    <form method="post" action="/feedback">
+      <label for="note">How did it go? (optional)</label>
+      <textarea id="note" name="note" rows="2" placeholder="e.g. ran out of time, or: easier than expected"></textarea>
+      <button class="btn-done" name="outcome" value="done">I did it</button>
+      <button class="btn-not-done" name="outcome" value="not_done">I didn't do it</button>
+    </form>
+  </div>
+{% else %}
+  <p>No goal set yet.</p>
+{% endif %}
+
+<div class="card">
+  <p><strong>{% if latest %}Set a different goal{% else %}What do you want to achieve?{% endif %}</strong></p>
+  <form method="post" action="/goal">
+    <input type="text" name="goal" placeholder="e.g. Learn backend development" required>
+    <button class="btn-goal" type="submit">Generate plan</button>
+  </form>
+</div>
+
+<p><a href="/history">View full history &rarr;</a></p>
+
+</body>
+</html>

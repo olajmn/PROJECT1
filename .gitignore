@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Personal data - goals, plans, history. Never commit this, even once
+# the code itself is public. See docs/12-decisions.md.
+data/
