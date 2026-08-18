@@ -7,6 +7,15 @@ server, no schema migrations, just a list of dictionaries written to disk.
 
 Data lives in data/plans.json, which is git-ignored (see .gitignore) -
 this is personal information and must never be committed to a repository.
+
+This module also owns the plan SHAPE: the four time-horizon keys are
+defined once here (PLAN_KEYS/HORIZON_LABELS) instead of being duplicated
+across the prompts, the templates, and every reader. Records saved
+before the switch to structured JSON (v0.1) had `plan` as a plain
+string; _load_all() normalizes those into the current dict shape so
+every caller - today.py, the templates, goal_to_plan.py - can always
+assume `plan` is a dict with these keys, without special-casing it
+themselves.
 """
 
 import json
@@ -16,27 +25,74 @@ from pathlib import Path
 DATA_DIR = Path(__file__).parent.parent / "data"
 PLANS_FILE = DATA_DIR / "plans.json"
 
+# The plan schema, defined once. generate_plan()/replan() ask the LLM
+# for exactly these keys; the templates iterate this same list to render
+# every horizon in the same order.
+PLAN_KEYS = ("one_year", "one_month", "this_week", "right_now")
+HORIZON_LABELS = {
+    "one_year": "1 year",
+    "one_month": "1 month",
+    "this_week": "This week",
+    "right_now": "Right now",
+}
+
+
+def ensure_data_dir() -> None:
+    """Create data/ if it doesn't exist yet. Safe to call repeatedly."""
+    DATA_DIR.mkdir(exist_ok=True)
+
+
+def _normalize_plan(plan) -> dict:
+    """
+    Convert a legacy free-text plan (from before the switch to structured
+    JSON) into the current dict shape, so every caller only ever sees one
+    shape. Dict plans pass through unchanged.
+    """
+    if isinstance(plan, dict):
+        return plan
+    return {"one_year": "", "one_month": "", "this_week": "", "right_now": plan}
+
 
 def _load_all() -> list[dict]:
-    """Read every saved record from disk.
+    """Read every saved record from disk, normalizing legacy plan shapes.
 
     Returns an empty list if the file doesn't exist yet (e.g. this is
     the very first run and nothing has been saved).
     """
     if not PLANS_FILE.exists():
         return []
-    with open(PLANS_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(PLANS_FILE, "r", encoding="utf-8") as f:
+            records = json.load(f)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(
+            f"{PLANS_FILE} is corrupted and can't be read as JSON ({e}). "
+            "It may have been interrupted mid-write. Restore it from a "
+            "backup or fix it by hand before continuing."
+        ) from e
+
+    for record in records:
+        record["plan"] = _normalize_plan(record["plan"])
+    return records
 
 
 def _save_all(records: list[dict]) -> None:
-    """Write the full list of records back to disk, creating data/ if needed."""
-    DATA_DIR.mkdir(exist_ok=True)
-    with open(PLANS_FILE, "w", encoding="utf-8") as f:
+    """
+    Write the full list of records back to disk, creating data/ if needed.
+
+    Writes to a temp file and renames it into place - a rename is atomic
+    on POSIX filesystems (macOS/Linux), so a crash mid-write can never
+    leave plans.json half-written/corrupted; the old file stays intact
+    until the new one is fully written.
+    """
+    ensure_data_dir()
+    tmp_file = PLANS_FILE.with_suffix(".json.tmp")
+    with open(tmp_file, "w", encoding="utf-8") as f:
         json.dump(records, f, indent=2, ensure_ascii=False)
+    tmp_file.replace(PLANS_FILE)
 
 
-def save_plan(goal: str, plan: str, feedback: str | None = None) -> dict:
+def save_plan(goal: str, plan: dict, feedback: str | None = None) -> dict:
     """
     Append a new goal+plan record to history and persist it to disk.
 

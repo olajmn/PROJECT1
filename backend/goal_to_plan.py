@@ -16,7 +16,7 @@ import json
 
 import ollama
 
-from backend.storage import save_plan
+from backend.storage import PLAN_KEYS, save_plan
 
 MODEL = "llama3.1:8b"
 
@@ -33,24 +33,6 @@ SYSTEM_PROMPT = (
     "next 5 minutes.\n"
 )
 
-
-def generate_plan(goal: str) -> dict:
-    """
-    Takes a goal (a text string) and asks the local model to produce a
-    structured plan. Returns a dict with keys: one_year, one_month,
-    this_week, right_now.
-    """
-    response = ollama.chat(
-        model=MODEL,
-        format="json",  # ask Ollama to constrain output to valid JSON
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": f"My goal is: {goal}"},
-        ],
-    )
-    return json.loads(response["message"]["content"])
-
-
 REPLAN_SYSTEM_PROMPT = (
     "You are a personal execution agent. The user already has a plan for "
     "their goal and is now giving you feedback on whether they completed "
@@ -64,28 +46,53 @@ REPLAN_SYSTEM_PROMPT = (
 )
 
 
+def _ask_model(system_prompt: str, user_content: str) -> dict:
+    """
+    Shared call used by both generate_plan() and replan(): sends a system
+    prompt + user message to the local model asking for JSON, parses the
+    response, and validates it has the expected plan shape (PLAN_KEYS)
+    before handing it back - so every caller can trust the shape instead
+    of re-checking it themselves.
+    """
+    response = ollama.chat(
+        model=MODEL,
+        format="json",  # ask Ollama to constrain output to valid JSON
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content},
+        ],
+    )
+    plan = json.loads(response["message"]["content"])
+
+    missing = [key for key in PLAN_KEYS if key not in plan]
+    if missing:
+        raise ValueError(
+            f"Model response is missing required plan key(s) {missing}: {plan}"
+        )
+    return plan
+
+
+def generate_plan(goal: str) -> dict:
+    """
+    Takes a goal (a text string) and asks the local model to produce a
+    structured plan. Returns a dict with keys: one_year, one_month,
+    this_week, right_now.
+    """
+    return _ask_model(SYSTEM_PROMPT, f"My goal is: {goal}")
+
+
 def replan(goal: str, previous_plan: dict, feedback: str) -> dict:
     """
     Takes the goal, the previous structured plan, and the user's feedback
     on the previous "right_now" action, and asks the model to produce an
     updated plan. Returns a dict with the same shape as generate_plan().
     """
-    response = ollama.chat(
-        model=MODEL,
-        format="json",
-        messages=[
-            {"role": "system", "content": REPLAN_SYSTEM_PROMPT},
-            {
-                "role": "user",
-                "content": (
-                    f"My goal is: {goal}\n\n"
-                    f"The previous plan was: {json.dumps(previous_plan)}\n\n"
-                    f"My feedback on the 'right_now' action: {feedback}"
-                ),
-            },
-        ],
+    user_content = (
+        f"My goal is: {goal}\n\n"
+        f"The previous plan was: {json.dumps(previous_plan)}\n\n"
+        f"My feedback on the 'right_now' action: {feedback}"
     )
-    return json.loads(response["message"]["content"])
+    return _ask_model(REPLAN_SYSTEM_PROMPT, user_content)
 
 
 # Only runs when this file is executed directly

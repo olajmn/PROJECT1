@@ -26,6 +26,11 @@ h1 {
   margin-bottom: 16px;
 }
 
+.goal { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
+.timestamp { color: #888; font-size: 0.85rem; margin-bottom: 12px; }
+.horizon { margin-bottom: 8px; }
+.horizon-label { font-weight: 600; color: #555; }
+
 label {
   display: block;
   margin-bottom: 6px;

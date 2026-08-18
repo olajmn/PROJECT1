@@ -2,6 +2,20 @@
 
 > Phase 7-9 in [[00-project-brief]]. Running log, newest first.
 
+## 2026-08-18 (latest x5)
+
+- Cleanup pass via `/code-review` + `/simplify` on `backend/` (5 parallel
+  agents: correctness, reuse, simplification, efficiency, altitude —
+  see [[12-decisions]] for the full list of what was fixed vs. skipped).
+  Highlights: `storage.py` now owns the plan schema (`PLAN_KEYS`) and
+  normalizes legacy string-format plans once, at the source, instead of
+  every reader special-casing them; atomic writes to `plans.json`;
+  `view.py`'s hand-built HTML replaced with a proper Jinja template
+  (`history.html`), fixing an HTML-escaping gap the templated `index.html`
+  didn't have; Flask routes no longer crash on missing form fields or an
+  empty history. Tested: `today.py`, `view.py`, and `app.py` (including
+  the fixed edge cases and the XSS-escaping fix) all re-verified working.
+
 ## 2026-08-18 (latest x4)
 
 - Initialized git, verified `.gitignore` correctly excludes `data/`

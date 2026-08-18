@@ -86,6 +86,29 @@ frontend — no server, no JS, regenerated on demand from
 (see above) because it isn't a feature, it's a way to see existing data.
 **Reversible?** Yes, trivially — delete the file, nothing else depends on it.
 
+## 2026-08-18 — Cleanup pass: fixed correctness/reuse issues, skipped premature efficiency optimization
+
+**Ran `/code-review` + `/simplify` (4 parallel angles) on `backend/`.**
+Fixed: `today.py` crash on legacy string-format plans (now normalized
+once in `storage.py`, not special-cased per caller), unvalidated LLM
+JSON output (schema now checked in `goal_to_plan.py` against a single
+`PLAN_KEYS` definition), `data/plans.json` corruption risk on a crashed
+write (now an atomic temp-file+rename), missing-field crashes in the
+Flask routes, unescaped HTML in the hand-built history page (replaced
+with a Jinja template — autoescaped, same as the rest of the app),
+duplicated CSS/HTML-building logic between `view.py` and `app.py`.
+
+**Skipped:** the efficiency agent's finding that every save/read does a
+full read-and-rewrite of `plans.json` (O(n) per operation). Fixing this
+properly means changing the storage format (e.g. append-only JSONL) —
+real behavior change for real cost, at a scale (single user, ~10 records,
+human click speed) where the cost is negligible. Matches the
+already-documented "JSON is sufficient for MVP, don't over-engineer"
+stance in [[08-technical-architecture]] § Memory & Data Architecture.
+Revisit only if history size or request volume actually becomes a
+problem.
+**Reversible?** Yes.
+
 ## See also
 
 - [[08-technical-architecture]]

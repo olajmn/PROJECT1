@@ -15,10 +15,23 @@ The -m flag is required (not `python backend/devtools/app.py`) so the
 from flask import Flask, redirect, render_template, request, url_for
 
 from backend.goal_to_plan import generate_plan, replan
-from backend.storage import get_latest_plan, load_history, save_plan
-from backend.devtools.view import render_html
+from backend.storage import HORIZON_LABELS, PLAN_KEYS, get_latest_plan, load_history, save_plan
 
 app = Flask(__name__)
+
+# The horizons shown on the history page, in order, excluding "right_now"
+# (which gets its own highlighted box in the template instead of being
+# listed alongside the others).
+_HISTORY_HORIZONS = [(key, HORIZON_LABELS[key]) for key in PLAN_KEYS if key != "right_now"]
+
+
+def render_history_page(history: list[dict]) -> str:
+    """
+    Render the history page HTML. Shared by the /history route and
+    view.py's standalone static-snapshot script, so there's exactly one
+    place that knows how to turn history into this page.
+    """
+    return render_template("history.html", history=history, horizons=_HISTORY_HORIZONS)
 
 
 @app.route("/")
@@ -30,9 +43,10 @@ def index():
 @app.route("/goal", methods=["POST"])
 def new_goal():
     """Handle the "set a new goal" form: generate a fresh plan and save it."""
-    goal = request.form["goal"]
-    plan = generate_plan(goal)
-    save_plan(goal, plan)
+    goal = request.form.get("goal", "").strip()
+    if goal:
+        plan = generate_plan(goal)
+        save_plan(goal, plan)
     return redirect(url_for("index"))
 
 
@@ -44,8 +58,13 @@ def feedback():
     result as a new history entry.
     """
     latest = get_latest_plan()
+    if latest is None:
+        # Nothing to give feedback on (e.g. a stale tab, or plans.json
+        # was cleared while the server was running) - just go back home
+        # instead of crashing.
+        return redirect(url_for("index"))
 
-    outcome = "Completed the action" if request.form["outcome"] == "done" else "Did not complete the action"
+    outcome = "Completed the action" if request.form.get("outcome") == "done" else "Did not complete the action"
     note = request.form.get("note", "").strip()
     feedback_text = f"{outcome}." + (f" Note: {note}" if note else "")
 
@@ -56,8 +75,7 @@ def feedback():
 
 @app.route("/history")
 def history():
-    """Reuse view.py's rendering to show the full history in-browser."""
-    return render_html(load_history())
+    return render_history_page(load_history())
 
 
 if __name__ == "__main__":

@@ -27,9 +27,10 @@ glance which files are the agent and which are personal tooling.
 
 | File | Responsibility | Run with |
 |---|---|---|
-| `devtools/view.py` | Generate a static HTML page of the full history (`data/view.html`) | `.venv/bin/python -m backend.devtools.view` |
-| `devtools/app.py` | Local interactive web page (Flask) — set goals, give feedback, through a browser instead of the terminal. Then open http://127.0.0.1:5050 | `.venv/bin/python -m backend.devtools.app` |
-| `devtools/templates/index.html` | The one page `app.py` serves |
+| `devtools/view.py` | Generate a static HTML snapshot of the full history (`data/view.html`) — reuses `app.py`'s Flask app + `history.html` template rather than hand-building HTML | `.venv/bin/python -m backend.devtools.view` |
+| `devtools/app.py` | Local interactive web page (Flask) — set goals, give feedback, through a browser instead of the terminal. Also exposes `render_history_page()`, shared with `view.py`. Then open http://127.0.0.1:5050 | `.venv/bin/python -m backend.devtools.app` |
+| `devtools/templates/index.html` | The goal/feedback page `app.py` serves at `/` |
+| `devtools/templates/history.html` | The history page, served live at `/history` and rendered to a static file by `view.py` |
 | `devtools/static/style.css` | Styling for that page. Lives in `static/`, not loose in `devtools/`, because Flask serves *everything* in `static/` as raw downloadable files at `/static/...` — keeping it in its own folder means only the CSS is exposed that way, never `app.py`/`view.py` themselves |
 
 See `../docs/08-technical-architecture.md` for the full architecture and

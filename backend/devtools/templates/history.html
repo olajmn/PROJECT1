@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Agent history</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<h1>Agent history ({{ history|length }} entr{{ "y" if history|length == 1 else "ies" }})</h1>
+
+{% if not history %}
+  <p>No plans saved yet.</p>
+{% else %}
+  {% for record in history|reverse %}
+    <div class="card">
+      <div class="goal">#{{ record.id }} — {{ record.goal }}</div>
+      <div class="timestamp">{{ record.created_at }}</div>
+      {% for key, label in horizons %}
+        {% if record.plan[key] %}
+          <div class="horizon"><span class="horizon-label">{{ label }}:</span> {{ record.plan[key] }}</div>
+        {% endif %}
+      {% endfor %}
+      {% if record.plan.right_now %}
+        <div class="right-now"><strong>Right now:</strong> {{ record.plan.right_now }}</div>
+      {% endif %}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<p><a href="/">&larr; Back</a></p>
+
+</body>
+</html>
