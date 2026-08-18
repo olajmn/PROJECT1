@@ -2,6 +2,14 @@
 
 > Phase 7-9 in [[00-project-brief]]. Running log, newest first.
 
+## 2026-08-18 (latest x4)
+
+- Initialized git, verified `.gitignore` correctly excludes `data/`
+  (personal goals/plans), `.venv/`, `__pycache__/`, `.DS_Store` before
+  first commit. Created private GitHub repo
+  ([github.com/olajmn/personal-ai-agent](https://github.com/olajmn/personal-ai-agent))
+  and pushed initial commit (Prototype 0.1, full loop closed).
+
 ## 2026-08-18 (latest, latest, latest)
 
 - Split off `backend/devtools/` (proper Python subpackage) for the
