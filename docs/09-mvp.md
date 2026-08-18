@@ -38,6 +38,13 @@ right now → user feedback → replan → new right now, tested via
 from the project root). Next: real usage/testing (see Testing philosophy
 below), not more features.
 
+**Important distinction:** "✅ Working" above means the *mechanism*
+works — the code correctly calls the LLM, saves, and displays the
+result. It does **not** mean the agent's answers are always accurate.
+The model has already been caught hallucinating a specific, unfounded
+detail (see [[11-experiments]]) — the plumbing works, the water isn't
+guaranteed clean. Don't conflate the two when reporting progress.
+
 ## Testing philosophy
 
 First user is the project owner, testing on themselves. Explicitly
