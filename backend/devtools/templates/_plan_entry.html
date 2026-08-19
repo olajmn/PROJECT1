@@ -1,0 +1,28 @@
+{# One plan record, rendered as a plain key: value block. Shared by
+   _history_list.html (the chronological log) and board.html (grouped
+   by active/completed) - one place that knows how to render a record,
+   same reasoning as render_history_page() being shared between
+   app.py and view.py. Expects `record` and `horizons` in scope
+   (Jinja's {% include %} shares the including template's context, so
+   a surrounding {% for record in ... %} is enough). #}
+<div class="card">
+  <div class="yaml-block">
+    <div class="yaml-line"><span class="yaml-key">id:</span> {{ record.id }}</div>
+    <div class="yaml-line"><span class="yaml-key">goal:</span> {{ record.goal }} <span class="yaml-comment"># given</span></div>
+    {% if record.duration %}
+      <div class="yaml-line"><span class="yaml-key">duration:</span> {{ record.duration }} <span class="yaml-comment"># {{ describe_duration(record.duration) }}</span></div>
+    {% endif %}
+    <div class="yaml-line"><span class="yaml-key">completed:</span> {{ "true" if record.completed else "false" }}</div>
+    <div class="yaml-line"><span class="yaml-key">plan:</span> <span class="yaml-comment"># generated, unverified</span></div>
+    {% for key, label in horizons %}
+      {% if record.plan[key] %}
+        <div class="yaml-line yaml-nested"><span class="yaml-key">{{ key }}:</span> {{ record.plan[key] }}</div>
+      {% endif %}
+    {% endfor %}
+    <div class="yaml-line yaml-nested"><span class="yaml-key">right_now:</span> {{ record.plan.right_now if record.plan.right_now else "null" }}</div>
+    {% if record.feedback %}
+      <div class="yaml-line"><span class="yaml-key">feedback:</span> {{ record.feedback }} <span class="yaml-comment"># given</span></div>
+    {% endif %}
+    <div class="yaml-line"><span class="yaml-key">created_at:</span> {{ record.created_at }}</div>
+  </div>
+</div>

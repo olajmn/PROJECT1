@@ -1,35 +1,74 @@
 body {
-  font-family: -apple-system, sans-serif;
-  max-width: 600px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  max-width: 1000px;
   margin: 40px auto;
   padding: 0 20px;
   color: #222;
 }
 
+/* Two columns: the working area (goal/right_now/feedback) on the
+   left, the board (active/completed) on the right - see
+   docs/10-development.md, 2026-08-19. Stacks on narrow viewports
+   since this is still meant to be usable on a phone. */
+.layout {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+.main-col, .side-col {
+  flex: 1;
+  min-width: 0; /* let long unbroken text wrap instead of overflowing the column */
+}
+@media (max-width: 700px) {
+  .layout { flex-direction: column; }
+}
+
 h1 {
   font-size: 1.4rem;
+  margin-bottom: 32px;
+}
+
+.log-heading {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.board-heading {
+  font-size: 1.1rem;
+  margin-top: 32px;
+  margin-bottom: 16px;
 }
 
 .card {
   border: 1px solid #ddd;
-  border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
 }
 
-.right-now {
-  background: #eef6ff;
-  border-left: 3px solid #3b82f6;
-  padding: 12px 16px;
-  border-radius: 4px;
-  font-size: 1.1rem;
+/* Secondary card (e.g. "set a different goal" above the main task) -
+   same shape as .card, but visually quieter so it doesn't compete with
+   the primary action. */
+.card-muted {
+  background: #fafafa;
+  padding: 16px 20px;
+}
+.card-muted input[type=text] { margin-bottom: 8px; }
+
+/* Plain, data-shaped display (key: value, no decoration) - used for
+   both the active goal on index.html and every entry in the log
+   (_history_list.html). Everything shown comes from one unverified
+   LLM call, so it's presented as raw data, not a styled "result" that
+   implies more confidence than it deserves. Font is already monospace
+   via body, this just controls sizing/spacing. */
+.yaml-block {
+  font-size: 0.9rem;
+  line-height: 1.7;
   margin-bottom: 16px;
 }
-
-.goal { font-size: 1.1rem; font-weight: 600; margin-bottom: 4px; }
-.timestamp { color: #888; font-size: 0.85rem; margin-bottom: 12px; }
-.horizon { margin-bottom: 8px; }
-.horizon-label { font-weight: 600; color: #555; }
+.yaml-key { color: #7c3aed; }
+.yaml-nested { margin-left: 1.5em; }
+.yaml-comment { color: #9ca3af; }
 
 label {
   display: block;
@@ -42,22 +81,27 @@ input[type=text], textarea {
   padding: 8px;
   margin-bottom: 12px;
   border: 1px solid #ccc;
-  border-radius: 4px;
   font-family: inherit;
   box-sizing: border-box;
 }
 
+/* Outlined, not filled - color still distinguishes what each button
+   does (a usability signal), but a flat colored block reads as
+   "friendly/consumer app" in a way a plain outline doesn't. */
 button {
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: none;
+  padding: 6px 14px;
+  border-radius: 0;
+  border: 1px solid currentColor;
+  background: transparent;
   cursor: pointer;
-  font-size: 1rem;
+  font-family: inherit;
+  font-size: 0.9rem;
   margin-right: 8px;
 }
 
-.btn-done { background: #22c55e; color: white; }
-.btn-not-done { background: #ef4444; color: white; }
-.btn-goal { background: #3b82f6; color: white; }
+.btn-done { color: #166534; }
+.btn-not-done { color: #991b1b; }
+.btn-goal-done { color: #6b21a8; }
+.btn-goal { color: #1e3a8a; }
 
 a { color: #3b82f6; }

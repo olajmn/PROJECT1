@@ -8,38 +8,91 @@
 <body>
 <h1>Your agent</h1>
 
-{% if latest %}
-  <div class="card">
-    <p><strong>Goal:</strong> {{ latest.goal }}</p>
-    <div class="right-now">
-      <strong>Right now:</strong>
-      {% if latest.plan is mapping %}
-        {{ latest.plan.right_now }}
-      {% else %}
-        {{ latest.plan }}
-      {% endif %}
-    </div>
+<div class="layout">
+<div class="main-col">
 
-    <form method="post" action="/feedback">
-      <label for="note">How did it go? (optional)</label>
-      <textarea id="note" name="note" rows="2" placeholder="e.g. ran out of time, or: easier than expected"></textarea>
-      <button class="btn-done" name="outcome" value="done">I did it</button>
-      <button class="btn-not-done" name="outcome" value="not_done">I didn't do it</button>
-    </form>
-  </div>
-{% else %}
-  <p>No goal set yet.</p>
-{% endif %}
-
-<div class="card">
-  <p><strong>{% if latest %}Set a different goal{% else %}What do you want to achieve?{% endif %}</strong></p>
+{# Goal-entry form: always the same, so it renders once regardless of
+   whether a goal already exists. Only the surrounding card style
+   (muted vs. normal) changes with `latest`, to keep this quiet when
+   there's already an active goal below it. #}
+<div class="card {% if latest %}card-muted{% endif %}">
+  <p><strong>Set a goal</strong></p>
   <form method="post" action="/goal">
     <input type="text" name="goal" placeholder="e.g. Learn backend development" required>
+    <input type="text" name="duration" placeholder="When / how long? e.g. 30 minutes, this evening, before bed, sometime this week (optional)">
     <button class="btn-goal" type="submit">Generate plan</button>
   </form>
 </div>
 
-<p><a href="/history">View full history &rarr;</a></p>
+{% if latest and latest.completed %}
+  {# The user explicitly said this whole goal is done (see
+     backend/storage.py save_plan() docstring) - nothing left to act
+     on, so show a plain confirmation instead of a "right now" line
+     with nothing to put in it. #}
+  <div class="card">
+    <div class="yaml-block">
+      <div class="yaml-line"><span class="yaml-key">goal:</span> {{ latest.goal }}</div>
+      <div class="yaml-line"><span class="yaml-key">status:</span> complete</div>
+    </div>
+  </div>
+{% elif latest %}
+  <div class="card">
+    {# Deliberately plain, data-shaped display (goal/duration/right_now
+       only) instead of a styled "plan" with multiple boxes. Everything
+       here comes from the same single, unverified LLM call - showing
+       it as key: value data instead of a polished layout makes that
+       plain instead of implying more confidence than it deserves. The
+       broader horizons (this_week/one_month/one_year) still exist and
+       are visible in the log below, just not given equal weight here.
+       See docs/12-decisions.md, 2026-08-19. #}
+    {# Every line is marked "given" (verbatim from you, or plain system
+       bookkeeping) or "generated" (produced by the LLM, unverified) -
+       see docs/12-decisions.md, 2026-08-19, for why this line exists:
+       the model's output isn't a fact just because it's displayed. #}
+    <div class="yaml-block">
+      <div class="yaml-line"><span class="yaml-key">goal:</span> {{ latest.goal }} <span class="yaml-comment"># given</span></div>
+      {% if latest.duration %}
+        <div class="yaml-line"><span class="yaml-key">duration:</span> {{ latest.duration }} <span class="yaml-comment"># {{ describe_duration(latest.duration) }}</span></div>
+      {% endif %}
+      {# plan is a real nested object in the stored data (see
+         backend/storage.py) - shown indented under its own key instead
+         of flattened, so the on-screen shape matches the actual data
+         shape. #}
+      <div class="yaml-line"><span class="yaml-key">plan:</span> <span class="yaml-comment"># generated, unverified</span></div>
+      <div class="yaml-line yaml-nested">
+        <span class="yaml-key">right_now:</span>
+        {% if latest.plan is mapping and latest.plan.right_now %}
+          {{ latest.plan.right_now }}
+        {% elif latest.plan is mapping %}
+          {# The model didn't give a next action even though it isn't
+             marked complete (see docs/11-experiments.md, 2026-08-19) -
+             say so plainly instead of showing an empty value. #}
+          null (no next action came back - give feedback again, or mark complete)
+        {% else %}
+          {{ latest.plan }}
+        {% endif %}
+      </div>
+    </div>
+
+    <form method="post" action="/feedback">
+      <p><strong>Are you done with this?</strong></p>
+      <label for="note">Note (optional)</label>
+      <textarea id="note" name="note" rows="2" placeholder="e.g. ran out of time, or: easier than expected"></textarea>
+      <button class="btn-done" name="outcome" value="done">Yes</button>
+      <button class="btn-not-done" name="outcome" value="not_done">No</button>
+      <button class="btn-goal-done" name="outcome" value="goal_done">Goal complete</button>
+    </form>
+  </div>
+{% endif %}
+
+</div>
+<div class="side-col">
+{% include "_board.html" %}
+</div>
+</div>
+
+<h1 class="log-heading">Log</h1>
+{% include "_history_list.html" %}
 
 </body>
 </html>

@@ -49,8 +49,24 @@ create real value for the user."** See [[09-mvp]] for build status.
 ## Status
 
 - [ ] Not tested yet
-- [ ] Partially supported
+- [x] Partially supported
 - [ ] Disproven — see why below
+
+**As of 2026-08-19:** Real usage happened for the first time (multiple
+goals, multiple feedback rounds, in one evening rather than spread
+across days). Mixed signal:
+
+- The core loop mechanism (goal → plan → right_now → feedback → replan
+  → new right_now) holds up over short chains (1-3 rounds) - verified
+  across dozens of real records.
+- Two real failure modes emerged that limit trust: severe hallucination
+  on non-English input, and drift over long replan chains (8+ rounds) -
+  see [[11-experiments]] entries this date.
+- Whether the loop is actually *useful* (the real hypothesis question)
+  is still not answered - tonight's testing was compressed into one
+  session and skewed toward stress-testing failure modes, not the
+  sustained, paced, multi-day use the hypothesis actually needs to be
+  judged against.
 
 ## See also
 

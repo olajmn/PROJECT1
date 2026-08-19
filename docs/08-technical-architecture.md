@@ -68,6 +68,20 @@ The point isn't that Markdown is the final format — it's that the data
 stays portable and human-readable, consistent with the data-ownership
 principle below.
 
+**Refinement (2026-08-19):** the reason a folder-per-time-period layout
+like this is attractive isn't just portability — it's that it makes a
+future "scanning" planning algorithm close to free. If `one_year`,
+`one_month`, `this_week` etc. are real folders/files on disk instead of
+fields inside one flat JSON blob, an algorithm that needs to answer
+"scan the 1-year plan, find how many weeks it covers, check status per
+week" can just walk the directory tree instead of needing a database or
+a custom index — the filesystem hierarchy *is* the index. This is the
+concrete version of the still-unbuilt "Planning logic (beyond a single
+LLM call)" and "Temporal awareness" items below. Still not decided or
+built — `data/plans.json` remains sufficient while there's a handful of
+records; revisit if/when Prototype 0.1 is validated and history grows
+enough that "which week was this" becomes a real, felt problem.
+
 ## Data Ownership (long-term principle)
 
 > The app should be able to disappear without the user's history

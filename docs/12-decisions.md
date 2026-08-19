@@ -109,6 +109,22 @@ Revisit only if history size or request volume actually becomes a
 problem.
 **Reversible?** Yes.
 
+## 2026-08-19 — Write goals in English, don't switch LLM backend yet
+
+**Alternatives considered:** keep writing goals in Norwegian and accept
+the failures, switch to Claude API now, write goals in English.
+**Why:** Norwegian goal text causes severe, reproducible hallucination
+in `llama3.1:8b` (entire responses disconnected from the actual goal -
+see [[11-experiments]], 2026-08-19). English phrasing of the identical
+goal produced grounded, sensible answers. Writing goals in English
+sidesteps the failure immediately, at zero cost, and doesn't block
+starting the real usage test that's been the priority all evening.
+**Trade-off:** the user thinks/writes naturally in Norwegian; this is a
+real, felt friction, not a free workaround.
+**Reversible?** Yes, trivially - revisit switching to Claude (better
+multilingual handling) if English-only friction becomes a real problem,
+per the already-logged Ollama-vs-Claude decision above.
+
 ## See also
 
 - [[08-technical-architecture]]

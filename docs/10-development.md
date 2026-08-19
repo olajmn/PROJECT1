@@ -2,6 +2,102 @@
 
 > Phase 7-9 in [[00-project-brief]]. Running log, newest first.
 
+## 2026-08-19 (latest x2)
+
+- Found via the first real test goal ("take shower", duration "any
+  time before i got to bed") that day-segment resolution missed a 4th
+  real category: a deadline tied to a personal routine event (bedtime),
+  not a clock time. Added `_DEADLINE_RE` (a tolerant regex, not a fixed
+  phrase list - the first attempt with exact phrases missed "before i
+  **got to** bed") so `describe_duration()` names this case honestly
+  ("recognized as a same-day deadline - actual time unknown, not
+  grounded") instead of lumping it into unexamined free text.
+  Deliberately does NOT invent a clock time for it, unlike day segments
+  - there's no real bedtime to compute.
+
+## 2026-08-19 (latest)
+
+- Added a "Goal complete" button/state: the user can now explicitly
+  mark a whole goal done (new `completed` field on each record) instead
+  of the agent having to guess it from a missing `right_now` - built
+  after a real test run (`ta en dusj`) hit exactly that: the model
+  returned `right_now: null` with no way to say "actually, I'm done."
+  `index.html` shows a plain confirmation card instead of an empty
+  action box when the latest record is completed; a defensive fallback
+  also covers the same `null` case for goals *not* marked complete.
+- New `/board` view (embedded on the front page in a two-column layout,
+  plus standalone at `/board`): groups goal history by latest known
+  state into "Active"/"Completed", since a goal is a chain of records
+  sharing the same goal text, not its own stored entity
+  (`storage.get_board()`).
+- Interface redesign, in response to user feedback that the UI looked
+  more confident/"friendly" than the underlying data warrants: switched
+  to a plain, monospace `key: value` display (no colored boxes, no
+  rounded corners, outlined not filled buttons) across the whole page;
+  `plan:` shown as a genuinely nested key (matching the real stored
+  shape) instead of flattened; every line marked `# given` (verbatim
+  user input) or `# generated, unverified` (LLM output) so reliability
+  isn't visually implied where none exists. No emojis anywhere, per
+  explicit user preference (also see global Claude preference, not
+  project-specific).
+- Day-segment duration resolution: `goal_to_plan.py` now recognizes a
+  small hardcoded set of day segments (morning/afternoon/evening/night,
+  Norwegian included) and grounds them in a real computed clock window
+  for today (e.g. "kveld" → "17:00-23:00") instead of handing the raw
+  word to the model - concrete first piece of "temporal awareness"
+  beyond just passing the current timestamp. Plain lengths ("30
+  minutes") and fully open text ("before my trip") still pass through
+  unexamined, as before. `describe_duration()` shows which case applies
+  directly in the UI, replacing a static comment.
+- Found and logged a severe, reproducible reliability issue: Norwegian
+  goal text causes `llama3.1:8b` to produce answers completely
+  disconnected from the goal (e.g. inventing "German" content from
+  nowhere); the identical goal in English produced grounded, sensible
+  answers. See [[11-experiments]] and [[12-decisions]] for the
+  write-goals-in-English decision this led to.
+- Board cleanup: all 7 pre-existing active goals marked complete (new
+  records, nothing deleted - 32 history entries intact) to give a clean
+  "Active" board before starting real usage testing.
+
+## 2026-08-19
+
+- Temporal grounding: `goal_to_plan.py` now sends the real current
+  date/time (`_now_str()`) to the model on every `generate_plan()` and
+  `replan()` call, so "right now" is grounded in the actual moment
+  instead of the model having no sense of time. First concrete step
+  toward the still-unbuilt "Temporal awareness" item in
+  [[08-technical-architecture]].
+- Added an optional free-text `duration` field to the "set a goal" form
+  (e.g. "30 minutes", "this week") — passed through to the model and
+  stored on the record. Deliberately free text, no fixed dropdown
+  options, per user preference.
+- Prompt change: the model now returns JSON `null` for any horizon
+  (`one_year`/`one_month`/`this_week`) that isn't relevant to the
+  goal's scope, instead of inventing a value ("Unknown" or a
+  hallucinated specific) just to fill the field. `right_now` is always
+  filled in. Tested: consistent across repeated calls; one noted
+  inaccuracy where a 3-month goal skipped `one_month` — a model
+  calibration limitation, not a code bug.
+- Bug found and fixed: `/feedback` wasn't carrying the goal's
+  `duration` through to `replan()`/`save_plan()`, so it silently
+  reverted to `null` after the first feedback round. Fixed in
+  `backend/devtools/app.py`.
+- `index.html` now shows the broader plan (whichever of
+  `this_week`/`one_month`/`one_year` came back non-null) above "Right
+  now", not just in `/history` — so a longer-duration goal's larger
+  arc is visible on the page you actually act from day to day, while
+  short-duration goals (which have no broader plan) show only "Right
+  now" as before.
+- UI cleanup: "Set a goal" moved above the current goal/feedback card,
+  simplified from two near-duplicate form blocks to one shared block;
+  added light styling (`card-muted`, `duration-tag`) — personal-tool
+  readability, not product polish, see [[12-decisions]].
+- Logged a user-proposed idea (folder-per-time-period storage + a
+  scanning planning algorithm over it) into
+  [[08-technical-architecture]] § Memory & Data Architecture and
+  [[13-ideas-parking-lot]] — not built, matches the existing
+  "testing over further ideation" decision in [[12-decisions]].
+
 ## 2026-08-18 (latest x5)
 
 - Cleanup pass via `/code-review` + `/simplify` on `backend/` (5 parallel

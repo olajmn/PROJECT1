@@ -20,4 +20,8 @@
   not the core product, see [[08-technical-architecture]] § Long-term architecture
 - Reflection / progress summaries ("you actually trained 1 hour/week —
   that's 52 hours this year")
+- Folder-per-time-period storage + a "scanning" planning algorithm that
+  walks the hierarchy (year/month/week/day as real files, not JSON
+  fields) instead of a database — see [[08-technical-architecture]]
+  § Memory & Data Architecture
 - *(add more ideas here as they come up — don't build them yet)*

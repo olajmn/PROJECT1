@@ -12,6 +12,11 @@ Technical standards for this codebase. Applies to every file going forward.
   still happen in Norwegian — this rule covers files that get committed,
   not the chat itself.
 
+## Interface style
+
+- No emojis anywhere in the UI (button labels, status text, headings)
+  or in generated content. Plain text only.
+
 ## Project structure
 
 Root only holds folders + standard project metadata files (`.gitignore`,

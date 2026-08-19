@@ -1,0 +1,20 @@
+{# The board content (Active/Completed sections) - shared between
+   board.html (standalone page at /board) and index.html (embedded in
+   the side column). Expects `board` and `horizons` in context. #}
+<h2 class="board-heading">Active ({{ board.active | length }})</h2>
+{% if not board.active %}
+  <p>No active goals.</p>
+{% else %}
+  {% for record in board.active %}
+    {% include "_plan_entry.html" %}
+  {% endfor %}
+{% endif %}
+
+<h2 class="board-heading">Completed ({{ board.completed | length }})</h2>
+{% if not board.completed %}
+  <p>No completed goals yet.</p>
+{% else %}
+  {% for record in board.completed %}
+    {% include "_plan_entry.html" %}
+  {% endfor %}
+{% endif %}

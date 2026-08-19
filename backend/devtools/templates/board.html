@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Board</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<h1>Board</h1>
+
+{# A goal isn't its own stored entity - it's a chain of records sharing
+   the same goal text (see storage.get_board()). This shows only the
+   latest known state per goal, split by whether it's been explicitly
+   marked complete. #}
+{% include "_board.html" %}
+
+<p><a href="/">&larr; Back</a></p>
+
+</body>
+</html>

@@ -92,7 +92,13 @@ def _save_all(records: list[dict]) -> None:
     tmp_file.replace(PLANS_FILE)
 
 
-def save_plan(goal: str, plan: dict, feedback: str | None = None) -> dict:
+def save_plan(
+    goal: str,
+    plan: dict,
+    feedback: str | None = None,
+    duration: str | None = None,
+    completed: bool = False,
+) -> dict:
     """
     Append a new goal+plan record to history and persist it to disk.
 
@@ -100,6 +106,16 @@ def save_plan(goal: str, plan: dict, feedback: str | None = None) -> dict:
     be created - i.e. what they said about the *previous* plan's
     "right_now" action, which led the agent to replan. None for a brand
     new goal that has no prior feedback yet.
+
+    `duration` is the free-text span the user asked this plan to cover
+    (e.g. "30 minutes", "this week"), if they gave one - see
+    goal_to_plan.generate_plan(). Stored so the history shows what was
+    actually asked for, not just what came back.
+
+    `completed` marks the whole goal (not just one "right_now" step) as
+    done - the user said so explicitly, via the "Goal complete" button,
+    rather than the agent guessing it from a missing next action. See
+    docs/11-experiments.md, 2026-08-19 entry, for why this exists.
 
     Returns the record that was saved (useful for confirming to the user).
     """
@@ -109,6 +125,8 @@ def save_plan(goal: str, plan: dict, feedback: str | None = None) -> dict:
         "goal": goal,
         "plan": plan,
         "feedback": feedback,
+        "duration": duration,
+        "completed": completed,
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
     records.append(record)
@@ -125,3 +143,30 @@ def get_latest_plan() -> dict | None:
     """Return the most recently saved record, or None if there's no history yet."""
     records = _load_all()
     return records[-1] if records else None
+
+
+def get_board() -> dict:
+    """
+    Group history into "active" and "completed" goals, for a board view
+    (see docs/10-development.md, 2026-08-19).
+
+    A "goal" isn't its own stored entity - it's a chain of records that
+    happen to share the same `goal` text, created by generate_plan()
+    and then extended by replan() each time feedback comes in (see
+    save_plan()). So the only way to know a goal's current state is to
+    find its most recent record. Records are loaded oldest-first, so
+    iterating in order and overwriting by `goal` text naturally leaves
+    the latest record per goal.
+
+    Returns {"active": [...], "completed": [...]}, each a list of
+    records (latest state only, one per distinct goal).
+    """
+    latest_by_goal: dict[str, dict] = {}
+    for record in _load_all():
+        latest_by_goal[record["goal"]] = record
+
+    # .get(), not [] - records saved before the "completed" field
+    # existed don't have the key at all.
+    active = [r for r in latest_by_goal.values() if not r.get("completed")]
+    completed = [r for r in latest_by_goal.values() if r.get("completed")]
+    return {"active": active, "completed": completed}
