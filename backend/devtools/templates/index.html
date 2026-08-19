@@ -38,17 +38,14 @@
 {% elif latest %}
   <div class="card">
     {# Deliberately plain, data-shaped display (goal/duration/right_now
-       only) instead of a styled "plan" with multiple boxes. Everything
-       here comes from the same single, unverified LLM call - showing
-       it as key: value data instead of a polished layout makes that
-       plain instead of implying more confidence than it deserves. The
-       broader horizons (this_week/one_month/one_year) still exist and
-       are visible in the log below, just not given equal weight here.
-       See docs/12-decisions.md, 2026-08-19. #}
-    {# Every line is marked "given" (verbatim from you, or plain system
-       bookkeeping) or "generated" (produced by the LLM, unverified) -
-       see docs/12-decisions.md, 2026-08-19, for why this line exists:
-       the model's output isn't a fact just because it's displayed. #}
+       only) instead of a styled "plan" with multiple boxes - everything
+       here comes from one unverified LLM call, so it's shown as
+       key: value data, not a polished result implying more confidence
+       than it deserves. The broader horizons (this_week/one_month/
+       one_year) still exist and are visible in the log below, just not
+       given equal weight here. Every line is marked "given" (verbatim
+       from you, or plain system bookkeeping) or "generated" (LLM
+       output, unverified). See docs/12-decisions.md, 2026-08-19. #}
     <div class="yaml-block">
       <div class="yaml-line"><span class="yaml-key">goal:</span> {{ latest.goal }} <span class="yaml-comment"># given</span></div>
       {% if latest.duration %}
