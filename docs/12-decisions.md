@@ -109,6 +109,30 @@ Revisit only if history size or request volume actually becomes a
 problem.
 **Reversible?** Yes.
 
+## 2026-08-20 — Built an auto-generated architecture diagram anyway, kept outside `backend/`
+
+**Alternatives considered:** keep the architecture diagram fully
+hand-maintained (matches "don't build it before it's needed" -
+`docs/12-decisions.md`'s own recurring principle); build a code-to-diagram
+generator now.
+**Why this choice:** the user explicitly asked for it after hearing the
+overengineering concern, with a specific future intent - lift it out of
+this repo later as an external tool/capability the agent itself could
+call on (see [[13-ideas-parking-lot]] "Tools / APIs the agent can use").
+Built as `tools/architecture_mapper/` (see its own README.md), not
+inside `backend/`: it only uses Python's `ast` module on the target
+source, imports nothing from `backend`, and knows nothing project-
+specific - a deliberate boundary so it stays extractable intact.
+**Trade-off:** it's a second thing to maintain, and it only ever
+describes the NOW section (functions/imports it can see in code) - it
+has no way to represent `docs/08-technical-architecture.md`'s VISION
+section, so `docs/08-architecture.drawio` stays hand-maintained as the
+full source of truth; the generator's output
+(`tools/architecture_mapper/output/`, git-ignored) is a cross-check, not
+a replacement.
+**Reversible?** Yes - it's fully self-contained in one folder with no
+inbound or outbound imports to the rest of the project, by design.
+
 ## 2026-08-19 — Write goals in English, don't switch LLM backend yet
 
 **Alternatives considered:** keep writing goals in Norwegian and accept
