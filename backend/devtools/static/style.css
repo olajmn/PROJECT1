@@ -1,25 +1,28 @@
 body {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  max-width: 1000px;
+  max-width: 1400px;
   margin: 40px auto;
   padding: 0 20px;
   color: #222;
 }
 
-/* Two columns: the working area (goal/right_now/feedback) on the
-   left, the board (active/completed) on the right - see
-   docs/10-development.md, 2026-08-19. Stacks on narrow viewports
-   since this is still meant to be usable on a phone. */
+/* A row of N equal columns - the working area (goal/right_now/
+   feedback) plus however many the board contributes (Active,
+   Completed - see _board.html) - see docs/10-development.md,
+   2026-08-19/2026-08-20. Any page can add its own .col children
+   alongside {% include "_board.html" %} and they'll line up the same
+   way. Stacks on narrow viewports since this is still meant to be
+   usable on a phone. */
 .layout {
   display: flex;
   gap: 32px;
   align-items: flex-start;
 }
-.main-col, .side-col {
+.col {
   flex: 1;
   min-width: 0; /* let long unbroken text wrap instead of overflowing the column */
 }
-@media (max-width: 700px) {
+@media (max-width: 900px) {
   .layout { flex-direction: column; }
 }
 
@@ -56,11 +59,12 @@ h1 {
 .card-muted input[type=text] { margin-bottom: 8px; }
 
 /* Plain, data-shaped display (key: value, no decoration) - used for
-   both the active goal on index.html and every entry in the log
-   (_history_list.html). Everything shown comes from one unverified
-   LLM call, so it's presented as raw data, not a styled "result" that
-   implies more confidence than it deserves. Font is already monospace
-   via body, this just controls sizing/spacing. */
+   Completed goals and every entry in the log (_history_list.html).
+   Everything shown comes from one unverified LLM call, so it's
+   presented as raw data, not a styled "result" that implies more
+   confidence than it deserves. Font is already monospace via body,
+   this just controls sizing/spacing. Active goals use the chat thread
+   below instead - see _active_goal.html. */
 .yaml-block {
   font-size: 0.9rem;
   line-height: 1.7;
@@ -69,6 +73,43 @@ h1 {
 .yaml-key { color: #7c3aed; }
 .yaml-nested { margin-left: 1.5em; }
 .yaml-comment { color: #9ca3af; }
+
+/* An active goal's history as a back-and-forth thread instead of a
+   flat dump - see _active_goal.html and storage.get_history_for_goal().
+   Same color language as docs/08-architecture.drawio (blue = user,
+   green = agent), plain blocks rather than rounded "bubbles" to stay
+   consistent with the rest of this dev tool's deliberately unstyled,
+   data-honest look (see docs/12-decisions.md, 2026-08-19). */
+.chat-header {
+  margin-bottom: 14px;
+  font-size: 1rem;
+}
+.chat-thread {
+  margin-bottom: 16px;
+}
+.chat-msg {
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.chat-label {
+  display: inline-block;
+  font-weight: 600;
+  margin-right: 8px;
+  font-size: 0.8rem;
+}
+.chat-me {
+  border-left: 3px solid #1e3a8a;
+  background: #f5f7fb;
+}
+.chat-me .chat-label { color: #1e3a8a; }
+.chat-agent {
+  border-left: 3px solid #166534;
+  background: #f5faf6;
+  margin-left: 24px;
+}
+.chat-agent .chat-label { color: #166534; }
 
 label {
   display: block;
@@ -100,6 +141,7 @@ button {
 }
 
 .btn-done { color: #166534; }
+.btn-in-progress { color: #92400e; }
 .btn-not-done { color: #991b1b; }
 .btn-goal-done { color: #6b21a8; }
 .btn-goal { color: #1e3a8a; }

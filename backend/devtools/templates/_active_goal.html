@@ -1,0 +1,65 @@
+{# One active goal, rendered as a back-and-forth thread (You / Agent)
+   instead of a flat data dump - the goal's full history, oldest first:
+   the original goal, then each feedback -> replan round. See
+   storage.get_history_for_goal() for why this chain already *is* a
+   conversation, just not shown as one until now.
+
+   Completed goals and the historical log still use the plain
+   key:value view (_plan_entry.html) - that data-honest framing still
+   matters for the archival record (see docs/12-decisions.md,
+   2026-08-19 redesign entry); this conversational framing is
+   specifically for the goal you're actively acting on right now.
+
+   Expects `record` (the goal's latest state, for goal_id/duration) in
+   scope - a surrounding {% for record in board.active %} is enough.
+
+   The card's id (goal-N) is the anchor app.py's /feedback route
+   redirects back to - a growing thread otherwise reloads to the very
+   top of the page after every submission, so confirmation that a
+   click registered (the newly appended message) sits scrolled out of
+   view below the fold. Found via real use, 2026-08-20: repeated
+   "Still working on it" clicks looked like they weren't working for
+   exactly this reason - see docs/11-experiments.md. #}
+<div class="card" id="goal-{{ record.goal_id }}">
+  <div class="chat-header">
+    <strong>{{ record.goal }}</strong>
+    {% if record.duration %}
+      <span class="yaml-comment">{{ record.duration }} &mdash; {{ describe_duration(record.duration) }}</span>
+    {% endif %}
+  </div>
+
+  <div class="chat-thread">
+    {% for msg in get_history_for_goal(record.goal_id) %}
+      <div class="chat-msg chat-me">
+        <span class="chat-label">You</span>
+        {% if loop.first %}
+          {{ msg.goal }}
+        {% else %}
+          {{ msg.feedback }}
+        {% endif %}
+      </div>
+      <div class="chat-msg chat-agent">
+        <span class="chat-label">Agent</span>
+        {% if msg.plan.right_now %}
+          {{ msg.plan.right_now }}
+        {% else %}
+          {# See docs/11-experiments.md, 2026-08-19: the model sometimes
+             gives no next action without marking the goal complete -
+             say so plainly rather than leaving the bubble empty. #}
+          (no next action came back - give feedback again, or mark complete)
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <form method="post" action="/feedback">
+    <input type="hidden" name="goal_id" value="{{ record.goal_id }}">
+    <p><strong>Are you done with this?</strong></p>
+    <label for="note-{{ record.goal_id }}">Note (optional)</label>
+    <textarea id="note-{{ record.goal_id }}" name="note" rows="2" placeholder="e.g. ran out of time, or: easier than expected"></textarea>
+    <button class="btn-done" name="outcome" value="done">Yes</button>
+    <button class="btn-in-progress" name="outcome" value="in_progress">Still working on it</button>
+    <button class="btn-not-done" name="outcome" value="not_done">No</button>
+    <button class="btn-goal-done" name="outcome" value="goal_done">Goal complete</button>
+  </form>
+</div>

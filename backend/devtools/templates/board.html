@@ -9,10 +9,12 @@
 <h1>Board</h1>
 
 {# A goal isn't its own stored entity - it's a chain of records sharing
-   the same goal text (see storage.get_board()). This shows only the
+   the same goal_id (see storage.get_board()). This shows only the
    latest known state per goal, split by whether it's been explicitly
-   marked complete. #}
+   marked complete, as two side-by-side columns. #}
+<div class="layout">
 {% include "_board.html" %}
+</div>
 
 <p><a href="/">&larr; Back</a></p>
 

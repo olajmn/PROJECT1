@@ -1,20 +1,49 @@
 {# The board content (Active/Completed sections) - shared between
-   board.html (standalone page at /board) and index.html (embedded in
-   the side column). Expects `board` and `horizons` in context. #}
-<h2 class="board-heading">Active ({{ board.active | length }})</h2>
-{% if not board.active %}
-  <p>No active goals.</p>
-{% else %}
-  {% for record in board.active %}
-    {% include "_plan_entry.html" %}
-  {% endfor %}
-{% endif %}
+   board.html (standalone page at /board) and index.html (embedded
+   alongside its "Set a goal" column). Each section is its own `.col`,
+   a sibling of whatever other `.col`s the including page's `.layout`
+   already has - see style.css - so Active and Completed render as
+   their own columns instead of stacked under one another. Expects
+   `board` and `horizons` in context. #}
+<div class="col">
+  <h2 class="board-heading">Active ({{ board.active | length }})</h2>
+  {% if not board.active %}
+    <p>No active goals.</p>
+  {% else %}
+    {% for record in board.active %}
+      {% include "_active_goal.html" %}
+    {% endfor %}
+  {% endif %}
+</div>
 
-<h2 class="board-heading">Completed ({{ board.completed | length }})</h2>
-{% if not board.completed %}
-  <p>No completed goals yet.</p>
-{% else %}
-  {% for record in board.completed %}
-    {% include "_plan_entry.html" %}
-  {% endfor %}
-{% endif %}
+<div class="col">
+  <h2 class="board-heading">Completed ({{ board.completed | length }})</h2>
+  {% if not board.completed %}
+    <p>No completed goals yet.</p>
+  {% else %}
+    {% for record in board.completed %}
+      {% include "_plan_entry.html" %}
+    {% endfor %}
+  {% endif %}
+</div>
+
+<script>
+  // A feedback form (_active_goal.html) has four buttons that each mean
+  // something meaningfully different (Yes / Still working on it / No /
+  // Goal complete). If focus drifts onto one of them (e.g. via Tab) and
+  // the user presses Enter expecting to submit their note, the browser
+  // activates whichever button happens to be focused - silently picking
+  // an outcome the user never chose. Found via real use, 2026-08-20 (see
+  // docs/11-experiments.md): typing "did it" and pressing Enter landed
+  // on "Still working on it" instead of "Yes", with no visible sign
+  // anything was wrong. Block Enter everywhere in these forms except
+  // inside the note textarea itself (where it should still just add a
+  // newline) - an outcome now always requires an explicit click.
+  document.querySelectorAll('form[action="/feedback"]').forEach(function (form) {
+    form.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
+        e.preventDefault();
+      }
+    });
+  });
+</script>
