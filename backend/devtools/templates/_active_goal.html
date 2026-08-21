@@ -20,46 +20,100 @@
    view below the fold. Found via real use, 2026-08-20: repeated
    "Still working on it" clicks looked like they weren't working for
    exactly this reason - see docs/11-experiments.md. #}
+{# Section labels below (Plan / Timeperiod / Task / Conversation) are
+   the product model from docs/07-features.md "Architecture framing:
+   Program / Rooms / Sitemap" - the interface is meant to stay
+   close to 1:1 with that model so the model itself stays visible in
+   what's actually on screen, not just in docs. No data-model change
+   behind this - Timeperiod is still `record.duration`, Task is still
+   `record.plan.right_now`, Conversation is still
+   get_history_for_goal() - only the labeling/grouping is new. #}
 <div class="card" id="goal-{{ record.goal_id }}">
-  <div class="chat-header">
+  <div class="model-row model-goal">
+    <span class="model-label">Goal</span>
     <strong>{{ record.goal }}</strong>
-    {% if record.duration %}
-      <span class="yaml-comment">{{ record.duration }} &mdash; {{ describe_duration(record.duration) }}</span>
-    {% endif %}
   </div>
 
-  <div class="chat-thread">
-    {% for msg in get_history_for_goal(record.goal_id) %}
-      <div class="chat-msg chat-me">
-        <span class="chat-label">You</span>
-        {% if loop.first %}
-          {{ msg.goal }}
-        {% else %}
-          {{ msg.feedback }}
-        {% endif %}
-      </div>
-      <div class="chat-msg chat-agent">
-        <span class="chat-label">Agent</span>
-        {% if msg.plan.right_now %}
-          {{ msg.plan.right_now }}
-        {% else %}
-          {# See docs/11-experiments.md, 2026-08-19: the model sometimes
-             gives no next action without marking the goal complete -
-             say so plainly rather than leaving the bubble empty. #}
-          (no next action came back - give feedback again, or mark complete)
-        {% endif %}
-      </div>
+  <div class="model-row model-plan-heading">
+    <span class="model-label">Plan</span>
+    {# Plan's own content: the broader horizons (this_week/one_month/
+       one_year), whichever the model actually filled in - excludes
+       right_now, which gets shown separately as Task below. Missing
+       until now: restructuring this card around the Goal/Plan/
+       Timeperiod/Task/Conversation model kept Task visible but
+       silently dropped these, leaving "Plan" as a bare heading with no
+       value of its own. `horizons` is passed in from app.py's index()/
+       board() routes - see _board.html. #}
+    {% for key, label in horizons %}
+      {% if record.plan[key] %}
+        <div><span class="yaml-key">{{ label }}:</span> {{ record.plan[key] }}</div>
+      {% endif %}
     {% endfor %}
   </div>
 
-  <form method="post" action="/feedback">
-    <input type="hidden" name="goal_id" value="{{ record.goal_id }}">
-    <p><strong>Are you done with this?</strong></p>
-    <label for="note-{{ record.goal_id }}">Note (optional)</label>
-    <textarea id="note-{{ record.goal_id }}" name="note" rows="2" placeholder="e.g. ran out of time, or: easier than expected"></textarea>
-    <button class="btn-done" name="outcome" value="done">Yes</button>
-    <button class="btn-in-progress" name="outcome" value="in_progress">Still working on it</button>
-    <button class="btn-not-done" name="outcome" value="not_done">No</button>
-    <button class="btn-goal-done" name="outcome" value="goal_done">Goal complete</button>
-  </form>
+  <div class="model-nested">
+    {% if record.duration %}
+      <div class="model-row">
+        <span class="model-label">Timeperiod</span>
+        <span>{{ record.duration }} <span class="yaml-comment">&mdash; {{ describe_duration(record.duration) }}</span></span>
+      </div>
+    {% endif %}
+
+    <div class="model-row">
+      <span class="model-label">Task (right now)</span>
+      <span>
+        {% if record.plan.right_now %}
+          {{ record.plan.right_now }}
+        {% else %}
+          (no next action came back - give feedback again, or mark complete)
+        {% endif %}
+      </span>
+    </div>
+
+    <div class="model-row">
+      <span class="model-label">Conversation</span>
+    </div>
+    <div class="chat-thread">
+      {% for msg in get_history_for_goal(record.goal_id) %}
+        <div class="chat-msg chat-me">
+          <span class="chat-label">You</span>
+          {% if loop.first %}
+            {{ msg.goal }}
+          {% else %}
+            {{ msg.feedback }}
+          {% endif %}
+        </div>
+        <div class="chat-msg chat-agent">
+          <span class="chat-label">Agent</span>
+          {% if msg.plan.right_now %}
+            {{ msg.plan.right_now }}
+          {% else %}
+            {# See docs/11-experiments.md, 2026-08-19: the model sometimes
+               gives no next action without marking the goal complete -
+               say so plainly rather than leaving the bubble empty. #}
+            (no next action came back - give feedback again, or mark complete)
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      {# The input for your next message, not a separate "Are you done
+         with this?" question below Conversation - what you type here
+         literally becomes the next "You" bubble above once submitted
+         (see app.py's /feedback route), so it's styled as a
+         continuation of the thread, not a form asking something with
+         one correct answer. No more Yes/Still working on it/No/Goal
+         complete buttons either: what you write is classified
+         deterministically (recognized phrases, no LLM - see
+         backend/outcome_classifier.py) into done/not_done/in_progress/
+         goal_done. Anything not confidently recognized checks in
+         without changing the plan - never a silent guess toward a
+         riskier outcome. See docs/12-decisions.md, 2026-08-20/2026-08-21. #}
+      <form method="post" action="/feedback" class="chat-msg chat-me chat-input-row">
+        <input type="hidden" name="goal_id" value="{{ record.goal_id }}">
+        <span class="chat-label">You</span>
+        <textarea id="note-{{ record.goal_id }}" name="note" rows="2" required placeholder="what's going on with this?"></textarea>
+        <button class="btn-goal" type="submit">Update</button>
+      </form>
+    </div>
+  </div>
 </div>

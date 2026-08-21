@@ -706,7 +706,7 @@ def render_drawio(
     positions: dict[str, tuple[float, float, float, float]] = {}
 
     # Two passes: first work out how tall each row needs to be (its
-    # tallest box, since goal_to_plan.py's 8 functions needs far more
+    # tallest box, since a module with many functions needs far more
     # room than a one-line external node), then place rows one under the
     # other using that real height - not a fixed guess - so a tall row
     # never overlaps the row below it.

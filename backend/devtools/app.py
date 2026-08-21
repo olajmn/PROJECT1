@@ -14,22 +14,18 @@ The -m flag is required (not `python backend/devtools/app.py`) so the
 
 from flask import Flask, redirect, render_template, request, url_for
 
-from backend.goal_to_plan import describe_duration, generate_plan, replan
-from backend.storage import (
-    HORIZON_LABELS,
-    PLAN_KEYS,
-    get_board,
-    get_history_for_goal,
-    get_latest_for_goal,
-    load_history,
-    save_plan,
-)
+from backend.goal import get_board, get_history_for_goal, get_latest_for_goal
+from backend.outcome_classifier import classify_outcome
+from backend.plan import HORIZON_LABELS, PLAN_KEYS, generate_plan, replan
+from backend.storage import load_history, save_plan
+from backend.timeperiod import describe_duration
 
 app = Flask(__name__)
 # Makes describe_duration() callable directly from templates, e.g.
 # {{ describe_duration(record.duration) }} in _plan_entry.html/index.html -
-# so the "how was this understood" text stays in one place (goal_to_plan.py)
-# instead of being duplicated as static strings in the templates.
+# so the "how was this understood" text stays in one place
+# (backend/timeperiod.py) instead of being duplicated as static strings
+# in the templates.
 app.jinja_env.globals["describe_duration"] = describe_duration
 # Same reasoning: lets _active_goal.html pull a goal's whole
 # conversation (see get_history_for_goal's docstring) without every
@@ -71,7 +67,7 @@ def new_goal():
 
     The form lets the user pick an existing active goal to continue
     (via `continue_goal_id`) instead of typing its text again - typing
-    is how goals used to fragment (see storage.get_board()). When
+    is how goals used to fragment (see backend/goal.py's get_board()). When
     continuing, the existing goal's own text is reused as-is and the
     goal_id is carried forward, so this record joins that goal's chain
     instead of starting a new one. A genuinely new goal (no selection)
@@ -104,9 +100,15 @@ def new_goal():
 @app.route("/feedback", methods=["POST"])
 def feedback():
     """
-    Handle the "how did it go" form: turn the button pressed + optional
-    note into a feedback sentence, ask the agent to replan, and save the
-    result as a new history entry.
+    Handle the "what's going on" form: classify the free-text note into
+    an outcome (see backend/outcome_classifier.py - no LLM, recognized
+    phrases only), then act on it exactly as the old Yes/Still working
+    on it/No/Goal complete buttons used to. There's no separate
+    "outcome" field anymore - the note itself is the only signal, so
+    typing doesn't mean picking which of four boxes your situation
+    best fits; see docs/12-decisions.md, 2026-08-20, for why this
+    replaced the buttons and why it still never lets an LLM decide
+    true/false.
 
     Which goal this applies to comes from the form's `goal_id` (each
     active board card posts its own) - not "whatever was touched most
@@ -122,9 +124,14 @@ def feedback():
         # back home instead of crashing or guessing which goal to act on.
         return redirect(url_for("index"))
 
-    outcome_value = request.form.get("outcome")
     note = request.form.get("note", "").strip()
     duration = latest.get("duration")
+    classified = classify_outcome(note)
+    # Anything not confidently recognized defaults to the same safe
+    # no-op as "in_progress" - check in without changing the plan,
+    # rather than guess toward a riskier outcome (done/goal_done) from
+    # ambiguous text. See classify_outcome()'s docstring.
+    outcome_value = classified or "in_progress"
 
     # Redirect back to this specific goal's own card (see
     # _active_goal.html's id="goal-{{ goal_id }}"), not just "/" - a
@@ -157,8 +164,12 @@ def feedback():
         # was told "not done" and reasonably tried to make it easier.
         # No replan() call here on purpose - check in without asking
         # the model to change anything, so the plan can't drift just
-        # because time passed.
-        feedback_text = "Still working on it." + (f" Note: {note}" if note else "")
+        # because time passed. `classified` distinguishes "you said
+        # you're still working on it" from "we genuinely couldn't tell"
+        # - both get the same safe treatment, but the record should be
+        # honest about which one actually happened.
+        prefix = "Still working on it." if classified else "Checked in (couldn't tell what this means yet)."
+        feedback_text = prefix + (f" Note: {note}" if note else "")
         save_plan(
             latest["goal"], latest["plan"], feedback=feedback_text,
             duration=duration, goal_id=latest["goal_id"],
@@ -168,7 +179,10 @@ def feedback():
     outcome = "Completed the action" if outcome_value == "done" else "Did not complete the action"
     feedback_text = f"{outcome}." + (f" Note: {note}" if note else "")
 
-    new_plan = replan(latest["goal"], latest["plan"], feedback_text, duration=duration)
+    # The full chain, not just latest["plan"] - see replan()'s docstring
+    # for why: a model only shown the single previous step has no way to
+    # notice it has already shrunk right_now several times in a row.
+    new_plan = replan(latest["goal"], get_history_for_goal(latest["goal_id"]), feedback_text, duration=duration)
     # goal_id carried forward explicitly - without this, save_plan() would
     # mint a fresh one and this replan would silently start a *new* board
     # entry instead of continuing the existing goal's chain.

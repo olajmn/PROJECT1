@@ -8,14 +8,15 @@ server, no schema migrations, just a list of dictionaries written to disk.
 Data lives in data/plans.json, which is git-ignored (see .gitignore) -
 this is personal information and must never be committed to a repository.
 
-This module also owns the plan SHAPE: the four time-horizon keys are
-defined once here (PLAN_KEYS/HORIZON_LABELS) instead of being duplicated
-across the prompts, the templates, and every reader. Records saved
-before the switch to structured JSON (v0.1) had `plan` as a plain
-string; _load_all() normalizes those into the current dict shape so
-every caller - today.py, the templates, goal_to_plan.py - can always
-assume `plan` is a dict with these keys, without special-casing it
-themselves.
+This module normalizes legacy shapes on read: records saved before the
+switch to structured JSON (v0.1) had `plan` as a plain string; _load_all()
+converts those into the current dict shape (see plan.PLAN_KEYS) so every
+caller - today.py, the templates, plan.py - can always assume `plan` is
+a dict with those keys, without special-casing it themselves.
+
+Goal identity/grouping (get_board() and friends) lives in backend/goal.py,
+not here - see that module's docstring for why goal_id minting/backfill
+stays in this file regardless.
 """
 
 import json
@@ -24,17 +25,6 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 PLANS_FILE = DATA_DIR / "plans.json"
-
-# The plan schema, defined once. generate_plan()/replan() ask the LLM
-# for exactly these keys; the templates iterate this same list to render
-# every horizon in the same order.
-PLAN_KEYS = ("one_year", "one_month", "this_week", "right_now")
-HORIZON_LABELS = {
-    "one_year": "1 year",
-    "one_month": "1 month",
-    "this_week": "This week",
-    "right_now": "Right now",
-}
 
 
 def ensure_data_dir() -> None:
@@ -143,7 +133,7 @@ def save_plan(
 
     `duration` is the free-text span the user asked this plan to cover
     (e.g. "30 minutes", "this week"), if they gave one - see
-    goal_to_plan.generate_plan(). Stored so the history shows what was
+    plan.generate_plan(). Stored so the history shows what was
     actually asked for, not just what came back.
 
     `completed` marks the whole goal (not just one "right_now" step) as
@@ -152,7 +142,7 @@ def save_plan(
     docs/11-experiments.md, 2026-08-19 entry, for why this exists.
 
     `goal_id` is the goal's real identity, separate from its display
-    text (see get_board()). Pass the existing goal_id when this record
+    text (see backend/goal.py's get_board()). Pass the existing goal_id when this record
     continues a goal already in history (e.g. a replan after feedback,
     or explicitly picking "continue an existing goal"); leave it None
     for a genuinely new goal, and one is minted here. Callers should
@@ -186,70 +176,3 @@ def get_latest_plan() -> dict | None:
     """Return the most recently saved record, or None if there's no history yet."""
     records = _load_all()
     return records[-1] if records else None
-
-
-def get_history_for_goal(goal_id: int) -> list[dict]:
-    """
-    Return every record for one specific goal_id, oldest first - the
-    goal's full back-and-forth: the original goal, then each
-    feedback-and-replan round in order.
-
-    A goal's history already *is* a conversation - each record's
-    `feedback` is what the user said about the previous record's
-    `right_now`, and its own `right_now` is the agent's reply - this
-    just returns that chain so a template can render it as one instead
-    of only ever showing the latest snapshot. See
-    devtools/templates/_active_goal.html.
-    """
-    return [r for r in _load_all() if r["goal_id"] == goal_id]
-
-
-def get_latest_for_goal(goal_id: int) -> dict | None:
-    """
-    Return the most recent record for one specific goal_id, or None if
-    no record has that goal_id.
-
-    Needed once more than one goal can be active at a time (see
-    docs/10-development.md, 2026-08-20): get_latest_plan() answers "what
-    was touched most recently, across every goal", which stops being
-    the right question the moment two goals are both active side by
-    side on the board - giving feedback on one must never silently act
-    on whichever goal happens to be globally newest.
-    """
-    for record in reversed(_load_all()):
-        if record["goal_id"] == goal_id:
-            return record
-    return None
-
-
-def get_board() -> dict:
-    """
-    Group history into "active" and "completed" goals, for a board view
-    (see docs/10-development.md, 2026-08-19).
-
-    A "goal" isn't its own stored entity - it's a chain of records
-    sharing the same `goal_id`, created by generate_plan() and then
-    extended by replan() each time feedback comes in (see save_plan()).
-    So the only way to know a goal's current state is to find its most
-    recent record. Records are loaded oldest-first, so iterating in
-    order and overwriting by goal_id naturally leaves the latest record
-    per goal.
-
-    Grouping by goal_id (not `goal` text) is what makes this reliable:
-    retyping a goal's text slightly differently ("take a shower" vs.
-    "take shower") used to fragment it into separate board entries.
-    goal_id is a stable identity assigned once and carried forward
-    regardless of text - see docs/12-decisions.md, 2026-08-20.
-
-    Returns {"active": [...], "completed": [...]}, each a list of
-    records (latest state only, one per distinct goal).
-    """
-    latest_by_goal: dict[int, dict] = {}
-    for record in _load_all():
-        latest_by_goal[record["goal_id"]] = record
-
-    # .get(), not [] - records saved before the "completed" field
-    # existed don't have the key at all.
-    active = [r for r in latest_by_goal.values() if not r.get("completed")]
-    completed = [r for r in latest_by_goal.values() if r.get("completed")]
-    return {"active": active, "completed": completed}

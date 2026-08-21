@@ -42,12 +42,12 @@ docs/               Obsidian vault - product/research/decision docs (see docs/00
   must be run **from the project root**, using `-m` and dots instead of
   a file path:
   ```bash
-  .venv/bin/python -m backend.goal_to_plan
+  .venv/bin/python -m backend.plan
   .venv/bin/python -m backend.today
   .venv/bin/python -m backend.devtools.view
   .venv/bin/python -m backend.devtools.app
   ```
-  `python backend/goal_to_plan.py` (a plain file path) will NOT work
+  `python backend/plan.py` (a plain file path) will NOT work
   anymore - the imports inside these files rely on Python treating them
   as package members, which only happens via `-m`.
   Or activate the environment once per terminal session:
@@ -92,4 +92,4 @@ Two standing long-term goals, already documented:
 - The `anthropic` package is also installed and kept up to date in
   `requirements.txt`, so the project can switch to Claude (`claude-opus-5`)
   later by setting `ANTHROPIC_API_KEY` and swapping the client — no
-  reinstall needed. See `goal_to_plan.py` for the current call site.
+  reinstall needed. See `backend/plan.py` for the current call site.

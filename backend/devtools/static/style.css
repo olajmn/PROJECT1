@@ -111,6 +111,50 @@ h1 {
 }
 .chat-agent .chat-label { color: #166534; }
 
+/* The feedback form, styled as the next "You" bubble rather than a
+   separate question below the thread - see _active_goal.html. Same
+   .chat-me colors/border, just needs its own textarea/button spacing
+   since a <form> holds more than a line of text. */
+.chat-input-row textarea {
+  margin-top: 6px;
+  margin-bottom: 8px;
+}
+.chat-input-row button {
+  margin-bottom: 0;
+}
+
+/* Section labels (Goal / Plan / Timeperiod / Task / Conversation) from
+   docs/07-features.md "Architecture framing: Program / Rooms /
+   Sitemap" - the interface stays close to 1:1 with that model on
+   purpose, so the model itself is visible on screen, not just in docs.
+   Same yaml-key purple as the rest of the data-shaped display; Plan's
+   children (Timeperiod/Task/Conversation) are indented under it, not
+   restyled as something fancier - still plain key: value, just grouped. */
+.model-row {
+  margin-bottom: 10px;
+}
+.model-label {
+  display: block;
+  font-weight: 600;
+  color: #7c3aed;
+  font-size: 0.8rem;
+  margin-bottom: 2px;
+}
+.model-goal {
+  font-size: 1rem;
+}
+.model-plan-heading {
+  margin-bottom: 4px;
+}
+/* Timeperiod/Task/Conversation used to be indented under Plan as its
+   children - now left-aligned flush with Goal/Plan instead, since each
+   is (or is becoming) its own file (backend/timeperiod.py,
+   backend/plan.py) rather than something nested inside Plan's own
+   code. See docs/07-features.md. */
+.model-nested {
+  margin-left: 0;
+}
+
 label {
   display: block;
   margin-bottom: 6px;
@@ -140,10 +184,6 @@ button {
   margin-right: 8px;
 }
 
-.btn-done { color: #166534; }
-.btn-in-progress { color: #92400e; }
-.btn-not-done { color: #991b1b; }
-.btn-goal-done { color: #6b21a8; }
 .btn-goal { color: #1e3a8a; }
 
 a { color: #3b82f6; }

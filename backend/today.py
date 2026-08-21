@@ -15,7 +15,7 @@ if __name__ == "__main__":
     latest = get_latest_plan()
 
     if latest is None:
-        print("No plan saved yet. Run goal_to_plan.py first.")
+        print("No plan saved yet. Run plan.py first.")
     else:
         print(f"Goal: {latest['goal']}")
         print(f"\nRight now: {latest['plan']['right_now']}")

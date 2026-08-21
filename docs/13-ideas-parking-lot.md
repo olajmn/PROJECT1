@@ -24,4 +24,17 @@
   walks the hierarchy (year/month/week/day as real files, not JSON
   fields) instead of a database — see [[08-technical-architecture]]
   § Memory & Data Architecture
+- Let the free-text feedback note act as a real channel to the agent,
+  not just status reporting: detect (deterministically, same approach
+  as `backend/outcome_classifier.py` - no LLM guessing on *what kind*
+  of message it is) when a note reads as a question/request rather
+  than a done/not-done/in-progress/goal-complete report, and route it
+  through `replan()` as labeled feedback (e.g. "Asked: ...") so the
+  agent actually responds instead of silently logging it as an
+  unrecognized check-in. Found via real use, 2026-08-20: notes like
+  "can you help me" / "maybe do some research for me" currently just
+  get logged and ignored. Explicit caveat to carry into the eventual
+  build: the agent still has no tools/internet access (see "Aggregation
+  / world-data capability" above), so a "response" is bounded by the
+  model's own training, not real live research.
 - *(add more ideas here as they come up — don't build them yet)*

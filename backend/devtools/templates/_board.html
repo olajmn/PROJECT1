@@ -26,24 +26,3 @@
     {% endfor %}
   {% endif %}
 </div>
-
-<script>
-  // A feedback form (_active_goal.html) has four buttons that each mean
-  // something meaningfully different (Yes / Still working on it / No /
-  // Goal complete). If focus drifts onto one of them (e.g. via Tab) and
-  // the user presses Enter expecting to submit their note, the browser
-  // activates whichever button happens to be focused - silently picking
-  // an outcome the user never chose. Found via real use, 2026-08-20 (see
-  // docs/11-experiments.md): typing "did it" and pressing Enter landed
-  // on "Still working on it" instead of "Yes", with no visible sign
-  // anything was wrong. Block Enter everywhere in these forms except
-  // inside the note textarea itself (where it should still just add a
-  // newline) - an outcome now always requires an explicit click.
-  document.querySelectorAll('form[action="/feedback"]').forEach(function (form) {
-    form.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" && e.target.tagName !== "TEXTAREA") {
-        e.preventDefault();
-      }
-    });
-  });
-</script>

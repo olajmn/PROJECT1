@@ -13,6 +13,36 @@
 
 ---
 
+## 2026-08-20 — Replace the Yes/Still working on it/No/Goal complete buttons with a classified free-text note
+
+**Alternatives considered:** keep the four buttons as the only signal
+(note stays a footnote); let the LLM classify the free-text note into
+an outcome; a deterministic phrase-matcher, same approach as
+goal_to_plan.py's `_resolve_duration()`.
+**Why this choice:** the user wanted to stop having to map what
+actually happened onto one of four fixed boxes before writing
+anything, but explicitly did not want that decision handed to an LLM -
+classifying true/false from ambiguous text is the same kind of guess
+that produced this project's hallucination findings, just one step
+earlier in the pipeline. `backend/outcome_classifier.py` recognizes a
+growing list of known phrases per outcome (no model call) and returns
+`None` for anything it doesn't recognize; app.py's `/feedback` route
+treats `None` the same as an explicit "still working on it" - a safe
+check-in, never a guess toward the two outcomes that change state
+(done -> replan, goal_done -> permanent). Built as its own module
+specifically so the phrase lists can grow from real usage without
+touching app.py or goal_to_plan.py.
+**Trade-off:** phrasing the classifier doesn't recognize (e.g. "I sent
+2 of 4 applications") gets treated as a no-op check-in even when it
+actually contains real signal - safe, but the note itself is currently
+the only place that nuance is preserved (it's not lost, just not acted
+on automatically).
+**Reversible?** Yes - `classify_outcome()` is a single pure function;
+reverting to explicit buttons or swapping in an LLM-based classifier
+both are localized changes, not a redesign.
+
+---
+
 ## 2026-08-18 — LLM backend: Ollama (local) instead of Anthropic Claude
 
 **Alternatives considered:** Anthropic Claude API (`claude-opus-5`), a
@@ -148,6 +178,52 @@ real, felt friction, not a free workaround.
 **Reversible?** Yes, trivially - revisit switching to Claude (better
 multilingual handling) if English-only friction becomes a real problem,
 per the already-logged Ollama-vs-Claude decision above.
+
+## 2026-08-21 — Don't recognize bare 4-digit clock times ("1400")
+
+**Alternatives considered:** recognize a bare 4-digit number as a
+24-hour clock time whenever it's a plausible time (0000-2359); require
+a signal word first ("kl 1400"/"at 1400"); don't recognize it at all,
+only colon-separated ("14:00") and 12-hour ("2pm"/"1 o'clock") forms.
+**Why this choice:** a bare number carries no signal of its own - the
+user's own example, "1500kr" (a price), is indistinguishable from
+"1500" the clock time without reading the surrounding text, and the
+same ambiguity applies to quantities ("1400 meter", "1400 kalorier")
+and years. This is the same shape of risk `_matched_month_name()`
+already found and fixed ("I may go" silently resolving to next May) -
+a bare match doesn't fail honestly here, it confidently states a wrong
+answer, which is worse than not recognizing it at all. `"14:00"`
+(colon) and `"2pm"`/`"1 o'clock"` (explicit suffix) stay recognized
+because both carry their own unambiguous signal; nothing else does.
+**Trade-off:** "kl 1400" (a real, common way to write a time,
+especially in Norwegian/military notation) stays unrecognized -
+"given, not parsed/verified by code" - rather than risk a wrong answer
+dressed up as a right one.
+**Reversible?** Yes - if this turns out to matter enough in real use,
+the signal-word option ("kl"/"at" + 4 digits) is the safer middle
+ground to revisit, not the bare-number option.
+
+## 2026-08-21 — Remove YEAR_FRACTIONS ("half a year"/"quarter of a year")
+
+**Alternatives considered:** keep `YEAR_FRACTIONS` as-is (4th entry in
+`_FRACTION_TABLES` alongside hour/minute/day); keep the table but drop
+it from recognition; remove it entirely.
+**Why this choice:** questioned whether the whole named-fraction
+mechanism ("half an hour" etc., alongside the already-working numeric
+`DURATION_LENGTH_RE`) was worth its cost at all - concluded it earns
+its place for hour/minute/day because that's genuinely how people
+phrase those durations in speech ("half an hour" more than "30
+minutes"), but year didn't clear the same bar: `MONTH_NAMES` (section
+2) already names a year's parts, and a *span* like "half a year"
+resolving to "6 months from now" wasn't judged to add real value over
+just writing "6 months" (already handled by `DURATION_LENGTH_RE`).
+**Trade-off:** "half a year"/"quarter of a year" now fall through to
+"given, not parsed/verified by code" instead of resolving - an honest
+answer, not a wrong one, just a narrower one than before.
+**Reversible?** Yes, trivially - re-add `YEAR_FRACTIONS` to
+`timesegments.py`, put "year" back in `NAMED_FRACTION_RE`'s
+alternation and `_FRACTION_TABLES`, and re-add the `_add_months()`
+branch `_named_fraction_end()` used to have for it.
 
 ## See also
 

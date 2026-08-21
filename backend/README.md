@@ -13,7 +13,12 @@ Run everything from the **project root**, using `-m` (see `../CONVENTIONS.md`
 
 | File | Responsibility | Run with |
 |---|---|---|
-| `goal_to_plan.py` | Goal → structured plan, and `replan()` (plan + feedback → updated plan). Both call the LLM | `.venv/bin/python -m backend.goal_to_plan` |
+| `plan.py` | Goal → structured plan, and `replan()` (plan + feedback → updated plan). Both call the LLM | `.venv/bin/python -m backend.plan` |
+| `goal.py` | Goal identity/grouping - `get_board()`, `get_latest_for_goal()`, `get_history_for_goal()` | (imported by others, not run directly) |
+| `timeperiod.py` | Understanding "when" a plan should span - resolves/describes recognized day segments and week/month/year phrases into a real clock window or calendar date range, honest about what it can't parse | (imported by others, not run directly) |
+| `timesegments.py` | The recognized time phrases/patterns themselves (`DAY_SEGMENTS`, `PERIOD_PHRASES`, etc.) - pure data, no logic; `timeperiod.py` is the logic that uses it | (imported by others, not run directly) |
+| `outcome_classifier.py` | Deterministic (no LLM) classification of free-text feedback into done/not_done/in_progress/goal_done - the logic; `outcome_phrases.py` is the data it uses | (imported by others, not run directly) |
+| `outcome_phrases.py` | The recognized feedback phrases themselves (`GOAL_DONE_PHRASES`, `RULES`, etc.) - pure data, no logic | (imported by others, not run directly) |
 | `storage.py` | Save/load plans (and feedback) to/from `../data/plans.json` | (imported by others, not run directly) |
 | `today.py` | Show just today's immediate action from the latest plan | `.venv/bin/python -m backend.today` |
 
