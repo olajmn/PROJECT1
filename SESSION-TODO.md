@@ -81,15 +81,8 @@ proper dev log / decision entry.
       fixed by passing full history + a stricter prompt rule), and the
       outcome-classifier word-boundary bug ("no" matching inside "not"/
       "know"/"now" before `_contains_phrase()` fixed it).
-- [ ] **Commit today's (2026-08-21) work** - large uncommitted diff:
-      new files `backend/goal.py`, `backend/plan.py`,
-      `backend/timeperiod.py`, `backend/timesegments.py`,
-      `backend/outcome_classifier.py` (rewritten),
-      `backend/outcome_phrases.py`; deleted `backend/goal_to_plan.py`;
-      modified templates/CSS, `README.md`, `CONVENTIONS.md`,
-      `docs/07-features.md`, `docs/12-decisions.md`,
-      `docs/13-ideas-parking-lot.md`. Nothing from today is on the
-      `multi-goal-ui-and-goal-id` branch (or a new one) yet.
+- [x] **Commit today's (2026-08-21) work** - done, pushed as
+      `e277f1a` on `multi-goal-ui-and-goal-id`.
 
 ## Done, just noting for the record
 
