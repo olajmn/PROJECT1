@@ -63,3 +63,16 @@
     you've gotten off the couch") - freely editing one step in
     isolation can silently break the steps that assumed it. Explicitly
     parked, not solved, at the concept stage.
+- **Recognize a real, already-happened start time in what the user
+  types** (e.g. "I started yesterday") and pass it to the model as
+  context, distinct from `duration` (how far the plan should span
+  *forward*) and from `PLAN_KEYS` (the plan's own forward-looking
+  horizons, year down to right_now) - neither currently captures "this
+  didn't start from zero just now." Discussed 2026-08-21, while
+  expanding `PLAN_KEYS` to `today`/`this_hour`/`this_minute`: a real,
+  if uncommon, case - flagged as its own mechanism (recognition +
+  context passed to the model), not an extra `PLAN_KEYS` entry, since
+  it answers "when did this actually begin" rather than "how does the
+  plan look at this time window." Likely the same deterministic-phrase
+  approach as `backend/outcome_classifier.py` (no LLM guessing on
+  *whether* a start time was named) if/when this gets built.
