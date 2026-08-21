@@ -26,3 +26,34 @@
     {% endfor %}
   {% endif %}
 </div>
+
+{# Plain numeric countdown for every Timeperiod bar on the page (see
+   _active_goal.html) - not fancy, just H:MM:SS ticking down to
+   `data-end`, client-side, once a second. One shared script here
+   (not repeated per-card inside _active_goal.html, which gets
+   {% include %}'d once per active goal) so N active goals still only
+   run one interval, not N. Plain negative-with-a-minus-sign past due,
+   not a separate "overdue" word - matches the "just numbers" request
+   this was built for, 2026-08-21. #}
+<script>
+(function () {
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function formatCountdown(ms) {
+    var totalSeconds = Math.round(ms / 1000);
+    var sign = totalSeconds < 0 ? "-" : "";
+    var abs = Math.abs(totalSeconds);
+    var h = Math.floor(abs / 3600);
+    var m = Math.floor((abs % 3600) / 60);
+    var s = abs % 60;
+    return sign + h + ":" + pad(m) + ":" + pad(s);
+  }
+  function tick() {
+    document.querySelectorAll(".duration-countdown[data-end]").forEach(function (el) {
+      var end = new Date(el.dataset.end);
+      el.textContent = formatCountdown(end - Date.now());
+    });
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>

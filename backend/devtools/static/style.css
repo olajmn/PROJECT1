@@ -155,6 +155,88 @@ h1 {
   margin-left: 0;
 }
 
+/* Start/now/end bar for Timeperiod - see backend/timeperiod.py's
+   duration_progress(). A plain line with a "nå" marker at whatever
+   percent `now` sits between start and end, not a filled "loading bar"
+   - matches this page's deliberately unstyled, data-honest look
+   (docs/12-decisions.md, 2026-08-19): the marker's position is the
+   whole signal, not a colored fill implying more polish than a
+   monospace key:value page otherwise has. Only rendered when
+   duration_progress() actually returned something - not every
+   recognized duration grounds a start AND end (a deadline has no real
+   end time), so there's nothing honest to draw for those.
+   percent is pre-clamped to 0-100 in duration_progress() itself, so
+   "upcoming"/"overdue" always render at the near/far edge - the
+   marker's color (not its position) is what actually says "this
+   hasn't started yet" / "this is already over". */
+.duration-bar {
+  position: relative;
+  margin: 10px 0 26px;
+}
+.duration-bar-track {
+  height: 2px;
+  background: #d1d5db;
+}
+.duration-bar-marker {
+  position: absolute;
+  top: 2px;
+  transform: translateX(-50%);
+  text-align: center;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.duration-bar-marker-tick {
+  display: block;
+  color: #7c3aed; /* active - same purple as model-label */
+}
+.duration-bar-marker.status-upcoming .duration-bar-marker-tick { color: #9ca3af; }
+.duration-bar-marker.status-overdue .duration-bar-marker-tick { color: #b45309; }
+.duration-bar-marker-label {
+  display: block;
+  color: #9ca3af;
+}
+.duration-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+.duration-countdown {
+  font-variant-numeric: tabular-nums; /* digits don't shift width as they tick */
+}
+
+/* Vertical step list - see backend/timeperiod.py's step_plan() and
+   _active_goal.html. Plain numbered list, same restrained look as the
+   rest of this page. current_step (see backend/storage.py's
+   save_plan()) marks which one "Task (right now)" actually points at -
+   .step-done (already confirmed via the Done? form, /step route) and
+   .step-current (what Done? is currently asking about) are the only
+   two states styled; everything after stays plain/upcoming. */
+.step-list {
+  margin: 4px 0 0;
+  padding-left: 1.4em;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.step-list li.step-done {
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+.step-list li.step-current {
+  font-weight: 600;
+}
+/* The Done? Yes/No form - plain, inline, same .btn-goal buttons as
+   everywhere else on this page (no new button style just for this). */
+.step-done-form {
+  display: inline-flex;
+  gap: 8px;
+}
+.step-time {
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
 label {
   display: block;
   margin-bottom: 6px;

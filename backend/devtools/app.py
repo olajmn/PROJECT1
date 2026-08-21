@@ -18,7 +18,7 @@ from backend.goal import get_board, get_history_for_goal, get_latest_for_goal
 from backend.outcome_classifier import classify_outcome
 from backend.plan import HORIZON_LABELS, PLAN_KEYS, generate_plan, replan
 from backend.storage import load_history, save_plan
-from backend.timeperiod import describe_duration
+from backend.timeperiod import describe_duration, duration_progress, freeze_duration, step_plan
 
 app = Flask(__name__)
 # Makes describe_duration() callable directly from templates, e.g.
@@ -27,6 +27,16 @@ app = Flask(__name__)
 # (backend/timeperiod.py) instead of being duplicated as static strings
 # in the templates.
 app.jinja_env.globals["describe_duration"] = describe_duration
+# Same reasoning, for the start/now/end progress bar in
+# _active_goal.html - percent/status/labels computed once in
+# timeperiod.py (see duration_progress()'s docstring), not recomputed
+# in template logic.
+app.jinja_env.globals["duration_progress"] = duration_progress
+# Same reasoning - the vertical step list in _active_goal.html zips a
+# goal's stored step descriptions (record.plan.steps, from
+# backend/plan.py's _generate_steps()) with their deterministically-
+# computed time slice via step_plan() - see its docstring.
+app.jinja_env.globals["step_plan"] = step_plan
 # Same reasoning: lets _active_goal.html pull a goal's whole
 # conversation (see get_history_for_goal's docstring) without every
 # route that renders it having to fetch and pass that separately.
@@ -73,9 +83,17 @@ def new_goal():
     instead of starting a new one. A genuinely new goal (no selection)
     still requires typed `goal` text, and mints its own goal_id via
     save_plan().
+
+    Both paths compute a FRESH `frozen_duration` (see
+    backend/timeperiod.py's freeze_duration()) - a new goal, or an
+    explicit "continue" with whatever duration was typed this time
+    (possibly a different one than before), is a genuinely new
+    planning decision, unlike checking in via /feedback below, which
+    keeps whatever timeframe was already running.
     """
     continue_goal_id = request.form.get("continue_goal_id", "").strip()
     duration = request.form.get("duration", "").strip() or None
+    frozen = freeze_duration(duration)
 
     if continue_goal_id:
         existing = next(
@@ -87,13 +105,16 @@ def new_goal():
             # since this page loaded) - nothing sensible to continue.
             return redirect(url_for("index"))
         plan = generate_plan(existing["goal"], duration)
-        save_plan(existing["goal"], plan, duration=duration, goal_id=existing["goal_id"])
+        save_plan(
+            existing["goal"], plan, duration=duration,
+            goal_id=existing["goal_id"], frozen_duration=frozen,
+        )
         return redirect(url_for("index"))
 
     goal = request.form.get("goal", "").strip()
     if goal:
         plan = generate_plan(goal, duration)
-        save_plan(goal, plan, duration=duration)
+        save_plan(goal, plan, duration=duration, frozen_duration=frozen)
     return redirect(url_for("index"))
 
 
@@ -126,6 +147,15 @@ def feedback():
 
     note = request.form.get("note", "").strip()
     duration = latest.get("duration")
+    # Inherited unchanged, never recomputed - a check-in isn't a new
+    # planning decision, it's the SAME timeframe continuing (see
+    # backend/timeperiod.py's freeze_duration() and
+    # backend/storage.py's save_plan() docstring for why re-deriving
+    # this from "now" here was the actual bug). Falls back to computing
+    # one fresh only for a goal saved before frozen_duration existed
+    # (2026-08-21) - a one-time "adopt now" so it isn't permanently
+    # stuck without a bar, not a recurring recompute.
+    frozen = latest.get("frozen_duration") or freeze_duration(duration)
     classified = classify_outcome(note)
     # Anything not confidently recognized defaults to the same safe
     # no-op as "in_progress" - check in without changing the plan,
@@ -152,6 +182,7 @@ def feedback():
         save_plan(
             latest["goal"], latest["plan"], feedback=feedback_text,
             duration=duration, completed=True, goal_id=latest["goal_id"],
+            frozen_duration=frozen,
         )
         return back_to
 
@@ -172,7 +203,7 @@ def feedback():
         feedback_text = prefix + (f" Note: {note}" if note else "")
         save_plan(
             latest["goal"], latest["plan"], feedback=feedback_text,
-            duration=duration, goal_id=latest["goal_id"],
+            duration=duration, goal_id=latest["goal_id"], frozen_duration=frozen,
         )
         return back_to
 
@@ -186,7 +217,69 @@ def feedback():
     # goal_id carried forward explicitly - without this, save_plan() would
     # mint a fresh one and this replan would silently start a *new* board
     # entry instead of continuing the existing goal's chain.
-    save_plan(latest["goal"], new_plan, feedback=feedback_text, duration=duration, goal_id=latest["goal_id"])
+    save_plan(
+        latest["goal"], new_plan, feedback=feedback_text, duration=duration,
+        goal_id=latest["goal_id"], frozen_duration=frozen,
+    )
+    return back_to
+
+
+@app.route("/step", methods=["POST"])
+def step():
+    """
+    Handle the per-step "Done?" Yes/No control (see _active_goal.html) -
+    advances `current_step` by one, purely by index arithmetic into the
+    goal's already-generated `plan.steps` list. No model call at all:
+    unlike /feedback's free-text note (which can trigger replan() -
+    the model reconsidering the plan), the step list was already fully
+    decided upfront (see backend/plan.py's _generate_steps()), so
+    moving through it is just "which one are we on now", nothing to
+    ask the model about.
+
+    "No" doesn't move the pointer - it's logged the same safe,
+    no-replan way /feedback's "in_progress" is, so a step can't be
+    silently reworded/shrunk just because it wasn't done yet either.
+
+    `current_step` can reach `len(steps)` (one past the last valid
+    index, not a real step) to mean "every step is done" - see
+    _active_goal.html for how that's shown (no more Yes/No, a prompt to
+    mark the whole goal complete via the existing free-text box
+    instead, not an automatic completion this route decides on its
+    own).
+    """
+    goal_id_value = request.form.get("goal_id", "").strip()
+    latest = get_latest_for_goal(int(goal_id_value)) if goal_id_value else None
+    if latest is None:
+        return redirect(url_for("index"))
+
+    back_to = redirect(url_for("index") + f"#goal-{latest['goal_id']}")
+    steps = latest["plan"].get("steps")
+    if not steps:
+        # Nothing to advance - no step list on this goal at all (see
+        # backend/plan.py's generate_plan(): only goals with a
+        # resolvable duration get one).
+        return back_to
+
+    current = latest.get("current_step", 0)
+    if current >= len(steps):
+        # Already at "all steps done" - nothing left to confirm.
+        return back_to
+
+    if request.form.get("done") == "yes":
+        next_index = current + 1
+        if next_index >= len(steps):
+            feedback_text = f"Completed step {current + 1} (the last one): {steps[current]}. All steps done."
+        else:
+            feedback_text = f"Completed step {current + 1}: {steps[current]}"
+    else:
+        next_index = current
+        feedback_text = f"Not done yet: step {current + 1}: {steps[current]}"
+
+    save_plan(
+        latest["goal"], latest["plan"], feedback=feedback_text,
+        duration=latest.get("duration"), goal_id=latest["goal_id"],
+        frozen_duration=latest.get("frozen_duration"), current_step=next_index,
+    )
     return back_to
 
 

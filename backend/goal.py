@@ -17,7 +17,27 @@ cut. What lives here is everything that only *reads* history and
 groups it by goal_id, after the fact.
 """
 
+from datetime import datetime
+
 from backend.storage import load_history
+
+
+def _created_at_key(record: dict) -> datetime:
+    """
+    A sortable, comparable `created_at` for one record - naive local
+    time, always. Records saved before 2026-08-21 stored `created_at`
+    in UTC (timezone-aware, e.g. "...+00:00"); everything since is
+    naive local (see storage.save_plan()'s comment on why that
+    changed). Comparing an aware and a naive datetime directly raises
+    TypeError in Python, so any aware timestamp is converted to local
+    time and its tzinfo dropped here - not just to avoid the crash, but
+    so mixed-era history still sorts in the actual right chronological
+    order, not by coincidence.
+    """
+    parsed = datetime.fromisoformat(record["created_at"])
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone().replace(tzinfo=None)
+    return parsed
 
 
 def get_history_for_goal(goal_id: int) -> list[dict]:
@@ -73,8 +93,11 @@ def get_board() -> dict:
     goal_id is a stable identity assigned once and carried forward
     regardless of text - see docs/12-decisions.md, 2026-08-20.
 
-    Returns {"active": [...], "completed": [...]}, each a list of
-    records (latest state only, one per distinct goal).
+    Returns {"active": [...], "completed": [...]} - "active" is newest
+    first (most recently created/updated goal on top, see
+    _created_at_key()); "completed" stays in the order it always has
+    (oldest-first, by when each goal_id first appeared in history) -
+    only "active" was asked to change, 2026-08-21.
     """
     latest_by_goal: dict[int, dict] = {}
     for record in load_history():
@@ -84,4 +107,5 @@ def get_board() -> dict:
     # existed don't have the key at all.
     active = [r for r in latest_by_goal.values() if not r.get("completed")]
     completed = [r for r in latest_by_goal.values() if r.get("completed")]
+    active.sort(key=_created_at_key, reverse=True)
     return {"active": active, "completed": completed}

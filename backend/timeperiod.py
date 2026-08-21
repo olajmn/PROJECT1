@@ -424,6 +424,275 @@ def _resolve_duration(duration: str | None) -> str | None:
     return duration
 
 
+def resolve_span(duration: str | None) -> tuple[datetime, datetime] | None:
+    """
+    The actual (start, end) datetime span `duration` resolves to, for
+    visualizing it (a start/now/end bar in the UI) - reuses the exact
+    same matchers/resolvers `_resolve_duration()`/`describe_duration()`
+    already call, just returning raw datetimes instead of a formatted
+    string, so there's no second copy of any date arithmetic. None for
+    anything not grounded in a real start and end (a deadline with an
+    unknown clock time, or fully unrecognized text) - nothing to draw a
+    bar for, same honesty as the text form's "not parsed/verified" and
+    "not grounded" cases.
+
+    `start` is `now` for anything that's a forward-looking span from
+    this moment (clock times, weekday names, named fractions, plain
+    lengths) rather than some absolute start that doesn't exist - "1
+    hour from now" is now -> now+1h, not a fabricated start point.
+    `end` is the end of the last day (next day's midnight) for whole-
+    day ranges (day segments' date, period phrases, month names,
+    weekday names), so a single-day span still has a non-zero width to
+    draw.
+    """
+    if not duration:
+        return None
+
+    day_match = _matched_day_segment(duration)
+    if day_match is not None:
+        _, (start_hour, end_hour) = day_match
+        target_date = datetime.now().date() + timedelta(days=_matched_day_offset(duration))
+        midnight = datetime.min.time()
+        start_dt = datetime.combine(target_date, midnight.replace(hour=start_hour))
+        if start_hour < end_hour:
+            end_dt = datetime.combine(target_date, midnight.replace(hour=end_hour))
+        else:
+            end_dt = datetime.combine(target_date + timedelta(days=1), midnight.replace(hour=end_hour))
+        return start_dt, end_dt
+
+    clock_match = _matched_clock_time(duration)
+    if clock_match is not None:
+        hour, minute = clock_match
+        return datetime.now(), _clock_time_date(duration, hour, minute)
+
+    period_match = _matched_period_phrase(duration)
+    if period_match is not None:
+        _, (start_date, end_date) = period_match
+        start_dt = datetime.combine(start_date, datetime.min.time())
+        end_dt = datetime.combine(end_date + timedelta(days=1), datetime.min.time())
+        return start_dt, end_dt
+
+    month_match = _matched_month_name(duration)
+    if month_match is not None:
+        _, month = month_match
+        start_date, end_date = _month_name_range(month)
+        start_dt = datetime.combine(start_date, datetime.min.time())
+        end_dt = datetime.combine(end_date + timedelta(days=1), datetime.min.time())
+        return start_dt, end_dt
+
+    weekday_match = _matched_weekday_name(duration)
+    if weekday_match is not None:
+        _, number, prefix = weekday_match
+        target_date = _weekday_name_date(number, prefix)
+        return datetime.now(), datetime.combine(target_date + timedelta(days=1), datetime.min.time())
+
+    fraction_match = _matched_named_fraction(duration)
+    if fraction_match is not None:
+        _, unit, value = fraction_match
+        return datetime.now(), _named_fraction_end(unit, value)
+
+    length_match = _matched_length(duration)
+    if length_match is not None:
+        number, unit = length_match
+        end_time = _length_end_time(number, unit)
+        if end_time is not None:
+            return datetime.now(), end_time
+        end_date = _length_end_date(number, unit)
+        if end_date is not None:
+            return datetime.now(), datetime.combine(end_date + timedelta(days=1), datetime.min.time())
+
+    return None
+
+
+def freeze_duration(duration: str | None) -> dict | None:
+    """
+    Everything about `duration` that must be computed ONCE - at the
+    moment a goal is created or its plan is replaced - and then stored
+    and carried forward unchanged, never re-derived from "now" again.
+    {"start": iso, "end": iso, "text": <description>}, or None if
+    `duration` doesn't resolve to a real span at all (nothing to
+    freeze - a same-day deadline or fully open text stays exactly as
+    unresolved as describe_duration() already shows it).
+
+    Fixes a real bug found via direct use, 2026-08-21: a forward-
+    looking duration like "within the next 1 hour" was being re-
+    resolved against the CURRENT moment on every single page render
+    (duration_progress()/step_plan() used to take raw `duration` text
+    and call resolve_span() fresh each time) - so its countdown quietly
+    reset to a full hour on every refresh instead of counting down from
+    when the goal was actually created. Calling this once at creation
+    time (see backend/storage.py's `save_plan(..., frozen_duration=...)`)
+    and reading the stored result from then on is the fix - see
+    duration_progress()/step_plan() below, which now take this dict
+    instead of raw duration text.
+    """
+    span = resolve_span(duration)
+    if span is None:
+        return None
+    start, end = span
+    return {"start": start.isoformat(), "end": end.isoformat(), "text": describe_duration(duration)}
+
+
+def _span_from_frozen(frozen: dict | None) -> tuple[datetime, datetime] | None:
+    """Deserializes a freeze_duration() dict back into (start, end)
+    datetimes, or None if there's nothing frozen to read."""
+    if not frozen:
+        return None
+    return datetime.fromisoformat(frozen["start"]), datetime.fromisoformat(frozen["end"])
+
+
+def duration_progress(frozen: dict | None) -> dict | None:
+    """
+    A ready-to-render dict for a start/now/end progress bar - `percent`
+    (0-100, how far `now` sits between start and end), `status`
+    ("upcoming"/"active"/"overdue" - `now` before/within/after the
+    span), and `start_label`/`end_label` (HH:MM if the span is same-day,
+    else a date) - or None if there's nothing frozen to read (see
+    freeze_duration()).
+
+    Takes an already-frozen `freeze_duration()` dict, NOT raw duration
+    text - `start`/`end` must stay fixed across renders (see
+    freeze_duration()'s docstring for why); only `now` below is ever
+    read live, since the whole point of a progress bar is showing real
+    elapsed time against a fixed target.
+
+    `percent` is NOT clamped to 0-100 in `status` terms - "overdue"
+    still gets a real (>100) percent internally so the template can
+    decide how to show it (e.g. a full bar plus an explicit "overdue"
+    label), rather than silently drawing an "active"-looking bar for a
+    span that's already over.
+    """
+    span = _span_from_frozen(frozen)
+    if span is None:
+        return None
+    start, end = span
+    now = datetime.now()
+    total = (end - start).total_seconds()
+    if total <= 0:
+        return None  # pragma: no cover - defensive; no resolver produces start >= end
+    elapsed = (now - start).total_seconds()
+    percent = elapsed / total * 100
+    if now < start:
+        status = "upcoming"
+    elif now > end:
+        status = "overdue"
+    else:
+        status = "active"
+    same_day = start.date() == end.date()
+    label_format = "%H:%M" if same_day else "%b %d"
+    # `end` is midnight of the day AFTER the span's real last day for
+    # whole-day spans (see resolve_span()'s docstring - that's what
+    # gives a single-day span a non-zero width to draw) - shown as-is,
+    # "2 days" would label its end "Aug 24" while describe_duration()
+    # says "to 2026-08-23" right next to it, a real inconsistency found
+    # via a screenshot, not a hypothetical. Roll the LABEL back a day
+    # whenever `end` lands exactly on a midnight boundary, so the two
+    # numbers next to each other always agree - the bar's internal math
+    # (`percent`) is unaffected, only this display string.
+    end_label_dt = end - timedelta(days=1) if end.time() == datetime.min.time() else end
+    return {
+        # Rounded to 2 decimals - not for display prettiness, but
+        # because a raw float this size (e.g. 2.77e-08 for "just
+        # started") renders in a CSS `style="left: ...%"` as scientific
+        # notation, which isn't a valid CSS percentage. Found via a
+        # real rendered page, not a hypothetical.
+        "percent": round(max(0, min(100, percent)), 2),
+        "status": status,
+        "start_label": start.strftime(label_format),
+        "end_label": end_label_dt.strftime(label_format),
+        # Raw ISO timestamp (naive, local time - matches datetime.now()
+        # everywhere else in this module) for the live countdown in the
+        # UI to count down to client-side, in JS, without polling the
+        # server every second. Local time on both ends is a safe
+        # assumption here specifically because this is a personal
+        # local-only dev tool (see backend/README.md) - server and
+        # browser are always the same machine/timezone.
+        "end_iso": end.isoformat(),
+    }
+
+
+# A goal's resolved span divided into this many minutes per step is the
+# concrete example that shaped this rule (2026-08-21): "1 hour" of
+# grocery-shopping-and-cooking naturally breaks into about four ~15
+# minute actions. MIN/MAX_STEPS keep that same target sane at the
+# extremes a fixed 15-minute chunk wouldn't handle well on its own - a
+# "this week" or "in March" goal would otherwise produce hundreds of
+# steps, and a 20-minute goal would produce just one.
+TARGET_STEP_MINUTES = 15
+MIN_STEPS = 3
+MAX_STEPS = 6
+
+
+def step_count(duration: str | None) -> int | None:
+    """
+    How many steps `duration`'s resolved span should be broken into -
+    deterministic, not the model's guess (see TARGET_STEP_MINUTES
+    above): the model's job is only ever to decide what each step IS,
+    never how many there are or when they fall. None if `duration`
+    doesn't resolve to a real span at all (see resolve_span()) - there
+    is nothing grounded to divide, so no step count either, same
+    honesty as every other "not parsed/verified by code" case in this
+    module.
+    """
+    span = resolve_span(duration)
+    if span is None:
+        return None
+    start, end = span
+    total_minutes = (end - start).total_seconds() / 60
+    raw_count = round(total_minutes / TARGET_STEP_MINUTES)
+    return max(MIN_STEPS, min(MAX_STEPS, raw_count))
+
+
+def step_spans(duration: str | None) -> list[tuple[datetime, datetime]] | None:
+    """
+    `duration`'s resolved span divided into `step_count()` EQUAL-length
+    sub-spans, oldest first - purely arithmetic, no model involved. None
+    under the same condition step_count() returns None.
+    """
+    count = step_count(duration)
+    if count is None:
+        return None
+    start, end = resolve_span(duration)
+    chunk = (end - start) / count
+    return [(start + chunk * i, start + chunk * (i + 1)) for i in range(count)]
+
+
+def step_plan(frozen: dict | None, steps: list[str] | None) -> list[dict] | None:
+    """
+    Zips stored step descriptions (the model's job - see backend/plan.py's
+    `_generate_steps()`) with a deterministically-computed time slice of
+    the goal's frozen span (`freeze_duration()` - this module's job),
+    ready for the UI to render as a plain list:
+    [{"text", "start_label", "end_label"}, ...]. None if there are no
+    stored steps or nothing frozen to slice.
+
+    Takes the SAME frozen dict duration_progress() does (see its
+    docstring for why raw duration text isn't used any more here
+    either) - the parent span is divided evenly into `len(steps)`
+    pieces, same arithmetic step_spans() always used, just against the
+    frozen start/end instead of a fresh resolve_span() call.
+    """
+    if not steps:
+        return None
+    span = _span_from_frozen(frozen)
+    if span is None:
+        return None
+    start, end = span
+    count = len(steps)
+    chunk = (end - start) / count
+    spans = [(start + chunk * i, start + chunk * (i + 1)) for i in range(count)]
+    result = []
+    for (s, e), text in zip(spans, steps):
+        same_day = s.date() == e.date()
+        label_format = "%H:%M" if same_day else "%b %d"
+        result.append({
+            "text": text,
+            "start_label": s.strftime(label_format),
+            "end_label": e.strftime(label_format),
+        })
+    return result
+
+
 def describe_duration(duration: str | None) -> str:
     """
     One-line explanation of how `duration` was understood, for display

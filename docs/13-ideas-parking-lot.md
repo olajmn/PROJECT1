@@ -37,4 +37,29 @@
   build: the agent still has no tools/internet access (see "Aggregation
   / world-data capability" above), so a "response" is bounded by the
   model's own training, not real live research.
-- *(add more ideas here as they come up — don't build them yet)*
+- **Plan as an ordered step list, with "Task (right now)" as just the
+  current step in it** — instead of today's model, where `right_now`
+  is its own independently-generated text field with no real
+  connection to a "step 2" waiting after it. Discussed 2026-08-21,
+  directly motivated by the drift bug fixed the same day
+  ([[12-decisions]]): without a real step list, nothing *structurally*
+  stopped `right_now` from drifting into something meaningless -
+  fixing it needed a promise in the prompt ("only shrink once"), not
+  something the data shape itself prevented. A real step list (step 3
+  of 7, inspectable) would make that kind of drift harder to produce
+  in the first place.
+  - Decided so far: the whole list is generated in one go, not built
+    incrementally step-by-step - but flagged as still needing its own
+    conversation, because a full `one_year` step list could get very
+    long.
+  - Explicitly deferred: which horizons actually become step-lists
+    (`this_week` only, or `one_month`/`one_year` too) - "we take it
+    bit by bit, but it's something to come back to."
+  - Concept for when feedback changes direction: start simple - it
+    changes which step it's currently asking about (edits/swaps the
+    current step), not a full regeneration of the whole list. Real,
+    named, unsolved problem this runs into immediately: steps have
+    implicit prerequisites ("you can't put water in the kettle before
+    you've gotten off the couch") - freely editing one step in
+    isolation can silently break the steps that assumed it. Explicitly
+    parked, not solved, at the concept stage.

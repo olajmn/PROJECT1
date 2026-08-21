@@ -73,15 +73,15 @@ proper dev log / decision entry.
       2026-08-20's 4 commits (goal_id, chat-thread UI, diagram rebuild,
       architecture_mapper) and today's (2026-08-21) module split +
       drift fix + classifier + time-phrase recognition now logged.
-- [ ] **Log real findings in `docs/11-experiments.md`** - stops at
-      2026-08-19. Missing: the gym goal's hallucinated "a friend"
-      detail (2026-08-20), the drift-then-fixed story (right_now
-      shrinking to "check the news for 30 seconds" over 13 replans,
-      fixed by passing full history + a stricter prompt rule), and the
-      outcome-classifier word-boundary bug ("no" matching inside "not"/
-      "know"/"now" before `_contains_phrase()` fixed it).
+- [x] **Log real findings in `docs/11-experiments.md`** - done, all 3
+      entries added, cited against the real stored history
+      (goal_id 11/12) rather than from memory.
 - [x] **Commit today's (2026-08-21) work** - done, pushed as
       `e277f1a` on `multi-goal-ui-and-goal-id`.
+
+- [x] **Clean up test goals created while building the timer** - done.
+      `goal_id 14`/`15` marked complete (user's choice), same pattern
+      as the 2026-08-19 board cleanup.
 
 ## Done, just noting for the record
 

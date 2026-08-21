@@ -44,31 +44,124 @@
        silently dropped these, leaving "Plan" as a bare heading with no
        value of its own. `horizons` is passed in from app.py's index()/
        board() routes - see _board.html. #}
+    {% set any_horizon_filled = namespace(value=false) %}
     {% for key, label in horizons %}
       {% if record.plan[key] %}
+        {% set any_horizon_filled.value = true %}
         <div><span class="yaml-key">{{ label }}:</span> {{ record.plan[key] }}</div>
       {% endif %}
     {% endfor %}
+    {% if not any_horizon_filled.value %}
+      <div class="yaml-comment">(no broader plan for this goal - short enough that "right now" below is the whole plan)</div>
+    {% endif %}
   </div>
 
   <div class="model-nested">
+    {# Declared unconditionally, before the record.duration check below
+       - step_plan() (further down, outside that block) needs `frozen`
+       regardless of whether a Timeperiod row rendered at all, and an
+       {% if %} in Jinja doesn't create its own scope, but a variable
+       never set inside a skipped {% if %} is Undefined, not None - so
+       this can't live inside that block. record.get() is None-safe for
+       records saved before frozen_duration existed. #}
+    {% set frozen = record.get('frozen_duration') %}
     {% if record.duration %}
       <div class="model-row">
         <span class="model-label">Timeperiod</span>
-        <span>{{ record.duration }} <span class="yaml-comment">&mdash; {{ describe_duration(record.duration) }}</span></span>
+        {# The frozen description text if there is one (see
+           backend/timeperiod.py's freeze_duration()) - computed once,
+           at creation/replan time, so it always agrees with the bar
+           below (both read the same frozen numbers). Falls back to a
+           live describe_duration() call only for a record saved
+           before frozen_duration existed, or a duration that never
+           resolved to a real span in the first place (e.g. "before
+           bed") - describe_duration() is still the right thing to
+           show for those, same as always. #}
+        <span>{{ record.duration }} <span class="yaml-comment">&mdash; {{ frozen.text if frozen else describe_duration(record.duration) }}</span></span>
+        {# Start/now/end bar - only when duration_progress() actually
+           has a frozen start AND end to read (see its own docstring);
+           a deadline or fully open duration has nothing honest to
+           draw here, same as describe_duration() falling back to
+           plain text for those. #}
+        {% set progress = duration_progress(frozen) %}
+        {% if progress %}
+          <div class="duration-bar">
+            <div class="duration-bar-track"></div>
+            <div class="duration-bar-marker status-{{ progress.status }}" style="left: {{ progress.percent }}%">
+              <span class="duration-bar-marker-tick">&#9650;</span>
+              <span class="duration-bar-marker-label">n&aring;</span>
+            </div>
+          </div>
+          <div class="duration-bar-labels">
+            <span>{{ progress.start_label }}</span>
+            {# Live countdown to `end` - ticks down client-side (see
+               _board.html's script), no server round-trip. The
+               server-rendered text here is just the pre-JS fallback
+               (e.g. if JS is disabled), computed once at page load. #}
+            <span class="duration-countdown" data-end="{{ progress.end_iso }}"></span>
+            <span>{{ progress.end_label }}</span>
+          </div>
+        {% endif %}
       </div>
     {% endif %}
 
+    {# The step list (see backend/plan.py's _generate_steps()) - only
+       for goals created after 2026-08-21 with a duration that resolves
+       to a real span (see backend/plan.py's generate_plan()); older
+       goals simply have no `steps`, so none of this section renders
+       for them, same as the empty-Plan message above.
+
+       Task (right now) is no longer its own independently-generated
+       thing once a goal has steps - step 1 always equals
+       plan.right_now exactly (see _generate_steps()'s docstring), and
+       "right now" is just steps[current_step]: a pointer into the
+       list, not separate text (see docs/13-ideas-parking-lot.md's
+       "Plan as an ordered step list" entry). current_step advances
+       via the Done? Yes/No form below, posting to /step - pure index
+       arithmetic, no model call, since the whole list was already
+       decided upfront. #}
+    {% set steps = step_plan(frozen, record.plan.get('steps')) %}
+    {% set current_index = record.get('current_step', 0) %}
     <div class="model-row">
       <span class="model-label">Task (right now)</span>
       <span>
-        {% if record.plan.right_now %}
+        {% if steps %}
+          {% if current_index < steps | length %}
+            {{ steps[current_index].text }}
+          {% else %}
+            All steps done - mark the whole goal complete below.
+          {% endif %}
+        {% elif record.plan.right_now %}
           {{ record.plan.right_now }}
         {% else %}
           (no next action came back - give feedback again, or mark complete)
         {% endif %}
       </span>
     </div>
+
+    {% if steps and current_index < steps | length %}
+      <div class="model-row">
+        <span class="model-label">Done?</span>
+        <form method="post" action="/step" class="step-done-form">
+          <input type="hidden" name="goal_id" value="{{ record.goal_id }}">
+          <button class="btn-goal" type="submit" name="done" value="yes">Yes</button>
+          <button class="btn-goal" type="submit" name="done" value="no">No</button>
+        </form>
+      </div>
+    {% endif %}
+
+    {% if steps %}
+      <div class="model-row">
+        <span class="model-label">Steps</span>
+        <ol class="step-list">
+          {% for step in steps %}
+            <li class="{% if loop.index0 < current_index %}step-done{% elif loop.index0 == current_index %}step-current{% endif %}">
+              <span class="step-time">{{ step.start_label }}&ndash;{{ step.end_label }}</span> {{ step.text }}
+            </li>
+          {% endfor %}
+        </ol>
+      </div>
+    {% endif %}
 
     <div class="model-row">
       <span class="model-label">Conversation</span>

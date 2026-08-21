@@ -20,7 +20,7 @@ stays in this file regardless.
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -122,6 +122,8 @@ def save_plan(
     duration: str | None = None,
     completed: bool = False,
     goal_id: int | None = None,
+    frozen_duration: dict | None = None,
+    current_step: int = 0,
 ) -> dict:
     """
     Append a new goal+plan record to history and persist it to disk.
@@ -149,6 +151,32 @@ def save_plan(
     never invent a goal_id themselves - always get it from an existing
     record or from this function's return value.
 
+    `frozen_duration` is `duration` resolved to a real start/end/
+    description ONCE (see backend/timeperiod.py's freeze_duration()),
+    stored as-is rather than re-derived from "now" on every later page
+    render - fixes a real bug, 2026-08-21: a forward-looking duration
+    like "within the next 1 hour" was silently resetting its countdown
+    to a full hour on every page refresh, because it used to be
+    re-resolved against the current moment each time instead of the
+    moment the goal was actually created. Callers should compute a
+    fresh one when a genuinely new plan/timeframe decision is being
+    made (a new goal, or "continue an existing goal" with a new
+    duration), and otherwise pass the PREVIOUS record's frozen_duration
+    through unchanged (a replan after feedback keeps the same
+    timeframe, it doesn't restart it) - see backend/devtools/app.py's
+    /goal and /feedback routes.
+
+    `current_step` is the index into `plan.steps` (see backend/plan.py's
+    `_generate_steps()`) that "Task (right now)" actually points at -
+    "right now" isn't its own independent thing once a goal has steps,
+    it's just `plan.steps[current_step]` (see docs/13-ideas-parking-lot.md's
+    "Plan as an ordered step list" entry, and backend/devtools/app.py's
+    /step route, which is the only thing that ever advances it). 0 (the
+    first step) by default - matches `plan.steps[0]` always equaling
+    `plan.right_now` (see _generate_steps()), so a goal with no steps at
+    all, or one that's never had this touched, behaves exactly as
+    before.
+
     Returns the record that was saved (useful for confirming to the user).
     """
     records = _load_all()
@@ -159,8 +187,20 @@ def save_plan(
         "plan": plan,
         "feedback": feedback,
         "duration": duration,
+        "frozen_duration": frozen_duration,
+        "current_step": current_step,
         "completed": completed,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        # Local time, naive (no tzinfo) - matches every other timestamp
+        # in this project (backend/timeperiod.py's whole resolution/
+        # bar/countdown system uses datetime.now(), local). Was UTC
+        # since the very first commit for no documented reason (no
+        # multi-timezone need in a single-machine personal tool) -
+        # switched 2026-08-21 after the mismatch was noticed directly
+        # in the log: created_at said "18:24" while the very next line
+        # (duration's frozen description) said "now 20:24" for the
+        # exact same real moment - correct, just confusing, two
+        # different clocks shown side by side for one event.
+        "created_at": datetime.now().isoformat(),
     }
     records.append(record)
     _save_all(records)
