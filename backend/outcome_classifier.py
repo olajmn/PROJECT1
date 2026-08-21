@@ -3,7 +3,7 @@ Deterministic classification of free-text feedback into one of the
 agent's four outcomes: "done", "not_done", "in_progress", "goal_done".
 
 No LLM call - just recognized phrases, the same approach as
-backend/timeperiod.py's _resolve_duration() and for the same reason:
+backend/timeperiod.py's resolve_duration() and for the same reason:
 predictable, inspectable, and free of the hallucination/drift risk an
 LLM classification call would carry for exactly the kind of true/false
 decision this project has already been burned by trusting a model with

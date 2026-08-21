@@ -200,7 +200,7 @@ DAY_FRACTIONS = {
 
 # Recognized day segments: word -> (start_hour, end_hour) in 24h local
 # time, both in [0, 24). "night" wraps past midnight (23 -> 6), handled
-# specially in timeperiod._resolve_duration(). This is the code
+# specially in timeperiod.resolve_duration(). This is the code
 # actually *knowing* what "evening" means (a real clock window) instead
 # of handing the raw word to the model and hoping it guesses sensibly -
 # see docs/11-experiments.md, 2026-08-19. Moved to this section

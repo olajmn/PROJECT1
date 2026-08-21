@@ -28,18 +28,21 @@ from datetime import datetime
 import ollama
 
 from backend.storage import save_plan
-from backend.timeperiod import _resolve_duration, step_count
+from backend.timeperiod import resolve_duration, step_count
 
 MODEL = "llama3.1:8b"
 
 # The plan schema, defined once. _ask_model() validates the LLM's
 # response has exactly these keys; the templates (via backend/devtools/
 # app.py) iterate this same list to render every horizon in order.
-PLAN_KEYS = ("one_year", "one_month", "this_week", "right_now")
+PLAN_KEYS = ("one_year", "one_month", "this_week", "today", "this_hour", "this_minute", "right_now")
 HORIZON_LABELS = {
     "one_year": "1 year",
     "one_month": "1 month",
     "this_week": "This week",
+    "today": "Today",
+    "this_hour": "This hour",
+    "this_minute": "This minute",
     "right_now": "Right now",
 }
 
@@ -50,22 +53,34 @@ SYSTEM_PROMPT = (
     "week', '3 months'). Ground everything in the real date/time you "
     "were given - never invent specifics (names, numbers, progress) the "
     "user didn't tell you.\n\n"
-    "The plan has four possible horizons, from broadest to narrowest: "
-    "one_year, one_month, this_week, right_now. Not every goal deserves "
-    "all four - a goal scoped to 45 minutes has no meaningful 'one "
-    "year' answer. Decide, based on the goal and the duration you were "
-    "given (if any), which horizon is the BROADEST one that's actually "
-    "relevant:\n"
-    "- Fill in every horizon from that broadest relevant one down "
-    "through right_now with a concrete, realistic value.\n"
-    "- Set every horizon ABOVE that (broader than relevant) to JSON "
-    "null - do not invent a value just to fill the field.\n"
-    "- right_now is always filled in, regardless of scope: it's the "
-    "single most immediate, concrete action the user can take this "
-    "very moment, small enough to start in the next 5 minutes.\n\n"
+    "First, decide whether the goal as given is specific enough to plan "
+    "at all. A bare noun or verb with no object or context (e.g. "
+    "'read', 'run', 'work', with nothing else said) isn't - answering it "
+    "would mean inventing what book, what distance, what task, none of "
+    "which the user actually told you. If so, do NOT invent an answer: "
+    "set clarification to ONE short question that would make the goal "
+    "specific enough to plan, and set every one of "
+    "one_year/one_month/this_week/today/this_hour/this_minute/right_now "
+    "to JSON null.\n\n"
+    "Otherwise, set clarification to JSON null. The plan has seven "
+    "horizons, from broadest to narrowest: one_year, one_month, "
+    "this_week, today, this_hour, this_minute, right_now. Fill in ALL "
+    "SEVEN with a concrete, realistic value, regardless of the goal's "
+    "own scope or duration - even a small, short goal gets a "
+    "one_year/one_month/this_week/today/this_hour/this_minute answer, "
+    "framed as how this goal connects to or fits within that larger "
+    "horizon (e.g. a habit it's part of, a pattern it continues, what "
+    "stays true a year on, what's realistic to finish today, what's "
+    "realistic within this one hour, what's realistic within this one "
+    "minute). Never use JSON null here.\n"
+    "- right_now is different from the six horizons above it: not a "
+    "time window description, but the actual trigger - the single most "
+    "immediate, concrete action the user can take this very moment, "
+    "small enough to start in the next 5 minutes.\n\n"
     "Respond with ONLY a JSON object (no other text) with exactly these "
-    "four keys - one_year, one_month, this_week, right_now - each "
-    "either a string value or JSON null as described above.\n"
+    "eight keys - clarification, one_year, one_month, this_week, today, "
+    "this_hour, this_minute, right_now - each either a string value or "
+    "JSON null as described above.\n"
 )
 
 REPLAN_SYSTEM_PROMPT = (
@@ -93,14 +108,15 @@ REPLAN_SYSTEM_PROMPT = (
     "Ground everything in the real date/time you were given - never "
     "invent specifics (names, numbers, progress) the user didn't tell "
     "you.\n\n"
-    "The previous plan already has JSON null on any horizon "
-    "(one_year/one_month/this_week) that isn't relevant to this goal's "
-    "scope - keep those null unless the feedback clearly means the "
-    "goal's scope has grown. Only update the horizons that already had "
-    "a real value. right_now is always filled in.\n\n"
+    "All seven horizons (one_year/one_month/this_week/today/this_hour/"
+    "this_minute/right_now) must have a concrete value, same as the "
+    "previous plan - never JSON null. Update whichever horizons the "
+    "feedback affects; carry the others forward unchanged if the "
+    "feedback doesn't touch them.\n\n"
     "Respond with ONLY a JSON object (no other text) with exactly the "
-    "same keys as before: one_year, one_month, this_week, right_now - "
-    "each either a string value or JSON null.\n"
+    "same keys as before: one_year, one_month, this_week, today, "
+    "this_hour, this_minute, right_now - each either a string value or "
+    "JSON null.\n"
 )
 
 
@@ -173,13 +189,15 @@ def _generate_steps(goal: str, right_now: str, count: int) -> list[str]:
     return [right_now] + steps
 
 
-def _ask_model(system_prompt: str, user_content: str) -> dict:
+def _ask_model(system_prompt: str, user_content: str, extra_keys: tuple[str, ...] = ()) -> dict:
     """
     Shared call used by both generate_plan() and replan(): sends a system
     prompt + user message to the local model asking for JSON, parses the
-    response, and validates it has the expected plan shape (PLAN_KEYS)
-    before handing it back - so every caller can trust the shape instead
-    of re-checking it themselves.
+    response, and validates it has the expected plan shape (PLAN_KEYS,
+    plus `extra_keys` if the caller's prompt asks for more than that -
+    see generate_plan()'s "clarification" key) before handing it back -
+    so every caller can trust the shape instead of re-checking it
+    themselves.
     """
     response = ollama.chat(
         model=MODEL,
@@ -191,7 +209,7 @@ def _ask_model(system_prompt: str, user_content: str) -> dict:
     )
     plan = json.loads(response["message"]["content"])
 
-    missing = [key for key in PLAN_KEYS if key not in plan]
+    missing = [key for key in PLAN_KEYS + extra_keys if key not in plan]
     if missing:
         raise ValueError(
             f"Model response is missing required plan key(s) {missing}: {plan}"
@@ -216,23 +234,34 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
     is optional free text from the user (e.g. "30 minutes", "this
     week") describing how far ahead this plan should reach - no fixed
     choices, whatever the user types is passed straight through.
-    Returns a dict with keys: one_year, one_month, this_week, right_now,
-    steps.
+    Returns a dict with keys: clarification, one_year, one_month,
+    this_week, right_now, steps.
+
+    `clarification` (added 2026-08-21) is a single question (string)
+    instead of a real plan when the goal as given is too vague to plan
+    at all - e.g. a bare noun/verb like "read", with no object or
+    context (see SYSTEM_PROMPT). Every other key is JSON null in that
+    case; callers MUST check `clarification` first and, if it's set,
+    treat this as "ask the user again", not as a plan to save - there's
+    nothing real in the rest of the dict to act on yet.
 
     `steps` (added 2026-08-21) is a list of short step descriptions
     only when `duration` actually resolves to a real span (see
     backend/timeperiod.py's step_count()) - None otherwise (no
-    duration given, or free text that isn't grounded in a real span).
-    There's nothing honest to break into steps without a real
-    timeframe to divide - same reasoning DEADLINE_RE's ungrounded
-    deadlines already follow elsewhere in this project.
+    duration given, or free text that isn't grounded in a real span, or
+    a clarification question came back instead of a plan). There's
+    nothing honest to break into steps without a real timeframe to
+    divide - same reasoning DEADLINE_RE's ungrounded deadlines already
+    follow elsewhere in this project.
     """
     user_content = f"The current date and time is: {_now_str()}\n\nMy goal is: {goal}"
     if duration:
-        user_content += f"\n\nI want this plan to span roughly: {_resolve_duration(duration)}"
-    plan = _ask_model(SYSTEM_PROMPT, user_content)
+        user_content += f"\n\nI want this plan to span roughly: {resolve_duration(duration)}"
+    plan = _ask_model(SYSTEM_PROMPT, user_content, extra_keys=("clarification",))
 
     plan["steps"] = None
+    if plan.get("clarification"):
+        return plan
     if duration:
         count = step_count(duration)
         if count is not None:
@@ -279,7 +308,7 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
         f"My feedback on the most recent 'right_now' action: {feedback}"
     )
     if duration:
-        user_content += f"\n\nThis plan should still span roughly: {_resolve_duration(duration)}"
+        user_content += f"\n\nThis plan should still span roughly: {resolve_duration(duration)}"
     return _ask_model(REPLAN_SYSTEM_PROMPT, user_content)
 
 

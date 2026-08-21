@@ -20,7 +20,7 @@ docs/08-technical-architecture.md § Memory & Data Architecture):
 this module is where a real year -> month -> week -> day -> hour ->
 minute hierarchy would eventually live, if/when flat duration strings
 stop being enough - e.g. a `resolve_hierarchy()` alongside today's
-`_resolve_duration()`, walking a structured scale instead of matching
+`resolve_duration()`, walking a structured scale instead of matching
 free text. Deliberately not started now - only day/week/month/year
 phrase recognition lives here today, not a real walkable hierarchy.
 """
@@ -356,7 +356,7 @@ def _matched_period_phrase(duration: str) -> tuple[str, tuple[date, date]] | Non
     return None
 
 
-def _resolve_duration(duration: str | None) -> str | None:
+def resolve_duration(duration: str | None) -> str | None:
     """
     Ground `duration` in a real clock window or calendar date range when
     it's a recognized day segment (see DAY_SEGMENTS) or whole-period
@@ -428,7 +428,7 @@ def resolve_span(duration: str | None) -> tuple[datetime, datetime] | None:
     """
     The actual (start, end) datetime span `duration` resolves to, for
     visualizing it (a start/now/end bar in the UI) - reuses the exact
-    same matchers/resolvers `_resolve_duration()`/`describe_duration()`
+    same matchers/resolvers `resolve_duration()`/`describe_duration()`
     already call, just returning raw datetimes instead of a formatted
     string, so there's no second copy of any date arithmetic. None for
     anything not grounded in a real start and end (a deadline with an

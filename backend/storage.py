@@ -40,7 +40,11 @@ def _normalize_plan(plan) -> dict:
     """
     if isinstance(plan, dict):
         return plan
-    return {"one_year": "", "one_month": "", "this_week": "", "right_now": plan}
+    return {
+        "one_year": "", "one_month": "", "this_week": "",
+        "today": "", "this_hour": "", "this_minute": "",
+        "right_now": plan,
+    }
 
 
 def _backfill_goal_ids(records: list[dict]) -> None:

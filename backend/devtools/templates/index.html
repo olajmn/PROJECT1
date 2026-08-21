@@ -18,7 +18,25 @@
    this quiet rather than competing with it. #}
 <div class="card {% if board.active %}card-muted{% endif %}">
   <p><strong>Set a goal</strong></p>
-  <form method="post" action="/goal">
+  {# The model can decline to plan a too-vague goal (a bare noun/verb
+     like "read") and ask a clarifying question instead of a real plan
+     (see backend/plan.py's generate_plan() docstring) - that round is
+     saved and shown in the goal's own card/conversation thread below
+     (see _active_goal.html), same as every other round, not here: this
+     form always starts a genuinely new attempt, it has no goal_id yet
+     to show a reply against. #}
+  {# Generating a plan is a real LLM call (Ollama, local, synchronous) -
+     ~5-10+ seconds, not instant - and nothing on the page changed at
+     all while waiting (no spinner, no disabled state), so a click had
+     no visible effect until the redirect finally landed. Read as "the
+     button doesn't work" via real use, 2026-08-21 - worse than it
+     sounds, too: Flask's dev server handles one request at a time, so
+     a second, impatient click doesn't retry anything, it just queues
+     behind the first and doubles the silent wait. onsubmit (not a
+     separate script block) matches the select's onchange just below -
+     this page's existing style for a one-line behavior, not enough to
+     warrant its own <script>. #}
+  <form method="post" action="/goal" onsubmit="document.getElementById('generate-btn').disabled = true; document.getElementById('generate-btn').textContent = 'Generating plan…';">
     {% if board.active %}
       {# Continuing an existing goal by picking it here (a stable
          goal_id) instead of retyping its text is what keeps it as one
@@ -34,7 +52,7 @@
     {% endif %}
     <input type="text" id="goal_text" name="goal" placeholder="e.g. Learn backend development">
     <input type="text" name="duration" placeholder="When / how long? e.g. 30 minutes, this evening, before bed, sometime this week (optional)">
-    <button class="btn-goal" type="submit">Generate plan</button>
+    <button class="btn-goal" type="submit" id="generate-btn">Generate plan</button>
   </form>
 </div>
 

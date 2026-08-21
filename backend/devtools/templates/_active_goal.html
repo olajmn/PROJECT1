@@ -55,7 +55,11 @@
       {% endif %}
     {% endfor %}
     {% if not any_horizon_filled.value %}
-      <div class="yaml-comment">(no broader plan for this goal - short enough that "right now" below is the whole plan)</div>
+      {% if record.plan.get('clarification') %}
+        <div class="yaml-comment">(nothing to plan yet - the agent needs an answer first, see below)</div>
+      {% else %}
+        <div class="yaml-comment">(no broader plan for this goal - short enough that "right now" below is the whole plan)</div>
+      {% endif %}
     {% endif %}
   </div>
 
@@ -136,6 +140,8 @@
           {% endif %}
         {% elif record.plan.right_now %}
           {{ record.plan.right_now }}
+        {% elif record.plan.get('clarification') %}
+          (answer the agent's question below to get a real plan)
         {% else %}
           (no next action came back - give feedback again, or mark complete)
         {% endif %}
@@ -181,7 +187,15 @@
         </div>
         <div class="chat-msg chat-agent">
           <span class="chat-label">Agent</span>
-          {% if msg.plan.right_now %}
+          {% if msg.plan.get('clarification') %}
+            {# The goal as typed (or as last answered) was too vague to
+               plan - see backend/plan.py's generate_plan() docstring.
+               Shown ahead of right_now: a pending question means
+               right_now is None anyway (both null together, never
+               both set - see that same docstring), so this can't
+               accidentally hide a real answer. #}
+            {{ msg.plan.clarification }}
+          {% elif msg.plan.right_now %}
             {{ msg.plan.right_now }}
           {% else %}
             {# See docs/11-experiments.md, 2026-08-19: the model sometimes
@@ -207,7 +221,7 @@
       <form method="post" action="/feedback" class="chat-msg chat-me chat-input-row">
         <input type="hidden" name="goal_id" value="{{ record.goal_id }}">
         <span class="chat-label">You</span>
-        <textarea id="note-{{ record.goal_id }}" name="note" rows="2" required placeholder="what's going on with this?"></textarea>
+        <textarea id="note-{{ record.goal_id }}" name="note" rows="2" required placeholder="{{ "your answer…" if record.plan.get('clarification') else "what's going on with this?" }}"></textarea>
         <button class="btn-goal" type="submit">Update</button>
       </form>
     </div>

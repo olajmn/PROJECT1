@@ -89,7 +89,21 @@ def new_goal():
     explicit "continue" with whatever duration was typed this time
     (possibly a different one than before), is a genuinely new
     planning decision, unlike checking in via /feedback below, which
-    keeps whatever timeframe was already running.
+    keeps whatever timeframe was already running. EXCEPT when
+    `generate_plan()` comes back with `clarification` set instead of a
+    real plan (see that function's docstring) - the goal as typed was
+    too vague (a bare noun/verb, e.g. "read") to plan at all. That
+    round is saved too (as a new active board entry, or a new round on
+    an existing one) so the question shows up in the goal's own
+    conversation thread and the user can answer it right there via the
+    normal feedback box - see /feedback below, which is what actually
+    resolves a pending clarification into a real plan. But its
+    `frozen_duration` is left None rather than frozen now: nothing has
+    actually started yet while a question is still pending, so there's
+    no honest countdown to draw until /feedback resolves it into a real
+    plan and freezes it then. Redirects straight to the card either way
+    (`#goal-{id}`, same anchor /feedback uses) so the question is
+    immediately visible, not buried below the fold.
     """
     continue_goal_id = request.form.get("continue_goal_id", "").strip()
     duration = request.form.get("duration", "").strip() or None
@@ -105,16 +119,20 @@ def new_goal():
             # since this page loaded) - nothing sensible to continue.
             return redirect(url_for("index"))
         plan = generate_plan(existing["goal"], duration)
-        save_plan(
-            existing["goal"], plan, duration=duration,
-            goal_id=existing["goal_id"], frozen_duration=frozen,
+        record = save_plan(
+            existing["goal"], plan, duration=duration, goal_id=existing["goal_id"],
+            frozen_duration=None if plan.get("clarification") else frozen,
         )
-        return redirect(url_for("index"))
+        return redirect(url_for("index") + f"#goal-{record['goal_id']}")
 
     goal = request.form.get("goal", "").strip()
     if goal:
         plan = generate_plan(goal, duration)
-        save_plan(goal, plan, duration=duration, frozen_duration=frozen)
+        record = save_plan(
+            goal, plan, duration=duration,
+            frozen_duration=None if plan.get("clarification") else frozen,
+        )
+        return redirect(url_for("index") + f"#goal-{record['goal_id']}")
     return redirect(url_for("index"))
 
 
@@ -147,6 +165,56 @@ def feedback():
 
     note = request.form.get("note", "").strip()
     duration = latest.get("duration")
+
+    # Redirect back to this specific goal's own card (see
+    # _active_goal.html's id="goal-{{ goal_id }}"), not just "/" - a
+    # goal's thread only ever grows, so reloading straight to the top of
+    # the page buries the message that just confirms the click actually
+    # registered below however much history came before it. Found via
+    # real use, 2026-08-20 (see docs/11-experiments.md): repeated
+    # "Still working on it" clicks looked broken for exactly this reason
+    # - the save always worked, the confirmation was just scrolled out
+    # of view.
+    back_to = redirect(url_for("index") + f"#goal-{latest['goal_id']}")
+
+    if latest["plan"].get("clarification"):
+        # This goal has no real plan yet - the agent asked a clarifying
+        # question instead (see backend/plan.py's generate_plan()
+        # docstring), and `note` is the ANSWER to that question, not a
+        # status report on a task that doesn't exist yet. Route it
+        # through generate_plan() again (not replan(), which is built
+        # entirely around "did you complete right_now" - there is no
+        # right_now here to have completed), never through
+        # classify_outcome() below: an answer like "speed and
+        # comprehension" isn't a done/not-done/in-progress signal at
+        # all, forcing it through that classifier would be a category
+        # error, not just an inaccurate guess.
+        #
+        # Every prior answer in this goal's history rides along too,
+        # not just this latest note - same reasoning replan() passing
+        # the FULL history (not just the last round) already follows:
+        # a two-round clarification ("what aspect?" -> "speed" -> "how
+        # much time do you have?" -> "20 min") needs both answers
+        # together, or the second call would re-ask something the first
+        # answer already covered. Every record in this goal's history
+        # is guaranteed to be a clarification round (this branch only
+        # ever runs while `clarification` keeps coming back), so every
+        # past `feedback` here really is a prior answer, safe to join
+        # as-is.
+        prior_answers = [r["feedback"] for r in get_history_for_goal(latest["goal_id"]) if r.get("feedback")]
+        combined_goal = " - ".join([latest["goal"], *prior_answers, note])
+        plan = generate_plan(combined_goal, duration)
+        # frozen_duration stays None for as long as clarification keeps
+        # coming back (same reasoning as /goal above: nothing has
+        # actually started yet) - only frozen for real, for the first
+        # time, the moment a real plan finally comes back.
+        save_plan(
+            latest["goal"], plan, feedback=note, duration=duration,
+            goal_id=latest["goal_id"],
+            frozen_duration=None if plan.get("clarification") else freeze_duration(duration),
+        )
+        return back_to
+
     # Inherited unchanged, never recomputed - a check-in isn't a new
     # planning decision, it's the SAME timeframe continuing (see
     # backend/timeperiod.py's freeze_duration() and
@@ -162,17 +230,6 @@ def feedback():
     # rather than guess toward a riskier outcome (done/goal_done) from
     # ambiguous text. See classify_outcome()'s docstring.
     outcome_value = classified or "in_progress"
-
-    # Redirect back to this specific goal's own card (see
-    # _active_goal.html's id="goal-{{ goal_id }}"), not just "/" - a
-    # goal's thread only ever grows, so reloading straight to the top of
-    # the page buries the message that just confirms the click actually
-    # registered below however much history came before it. Found via
-    # real use, 2026-08-20 (see docs/11-experiments.md): repeated
-    # "Still working on it" clicks looked broken for exactly this reason
-    # - the save always worked, the confirmation was just scrolled out
-    # of view.
-    back_to = redirect(url_for("index") + f"#goal-{latest['goal_id']}")
 
     if outcome_value == "goal_done":
         # The whole goal is done, not just this one "right_now" step -
