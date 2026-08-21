@@ -260,14 +260,17 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     the goal's actual action (sending an application) - see
     docs/11-experiments.md.
     """
-    steps = []
+    # Named history_lines, not "steps" - unrelated to this file's
+    # `steps` plan field/_generate_steps() (added later the same day);
+    # this is prose lines for the replan prompt, not the step list.
+    history_lines = []
     for record in history:
         right_now = record["plan"].get("right_now") or "(none)"
         if record.get("feedback"):
-            steps.append(f'- right_now: "{right_now}" -> feedback: "{record["feedback"]}"')
+            history_lines.append(f'- right_now: "{right_now}" -> feedback: "{record["feedback"]}"')
         else:
-            steps.append(f'- right_now: "{right_now}" (the first plan, no feedback yet)')
-    history_text = "\n".join(steps)
+            history_lines.append(f'- right_now: "{right_now}" (the first plan, no feedback yet)')
+    history_text = "\n".join(history_lines)
 
     user_content = (
         f"The current date and time is: {_now_str()}\n\n"

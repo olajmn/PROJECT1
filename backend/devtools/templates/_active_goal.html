@@ -24,10 +24,13 @@
    the product model from docs/07-features.md "Architecture framing:
    Program / Rooms / Sitemap" - the interface is meant to stay
    close to 1:1 with that model so the model itself stays visible in
-   what's actually on screen, not just in docs. No data-model change
-   behind this - Timeperiod is still `record.duration`, Task is still
-   `record.plan.right_now`, Conversation is still
-   get_history_for_goal() - only the labeling/grouping is new. #}
+   what's actually on screen, not just in docs. Originally (2026-08-19)
+   this was purely a labeling change, no data-model change behind it -
+   that stopped being true 2026-08-21 once a goal can have `steps`
+   (see below): Task stops being `record.plan.right_now` directly and
+   becomes a pointer into the step list instead. Timeperiod
+   (`record.duration`/`frozen_duration`) and Conversation
+   (get_history_for_goal()) are unaffected. #}
 <div class="card" id="goal-{{ record.goal_id }}">
   <div class="model-row model-goal">
     <span class="model-label">Goal</span>

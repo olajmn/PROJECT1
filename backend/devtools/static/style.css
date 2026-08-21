@@ -80,10 +80,6 @@ h1 {
    green = agent), plain blocks rather than rounded "bubbles" to stay
    consistent with the rest of this dev tool's deliberately unstyled,
    data-honest look (see docs/12-decisions.md, 2026-08-19). */
-.chat-header {
-  margin-bottom: 14px;
-  font-size: 1rem;
-}
 .chat-thread {
   margin-bottom: 16px;
 }

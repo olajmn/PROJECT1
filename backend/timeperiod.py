@@ -643,20 +643,6 @@ def step_count(duration: str | None) -> int | None:
     return max(MIN_STEPS, min(MAX_STEPS, raw_count))
 
 
-def step_spans(duration: str | None) -> list[tuple[datetime, datetime]] | None:
-    """
-    `duration`'s resolved span divided into `step_count()` EQUAL-length
-    sub-spans, oldest first - purely arithmetic, no model involved. None
-    under the same condition step_count() returns None.
-    """
-    count = step_count(duration)
-    if count is None:
-        return None
-    start, end = resolve_span(duration)
-    chunk = (end - start) / count
-    return [(start + chunk * i, start + chunk * (i + 1)) for i in range(count)]
-
-
 def step_plan(frozen: dict | None, steps: list[str] | None) -> list[dict] | None:
     """
     Zips stored step descriptions (the model's job - see backend/plan.py's
@@ -667,10 +653,13 @@ def step_plan(frozen: dict | None, steps: list[str] | None) -> list[dict] | None
     stored steps or nothing frozen to slice.
 
     Takes the SAME frozen dict duration_progress() does (see its
-    docstring for why raw duration text isn't used any more here
-    either) - the parent span is divided evenly into `len(steps)`
-    pieces, same arithmetic step_spans() always used, just against the
-    frozen start/end instead of a fresh resolve_span() call.
+    docstring for why raw duration text isn't used here either) - the
+    parent span is divided evenly into `len(steps)` pieces, against the
+    frozen start/end rather than a fresh resolve_span() call (there
+    used to be a separate step_spans(duration) doing this same division
+    against a freshly-resolved span - removed 2026-08-21 once nothing
+    called it any more; this function's own arithmetic below replaced
+    it when steps moved to reading the frozen span instead).
     """
     if not steps:
         return None
