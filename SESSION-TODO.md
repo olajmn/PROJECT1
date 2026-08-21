@@ -69,11 +69,10 @@ proper dev log / decision entry.
       fixed by requiring literal "in" before the month name, same
       trade `DEADLINE_RE` already makes with "before". Not yet logged
       in docs/11-experiments.md.
-- [ ] **Catch up `docs/10-development.md`** - the dev log stops at
-      2026-08-18. None of 2026-08-19's redesign commit, 2026-08-20's
-      goal_id/multi-goal/classifier work, or today's (2026-08-21)
-      module split (goal.py/plan.py/timeperiod.py/timesegments.py/
-      outcome_classifier.py/outcome_phrases.py) is logged there yet.
+- [x] **Catch up `docs/10-development.md`** - done, all of
+      2026-08-20's 4 commits (goal_id, chat-thread UI, diagram rebuild,
+      architecture_mapper) and today's (2026-08-21) module split +
+      drift fix + classifier + time-phrase recognition now logged.
 - [ ] **Log real findings in `docs/11-experiments.md`** - stops at
       2026-08-19. Missing: the gym goal's hallucinated "a friend"
       detail (2026-08-20), the drift-then-fixed story (right_now
