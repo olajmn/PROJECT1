@@ -225,6 +225,44 @@ answer, not a wrong one, just a narrower one than before.
 alternation and `_FRACTION_TABLES`, and re-add the `_add_months()`
 branch `_named_fraction_end()` used to have for it.
 
+## 2026-08-22 — Not moving to SQL; future personal knowledge base gets RAG, not a database
+
+**Alternatives considered:** migrate `data/plans.json` to SQL now;
+migrate to SQL once the project grows into a multi-domain/"advanced"
+agent; use SQL as the retrieval mechanism for a future personal
+knowledge base (user-supplied documents the agent can draw on).
+**Why this choice:** SQL earns its cost (schema, migrations, an opaque
+binary file instead of a readable one) when data is large AND the
+access pattern needs real relational queries (joins, multi-criteria
+filtering) or concurrent writers - none of which this project has: one
+user, one machine, ~100 records, and every actual lookup so far ("latest
+record for this goal_id", "group by active/completed") is already a
+plain, fast Python scan. This also runs directly against the project's
+own Data Ownership principle
+([[08-technical-architecture]] § Data Ownership) - a human-readable
+file the user can open and inspect without the app - which a SQL file
+doesn't give up easily. Separately, discussed extending the agent to
+multiple life-domains (health/work/finance) reasoning about each other
+- concluded that's a context-passed-to-the-prompt problem (a `domain`
+field + a short cross-domain summary handed to the model), not a JOIN,
+so it doesn't move the SQL calculus either. Separately again, discussed
+a future personal knowledge base (user-supplied documents, e.g. "text
+files with documented science") - concluded that's a RAG (Retrieval-
+Augmented Generation) problem, retrieved by embedding similarity, not
+exact-match SQL querying - see [[07-features]] § Knowledge (RAG over
+user documents) for the sketched design (flat file of chunk+vector
+pairs, Ollama embeddings, brute-force similarity search - no vector
+database either, for the same "simplest thing that works at this
+scale" reasoning).
+**Trade-off:** none of this is free forever - the doc above names the
+concrete trigger for each piece (felt query complexity for goals/plans,
+felt brute-force search slowness for the knowledge base) rather than a
+timeline, on purpose: revisit when the trigger is real, not on a
+schedule.
+**Reversible?** Yes - nothing built tonight commits to a storage format
+that would need un-migrating; this is a decision about what to build
+next, not a lock-in.
+
 ## See also
 
 - [[08-technical-architecture]]
