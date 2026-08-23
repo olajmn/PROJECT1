@@ -210,8 +210,7 @@ DAY_FRACTIONS = {
 #
 # English only (see CONVENTIONS.md) - this used to also recognize the
 # Norwegian words for each segment ("morgen"/"formiddag" - morning,
-# "ettermiddag" - afternoon, "kveld" - evening, "natt" - night), added
-# because real testing was done in Norwegian.
+# "ettermiddag" - afternoon, "kveld" - evening, "natt" - night).
 # Dropped 2026-08-21 for the same reason goals are written in English
 # (docs/12-decisions.md, 2026-08-19): a duration typed in Norwegian
 # still flows into the prompt sent to the model, and mixed-language

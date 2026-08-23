@@ -224,8 +224,8 @@ def _apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
     "You" message in the conversation thread. Missing until 2026-08-23:
     this call never passed it at all, so the record got feedback=None -
     not a rendering bug, an actual empty bubble in the saved history
-    (found via a real screenshot: the "You" reply to "How long do you
-    want this to run now?" showed the label with no text under it).
+    (the "You" reply to "How long do you want this to run now?" showed
+    the label with no text under it).
     """
     plan = generate_plan(existing["goal"], duration)
     return save_plan(
@@ -284,11 +284,10 @@ def feedback():
     # _active_goal.html's id="goal-{{ goal_id }}"), not just "/" - a
     # goal's thread only ever grows, so reloading straight to the top of
     # the page buries the message that just confirms the click actually
-    # registered below however much history came before it. Found via
-    # real use, 2026-08-20 (see docs/11-experiments.md): repeated
-    # "Still working on it" clicks looked broken for exactly this reason
-    # - the save always worked, the confirmation was just scrolled out
-    # of view.
+    # registered below however much history came before it (2026-08-20,
+    # see docs/11-experiments.md): without it, repeated "Still working
+    # on it" clicks look broken for exactly this reason - the save
+    # always worked, the confirmation was just scrolled out of view.
     back_to = redirect(url_for("index") + f"#goal-{latest['goal_id']}")
 
     if latest["plan"].get("clarification"):
@@ -323,10 +322,10 @@ def feedback():
         # missing-timeframe check) - the answer to THAT question is a
         # duration phrase, not just more goal content, so it needs the
         # same extract_duration_phrase() extraction /goal's own
-        # new-goal path already does, or a real answer like "this week"
-        # silently stays lost as untyped prose forever (found via real
-        # use, 2026-08-23 - "Your answer" never produced a real plan
-        # for exactly this class of clarification). Only attempted
+        # new-goal path already does - otherwise a real answer like
+        # "this week" stays lost as untyped prose forever (2026-08-23:
+        # "Your answer" never produced a real plan for exactly this
+        # class of clarification). Only attempted
         # while duration is still unknown - an already-known duration
         # (a content-vagueness clarification, e.g. "read") is left
         # alone, since `note` there answers a different question
@@ -368,9 +367,9 @@ def feedback():
         # The new duration might already be IN this same message (e.g.
         # "can we change timeframe to 1 hour") - checked first so that
         # case applies it immediately instead of asking a question
-        # you've already answered (found via real use, 2026-08-23: the
-        # first version always asked "how long...?" even when the
-        # answer was right there, silently discarding it). Only asks
+        # you've already answered - the first version (2026-08-23)
+        # always asked "how long...?" even when the answer was right
+        # there, silently discarding it. Only asks
         # the follow-up when nothing recognized turns up.
         new_duration = extract_duration_phrase(note)
         if new_duration:

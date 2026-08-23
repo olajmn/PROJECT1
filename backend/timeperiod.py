@@ -91,11 +91,11 @@ def _matched_day_offset(duration: str) -> int:
     names yesterday/today/tomorrow (see timesegments.PERIOD_PHRASES'
     "day" entries) - so a day segment can combine with it correctly.
 
-    Found via real use, 2026-08-21: "tomorrow evening" was resolving
-    against *today's* date ("resolved: today 2026-08-21, 17:00-23:00"),
-    silently ignoring the "tomorrow" the user actually typed. Day
-    segments (DAY_SEGMENTS) only ever knew about clock hours, never
-    about which day those hours belonged to - always assumed today.
+    Without this (2026-08-21): "tomorrow evening" would resolve against
+    *today's* date ("resolved: today 2026-08-21, 17:00-23:00"), silently
+    ignoring the "tomorrow" actually typed. Day segments (DAY_SEGMENTS)
+    only ever knew about clock hours, never about which day those hours
+    belonged to - always assumed today.
     """
     lowered = duration.lower()
     for phrase, (unit, offset) in PERIOD_PHRASES.items():
@@ -186,9 +186,9 @@ def _matched_month_name(duration: str) -> tuple[str, int] | None:
     `duration` (see timesegments.MONTH_NUMBERS), or None if none match.
 
     Requires the literal "in" right before the name - NOT a bare
-    word-boundary match on the month name alone. Found via real testing
-    2026-08-21: "I may go" was silently "resolving" to next May, and
-    "this may take a while" to the same - "may" (the month) and "may"
+    word-boundary match on the month name alone (2026-08-21): without
+    it, "I may go" would silently "resolve" to next May, and "this may
+    take a while" to the same - "may" (the month) and "may"
     (the everyday modal verb) are the same word, and "march"/"august"
     have the identical problem (verb / adjective). A bare match doesn't
     just fail honestly here, the way an unrecognized phrase normally
@@ -580,9 +580,9 @@ def freeze_duration(duration: str | None) -> dict | None:
     freeze - a same-day deadline or fully open text stays exactly as
     unresolved as describe_duration() already shows it).
 
-    Fixes a real bug found via direct use, 2026-08-21: a forward-
-    looking duration like "within the next 1 hour" was being re-
-    resolved against the CURRENT moment on every single page render
+    Fixes a real bug (2026-08-21): a forward-looking duration like
+    "within the next 1 hour" was being re-resolved against the CURRENT
+    moment on every single page render
     (duration_progress()/step_plan() used to take raw `duration` text
     and call resolve_span() fresh each time) - so its countdown quietly
     reset to a full hour on every refresh instead of counting down from
@@ -650,8 +650,8 @@ def duration_progress(frozen: dict | None) -> dict | None:
     # whole-day spans (see resolve_span()'s docstring - that's what
     # gives a single-day span a non-zero width to draw) - shown as-is,
     # "2 days" would label its end "Aug 24" while describe_duration()
-    # says "to 2026-08-23" right next to it, a real inconsistency found
-    # via a screenshot, not a hypothetical. Roll the LABEL back a day
+    # says "to 2026-08-23" right next to it, a real inconsistency.
+    # Roll the LABEL back a day
     # whenever `end` lands exactly on a midnight boundary, so the two
     # numbers next to each other always agree - the bar's internal math
     # (`percent`) is unaffected, only this display string.
@@ -660,8 +660,7 @@ def duration_progress(frozen: dict | None) -> dict | None:
         # Rounded to 2 decimals - not for display prettiness, but
         # because a raw float this size (e.g. 2.77e-08 for "just
         # started") renders in a CSS `style="left: ...%"` as scientific
-        # notation, which isn't a valid CSS percentage. Found via a
-        # real rendered page, not a hypothetical.
+        # notation, which isn't a valid CSS percentage.
         "percent": round(max(0, min(100, percent)), 2),
         "status": status,
         "start_label": start.strftime(label_format),
@@ -703,8 +702,8 @@ MAX_STEPS = 6
 # itself (inconsistent - see docs/12-decisions.md) and always filling
 # every horizon regardless of scope (concrete, realistic-sounding but
 # fabricated content for horizons broader than what was actually asked
-# for - a real example found via use: a "3 months" goal getting a full
-# one_year answer). Code decides the boundary; the model is just told
+# for - e.g. a "3 months" goal getting a full one_year answer). Code
+# decides the boundary; the model is just told
 # where it is, nothing left to its own judgment.
 _HORIZON_LENGTH_THRESHOLDS = (
     ("one_year", 300),

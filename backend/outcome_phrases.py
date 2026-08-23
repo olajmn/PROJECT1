@@ -22,8 +22,8 @@ answer.
 #
 # Every phrase is matched on word boundaries (see
 # outcome_classifier.classify_outcome()), not raw substring containment
-# - found via real use, 2026-08-20: a bare "no" needed adding (people
-# fall back to the old Yes/No button labels out of habit), but "no" as
+# - a bare "no" needed adding (2026-08-20; people fall back to the old
+# Yes/No button labels out of habit), but "no" as
 # a plain substring also sits inside "not", "know", "now" - a false
 # positive on nearly any sentence containing one of those words.
 # Word-boundary matching is what makes adding short, common words like

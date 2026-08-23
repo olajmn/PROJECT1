@@ -159,12 +159,12 @@ def _generate_steps(goal: str, right_now: str, count: int) -> list[str]:
     "the first action" from the model. Only steps 2..count are an
     actual model call (see STEPS_SYSTEM_PROMPT).
 
-    Found via a real screenshot, 2026-08-21: the model's own idea of
-    "the first concrete action" (asked for as context, not fixed) came
-    out worded differently from - and overlapping awkwardly with -
-    right_now itself, so Task (right now) and the step list visibly
-    didn't line up (e.g. steps 2-3 re-covering what right_now already
-    said, step 4 repeating step 1's idea). Fixing step 1 to be the
+    Without this (2026-08-21): the model's own idea of "the first
+    concrete action" (asked for as context, not fixed) can come out
+    worded differently from - and overlap awkwardly with - right_now
+    itself, so Task (right now) and the step list visibly disagree
+    (e.g. steps 2-3 re-covering what right_now already said, step 4
+    repeating step 1's idea). Fixing step 1 to be the
     literal same string removes the disagreement structurally, instead
     of trying to word a prompt carefully enough to avoid it.
 
@@ -306,9 +306,9 @@ def join_plan_prose(texts: list[str]) -> str:
     trailing punctuation/whitespace before re-joining with ". " and a
     final period, rather than a bare space - the model doesn't
     consistently end a horizon's text with a period itself, so a plain
-    space-join produced run-on-looking text with no visible sentence
-    boundary (found via a real rendered example, "...long-term Develop
-    a meal planning system..."). Empty string for an empty list -
+    space-join produces run-on-looking text with no visible sentence
+    boundary (e.g. "...long-term Develop a meal planning system...").
+    Empty string for an empty list -
     nothing to join, same as the template's own empty check.
     """
     cleaned = [text.strip().rstrip(".") for text in texts if text]
@@ -331,10 +331,10 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     lets REPLAN_SYSTEM_PROMPT's "don't shrink right_now more than once"
     rule actually work - a model only ever shown the single most recent
     step has no way to notice it has already made the same task smaller
-    several times in a row. Found via real use, 2026-08-20: a goal's
-    right_now drifted from "research 4 companies" down to "check the
-    news for 30 seconds" over 13 replans, never once advancing toward
-    the goal's actual action (sending an application) - see
+    several times in a row. Without it, a goal's right_now can drift -
+    e.g. from "research 4 companies" down to "check the news for 30
+    seconds" over 13 replans (2026-08-20), never advancing toward the
+    goal's actual action (sending an application) - see
     docs/11-experiments.md.
     """
     # Named history_lines, not "steps" - unrelated to this file's

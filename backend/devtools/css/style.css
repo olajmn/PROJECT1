@@ -21,10 +21,9 @@ body {
    visibly bounded panel - previously just a heading and loose cards
    floating in a flex column with no outer boundary tying them
    together as one section, so the page read as continuous rather than
-   clearly divided zones. Same border color as .card - a section is a
-   bigger version of the same "this is one bounded thing" idea, not a
-   different visual language. Found via a real annotated screenshot,
-   2026-08-23. */
+   clearly divided zones (2026-08-23). Same border color as .card - a
+   section is a bigger version of the same "this is one bounded thing"
+   idea, not a different visual language. */
 .col {
   flex: 1;
   min-width: 0; /* let long unbroken text wrap instead of overflowing the column */
@@ -41,8 +40,8 @@ body {
    flex:1's default equal split, so Active gets the leftover space
    instead of sitting cramped/cut off next to an oversized empty box -
    see index.html. Still shrinks on narrow viewports (flex-shrink:1,
-   and the media query above still stacks columns under 900px). Found
-   via a real screenshot, 2026-08-23. */
+   and the media query above still stacks columns under 900px)
+   (2026-08-23). */
 .col-goal {
   flex: 0 1 340px;
 }
@@ -145,11 +144,11 @@ h1 {
 .chat-msg {
   /* fit-content (2026-08-23) so a short message gets a short bubble,
      not a full-width block with the text stranded off to one side -
-     found via a real screenshot: "make user_id" (two words) was
-     rendering as a bubble spanning most of max-width regardless,
-     since a plain block element fills its allotted width rather than
-     shrinking to its content. max-width still caps it so a genuinely
-     long message wraps instead of stretching the bubble edge to edge. */
+     a block element otherwise fills its allotted width rather than
+     shrinking to content, so e.g. "make user_id" (two words) rendered
+     as a bubble spanning most of max-width regardless. max-width still
+     caps it so a genuinely long message wraps instead of stretching
+     the bubble edge to edge. */
   width: fit-content;
   max-width: 75%;
   padding: 8px 14px;

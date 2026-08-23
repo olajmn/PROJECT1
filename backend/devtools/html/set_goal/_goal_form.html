@@ -33,9 +33,9 @@
   {# Generating a plan is a real LLM call (Ollama, local, synchronous) -
      ~5-10+ seconds, not instant - and nothing on the page changed at
      all while waiting (no spinner, no disabled state), so a click had
-     no visible effect until the redirect finally landed. Read as "the
-     button doesn't work" via real use, 2026-08-21 - worse than it
-     sounds, too: Flask's dev server handles one request at a time, so
+     no visible effect until the redirect finally landed. Reads as "the
+     button doesn't work" (2026-08-21) - worse than it sounds, too:
+     Flask's dev server handles one request at a time, so
      a second, impatient click doesn't retry anything, it just queues
      behind the first and doubles the silent wait. #}
   <form method="post" action="/goal" onsubmit="document.getElementById('generate-btn').disabled = true; document.getElementById('generate-btn').textContent = 'Generating plan…';">

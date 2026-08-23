@@ -24,9 +24,9 @@
    redirects back to - a growing thread otherwise reloads to the very
    top of the page after every submission, so confirmation that a click
    registered (the newly appended message) sits scrolled out of view
-   below the fold. Found via real use, 2026-08-20: repeated "Still
-   working on it" clicks looked like they weren't working for exactly
-   this reason - see docs/11-experiments.md. #}
+   below the fold (2026-08-20): without it, repeated "Still working on
+   it" clicks look like they aren't working, for exactly this reason -
+   see docs/11-experiments.md. #}
 <div class="card" id="goal-{{ record.goal_id }}">
   {# Built once here (not in active_goal/_plan.html or active_goal/_timeperiod.html
      separately) since both need it: Plan wants the horizon TEXT woven
