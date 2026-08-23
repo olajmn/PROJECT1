@@ -18,7 +18,9 @@
 **Alternatives considered:** keep the four buttons as the only signal
 (note stays a footnote); let the LLM classify the free-text note into
 an outcome; a deterministic phrase-matcher, same approach as
-goal_to_plan.py's `_resolve_duration()`.
+`backend/timeperiod.py`'s `resolve_duration()` (at the time this was
+written, that logic still lived in `goal_to_plan.py` as
+`_resolve_duration()` - both since renamed/moved).
 **Why this choice:** the user wanted to stop having to map what
 actually happened onto one of four fixed boxes before writing
 anything, but explicitly did not want that decision handed to an LLM -

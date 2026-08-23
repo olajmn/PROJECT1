@@ -26,11 +26,11 @@ LLM can adjust the plan
 
 | Step | Status | File |
 |---|---|---|
-| Goal → Plan | ✅ Working | `backend/goal_to_plan.py` (structured JSON: one_year/one_month/this_week/right_now) |
+| Goal → Plan | ✅ Working | `backend/plan.py` (structured JSON: one_year/one_month/this_week/today/this_hour/this_minute/right_now) |
 | Plan is saved | ✅ Working | `backend/storage.py` (JSON history, `data/plans.json`) |
 | Today's task | ✅ Working | `backend/today.py` — shows just `right_now` from the latest plan |
 | User reports progress | ✅ Working | `backend/devtools/app.py` `/feedback` route (web form) |
-| LLM adjusts the plan | ✅ Working | `backend/goal_to_plan.py` `replan()` |
+| LLM adjusts the plan | ✅ Working | `backend/plan.py` `replan()` |
 
 **Prototype 0.1's loop is closed end-to-end** (2026-08-18): goal → plan →
 right now → user feedback → replan → new right now, tested via

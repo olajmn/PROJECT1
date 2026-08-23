@@ -14,7 +14,7 @@ directly in this note with Obsidian's "Diagrams.net" community plugin.
 ```
 Terminal (input())
       ↓
-backend/goal_to_plan.py
+backend/plan.py
       ↓
 Ollama (local server, localhost:11434)
       ↓

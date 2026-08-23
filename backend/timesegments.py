@@ -209,8 +209,9 @@ DAY_FRACTIONS = {
 # matching regex the way section 3's segments/fractions are.
 #
 # English only (see CONVENTIONS.md) - this used to also recognize the
-# Norwegian words for each segment (morgen/formiddag, ettermiddag,
-# kveld, natt), added because real testing was done in Norwegian.
+# Norwegian words for each segment ("morgen"/"formiddag" - morning,
+# "ettermiddag" - afternoon, "kveld" - evening, "natt" - night), added
+# because real testing was done in Norwegian.
 # Dropped 2026-08-21 for the same reason goals are written in English
 # (docs/12-decisions.md, 2026-08-19): a duration typed in Norwegian
 # still flows into the prompt sent to the model, and mixed-language
@@ -333,8 +334,9 @@ CLOCK_24H_RE = re.compile(r"\b([01]\d|2[0-3]):([0-5]\d)\b")
 # still matches too.
 #
 # English only (see CONVENTIONS.md) - this used to also match the
-# Norwegian phrasing ("før jeg legger meg"/"innen jeg legger meg"),
-# dropped 2026-08-21 for the same reason as DAY_SEGMENTS above.
+# Norwegian phrasing ("before I go to bed" / "before I lie down",
+# literally "før jeg legger meg" / "innen jeg legger meg"), dropped
+# 2026-08-21 for the same reason as DAY_SEGMENTS above.
 DEADLINE_RE = re.compile(
     r"before\s+(?:i\s+)?(?:\w+\s+to\s+)?(bed(?:time)?|sleep)",
     re.IGNORECASE,

@@ -150,8 +150,9 @@ confusion during multi-day testing, rather than fixing preemptively.
 **Hypothesis tested:** Does `llama3.1:8b` handle a goal written in Norwegian
 as reliably as one written in English?
 **Setup:** `generate_plan()` called directly (bypassing the UI) with the
-same goal in both languages: `"lage mat"` (+ duration `"i løpet av
-kvelden"`) vs. `"make food"` (+ duration `"during the evening"`).
+same goal in both languages: `"lage mat"` (Norwegian for "make food") +
+duration `"i løpet av kvelden"` ("during the evening") vs. the English
+originals directly: `"make food"` + duration `"during the evening"`.
 Repeated 3 times for the Norwegian phrasing to check reproducibility.
 **Result:** All 3 Norwegian calls produced answers unrelated to cooking -
 two of them invented "German" content from nowhere ("Learn 10 new German
@@ -160,8 +161,9 @@ suggested "Translate 'lage mat'..." instead of an actual action. The
 English phrasing of the *identical* goal, on the same call, produced a
 sensible, grounded answer ("Check what ingredients are available in the
 pantry and fridge"). Confirmed unrelated to the duration-resolution
-feature built earlier the same day - `_resolve_duration()` correctly
-computed "kveld" → 17:00-23:00 in every case regardless of the plan
+feature built earlier the same day - `resolve_duration()` (renamed from
+`_resolve_duration()` 2026-08-22) correctly computed "kveld" (Norwegian
+for "evening") → 17:00-23:00 in every case regardless of the plan
 quality.
 **Learning:** This is a more severe reliability failure than the
 "chapter 11" hallucination (2026-08-18 below) - there, one detail was
