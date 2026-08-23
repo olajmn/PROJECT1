@@ -91,3 +91,26 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("in_progress", IN_PROGRESS_PHRASES),
     ("done", DONE_PHRASES),
 )
+
+# Separate from RULES above (2026-08-23) - this isn't a fifth outcome
+# alongside done/not_done/in_progress/goal_done, it's a different kind
+# of thing entirely: a request to change the goal's TIMEFRAME, checked
+# by wants_duration_change() in outcome_classifier.py before outcome
+# classification even runs (see backend/devtools/app.py's /feedback
+# route). Replaces the old standalone "Extend timeframe" form - typing
+# the request in the normal conversation box is the only way to do this
+# now, so the phrases here need to cover how someone would actually
+# phrase that request, not a status report.
+DURATION_CHANGE_PHRASES = (
+    "change timeframe",
+    "change the timeframe",
+    "change time frame",
+    "new timeframe",
+    "different timeframe",
+    "extend timeframe",
+    "extend the timeframe",
+    "extend the deadline",
+    "change the deadline",
+    "more time",
+    "need more time",
+)

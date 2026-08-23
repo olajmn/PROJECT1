@@ -84,3 +84,11 @@
   plan look at this time window." Likely the same deterministic-phrase
   approach as `backend/outcome_classifier.py` (no LLM guessing on
   *whether* a start time was named) if/when this gets built.
+- **Export/share a goal's plan as a document** - let the user send or
+  print a goal's plan (and maybe its full conversation history) as an
+  actual document/file, not just something viewed live in the devtools
+  UI. Raised 2026-08-23, explicitly flagged by the user as "for later"
+  while working on the horizon-scale diagram in
+  `active/_timeperiod.html` - not scoped or designed at all yet
+  (format, what's included, whether it's a real feature or a devtools
+  convenience like `backend/devtools/view.py`'s static snapshot).

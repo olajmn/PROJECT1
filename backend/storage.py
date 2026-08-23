@@ -17,6 +17,15 @@ a dict with those keys, without special-casing it themselves.
 Goal identity/grouping (get_board() and friends) lives in backend/goal.py,
 not here - see that module's docstring for why goal_id minting/backfill
 stays in this file regardless.
+
+Every record also carries a `user_id` (added 2026-08-23), always
+DEFAULT_USER_ID for now - there is exactly one person using this app
+(see docs/12-decisions.md: real multi-user support is explicitly
+deferred past MVP, needs proper auth + encryption first). This is
+deliberately NOT the start of an accounts system - it's a stable field
+added now so that if/when multi-user support is ever built, existing
+history doesn't need a migration to grow one. Unlike goal_id, there is
+no minting/counter for it: there's only ever one value.
 """
 
 import json
@@ -25,6 +34,10 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 PLANS_FILE = DATA_DIR / "plans.json"
+
+# The only user_id that exists today - see module docstring. Not a
+# counter like goal_id: there is exactly one person using this app.
+DEFAULT_USER_ID = 1
 
 
 def ensure_data_dir() -> None:
@@ -73,6 +86,18 @@ def _backfill_goal_ids(records: list[dict]) -> None:
         record["goal_id"] = seen[record["goal"]]
 
 
+def _backfill_user_ids(records: list[dict]) -> None:
+    """
+    Records saved before `user_id` existed get DEFAULT_USER_ID - unlike
+    _backfill_goal_ids(), there's no grouping/counting to do: every
+    record belongs to the same single user, so there's only one value
+    to fill in. Mutates records in place, same as _backfill_goal_ids().
+    """
+    for record in records:
+        if not record.get("user_id"):
+            record["user_id"] = DEFAULT_USER_ID
+
+
 def _next_goal_id(records: list[dict]) -> int:
     """One higher than the largest goal_id in history, or 1 if there are none yet."""
     existing = [r["goal_id"] for r in records if r.get("goal_id")]
@@ -98,6 +123,7 @@ def _load_all() -> list[dict]:
         ) from e
 
     _backfill_goal_ids(records)
+    _backfill_user_ids(records)
     for record in records:
         record["plan"] = _normalize_plan(record["plan"])
     return records
@@ -155,6 +181,12 @@ def save_plan(
     never invent a goal_id themselves - always get it from an existing
     record or from this function's return value.
 
+    There is no `user_id` parameter (unlike `goal_id`): every record is
+    stamped with DEFAULT_USER_ID directly, since there is exactly one
+    user of this app today - see module docstring. Not exposed as a
+    choice callers could get wrong, because there is nothing to choose
+    yet.
+
     `frozen_duration` is `duration` resolved to a real start/end/
     description ONCE (see backend/timeperiod.py's freeze_duration()),
     stored as-is rather than re-derived from "now" on every later page
@@ -186,6 +218,7 @@ def save_plan(
     records = _load_all()
     record = {
         "id": len(records) + 1,
+        "user_id": DEFAULT_USER_ID,
         "goal_id": goal_id if goal_id is not None else _next_goal_id(records),
         "goal": goal,
         "plan": plan,

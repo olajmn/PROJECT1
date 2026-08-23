@@ -15,7 +15,7 @@ The -m flag is required (not `python backend/devtools/app.py`) so the
 from flask import Flask, redirect, render_template, request, url_for
 
 from backend.goal import get_board, get_history_for_goal, get_latest_for_goal
-from backend.outcome_classifier import classify_outcome
+from backend.outcome_classifier import classify_outcome, wants_duration_change
 from backend.plan import HORIZON_LABELS, PLAN_KEYS, generate_plan, join_plan_prose, replan
 from backend.storage import load_history, save_plan
 from backend.timeperiod import (
@@ -26,7 +26,13 @@ from backend.timeperiod import (
     step_plan,
 )
 
-app = Flask(__name__)
+# Custom folder names (2026-08-23, defaults were templates/ and
+# static/) - explicit split of "frontend" (html/ - every .html file,
+# nothing else) from CSS (css/) within this devtools app. Flask's
+# `static` endpoint name and the url_for('static', ...) calls in the
+# templates don't change just because the on-disk folder does - only
+# WHERE Flask looks, not what anything is called from outside.
+app = Flask(__name__, template_folder="html", static_folder="css")
 # Makes describe_duration() callable directly from templates, e.g.
 # {{ describe_duration(record.duration) }} in _plan_entry.html/index.html -
 # so the "how was this understood" text stays in one place
@@ -34,22 +40,23 @@ app = Flask(__name__)
 # in the templates.
 app.jinja_env.globals["describe_duration"] = describe_duration
 # Same reasoning, for the start/now/end progress bar in
-# _active_goal.html - percent/status/labels computed once in
+# active_goal/_timeperiod.html - percent/status/labels computed once in
 # timeperiod.py (see duration_progress()'s docstring), not recomputed
 # in template logic.
 app.jinja_env.globals["duration_progress"] = duration_progress
-# Same reasoning - the vertical step list in _active_goal.html zips a
-# goal's stored step descriptions (record.plan.steps, from
-# backend/plan.py's _generate_steps()) with their deterministically-
-# computed time slice via step_plan() - see its docstring.
+# Same reasoning - the vertical step list in active_goal/_task.html and
+# active_goal/_steps.html zips a goal's stored step descriptions
+# (record.plan.steps, from backend/plan.py's _generate_steps()) with
+# their deterministically-computed time slice via step_plan() - see
+# its docstring.
 app.jinja_env.globals["step_plan"] = step_plan
-# Same reasoning: lets _active_goal.html pull a goal's whole
+# Same reasoning: lets active_goal/_conversation.html pull a goal's whole
 # conversation (see get_history_for_goal's docstring) without every
 # route that renders it having to fetch and pass that separately.
 app.jinja_env.globals["get_history_for_goal"] = get_history_for_goal
 # Same reasoning - joins Plan's filled-horizon sentences into one
-# flowing paragraph (see _active_goal.html's Plan section, 2026-08-23)
-# rather than a bare space-join done in the template itself.
+# flowing paragraph (see active_goal/_plan.html, 2026-08-23) rather than a
+# bare space-join done in the template itself.
 app.jinja_env.globals["join_plan_prose"] = join_plan_prose
 
 # The broader horizons shown alongside "right_now", on both the index
@@ -61,13 +68,52 @@ app.jinja_env.globals["join_plan_prose"] = join_plan_prose
 _BROADER_HORIZONS = [(key, HORIZON_LABELS[key]) for key in PLAN_KEYS if key != "right_now"]
 
 
+def split_message_lines(text: str) -> list[str]:
+    """
+    Split one chat message into its separate sentence-like parts, for
+    active_goal/_conversation.html's thread to render each on
+    its own line - a message built from more than one thought (e.g.
+    app.py's own "Checked in (couldn't tell what this means yet). Note:
+    {note}") otherwise reads as one dense run-on block instead of the
+    distinct statements it actually is. Purely a DISPLAY concern (how
+    devtools renders a string), not a data concern - the stored
+    `feedback`/`right_now`/etc. text itself is untouched, still one
+    plain string everywhere else (goal_log/history.html, _plan_entry.html, the
+    JSON file itself).
+
+    The exact reverse of backend/plan.py's join_plan_prose() (". ".join
+    of several texts): splits back on that same separator. A plain
+    ". ".split() would silently swallow the period from every part
+    except the last (join_plan_prose's job was gluing them INTO one
+    string, so the separator eats it) - re-added here to each part that
+    doesn't already end in its own sentence-ending punctuation, so a
+    part like "Checked in (couldn't tell what this means yet)" reads as
+    a complete sentence again once it's back on its own line.
+    """
+    if not text:
+        return []
+    parts = [p for p in text.split(". ") if p]
+    return [
+        p if i == len(parts) - 1 or p.rstrip().endswith((".", "!", "?", ":")) else p.rstrip() + "."
+        for i, p in enumerate(parts)
+    ]
+
+
+# Registered as a filter (`{{ text | split_message_lines }}`), not a
+# global like join_plan_prose/step_plan/etc. above - this transforms a
+# string that's already in template scope (msg.feedback, msg.right_now,
+# ...) rather than pulling in data the template doesn't have yet, so
+# filter syntax reads more naturally at every call site.
+app.jinja_env.filters["split_message_lines"] = split_message_lines
+
+
 def render_history_page(history: list[dict]) -> str:
     """
     Render the history page HTML. Shared by the /history route and
     view.py's standalone static-snapshot script, so there's exactly one
     place that knows how to turn history into this page.
     """
-    return render_template("history.html", history=history, horizons=_BROADER_HORIZONS)
+    return render_template("goal_log/history.html", history=history, horizons=_BROADER_HORIZONS)
 
 
 @app.route("/")
@@ -101,67 +147,34 @@ def new_goal():
     for why the model isn't trusted with judgment calls like this one
     when code can decide them outright).
 
-    The form lets the user pick an existing active goal to continue
-    (via `continue_goal_id`) instead of typing its text again - typing
-    is how goals used to fragment (see backend/goal.py's get_board()).
-    When continuing, the existing goal's own text is reused as-is and
-    the goal_id is carried forward, so this record joins that goal's
-    chain instead of starting a new one; whatever's typed in the (now
-    single, always-enabled) text field in that case is read as a NEW
-    duration only, not new goal text - see index.html. Nothing typed
-    means "keep going with whatever timeframe was already running" -
-    the existing goal's own last-known duration carries forward
-    unchanged, same as a plain check-in via /feedback would, not
-    silently dropped just because the field was left empty.
+    Only ever starts a genuinely NEW goal now (2026-08-23) - always
+    requires typed text, and mints its own goal_id via save_plan().
+    Extending an EXISTING goal's timeframe used to also go through here
+    (`continue_goal_id`, posted by a standalone "Extend timeframe" form
+    on that goal's own board card), but that's now done conversationally
+    instead - see /feedback's `wants_duration_change()` branch below,
+    which asks for and applies a new duration through the goal's own
+    chat thread. `_apply_new_duration()` is the shared piece of logic
+    that survived that move.
 
-    A genuinely new goal (no selection) still requires typed text, and
-    mints its own goal_id via save_plan().
-
-    Both paths compute a FRESH `frozen_duration` (see
-    backend/timeperiod.py's freeze_duration()) only when there's an
-    actual new duration decision to freeze (a new goal, or an explicit
-    "continue" with a NEW duration typed) - an explicit "continue" with
-    nothing typed reuses the existing goal's own frozen_duration
-    unchanged, same reasoning /feedback's check-in path already
-    follows: continuing without saying otherwise isn't a new planning
-    decision, so it shouldn't restart the countdown. EXCEPT when
-    `generate_plan()` comes back with `clarification` set instead of a
-    real plan (see that function's docstring) - the goal as typed was
-    too vague in CONTENT (a bare noun/verb, e.g. "read") to plan at
-    all, a different case from missing TIME above. That round is saved
-    too (as a new active board entry, or a new round on an existing
-    one) so the question shows up in the goal's own conversation thread
-    and the user can answer it right there via the normal feedback box
-    - see /feedback below, which is what actually resolves a pending
-    clarification into a real plan. But its `frozen_duration` is left
-    None rather than frozen now: nothing has actually started yet
-    while a question is still pending, so there's no honest countdown
-    to draw until /feedback resolves it into a real plan and freezes it
-    then. Redirects straight to the card either way (`#goal-{id}`, same
-    anchor /feedback uses) so the question is immediately visible, not
-    buried below the fold.
+    Computes a FRESH `frozen_duration` (see backend/timeperiod.py's
+    freeze_duration()) whenever a real plan comes back - EXCEPT when
+    `generate_plan()` comes back with `clarification` set instead (see
+    that function's docstring) - the goal as typed was too vague in
+    CONTENT (a bare noun/verb, e.g. "read") to plan at all, a different
+    case from missing TIME below. That round is saved too (as a new
+    active board entry) so the question shows up in the goal's own
+    conversation thread and the user can answer it right there via the
+    normal feedback box - see /feedback below, which is what actually
+    resolves a pending clarification into a real plan. But its
+    `frozen_duration` is left None rather than frozen now: nothing has
+    actually started yet while a question is still pending, so there's
+    no honest countdown to draw until /feedback resolves it into a real
+    plan and freezes it then. Redirects straight to the card either way
+    (`#goal-{id}`, same anchor /feedback uses) so the question is
+    immediately visible, not buried below the fold.
     """
-    continue_goal_id = request.form.get("continue_goal_id", "").strip()
     typed_text = request.form.get("goal", "").strip()
-
-    if continue_goal_id:
-        existing = next(
-            (r for r in get_board()["active"] if str(r["goal_id"]) == continue_goal_id),
-            None,
-        )
-        if existing is None:
-            # Stale selection (e.g. the goal was completed in another tab
-            # since this page loaded) - nothing sensible to continue.
-            return redirect(url_for("index"))
-        new_duration = extract_duration_phrase(typed_text) if typed_text else None
-        duration = new_duration or existing.get("duration")
-        frozen = freeze_duration(duration) if new_duration else existing.get("frozen_duration")
-        plan = generate_plan(existing["goal"], duration)
-        record = save_plan(
-            existing["goal"], plan, duration=duration, goal_id=existing["goal_id"],
-            frozen_duration=None if plan.get("clarification") else frozen,
-        )
-        return redirect(url_for("index") + f"#goal-{record['goal_id']}")
 
     if typed_text:
         duration = extract_duration_phrase(typed_text)
@@ -186,6 +199,41 @@ def new_goal():
     return redirect(url_for("index"))
 
 
+def _apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
+    """
+    Regenerate `existing`'s plan around a new duration span - the piece
+    of logic that survived /goal's old `continue_goal_id` branch (moved
+    here 2026-08-23 when that branch's only caller, the standalone
+    "Extend timeframe" form, was replaced by /feedback's conversational
+    wants_duration_change() flow below).
+
+    Always calls generate_plan() again, never just patches
+    duration/frozen_duration onto the existing record: changing the
+    timeframe is a real new planning decision (new horizons filled, a
+    new step list from backend/plan.py's _generate_steps()), not a
+    countdown edit - same as it always was here, just triggered by a
+    chat message now instead of a form submit. frozen_duration stays
+    None if the new duration turns out too vague in CONTENT to plan at
+    all (generate_plan() comes back with `clarification` set) - nothing
+    has actually started yet in that case, same reasoning /goal and
+    /feedback's own clarification handling already follow.
+
+    `feedback` is the user's own raw typed note (e.g. "5 months", or
+    "can we change timeframe to 1 hour") - stored as-is, same as every
+    other /feedback branch does with `note`, so it shows up as the
+    "You" message in the conversation thread. Missing until 2026-08-23:
+    this call never passed it at all, so the record got feedback=None -
+    not a rendering bug, an actual empty bubble in the saved history
+    (found via a real screenshot: the "You" reply to "How long do you
+    want this to run now?" showed the label with no text under it).
+    """
+    plan = generate_plan(existing["goal"], duration)
+    return save_plan(
+        existing["goal"], plan, feedback=feedback, duration=duration, goal_id=existing["goal_id"],
+        frozen_duration=None if plan.get("clarification") else freeze_duration(duration),
+    )
+
+
 @app.route("/feedback", methods=["POST"])
 def feedback():
     """
@@ -198,6 +246,22 @@ def feedback():
     best fits; see docs/12-decisions.md, 2026-08-20, for why this
     replaced the buttons and why it still never lets an LLM decide
     true/false.
+
+    Before any of that, two earlier checks can take over the note
+    entirely instead of treating it as a progress report:
+    - `plan.clarification` set -> the note ANSWERS a pending question
+      about the goal itself (see that branch below).
+    - `plan.pending_duration_question` set -> the note answers "how
+      long do you want this to run now?" (see _apply_new_duration()).
+    - otherwise, `wants_duration_change(note)` -> the note is a NEW
+      request to change the timeframe (e.g. "can we change timeframe"),
+      not a status report; applies immediately if a new duration is
+      ALSO already in this same message (e.g. "change timeframe to 1
+      hour"), otherwise asks the follow-up question and lets the
+      pending_duration_question branch above catch the answer on the
+      NEXT message. Replaces the old standalone "Extend timeframe"
+      form (2026-08-23) - the goal's own conversation box is now the
+      only way to do this, no separate control on the card.
 
     Which goal this applies to comes from the form's `goal_id` (each
     active board card posts its own) - not "whatever was touched most
@@ -253,6 +317,22 @@ def feedback():
         # as-is.
         prior_answers = [r["feedback"] for r in get_history_for_goal(latest["goal_id"]) if r.get("feedback")]
         combined_goal = " - ".join([latest["goal"], *prior_answers, note])
+        # `duration` can still be None here specifically when this
+        # clarification IS the "When do you want to do this, or how
+        # long should it take?" question (see /goal's deterministic
+        # missing-timeframe check) - the answer to THAT question is a
+        # duration phrase, not just more goal content, so it needs the
+        # same extract_duration_phrase() extraction /goal's own
+        # new-goal path already does, or a real answer like "this week"
+        # silently stays lost as untyped prose forever (found via real
+        # use, 2026-08-23 - "Your answer" never produced a real plan
+        # for exactly this class of clarification). Only attempted
+        # while duration is still unknown - an already-known duration
+        # (a content-vagueness clarification, e.g. "read") is left
+        # alone, since `note` there answers a different question
+        # entirely and isn't a timeframe to (mis)parse.
+        if duration is None:
+            duration = extract_duration_phrase(note)
         plan = generate_plan(combined_goal, duration)
         # frozen_duration stays None for as long as clarification keeps
         # coming back (same reasoning as /goal above: nothing has
@@ -262,6 +342,53 @@ def feedback():
             latest["goal"], plan, feedback=note, duration=duration,
             goal_id=latest["goal_id"],
             frozen_duration=None if plan.get("clarification") else freeze_duration(duration),
+        )
+        return back_to
+
+    if latest["plan"].get("pending_duration_question"):
+        # The PREVIOUS record in this goal's thread asked "how long do
+        # you want this to run now?" (see wants_duration_change() below)
+        # - this note is the answer, a duration phrase, not a status
+        # report on right_now. Falls back to the existing duration
+        # unchanged if nothing recognized, same as the old "Extend
+        # timeframe" form's own empty-submit behavior - never silently
+        # wipes a working timeframe just because the answer wasn't
+        # understood.
+        new_duration = extract_duration_phrase(note) or duration
+        _apply_new_duration(latest, new_duration, feedback=note)
+        return back_to
+
+    if wants_duration_change(note):
+        # A request to change the TIMEFRAME, not a progress report -
+        # checked before classify_outcome() so it can never be
+        # misread as one of its four outcomes (see
+        # outcome_classifier.wants_duration_change()'s docstring for
+        # why this can't just be a fifth RULES entry).
+        #
+        # The new duration might already be IN this same message (e.g.
+        # "can we change timeframe to 1 hour") - checked first so that
+        # case applies it immediately instead of asking a question
+        # you've already answered (found via real use, 2026-08-23: the
+        # first version always asked "how long...?" even when the
+        # answer was right there, silently discarding it). Only asks
+        # the follow-up when nothing recognized turns up.
+        new_duration = extract_duration_phrase(note)
+        if new_duration:
+            _apply_new_duration(latest, new_duration, feedback=note)
+            return back_to
+
+        # Carries the current plan/duration/steps forward completely
+        # unchanged (this goal isn't being replanned or checked in on
+        # right now) - only difference from a plain "carry forward"
+        # save is the pending_duration_question flag, which is what
+        # makes the branch above fire on the NEXT message and is what
+        # active_goal/_conversation.html's thread shows as the agent's reply
+        # instead of the real right_now.
+        save_plan(
+            latest["goal"],
+            {**latest["plan"], "pending_duration_question": "How long do you want this to run now?"},
+            feedback=note, duration=duration, goal_id=latest["goal_id"],
+            frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
         )
         return back_to
 
@@ -334,7 +461,7 @@ def feedback():
 @app.route("/step", methods=["POST"])
 def step():
     """
-    Handle the per-step "Done?" Yes/No control (see _active_goal.html) -
+    Handle the per-step "Done?" Yes/No control (see active_goal/_task.html) -
     advances `current_step` by one, purely by index arithmetic into the
     goal's already-generated `plan.steps` list. No model call at all:
     unlike /feedback's free-text note (which can trigger replan() -
@@ -349,7 +476,7 @@ def step():
 
     `current_step` can reach `len(steps)` (one past the last valid
     index, not a real step) to mean "every step is done" - see
-    _active_goal.html for how that's shown (no more Yes/No, a prompt to
+    active_goal/_task.html for how that's shown (no more Yes/No, a prompt to
     mark the whole goal complete via the existing free-text box
     instead, not an automatic completion this route decides on its
     own).
@@ -395,9 +522,18 @@ def history():
     return render_history_page(load_history())
 
 
-@app.route("/board")
-def board():
-    return render_template("board.html", board=get_board(), horizons=_BROADER_HORIZONS)
+@app.route("/completed")
+def completed():
+    """
+    Completed goals only, on their own page (2026-08-23; used to be
+    /board, showing Active alongside Completed) - index.html already
+    shows Active, so a second page repeating it never earned its keep.
+    get_board() still computes both halves (it groups ALL history by
+    goal_id, splitting into active/completed is just what falls out of
+    that in one pass - see backend/goal.py) but only `board.completed`
+    is ever read here now, via completed_goal/_completed.html.
+    """
+    return render_template("completed_goal/completed.html", board=get_board(), horizons=_BROADER_HORIZONS)
 
 
 if __name__ == "__main__":

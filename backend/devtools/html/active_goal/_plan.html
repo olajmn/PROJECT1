@@ -1,0 +1,27 @@
+{# Plan - the one overarching whole-goal plan: every filled horizon's
+   text woven into one continuous paragraph (see backend/plan.py's
+   join_plan_prose()), not a per-level breakdown (see
+   active_goal/_timeperiod.html's horizon-scale diagram for that) - two
+   different views of the same underlying `record.plan` data, not two
+   sources of truth. Split out of _active_goal.html (2026-08-23).
+
+   Expects `record` and `horizon_texts` in context - `horizon_texts` is
+   built once in the parent shell (_active_goal.html), not here,
+   since active_goal/_timeperiod.html needs the parallel `filled_horizon_labels`
+   list from that same pass too. #}
+<div class="model-row model-plan-heading">
+  <span class="model-label">Plan</span>
+  {# Plan's own content: every filled horizon's text (this_week/
+     one_month/one_year/etc - excludes right_now, shown separately as
+     Task) woven into one flowing paragraph rather than a per-horizon
+     labeled list - Plan's job is just "what will happen", read as one
+     continuous thing. `horizons` (and so `horizon_texts`) is passed in
+     from app.py's index() route - see index.html. #}
+  {% if horizon_texts %}
+    <p class="plan-prose">{{ join_plan_prose(horizon_texts) }}</p>
+  {% elif record.plan.get('clarification') %}
+    <div class="yaml-comment">(nothing to plan yet - the agent needs an answer first, see below)</div>
+  {% else %}
+    <div class="yaml-comment">(no broader plan for this goal - short enough that "right now" below is the whole plan)</div>
+  {% endif %}
+</div>

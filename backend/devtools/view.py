@@ -23,8 +23,8 @@ if __name__ == "__main__":
     # an app context - because the template calls url_for() to build the
     # CSS link. test_request_context() simulates a request without
     # actually starting the server; this reuses app.py's app (and
-    # therefore its templates/ and static/ folders) instead of
-    # duplicating that setup here.
+    # therefore its html/ and css/ folders) instead of duplicating that
+    # setup here.
     with app.test_request_context():
         html = render_history_page(load_history())
 

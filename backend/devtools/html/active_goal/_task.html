@@ -1,0 +1,47 @@
+{# Task (right now) + Done? - the single next action, and (once a goal
+   has steps) the Yes/No control that advances through them. Split out
+   of _active_goal.html (2026-08-23).
+
+   Task (right now) is no longer its own independently-generated thing
+   once a goal has steps - step 1 always equals plan.right_now exactly
+   (see backend/plan.py's _generate_steps() docstring), and "right now"
+   is just steps[current_step]: a pointer into the list, not separate
+   text (see docs/13-ideas-parking-lot.md's "Plan as an ordered step
+   list" entry). current_step advances via the Done? Yes/No form below,
+   posting to /step - pure index arithmetic, no model call, since the
+   whole list was already decided upfront.
+
+   Expects `record`, `steps`, `current_index` in context - `steps`/
+   `current_index` built once in the parent shell
+   (_active_goal.html), not here, since active_goal/_steps.html needs
+   the same two values and a {% set %} inside one included template
+   can't hand them to a sibling include. #}
+<div class="model-row">
+  <span class="model-label">Task (right now)</span>
+  <span>
+    {% if steps %}
+      {% if current_index < steps | length %}
+        {{ steps[current_index].text }}
+      {% else %}
+        All steps done - mark the whole goal complete below.
+      {% endif %}
+    {% elif record.plan.right_now %}
+      {{ record.plan.right_now }}
+    {% elif record.plan.get('clarification') %}
+      (answer the agent's question below to get a real plan)
+    {% else %}
+      (no next action came back - give feedback again, or mark complete)
+    {% endif %}
+  </span>
+</div>
+
+{% if steps and current_index < steps | length %}
+  <div class="model-row">
+    <span class="model-label">Done?</span>
+    <form method="post" action="/step" class="step-done-form">
+      <input type="hidden" name="goal_id" value="{{ record.goal_id }}">
+      <button class="btn-goal" type="submit" name="done" value="yes">Yes</button>
+      <button class="btn-goal" type="submit" name="done" value="no">No</button>
+    </form>
+  </div>
+{% endif %}

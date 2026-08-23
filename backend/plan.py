@@ -300,7 +300,7 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
 def join_plan_prose(texts: list[str]) -> str:
     """
     Join a plan's filled-horizon sentences into one flowing paragraph
-    (see devtools/templates/_active_goal.html's Plan section,
+    (see devtools/html/active_goal/_plan.html,
     2026-08-23 - horizons used to render as separate labeled lines,
     now as one continuous piece of text). Strips each piece's own
     trailing punctuation/whitespace before re-joining with ". " and a

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "ask": [
+      "Bash(npx playwright*)",
+      "Bash(npx -y playwright*)",
+      "Bash(npx --yes playwright*)",
+      "Bash(playwright*)",
+      "Bash(npx chromium-cli*)",
+      "Bash(npx -y chromium-cli*)",
+      "Bash(chromium-cli*)"
+    ]
+  }
+}

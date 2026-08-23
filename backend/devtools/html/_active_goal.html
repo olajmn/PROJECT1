@@ -1,0 +1,72 @@
+{# One active goal's card - the shell that orchestrates its six
+   sections (see docs/07-features.md's "Program / Rooms / Sitemap"
+   model): Goal / Plan / Timeperiod / Task / Steps / Conversation, each
+   its own file in this folder now (split 2026-08-23, previously all
+   one file). This file's only job is:
+   1. Compute the handful of values MORE THAN ONE section needs
+      (horizon_texts/filled_horizon_labels, frozen, steps/current_index)
+      - once, here, not in whichever section happens to need it first.
+      A {% set %} made INSIDE an {% include %}'d template never leaks
+      back out to a sibling include, only a {% set %} in this shared
+      parent does - so anything more than one section reads has to live
+      here.
+   2. Include each section in order.
+   Expects `record` (the goal's latest state) and `horizons` (from
+   app.py's index() route, see index.html) in context - a surrounding
+   {% for record in board.active %} is enough. Only ever rendered for
+   ACTIVE goals - completed ones use _plan_entry.html instead (see
+   completed_goal/_completed.html), so this file only has one caller
+   now (2026-08-23; used to also be reachable via a combined
+   Active+Completed page at /board, since removed - see
+   completed_goal/completed.html).
+
+   The card's id (goal-N) is the anchor app.py's /feedback route
+   redirects back to - a growing thread otherwise reloads to the very
+   top of the page after every submission, so confirmation that a click
+   registered (the newly appended message) sits scrolled out of view
+   below the fold. Found via real use, 2026-08-20: repeated "Still
+   working on it" clicks looked like they weren't working for exactly
+   this reason - see docs/11-experiments.md. #}
+<div class="card" id="goal-{{ record.goal_id }}">
+  {# Built once here (not in active_goal/_plan.html or active_goal/_timeperiod.html
+     separately) since both need it: Plan wants the horizon TEXT woven
+     into one paragraph, Timeperiod wants the horizon LABELS that text
+     came from - two different projections of the same underlying
+     `record.plan` data, not two different sources of truth.
+     `horizon_texts`/`filled_horizon_labels` built with .append()
+     (mutates the list in place) rather than {% set %} inside the loop,
+     which wouldn't leak out of the loop's own scope in Jinja. #}
+  {% set horizon_texts = [] %}
+  {% set filled_horizon_labels = [] %}
+  {% for key, label in horizons %}
+    {% if record.plan[key] %}
+      {% set _ = horizon_texts.append(record.plan[key]) %}
+      {% set _ = filled_horizon_labels.append(label) %}
+    {% endif %}
+  {% endfor %}
+
+  {% include "active_goal/_goal.html" %}
+  {% include "active_goal/_plan.html" %}
+
+  <div class="model-nested">
+    {# Declared unconditionally, before active_goal/_timeperiod.html's own
+       `{% if record.duration ... %}` check - active_goal/_task.html's
+       step_plan() call needs `frozen` regardless of whether a
+       Timeperiod row rendered at all, and an {% if %} in Jinja doesn't
+       create its own scope, but a variable never set inside a skipped
+       {% if %} is Undefined, not None - so this can't live inside that
+       file's own conditional. record.get() is None-safe for records
+       saved before frozen_duration existed. #}
+    {% set frozen = record.get('frozen_duration') %}
+    {% include "active_goal/_timeperiod.html" %}
+
+    {# Same reasoning as `frozen` above - active_goal/_task.html and
+       active_goal/_steps.html both need `steps`/`current_index`, so both
+       are built once here rather than in either file separately. #}
+    {% set steps = step_plan(frozen, record.plan.get('steps')) %}
+    {% set current_index = record.get('current_step', 0) %}
+    {% include "active_goal/_task.html" %}
+    {% include "active_goal/_steps.html" %}
+    {% include "active_goal/_conversation.html" %}
+  </div>
+</div>

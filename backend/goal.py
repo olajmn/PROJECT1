@@ -51,7 +51,7 @@ def get_history_for_goal(goal_id: int) -> list[dict]:
     `right_now`, and its own `right_now` is the agent's reply - this
     just returns that chain so a template can render it as one instead
     of only ever showing the latest snapshot. See
-    devtools/templates/_active_goal.html.
+    devtools/html/_active_goal.html.
     """
     return [r for r in load_history() if r["goal_id"] == goal_id]
 

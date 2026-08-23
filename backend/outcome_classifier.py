@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import re
 
-from backend.outcome_phrases import RULES
+from backend.outcome_phrases import DURATION_CHANGE_PHRASES, RULES
 
 
 def _contains_phrase(text: str, phrase: str) -> bool:
@@ -59,3 +59,24 @@ def classify_outcome(text: str) -> str | None:
         if any(_contains_phrase(lowered, phrase) for phrase in phrases):
             return label
     return None
+
+
+def wants_duration_change(text: str) -> bool:
+    """
+    True if `text` is asking to change the goal's TIMEFRAME (e.g. "can
+    we change timeframe", "I need more time") rather than reporting on
+    progress - checked separately from, and before, classify_outcome()
+    in backend/devtools/app.py's /feedback route: this isn't a fifth
+    outcome, it's a different kind of message altogether, so it can't
+    live in RULES/classify_outcome() without that function starting to
+    return two unrelated kinds of answer from one call.
+
+    Same deterministic, no-LLM approach as classify_outcome() itself,
+    for the same reason (see this module's docstring) - and the same
+    honest limitation: only phrases in DURATION_CHANGE_PHRASES are
+    recognized, so an unrecognized way of asking the same thing falls
+    through to classify_outcome() instead (extend the phrase list as
+    real phrasings turn up, same as outcome_phrases.py's other lists).
+    """
+    lowered = text.lower()
+    return any(_contains_phrase(lowered, phrase) for phrase in DURATION_CHANGE_PHRASES)

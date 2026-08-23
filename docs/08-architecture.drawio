@@ -40,7 +40,7 @@
         </mxCell>
 
         <!-- Layer 1.5: single-caller leaves, directly under their one caller so the vertical edge never crosses anything -->
-        <mxCell id="templates" value="devtools/templates/&#10;index.html, board.html, history.html&#10;_board.html, _plan_entry.html, _history_list.html&#10;+ devtools/static/style.css" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=6;" vertex="1" parent="1">
+        <mxCell id="templates" value="devtools/html/&#10;index.html + 4 sections:&#10;set_goal/, active_goal/, completed_goal/, goal_log/&#10;+ devtools/css/style.css" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=6;" vertex="1" parent="1">
           <mxGeometry x="340" y="400" width="260" height="90" as="geometry" />
         </mxCell>
 
