@@ -59,12 +59,28 @@ _FRACTION_TABLES = {
 }
 
 
+def _contains_phrase(text: str, phrase: str) -> bool:
+    """
+    Whether `phrase` (already lowercase) appears in `text` as whole
+    word(s), not just as a substring - `"this week" in "this weekend"`
+    is True with a plain substring check but wrong, the same shape of
+    bug `_matched_month_name()` already found and fixed for month names
+    colliding with everyday words ("I may go" - see its docstring).
+    Only mattered lightly before 2026-08-23 (duration used to live in
+    its own short, dedicated field, where an accidental collision was
+    unlikely) - became a real risk once goal text and duration are
+    typed together as one free-text sentence, where "weekend"/
+    "midnight"/etc are much more likely to actually appear.
+    """
+    return re.search(r"\b" + re.escape(phrase) + r"\b", text) is not None
+
+
 def _matched_day_segment(duration: str) -> tuple[str, tuple[int, int]] | None:
     """Return (word, (start_hour, end_hour)) for the first known day
     segment found in `duration`, or None if none match."""
     lowered = duration.lower()
     for word, hours in DAY_SEGMENTS.items():
-        if word in lowered:
+        if _contains_phrase(lowered, word):
             return word, hours
     return None
 
@@ -83,7 +99,7 @@ def _matched_day_offset(duration: str) -> int:
     """
     lowered = duration.lower()
     for phrase, (unit, offset) in PERIOD_PHRASES.items():
-        if unit == "day" and phrase in lowered:
+        if unit == "day" and _contains_phrase(lowered, phrase):
             return offset
     return 0
 
@@ -351,8 +367,58 @@ def _matched_period_phrase(duration: str) -> tuple[str, tuple[date, date]] | Non
     PERIOD_PHRASES entry found in `duration`, or None if none match."""
     lowered = duration.lower()
     for phrase, (unit, offset) in PERIOD_PHRASES.items():
-        if phrase in lowered:
+        if _contains_phrase(lowered, phrase):
             return phrase, _period_range(unit, offset)
+    return None
+
+
+def extract_duration_phrase(text: str) -> str | None:
+    """
+    The raw, literal time-phrase found somewhere within `text` (e.g.
+    "30 minutes", "this week", "before bed") - for when goal text and
+    duration are typed together as one free-text sentence (2026-08-23),
+    e.g. "clean the apartment this weekend", rather than two separate
+    form fields. None if nothing in `text` is recognized at all - see
+    describe_duration()'s "not parsed/verified by code" fallback for
+    the same honesty applied to a whole dedicated duration field.
+
+    Tries the same matchers `resolve_duration()` does below, in the
+    same broadest-signal-first order, returning as soon as one hits.
+    Doesn't just call `resolve_duration()` and reuse its output,
+    though: that returns a RESOLVED description ("evening (resolved:
+    ...)"), not the plain phrase on its own - callers here want
+    something short enough to still read naturally as `duration` on
+    its own (e.g. in the Timeperiod row), not the goal's whole
+    sentence repeated back with a resolution note stapled on.
+    """
+    if not text:
+        return None
+    day_match = _matched_day_segment(text)
+    if day_match is not None:
+        return day_match[0]
+    clock_match = CLOCK_12H_RE.search(text) or CLOCK_24H_RE.search(text)
+    if clock_match is not None:
+        return clock_match.group(0)
+    period_match = _matched_period_phrase(text)
+    if period_match is not None:
+        return period_match[0]
+    month_match = _matched_month_name(text)
+    if month_match is not None:
+        return f"in {month_match[0]}"
+    weekday_match = _matched_weekday_name(text)
+    if weekday_match is not None:
+        name, _, prefix = weekday_match
+        return f"{prefix} {name}" if prefix else name
+    deadline_match = _matched_deadline_phrase(text)
+    if deadline_match is not None:
+        return deadline_match
+    fraction_match = _matched_named_fraction(text)
+    if fraction_match is not None:
+        segment, unit, _ = fraction_match
+        return f"{segment} {unit}"
+    length_match = DURATION_LENGTH_RE.search(text)
+    if length_match is not None:
+        return length_match.group(0)
     return None
 
 
@@ -621,6 +687,54 @@ def duration_progress(frozen: dict | None) -> dict | None:
 TARGET_STEP_MINUTES = 15
 MIN_STEPS = 3
 MAX_STEPS = 6
+
+
+# Which PLAN_KEYS horizon is the broadest one worth filling in, given
+# a goal's actual resolved length - a goal given "3 months" has no
+# honest one_year answer, only up through one_month. Checked broadest
+# to narrowest, first threshold cleared wins. Deliberately coarse
+# buckets (a "month" close enough to 30 days, not read from
+# backend.timesegments.AVERAGE_DAYS_PER_MONTH) rather than a precise
+# formula - same convention-over-precision trade WEEKS_PER_MONTH=4
+# already makes elsewhere in this module; the actual question here
+# ("is this goal roughly year-scale, month-scale, ...") doesn't need
+# more precision than that. Added 2026-08-23, replacing two earlier,
+# worse answers tried the same night: the model guessing relevance
+# itself (inconsistent - see docs/12-decisions.md) and always filling
+# every horizon regardless of scope (concrete, realistic-sounding but
+# fabricated content for horizons broader than what was actually asked
+# for - a real example found via use: a "3 months" goal getting a full
+# one_year answer). Code decides the boundary; the model is just told
+# where it is, nothing left to its own judgment.
+_HORIZON_LENGTH_THRESHOLDS = (
+    ("one_year", 300),
+    ("one_month", 25),
+    ("this_week", 5),
+    ("today", 1),
+    ("this_hour", 1 / 24),
+    ("this_minute", 0),
+)
+
+
+def broadest_relevant_horizon(duration: str | None) -> str:
+    """
+    The PLAN_KEYS name of the broadest horizon actually worth filling
+    in for `duration` - see _HORIZON_LENGTH_THRESHOLDS above.
+    "right_now" (the narrowest, always-filled one - see
+    docs/07-features.md's "right_now is a trigger, not a time
+    variable") if `duration` doesn't resolve to a real span at all -
+    nothing grounded to measure, same honesty as every other
+    "not parsed/verified by code" case in this module.
+    """
+    span = resolve_span(duration)
+    if span is None:
+        return "right_now"
+    start, end = span
+    total_days = (end - start).total_seconds() / 86400
+    for horizon, min_days in _HORIZON_LENGTH_THRESHOLDS:
+        if total_days >= min_days:
+            return horizon
+    return "right_now"  # pragma: no cover - defensive; the 0-day threshold above already catches everything
 
 
 def step_count(duration: str | None) -> int | None:

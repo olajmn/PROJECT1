@@ -4,7 +4,19 @@
    a sibling of whatever other `.col`s the including page's `.layout`
    already has - see style.css - so Active and Completed render as
    their own columns instead of stacked under one another. Expects
-   `board` and `horizons` in context. #}
+   `board` and `horizons` in context.
+
+   `show_completed` (optional, defaults true) - index.html sets this
+   false before including this template, so Completed goals only live
+   on their own at /board (board.html, which doesn't set it, so it
+   keeps showing both) - not duplicated alongside Active on the main
+   working page too. Found via real use, 2026-08-22: with both
+   sections on every page, the front page kept growing with goals
+   already finished, competing with the ones still active. Completed
+   goals stay visible elsewhere regardless (the Log at the bottom of
+   index.html, via _history_list.html) - this only removes the
+   second, redundant Completed column, not visibility of completed
+   goals altogether. #}
 <div class="col">
   <h2 class="board-heading">Active ({{ board.active | length }})</h2>
   {% if not board.active %}
@@ -16,6 +28,7 @@
   {% endif %}
 </div>
 
+{% if show_completed | default(true) %}
 <div class="col">
   <h2 class="board-heading">Completed ({{ board.completed | length }})</h2>
   {% if not board.completed %}
@@ -26,6 +39,7 @@
     {% endfor %}
   {% endif %}
 </div>
+{% endif %}
 
 {# Plain numeric countdown for every Timeperiod bar on the page (see
    _active_goal.html) - not fancy, just H:MM:SS ticking down to

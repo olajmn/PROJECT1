@@ -16,9 +16,15 @@ from flask import Flask, redirect, render_template, request, url_for
 
 from backend.goal import get_board, get_history_for_goal, get_latest_for_goal
 from backend.outcome_classifier import classify_outcome
-from backend.plan import HORIZON_LABELS, PLAN_KEYS, generate_plan, replan
+from backend.plan import HORIZON_LABELS, PLAN_KEYS, generate_plan, join_plan_prose, replan
 from backend.storage import load_history, save_plan
-from backend.timeperiod import describe_duration, duration_progress, freeze_duration, step_plan
+from backend.timeperiod import (
+    describe_duration,
+    duration_progress,
+    extract_duration_phrase,
+    freeze_duration,
+    step_plan,
+)
 
 app = Flask(__name__)
 # Makes describe_duration() callable directly from templates, e.g.
@@ -41,6 +47,10 @@ app.jinja_env.globals["step_plan"] = step_plan
 # conversation (see get_history_for_goal's docstring) without every
 # route that renders it having to fetch and pass that separately.
 app.jinja_env.globals["get_history_for_goal"] = get_history_for_goal
+# Same reasoning - joins Plan's filled-horizon sentences into one
+# flowing paragraph (see _active_goal.html's Plan section, 2026-08-23)
+# rather than a bare space-join done in the template itself.
+app.jinja_env.globals["join_plan_prose"] = join_plan_prose
 
 # The broader horizons shown alongside "right_now", on both the index
 # page and the history page, in order, excluding "right_now" itself
@@ -75,39 +85,64 @@ def new_goal():
     """
     Handle the "set a goal" form: generate a fresh plan and save it.
 
+    One text field now (2026-08-23; used to be two - goal and duration
+    typed separately) - `extract_duration_phrase()`
+    (backend/timeperiod.py) searches whatever was typed for a
+    recognized time phrase anywhere inside it (e.g. "clean the
+    apartment this weekend"), the same matchers a dedicated duration
+    field already used, just applied to the whole sentence instead of
+    a field reserved for only that. If NOTHING recognized turns up at
+    all, that's treated as "no timeframe given" DETERMINISTICALLY,
+    before even calling the model - a fixed clarifying-question round
+    is saved asking for one, same "code decides, model is just told"
+    reasoning as the horizon-scope fix (see plan.py's
+    _horizon_scope_instruction()) rather than relying on the model to
+    reliably notice this itself (see docs/12-decisions.md, 2026-08-23,
+    for why the model isn't trusted with judgment calls like this one
+    when code can decide them outright).
+
     The form lets the user pick an existing active goal to continue
     (via `continue_goal_id`) instead of typing its text again - typing
-    is how goals used to fragment (see backend/goal.py's get_board()). When
-    continuing, the existing goal's own text is reused as-is and the
-    goal_id is carried forward, so this record joins that goal's chain
-    instead of starting a new one. A genuinely new goal (no selection)
-    still requires typed `goal` text, and mints its own goal_id via
-    save_plan().
+    is how goals used to fragment (see backend/goal.py's get_board()).
+    When continuing, the existing goal's own text is reused as-is and
+    the goal_id is carried forward, so this record joins that goal's
+    chain instead of starting a new one; whatever's typed in the (now
+    single, always-enabled) text field in that case is read as a NEW
+    duration only, not new goal text - see index.html. Nothing typed
+    means "keep going with whatever timeframe was already running" -
+    the existing goal's own last-known duration carries forward
+    unchanged, same as a plain check-in via /feedback would, not
+    silently dropped just because the field was left empty.
+
+    A genuinely new goal (no selection) still requires typed text, and
+    mints its own goal_id via save_plan().
 
     Both paths compute a FRESH `frozen_duration` (see
-    backend/timeperiod.py's freeze_duration()) - a new goal, or an
-    explicit "continue" with whatever duration was typed this time
-    (possibly a different one than before), is a genuinely new
-    planning decision, unlike checking in via /feedback below, which
-    keeps whatever timeframe was already running. EXCEPT when
+    backend/timeperiod.py's freeze_duration()) only when there's an
+    actual new duration decision to freeze (a new goal, or an explicit
+    "continue" with a NEW duration typed) - an explicit "continue" with
+    nothing typed reuses the existing goal's own frozen_duration
+    unchanged, same reasoning /feedback's check-in path already
+    follows: continuing without saying otherwise isn't a new planning
+    decision, so it shouldn't restart the countdown. EXCEPT when
     `generate_plan()` comes back with `clarification` set instead of a
     real plan (see that function's docstring) - the goal as typed was
-    too vague (a bare noun/verb, e.g. "read") to plan at all. That
-    round is saved too (as a new active board entry, or a new round on
-    an existing one) so the question shows up in the goal's own
-    conversation thread and the user can answer it right there via the
-    normal feedback box - see /feedback below, which is what actually
-    resolves a pending clarification into a real plan. But its
-    `frozen_duration` is left None rather than frozen now: nothing has
-    actually started yet while a question is still pending, so there's
-    no honest countdown to draw until /feedback resolves it into a real
-    plan and freezes it then. Redirects straight to the card either way
-    (`#goal-{id}`, same anchor /feedback uses) so the question is
-    immediately visible, not buried below the fold.
+    too vague in CONTENT (a bare noun/verb, e.g. "read") to plan at
+    all, a different case from missing TIME above. That round is saved
+    too (as a new active board entry, or a new round on an existing
+    one) so the question shows up in the goal's own conversation thread
+    and the user can answer it right there via the normal feedback box
+    - see /feedback below, which is what actually resolves a pending
+    clarification into a real plan. But its `frozen_duration` is left
+    None rather than frozen now: nothing has actually started yet
+    while a question is still pending, so there's no honest countdown
+    to draw until /feedback resolves it into a real plan and freezes it
+    then. Redirects straight to the card either way (`#goal-{id}`, same
+    anchor /feedback uses) so the question is immediately visible, not
+    buried below the fold.
     """
     continue_goal_id = request.form.get("continue_goal_id", "").strip()
-    duration = request.form.get("duration", "").strip() or None
-    frozen = freeze_duration(duration)
+    typed_text = request.form.get("goal", "").strip()
 
     if continue_goal_id:
         existing = next(
@@ -118,6 +153,9 @@ def new_goal():
             # Stale selection (e.g. the goal was completed in another tab
             # since this page loaded) - nothing sensible to continue.
             return redirect(url_for("index"))
+        new_duration = extract_duration_phrase(typed_text) if typed_text else None
+        duration = new_duration or existing.get("duration")
+        frozen = freeze_duration(duration) if new_duration else existing.get("frozen_duration")
         plan = generate_plan(existing["goal"], duration)
         record = save_plan(
             existing["goal"], plan, duration=duration, goal_id=existing["goal_id"],
@@ -125,12 +163,24 @@ def new_goal():
         )
         return redirect(url_for("index") + f"#goal-{record['goal_id']}")
 
-    goal = request.form.get("goal", "").strip()
-    if goal:
-        plan = generate_plan(goal, duration)
+    if typed_text:
+        duration = extract_duration_phrase(typed_text)
+        if duration is None:
+            # Nothing recognized as a timeframe anywhere in what was
+            # typed - ask, deterministically, without spending a model
+            # call to find that out. Every other horizon stays JSON
+            # null (nothing planned yet), matching the shape a
+            # content-vagueness clarification from generate_plan()
+            # already has (see that function's docstring).
+            clarification_plan = {key: None for key in PLAN_KEYS}
+            clarification_plan["clarification"] = "When do you want to do this, or how long should it take?"
+            clarification_plan["steps"] = None
+            record = save_plan(typed_text, clarification_plan, duration=None, frozen_duration=None)
+            return redirect(url_for("index") + f"#goal-{record['goal_id']}")
+        plan = generate_plan(typed_text, duration)
         record = save_plan(
-            goal, plan, duration=duration,
-            frozen_duration=None if plan.get("clarification") else frozen,
+            typed_text, plan, duration=duration,
+            frozen_duration=None if plan.get("clarification") else freeze_duration(duration),
         )
         return redirect(url_for("index") + f"#goal-{record['goal_id']}")
     return redirect(url_for("index"))

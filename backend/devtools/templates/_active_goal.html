@@ -37,29 +37,42 @@
     <strong>{{ record.goal }}</strong>
   </div>
 
+  {# Declared once, up here, so both Plan (content) and Timeperiod
+     (structure) below can read the same pass over `horizons` - split
+     2026-08-23 (previously one loop building both a boolean AND the
+     per-line display together): Plan wants the horizon TEXT woven into
+     one paragraph, Timeperiod wants the horizon LABELS that text came
+     from - two different projections of the same underlying `record.plan`
+     data, not two different sources of truth. `horizon_texts`/
+     `filled_horizon_labels` built with .append() (mutates the list
+     in place) rather than {% set %} inside the loop, which wouldn't
+     leak out of the loop's own scope in Jinja. #}
+  {% set horizon_texts = [] %}
+  {% set filled_horizon_labels = [] %}
+  {% for key, label in horizons %}
+    {% if record.plan[key] %}
+      {% set _ = horizon_texts.append(record.plan[key]) %}
+      {% set _ = filled_horizon_labels.append(label) %}
+    {% endif %}
+  {% endfor %}
+
   <div class="model-row model-plan-heading">
     <span class="model-label">Plan</span>
-    {# Plan's own content: the broader horizons (this_week/one_month/
-       one_year), whichever the model actually filled in - excludes
-       right_now, which gets shown separately as Task below. Missing
-       until now: restructuring this card around the Goal/Plan/
-       Timeperiod/Task/Conversation model kept Task visible but
-       silently dropped these, leaving "Plan" as a bare heading with no
-       value of its own. `horizons` is passed in from app.py's index()/
-       board() routes - see _board.html. #}
-    {% set any_horizon_filled = namespace(value=false) %}
-    {% for key, label in horizons %}
-      {% if record.plan[key] %}
-        {% set any_horizon_filled.value = true %}
-        <div><span class="yaml-key">{{ label }}:</span> {{ record.plan[key] }}</div>
-      {% endif %}
-    {% endfor %}
-    {% if not any_horizon_filled.value %}
-      {% if record.plan.get('clarification') %}
-        <div class="yaml-comment">(nothing to plan yet - the agent needs an answer first, see below)</div>
-      {% else %}
-        <div class="yaml-comment">(no broader plan for this goal - short enough that "right now" below is the whole plan)</div>
-      {% endif %}
+    {# Plan's own content: every filled horizon's text (this_week/
+       one_month/one_year/etc - excludes right_now, shown separately as
+       Task below), woven into one flowing paragraph rather than a
+       per-horizon labeled list - the labels themselves moved to
+       Timeperiod below (2026-08-23), since which time window each
+       sentence belongs to is a TIME fact, not a content one; Plan's
+       job is just "what will happen", read as one continuous thing.
+       `horizons` is passed in from app.py's index()/board() routes -
+       see _board.html. #}
+    {% if horizon_texts %}
+      <p class="plan-prose">{{ join_plan_prose(horizon_texts) }}</p>
+    {% elif record.plan.get('clarification') %}
+      <div class="yaml-comment">(nothing to plan yet - the agent needs an answer first, see below)</div>
+    {% else %}
+      <div class="yaml-comment">(no broader plan for this goal - short enough that "right now" below is the whole plan)</div>
     {% endif %}
   </div>
 
@@ -72,42 +85,57 @@
        this can't live inside that block. record.get() is None-safe for
        records saved before frozen_duration existed. #}
     {% set frozen = record.get('frozen_duration') %}
-    {% if record.duration %}
+    {# Renders on duration OR filled horizons (not just duration, like
+       before 2026-08-23) - a goal can have horizons filled with no
+       duration ever given (see backend/plan.py's generate_plan(): all
+       seven horizons fill in regardless of scope), and the horizon
+       scale below is worth showing even then. #}
+    {% if record.duration or filled_horizon_labels %}
       <div class="model-row">
         <span class="model-label">Timeperiod</span>
-        {# The frozen description text if there is one (see
-           backend/timeperiod.py's freeze_duration()) - computed once,
-           at creation/replan time, so it always agrees with the bar
-           below (both read the same frozen numbers). Falls back to a
-           live describe_duration() call only for a record saved
-           before frozen_duration existed, or a duration that never
-           resolved to a real span in the first place (e.g. "before
-           bed") - describe_duration() is still the right thing to
-           show for those, same as always. #}
-        <span>{{ record.duration }} <span class="yaml-comment">&mdash; {{ frozen.text if frozen else describe_duration(record.duration) }}</span></span>
-        {# Start/now/end bar - only when duration_progress() actually
-           has a frozen start AND end to read (see its own docstring);
-           a deadline or fully open duration has nothing honest to
-           draw here, same as describe_duration() falling back to
-           plain text for those. #}
-        {% set progress = duration_progress(frozen) %}
-        {% if progress %}
-          <div class="duration-bar">
-            <div class="duration-bar-track"></div>
-            <div class="duration-bar-marker status-{{ progress.status }}" style="left: {{ progress.percent }}%">
-              <span class="duration-bar-marker-tick">&#9650;</span>
-              <span class="duration-bar-marker-label">n&aring;</span>
+        {% if record.duration %}
+          {# The frozen description text if there is one (see
+             backend/timeperiod.py's freeze_duration()) - computed once,
+             at creation/replan time, so it always agrees with the bar
+             below (both read the same frozen numbers). Falls back to a
+             live describe_duration() call only for a record saved
+             before frozen_duration existed, or a duration that never
+             resolved to a real span in the first place (e.g. "before
+             bed") - describe_duration() is still the right thing to
+             show for those, same as always. #}
+          <span>{{ record.duration }} <span class="yaml-comment">&mdash; {{ frozen.text if frozen else describe_duration(record.duration) }}</span></span>
+          {# Start/now/end bar - only when duration_progress() actually
+             has a frozen start AND end to read (see its own docstring);
+             a deadline or fully open duration has nothing honest to
+             draw here, same as describe_duration() falling back to
+             plain text for those. #}
+          {% set progress = duration_progress(frozen) %}
+          {% if progress %}
+            <div class="duration-bar">
+              <div class="duration-bar-track"></div>
+              <div class="duration-bar-marker status-{{ progress.status }}" style="left: {{ progress.percent }}%">
+                <span class="duration-bar-marker-tick">&#9650;</span>
+                <span class="duration-bar-marker-label">now</span>
+              </div>
             </div>
-          </div>
-          <div class="duration-bar-labels">
-            <span>{{ progress.start_label }}</span>
-            {# Live countdown to `end` - ticks down client-side (see
-               _board.html's script), no server round-trip. The
-               server-rendered text here is just the pre-JS fallback
-               (e.g. if JS is disabled), computed once at page load. #}
-            <span class="duration-countdown" data-end="{{ progress.end_iso }}"></span>
-            <span>{{ progress.end_label }}</span>
-          </div>
+            <div class="duration-bar-labels">
+              <span>{{ progress.start_label }}</span>
+              {# Live countdown to `end` - ticks down client-side (see
+                 _board.html's script), no server round-trip. The
+                 server-rendered text here is just the pre-JS fallback
+                 (e.g. if JS is disabled), computed once at page load. #}
+              <span class="duration-countdown" data-end="{{ progress.end_iso }}"></span>
+              <span>{{ progress.end_label }}</span>
+            </div>
+          {% endif %}
+        {% endif %}
+        {% if filled_horizon_labels %}
+          {# The horizon SCALE - which levels this plan actually
+             reaches (broadest to narrowest, right_now excluded - see
+             Task below) - moved here from Plan 2026-08-23. Reuses
+             .yaml-comment (already the page's "quiet secondary text"
+             style) rather than a new class. #}
+          <div class="yaml-comment horizon-scale">{{ filled_horizon_labels | join(' · ') }}</div>
         {% endif %}
       </div>
     {% endif %}

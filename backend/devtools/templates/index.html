@@ -40,25 +40,39 @@
     {% if board.active %}
       {# Continuing an existing goal by picking it here (a stable
          goal_id) instead of retyping its text is what keeps it as one
-         board entry - see storage.get_board(). Selecting one disables
-         the free-text field below, since its text is reused as-is. #}
+         board entry - see storage.get_board(). The text field below
+         is NEVER disabled now (2026-08-23) - selecting an existing
+         goal repurposes it (its own placeholder swaps to say so) as an
+         OPTIONAL new-duration field instead of goal text, rather than
+         locking it - see app.py's /goal route for how that typed text
+         is read differently in each case. #}
       <label for="continue_goal_id">Continue an existing goal (optional)</label>
-      <select id="continue_goal_id" name="continue_goal_id" onchange="document.getElementById('goal_text').disabled = this.value !== '';">
+      <select id="continue_goal_id" name="continue_goal_id" onchange="document.getElementById('goal_text').placeholder = this.value !== '' ? 'Optional: type a new timeframe to update it, e.g. 2 more weeks' : 'e.g. Learn backend development, this evening';">
         <option value="">&mdash; New goal &mdash;</option>
         {% for g in board.active %}
           <option value="{{ g.goal_id }}">{{ g.goal }}</option>
         {% endfor %}
       </select>
     {% endif %}
-    <input type="text" id="goal_text" name="goal" placeholder="e.g. Learn backend development">
-    <input type="text" name="duration" placeholder="When / how long? e.g. 30 minutes, this evening, before bed, sometime this week (optional)">
-    <button class="btn-goal" type="submit" id="generate-btn">Generate plan</button>
+    {# One field for goal text AND timing together (2026-08-23, used to
+       be two separate inputs) - backend/timeperiod.py's
+       extract_duration_phrase() searches whatever's typed for a
+       recognized time phrase anywhere inside it, same as a dedicated
+       duration field did, just applied to the whole sentence. See
+       app.py's /goal route docstring for what happens when nothing
+       time-shaped is found at all (a clarifying question, not a
+       silent guess). #}
+    <input type="text" id="goal_text" name="goal" placeholder="e.g. Learn backend development, this evening">
+    <button class="btn-goal" type="submit" id="generate-btn">Set goal</button>
   </form>
 </div>
 
 </div>
+{% set show_completed = false %}
 {% include "_board.html" %}
 </div>
+
+<p><a href="/board">Completed goals &rarr;</a></p>
 
 <h1 class="log-heading">Log</h1>
 {% include "_history_list.html" %}

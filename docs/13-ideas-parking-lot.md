@@ -63,6 +63,14 @@
     you've gotten off the couch") - freely editing one step in
     isolation can silently break the steps that assumed it. Explicitly
     parked, not solved, at the concept stage.
+  - Raised 2026-08-23: click into any individual step and generate
+    steps FOR that step - the same "break this into smaller pieces"
+    mechanism `_generate_steps()` already applies once to `right_now`,
+    applied recursively/on-demand to any step in the list, drilling
+    down as deep as needed. Same unsolved prerequisite problem as
+    above applies one level deeper too (sub-steps inherit whatever
+    their parent step assumed) - not a separate problem, the same one,
+    just recursive.
 - **Recognize a real, already-happened start time in what the user
   types** (e.g. "I started yesterday") and pass it to the model as
   context, distinct from `duration` (how far the plan should span

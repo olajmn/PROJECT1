@@ -28,7 +28,7 @@ from datetime import datetime
 import ollama
 
 from backend.storage import save_plan
-from backend.timeperiod import resolve_duration, step_count
+from backend.timeperiod import broadest_relevant_horizon, resolve_duration, step_count
 
 MODEL = "llama3.1:8b"
 
@@ -64,19 +64,24 @@ SYSTEM_PROMPT = (
     "to JSON null.\n\n"
     "Otherwise, set clarification to JSON null. The plan has seven "
     "horizons, from broadest to narrowest: one_year, one_month, "
-    "this_week, today, this_hour, this_minute, right_now. Fill in ALL "
-    "SEVEN with a concrete, realistic value, regardless of the goal's "
-    "own scope or duration - even a small, short goal gets a "
-    "one_year/one_month/this_week/today/this_hour/this_minute answer, "
-    "framed as how this goal connects to or fits within that larger "
-    "horizon (e.g. a habit it's part of, a pattern it continues, what "
-    "stays true a year on, what's realistic to finish today, what's "
-    "realistic within this one hour, what's realistic within this one "
-    "minute). Never use JSON null here.\n"
-    "- right_now is different from the six horizons above it: not a "
-    "time window description, but the actual trigger - the single most "
+    "this_week, today, this_hour, this_minute, right_now - but not "
+    "every goal's real timeframe reaches all the way up to one_year. "
+    "You will be told exactly which of these horizons to FILL IN and "
+    "which to leave as JSON null, based on the goal's actual given "
+    "timeframe - respect that list exactly. Do NOT invent a value for "
+    "any horizon you were told to leave null, even a plausible-sounding "
+    "one - a goal given '3 months' has no honest one_year answer, "
+    "inventing one anyway is fabrication, not planning. For every "
+    "horizon you WERE told to fill in, give a concrete, realistic "
+    "value, framed as how this goal connects to or fits within that "
+    "time window (e.g. a habit it's part of, a pattern it continues, "
+    "what stays true a year on, what's realistic to finish today, "
+    "within this one hour, within this one minute).\n"
+    "- right_now is different from the horizons above it: not a time "
+    "window description, but the actual trigger - the single most "
     "immediate, concrete action the user can take this very moment, "
-    "small enough to start in the next 5 minutes.\n\n"
+    "small enough to start in the next 5 minutes. Always filled in, "
+    "never one of the ones left null.\n\n"
     "Respond with ONLY a JSON object (no other text) with exactly these "
     "eight keys - clarification, one_year, one_month, this_week, today, "
     "this_hour, this_minute, right_now - each either a string value or "
@@ -108,9 +113,11 @@ REPLAN_SYSTEM_PROMPT = (
     "Ground everything in the real date/time you were given - never "
     "invent specifics (names, numbers, progress) the user didn't tell "
     "you.\n\n"
-    "All seven horizons (one_year/one_month/this_week/today/this_hour/"
-    "this_minute/right_now) must have a concrete value, same as the "
-    "previous plan - never JSON null. Update whichever horizons the "
+    "You will be told exactly which horizons should have a concrete "
+    "value and which should be JSON null, same as the previous plan - "
+    "this doesn't change on a replan just because the goal's scope "
+    "grew in conversation. Never invent a value for a horizon named as "
+    "null. Update whichever of the horizons you ARE filling in the "
     "feedback affects; carry the others forward unchanged if the "
     "feedback doesn't touch them.\n\n"
     "Respond with ONLY a JSON object (no other text) with exactly the "
@@ -227,6 +234,26 @@ def _now_str() -> str:
     return datetime.now().strftime("%A, %Y-%m-%d %H:%M")
 
 
+def _horizon_scope_instruction(duration: str | None) -> str:
+    """
+    The exact "fill these horizons in, leave these as null" line to
+    append to a prompt's user_content - shared by generate_plan() and
+    replan() so both ever compute the boundary the same one way (see
+    backend/timeperiod.py's broadest_relevant_horizon()). Always names
+    right_now as one to fill (it's never the broadest relevant horizon
+    itself, but the loop below still includes it since it's always the
+    last/narrowest PLAN_KEYS entry).
+    """
+    broadest = broadest_relevant_horizon(duration)
+    start = PLAN_KEYS.index(broadest)
+    fill_keys = PLAN_KEYS[start:]
+    null_keys = PLAN_KEYS[:start]
+    instruction = f"\n\nFill in these horizons: {', '.join(fill_keys)}."
+    if null_keys:
+        instruction += f" Leave these horizons as JSON null: {', '.join(null_keys)}."
+    return instruction
+
+
 def generate_plan(goal: str, duration: str | None = None) -> dict:
     """
     Takes a goal (a text string) and asks the local model to produce a
@@ -257,6 +284,7 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
     user_content = f"The current date and time is: {_now_str()}\n\nMy goal is: {goal}"
     if duration:
         user_content += f"\n\nI want this plan to span roughly: {resolve_duration(duration)}"
+    user_content += _horizon_scope_instruction(duration)
     plan = _ask_model(SYSTEM_PROMPT, user_content, extra_keys=("clarification",))
 
     plan["steps"] = None
@@ -267,6 +295,26 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
         if count is not None:
             plan["steps"] = _generate_steps(goal, plan.get("right_now") or goal, count)
     return plan
+
+
+def join_plan_prose(texts: list[str]) -> str:
+    """
+    Join a plan's filled-horizon sentences into one flowing paragraph
+    (see devtools/templates/_active_goal.html's Plan section,
+    2026-08-23 - horizons used to render as separate labeled lines,
+    now as one continuous piece of text). Strips each piece's own
+    trailing punctuation/whitespace before re-joining with ". " and a
+    final period, rather than a bare space - the model doesn't
+    consistently end a horizon's text with a period itself, so a plain
+    space-join produced run-on-looking text with no visible sentence
+    boundary (found via a real rendered example, "...long-term Develop
+    a meal planning system..."). Empty string for an empty list -
+    nothing to join, same as the template's own empty check.
+    """
+    cleaned = [text.strip().rstrip(".") for text in texts if text]
+    if not cleaned:
+        return ""
+    return ". ".join(cleaned) + "."
 
 
 def replan(goal: str, history: list[dict], feedback: str, duration: str | None = None) -> dict:
@@ -309,6 +357,7 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     )
     if duration:
         user_content += f"\n\nThis plan should still span roughly: {resolve_duration(duration)}"
+    user_content += _horizon_scope_instruction(duration)
     return _ask_model(REPLAN_SYSTEM_PROMPT, user_content)
 
 

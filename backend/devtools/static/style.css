@@ -18,9 +18,19 @@ body {
   gap: 32px;
   align-items: flex-start;
 }
+/* Each top-level section (Set a goal / Active / Completed) as its own
+   visibly bounded panel - previously just a heading and loose cards
+   floating in a flex column with no outer boundary tying them
+   together as one section, so the page read as continuous rather than
+   clearly divided zones. Same border color as .card - a section is a
+   bigger version of the same "this is one bounded thing" idea, not a
+   different visual language. Found via a real annotated screenshot,
+   2026-08-23. */
 .col {
   flex: 1;
   min-width: 0; /* let long unbroken text wrap instead of overflowing the column */
+  border: 1px solid #ddd;
+  padding: 20px;
 }
 @media (max-width: 900px) {
   .layout { flex-direction: column; }
@@ -142,6 +152,21 @@ h1 {
 .model-plan-heading {
   margin-bottom: 4px;
 }
+/* Plan's content as one flowing paragraph (2026-08-23, see
+   _active_goal.html) rather than a list of short labeled lines -
+   readable line-height matters more here than it did for the old
+   one-sentence-per-line layout. */
+.plan-prose {
+  margin: 0;
+  line-height: 1.6;
+}
+/* The horizon scale under Timeperiod (which levels this plan reaches -
+   see _active_goal.html) - already .yaml-comment's muted color, this
+   just adds a little breathing room above it when it follows the
+   duration bar. */
+.horizon-scale {
+  margin-top: 6px;
+}
 /* Timeperiod/Task/Conversation used to be indented under Plan as its
    children - now left-aligned flush with Goal/Plan instead, since each
    is (or is becoming) its own file (backend/timeperiod.py,
@@ -152,7 +177,7 @@ h1 {
 }
 
 /* Start/now/end bar for Timeperiod - see backend/timeperiod.py's
-   duration_progress(). A plain line with a "nå" marker at whatever
+   duration_progress(). A plain line with a "now" marker at whatever
    percent `now` sits between start and end, not a filled "loading bar"
    - matches this page's deliberately unstyled, data-honest look
    (docs/12-decisions.md, 2026-08-19): the marker's position is the
