@@ -81,7 +81,7 @@
 (function () {
   var DAY_MS = 86400000;
   // Convention over precision - same "close enough" bucket sizes
-  // backend/timeperiod.py's own _HORIZON_LENGTH_THRESHOLDS already
+  // backend/agent/distributed/timeperiod/frozen.py's own _HORIZON_LENGTH_THRESHOLDS already
   // uses for the same kind of decision (which bucket does this span
   // fall into), not a real calendar-aware month/year length. Fine
   // here for the same reason it's fine there: this is about which

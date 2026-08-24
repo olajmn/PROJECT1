@@ -29,7 +29,7 @@
       <span class="chat-label">Agent</span>
       {% if msg.plan.get('clarification') %}
         {# The goal as typed (or as last answered) was too vague to
-           plan - see backend/plan.py's generate_plan() docstring.
+           plan - see backend/agent/specialized/plan.py's generate_plan() docstring.
            Shown ahead of right_now: a pending question means right_now
            is None anyway (both null together, never both set - see
            that same docstring), so this can't accidentally hide a
@@ -63,7 +63,7 @@
      not a form asking something with one correct answer. No more
      Yes/Still working on it/No/Goal complete buttons either: what you
      write is classified deterministically (recognized phrases, no LLM
-     - see backend/outcome_classifier.py) into
+     - see backend/agent/specialized/outcome_classifier.py) into
      done/not_done/in_progress/goal_done. Anything not confidently
      recognized checks in without changing the plan - never a silent
      guess toward a riskier outcome. See docs/12-decisions.md,

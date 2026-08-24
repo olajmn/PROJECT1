@@ -15,7 +15,7 @@
     <span class="model-label">Timeperiod</span>
     {% if record.duration %}
       {# The frozen description text if there is one (see
-         backend/timeperiod.py's freeze_duration()) - computed once,
+         backend/agent/distributed/timeperiod/frozen.py's freeze_duration()) - computed once,
          at creation/replan time, so it always agrees with the bar
          below (both read the same frozen numbers). Falls back to a
          live describe_duration() call only for a record saved before
@@ -86,7 +86,7 @@
          than Plan's join_plan_prose() - Plan wants everything woven
          into one continuous read, this wants each level kept distinct
          and labeled. NOW/right_now added at the end, same text Task
-         shows as the ORIGINAL first action (see backend/plan.py's
+         shows as the ORIGINAL first action (see backend/agent/specialized/plan.py's
          _generate_steps() docstring: step 1 always equals right_now,
          unchanged) - not step-aware like Task's own current_step
          pointer, since this is an overview of the plan's original

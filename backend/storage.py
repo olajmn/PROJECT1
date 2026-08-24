@@ -14,7 +14,7 @@ converts those into the current dict shape (see plan.PLAN_KEYS) so every
 caller - today.py, the templates, plan.py - can always assume `plan` is
 a dict with those keys, without special-casing it themselves.
 
-Goal identity/grouping (get_board() and friends) lives in backend/goal.py,
+Goal identity/grouping (get_board() and friends) lives in backend/agent/specialized/goal.py,
 not here - see that module's docstring for why goal_id minting/backfill
 stays in this file regardless.
 
@@ -174,7 +174,7 @@ def save_plan(
     docs/11-experiments.md, 2026-08-19 entry, for why this exists.
 
     `goal_id` is the goal's real identity, separate from its display
-    text (see backend/goal.py's get_board()). Pass the existing goal_id when this record
+    text (see backend/agent/specialized/goal.py's get_board()). Pass the existing goal_id when this record
     continues a goal already in history (e.g. a replan after feedback,
     or explicitly picking "continue an existing goal"); leave it None
     for a genuinely new goal, and one is minted here. Callers should
@@ -188,7 +188,7 @@ def save_plan(
     yet.
 
     `frozen_duration` is `duration` resolved to a real start/end/
-    description ONCE (see backend/timeperiod.py's freeze_duration()),
+    description ONCE (see backend/agent/distributed/timeperiod/frozen.py's freeze_duration()),
     stored as-is rather than re-derived from "now" on every later page
     render - fixes a real bug, 2026-08-21: a forward-looking duration
     like "within the next 1 hour" was silently resetting its countdown
@@ -199,14 +199,14 @@ def save_plan(
     made (a new goal, or "continue an existing goal" with a new
     duration), and otherwise pass the PREVIOUS record's frozen_duration
     through unchanged (a replan after feedback keeps the same
-    timeframe, it doesn't restart it) - see backend/devtools/app.py's
+    timeframe, it doesn't restart it) - see devtools/app.py's
     /goal and /feedback routes.
 
-    `current_step` is the index into `plan.steps` (see backend/plan.py's
+    `current_step` is the index into `plan.steps` (see backend/agent/specialized/plan.py's
     `_generate_steps()`) that "Task (right now)" actually points at -
     "right now" isn't its own independent thing once a goal has steps,
     it's just `plan.steps[current_step]` (see docs/13-ideas-parking-lot.md's
-    "Plan as an ordered step list" entry, and backend/devtools/app.py's
+    "Plan as an ordered step list" entry, and devtools/app.py's
     /step route, which is the only thing that ever advances it). 0 (the
     first step) by default - matches `plan.steps[0]` always equaling
     `plan.right_now` (see _generate_steps()), so a goal with no steps at
@@ -228,7 +228,7 @@ def save_plan(
         "current_step": current_step,
         "completed": completed,
         # Local time, naive (no tzinfo) - matches every other timestamp
-        # in this project (backend/timeperiod.py's whole resolution/
+        # in this project (backend/agent/distributed/timeperiod/'s whole resolution/
         # bar/countdown system uses datetime.now(), local). Was UTC
         # since the very first commit for no documented reason (no
         # multi-timezone need in a single-machine personal tool) -

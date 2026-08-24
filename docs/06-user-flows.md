@@ -40,7 +40,7 @@ actually closes the circle.
 
 ## Status in the code
 
-- [x] "States a goal → agent creates a plan" — `backend/plan.py`, see [[09-mvp]]
+- [x] "States a goal → agent creates a plan" — `backend/agent/specialized/plan.py`, see [[09-mvp]]
 - [ ] Agent asks clarifying questions before planning
 - [ ] Plan storage
 - [ ] Today's action

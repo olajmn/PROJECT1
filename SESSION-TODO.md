@@ -26,28 +26,15 @@ version of this file (now cleared, all items done) for the pattern.
       class of instruction-following unreliability seen elsewhere
       tonight with this local 8B model.
 
-- [ ] **Merge the goal + duration fields into one text box** - user
-      wants "Set a goal" to be a single free-text field (button
-      relabeled "Set goal"), typing goal and timing together
-      ("clean the apartment this weekend") instead of two separate
-      inputs - and if no timeframe is mentioned in what's typed, the
-      agent should ask for one (deterministically, before even calling
-      the model - same "code decides, model is just told" philosophy
-      as the horizon-scope fix above). Investigated but NOT built
-      tonight - real finding along the way: `_matched_day_segment()`
-      and `_matched_period_phrase()` in `backend/timeperiod.py`
-      currently use a naive substring check (`if word in lowered`),
-      not word-boundary matching. That's safe today only because
-      duration text lives in its own short, dedicated field - "this
-      week" would falsely match inside "this weekend", "night" inside
-      "midnight", the moment these matchers run against a full natural
-      sentence instead. Same bug class as the already-fixed "may"/May
-      month-name collision (docs/12-decisions.md) - needs the same
-      word-boundary treatment BEFORE this feature is safe to build.
-      Also needs a design answer for the "continue an existing goal"
-      dropdown flow, which currently uses the separate duration field
-      to let you set a NEW timeframe when continuing - no clear single-
-      field equivalent decided yet. Raised 2026-08-23.
+- [x] **Merge the goal + duration fields into one text box** - done
+      2026-08-23, commit 5f2cf0a. `extract_duration_phrase()`
+      (backend/timeperiod.py) searches the whole sentence for a
+      recognized time phrase; the word-boundary prerequisite fix
+      landed in the same commit. "Continue an existing goal" now
+      repurposes the same field as an optional new-duration input
+      (superseded again 2026-08-23 night by the conversational
+      duration-change flow, commit 4396847 - the dropdown/"Extend
+      timeframe" form is gone entirely).
 
 - [ ] **Vertical/hierarchical step list, not one flat list per goal** -
       user's concrete trigger: "improve my diet" over 3 months produces
@@ -94,14 +81,18 @@ version of this file (now cleared, all items done) for the pattern.
       language together rather than fix single colors in isolation.
       Raised 2026-08-23.
 
-- [ ] **Clean up test-artifact active goals from tonight's session** -
-      board currently has 16 active goals, several clearly test debris
-      from building/testing tonight's features rather than real goals:
-      `goal_id` 16/17 (duplicate "read a book"), 22/23/24 (duplicate
-      "make dinner", from testing the timeperiod bar), 25/26/27 (from
-      testing the clarifying-question flow - "read 20 pages...",
-      "become a better reader", "improve my writing"). Not touched yet
-      - user wants to review before marking complete/deleting.
+- [x] **Clean up test-artifact active goals from tonight's session** -
+      done 2026-08-24. Board had grown to 22 active goals by the time
+      this was tackled (more test debris accumulated after this note
+      was first written: Norwegian/rapid-fire test goals 18/19/20/21,
+      and dev-task goals 29/32/33 - "learn backend development"
+      duplicating the seed record, "make user_id" and "fix active
+      column" literally naming dev tasks rather than personal goals).
+      15 goal_ids marked `completed=True` via `save_plan()` (same
+      mechanism the "Goal complete" feedback path already uses, not a
+      raw JSON edit) - history is untouched, append-only, fully
+      reversible. Board is down to 7 real active goals: 11, 12, 13, 28,
+      30, 31, 34.
 
 ## Done, just noting for the record (this session, 2026-08-22)
 

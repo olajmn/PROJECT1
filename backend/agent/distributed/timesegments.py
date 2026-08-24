@@ -4,11 +4,11 @@ or interpret any of it. Split out of timeperiod.py (2026-08-21) purely
 for overview: everything the code currently knows how to recognize
 about "when" lives in this one file, scannable at a glance, without
 wading through the resolution logic that uses it (that logic - actual
-date/time arithmetic, matching, describing - stays in timeperiod.py,
-which imports these tables from here).
+date/time arithmetic, matching, describing - stays in
+backend/agent/distributed/timeperiod/, whose matchers.py imports these tables from here).
 
 Nothing here does anything by itself - these are just tables and
-patterns; see backend/timeperiod.py for what turns them into an actual
+patterns; see backend/agent/distributed/timeperiod/ for what turns them into an actual
 answer.
 """
 

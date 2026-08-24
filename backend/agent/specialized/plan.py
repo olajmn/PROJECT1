@@ -12,14 +12,14 @@ and the model pulled (ollama pull llama3.1:8b).
 Renamed from goal_to_plan.py (2026-08-21) to match the product model in
 docs/07-features.md ("Architecture framing: Program / Rooms /
 Sitemap") - this file is the "Plan" room. Timeperiod understanding
-(duration parsing/grounding) moved out to backend/timeperiod.py, its
-own room, in the same pass - see that module's docstring. PLAN_KEYS/
+(duration parsing/grounding) moved out to backend/agent/distributed/timeperiod/, its
+own room, in the same pass - see that package's docstring. PLAN_KEYS/
 HORIZON_LABELS moved in from storage.py the same day, for the same
 reason: they describe the Plan's shape, not anything about how it's
 persisted - storage.py never used them internally, only re-exported
 them, so this is a clean move with nothing left importing them back.
 
-Run from the PROJECT ROOT: .venv/bin/python -m backend.plan
+Run from the PROJECT ROOT: .venv/bin/python -m backend.agent.specialized.plan
 """
 
 import json
@@ -27,13 +27,13 @@ from datetime import datetime
 
 import ollama
 
+from backend.agent.distributed.timeperiod import broadest_relevant_horizon, resolve_duration, step_count
 from backend.storage import save_plan
-from backend.timeperiod import broadest_relevant_horizon, resolve_duration, step_count
 
 MODEL = "llama3.1:8b"
 
 # The plan schema, defined once. _ask_model() validates the LLM's
-# response has exactly these keys; the templates (via backend/devtools/
+# response has exactly these keys; the templates (via devtools/
 # app.py) iterate this same list to render every horizon in order.
 PLAN_KEYS = ("one_year", "one_month", "this_week", "today", "this_hour", "this_minute", "right_now")
 HORIZON_LABELS = {
@@ -129,7 +129,7 @@ REPLAN_SYSTEM_PROMPT = (
 
 # Separate, narrow prompt for _generate_steps() - deliberately NOT
 # folded into SYSTEM_PROMPT/one bigger call: the step count itself is
-# already decided deterministically (backend/timeperiod.py's
+# already decided deterministically (backend/agent/distributed/timeperiod/frozen.py's
 # step_count()), so the model's only job here is content, never count
 # or timing. Only used from generate_plan(), and only when `duration`
 # resolves to a real span - see that function. New goals only for now
@@ -168,7 +168,7 @@ def _generate_steps(goal: str, right_now: str, count: int) -> list[str]:
     literal same string removes the disagreement structurally, instead
     of trying to word a prompt carefully enough to avoid it.
 
-    `count` itself always comes from backend/timeperiod.py's
+    `count` itself always comes from backend/agent/distributed/timeperiod/frozen.py's
     step_count(), never from the model. Raises ValueError if the model
     didn't return exactly `count - 1` strings for the remainder, same
     "trust the shape or fail loudly" approach as _ask_model().
@@ -239,7 +239,7 @@ def _horizon_scope_instruction(duration: str | None) -> str:
     The exact "fill these horizons in, leave these as null" line to
     append to a prompt's user_content - shared by generate_plan() and
     replan() so both ever compute the boundary the same one way (see
-    backend/timeperiod.py's broadest_relevant_horizon()). Always names
+    backend/agent/distributed/timeperiod/frozen.py's broadest_relevant_horizon()). Always names
     right_now as one to fill (it's never the broadest relevant horizon
     itself, but the loop below still includes it since it's always the
     last/narrowest PLAN_KEYS entry).
@@ -274,7 +274,7 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
 
     `steps` (added 2026-08-21) is a list of short step descriptions
     only when `duration` actually resolves to a real span (see
-    backend/timeperiod.py's step_count()) - None otherwise (no
+    backend/agent/distributed/timeperiod/frozen.py's step_count()) - None otherwise (no
     duration given, or free text that isn't grounded in a real span, or
     a clarification question came back instead of a plan). There's
     nothing honest to break into steps without a real timeframe to

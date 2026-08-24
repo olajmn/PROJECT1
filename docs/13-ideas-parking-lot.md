@@ -26,7 +26,7 @@
   § Memory & Data Architecture
 - Let the free-text feedback note act as a real channel to the agent,
   not just status reporting: detect (deterministically, same approach
-  as `backend/outcome_classifier.py` - no LLM guessing on *what kind*
+  as `backend/agent/specialized/outcome_classifier.py` - no LLM guessing on *what kind*
   of message it is) when a note reads as a question/request rather
   than a done/not-done/in-progress/goal-complete report, and route it
   through `replan()` as labeled feedback (e.g. "Asked: ...") so the
@@ -82,7 +82,7 @@
   context passed to the model), not an extra `PLAN_KEYS` entry, since
   it answers "when did this actually begin" rather than "how does the
   plan look at this time window." Likely the same deterministic-phrase
-  approach as `backend/outcome_classifier.py` (no LLM guessing on
+  approach as `backend/agent/specialized/outcome_classifier.py` (no LLM guessing on
   *whether* a start time was named) if/when this gets built.
 - **Export/share a goal's plan as a document** - let the user send or
   print a goal's plan (and maybe its full conversation history) as an
@@ -90,5 +90,63 @@
   UI. Raised 2026-08-23, explicitly flagged by the user as "for later"
   while working on the horizon-scale diagram in
   `active/_timeperiod.html` - not scoped or designed at all yet
-  (format, what's included, whether it's a real feature or a devtools
-  convenience like `backend/devtools/view.py`'s static snapshot).
+  (format, what's included, whether it's a real feature or just a
+  personal debugging convenience - in the spirit of the static-snapshot
+  tool that used to live at `backend/devtools/view.py`, removed
+  2026-08-24 once it turned out to be unused, see `backend/README.md`).
+- **Fact-checking as a separate layer on top of the future Knowledge/
+  RAG room, plus a three-way split of knowledge types.** Discussed
+  2026-08-24 (from a ChatGPT summary the user brought in) - not a new
+  build, an addition to [[07-features]] § Knowledge once that room
+  gets built:
+  - RAG and fact-checking are different things. RAG (retrieval) finds
+    the stored chunks closest to a claim/question. Fact-checking is
+    one function *built on top of* that retrieved material - it hands
+    the claim and the sources to the model and asks for a verdict
+    (e.g. "supported" / "mixed evidence" / "not supported" / "unknown")
+    with the sources shown back to the user, instead of the model
+    answering from training alone as if it knows for sure.
+  - Pairs with keeping three kinds of knowledge distinct rather than
+    blended in a response: personal (the user's own notes, experience,
+    history, stated preferences), external (papers, documentation,
+    other verifiable sources), and system data (dates, goals, actions,
+    actual stored history - what the system already knows for
+    certain). Same shape as the principle already followed elsewhere
+    in the project for time understanding, goal identity, and step
+    counting: don't let the model guess or invent what deterministic
+    code or a real source can already establish.
+  - Suggested build order once any of this becomes real: Goal → Plan →
+    Feedback → History → Knowledge/RAG → Fact-checking. Fact-checking
+    is meant to land as one function using the Knowledge layer, not a
+    separate system built from scratch.
+- **Semantic understanding of time, not just numeric duration.**
+  Discussed 2026-08-24: the agent should understand what a duration
+  actually means in context, not just convert it (1 hour = 60
+  minutes). One hour of reading is a lot; one hour of training is
+  comparatively little. The same hour is also relative - long next to
+  15 minutes, short next to a full day. Consequence for planning: if
+  the user only has 45 minutes available, the agent shouldn't
+  automatically shrink whatever plan already exists - it may need to
+  choose a different activity or plan entirely, not a shorter version
+  of the current one. Overlaps with the "only shrink once" constraint
+  noted in the step-list drift fix above ([[12-decisions]]) and with
+  the existing `duration`/`PLAN_KEYS` machinery ([[07-features]] §
+  Time periods, `backend/agent/distributed/timeperiod/`). Directly what prompted the
+  "Faculties" framing in [[08-technical-architecture]], same day -
+  `backend/agent/distributed/timeperiod/` is that framing's first concrete example.
+  Expanded into its own draft doc the same day - see [[14-semantic-time]].
+- **The agent actually doing things, not just explaining how.**
+  Discussed 2026-08-24: distinguishes an agent that tells the user how
+  to do something from one that produces the finished result itself.
+  Concrete example raised: an app that generates Excel files, Word
+  documents, text notes, or recipes, and uploads them to Google Drive.
+  The specific file formats aren't the point - the point is going from
+  a stated intention to an actual completed artifact. Flagged as close
+  to the core definition of "agent" in this project (see
+  [[00-project-brief]] - "Does the system make its own decisions?").
+  This is the output/action counterpart to the already-parked
+  "Aggregation / world-data capability" idea above, which is about the
+  agent pulling information in. One of the candidate "faculties" named
+  (not settled) in [[08-technical-architecture]]'s "Faculties" section,
+  logged the same day - overlaps the ACTION node in that doc's
+  long-term pipeline diagram, relationship not resolved.

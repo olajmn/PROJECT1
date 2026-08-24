@@ -26,15 +26,15 @@ LLM can adjust the plan
 
 | Step | Status | File |
 |---|---|---|
-| Goal → Plan | ✅ Working | `backend/plan.py` (structured JSON: one_year/one_month/this_week/today/this_hour/this_minute/right_now) |
+| Goal → Plan | ✅ Working | `backend/agent/specialized/plan.py` (structured JSON: one_year/one_month/this_week/today/this_hour/this_minute/right_now) |
 | Plan is saved | ✅ Working | `backend/storage.py` (JSON history, `data/plans.json`) |
-| Today's task | ✅ Working | `backend/today.py` — shows just `right_now` from the latest plan |
-| User reports progress | ✅ Working | `backend/devtools/app.py` `/feedback` route (web form) |
-| LLM adjusts the plan | ✅ Working | `backend/plan.py` `replan()` |
+| Today's task | ✅ Working | `backend/agent/specialized/today.py` — shows just `right_now` from the latest plan |
+| User reports progress | ✅ Working | `devtools/app.py` `/feedback` route (web form) |
+| LLM adjusts the plan | ✅ Working | `backend/agent/specialized/plan.py` `replan()` |
 
 **Prototype 0.1's loop is closed end-to-end** (2026-08-18): goal → plan →
 right now → user feedback → replan → new right now, tested via
-`backend/devtools/app.py` (run: `.venv/bin/python -m backend.devtools.app`
+`devtools/app.py` (run: `.venv/bin/python -m devtools.app`
 from the project root). Next: real usage/testing (see Testing philosophy
 below), not more features.
 

@@ -61,8 +61,8 @@ exists in code):
 | Goals | `goal` + `goal_id` (`backend/storage.py`) |
 | Plans | the `plan` dict: `one_year` / `one_month` / `this_week` / `today` / `this_hour` / `this_minute` / `right_now` (widened to the full year-\>minute ladder 2026-08-22, was three rungs + `right_now` before) |
 | Tasks | not yet its own room - see "right_now is a trigger, not a time variable" below |
-| Time periods | `duration` + `resolve_duration()` (`backend/timeperiod.py`) |
-| Conversation | the You/Agent thread on each active goal (`_active_goal.html`) - can now also be the agent asking a clarifying question instead of stating a plan, when the goal as given is too vague (2026-08-22, see `backend/plan.py`'s `generate_plan()`) |
+| Time periods | `duration` + `resolve_duration()` (`backend/agent/distributed/timeperiod/resolve.py`) |
+| Conversation | the You/Agent thread on each active goal (`_active_goal.html`) - can now also be the agent asking a clarifying question instead of stating a plan, when the goal as given is too vague (2026-08-22, see `backend/agent/specialized/plan.py`'s `generate_plan()`) |
 | History | `get_history_for_goal()` / the `/history` log |
 | Knowledge | not built yet - see "Knowledge (RAG over user documents)" below |
 

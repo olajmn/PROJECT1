@@ -65,7 +65,7 @@ from pathlib import Path
 class ModuleInfo:
     """Everything extracted from one .py file's own source."""
 
-    dotted_path: str  # e.g. "backend.devtools.app"
+    dotted_path: str  # e.g. "devtools.app"
     file_path: Path
     display_name: str = ""  # e.g. "devtools/app.py" - for readable labels
     functions: list[str] = field(default_factory=list)
@@ -112,7 +112,7 @@ def _stdlib_names() -> set[str]:
 def parse_package(root: Path, package_name: str) -> dict[str, ModuleInfo]:
     """
     Walk every .py file under `root` and parse it into a ModuleInfo,
-    keyed by its dotted module path (e.g. "backend.devtools.app").
+    keyed by its dotted module path (e.g. "devtools.app").
     """
     modules: dict[str, ModuleInfo] = {}
     stdlib = _stdlib_names()

@@ -1,11 +1,11 @@
 """
 Recognized feedback-phrase DATA only - no logic, no functions that
 classify anything. Split out of outcome_classifier.py (2026-08-21),
-same reasoning as backend/timesegments.py vs backend/timeperiod.py:
+same reasoning as backend/agent/distributed/timesegments.py vs backend/agent/distributed/timeperiod/:
 the phrase lists (what's recognized) are meant to grow over time as
 real usage turns up new phrasings people actually type, and living in
 their own file keeps that growth from cluttering the matching logic
-that uses them (backend/outcome_classifier.py).
+that uses them (backend/agent/specialized/outcome_classifier.py).
 
 Nothing here does anything by itself - see outcome_classifier.py for
 what turns these into an actual done/not_done/in_progress/goal_done
@@ -96,7 +96,7 @@ RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
 # alongside done/not_done/in_progress/goal_done, it's a different kind
 # of thing entirely: a request to change the goal's TIMEFRAME, checked
 # by wants_duration_change() in outcome_classifier.py before outcome
-# classification even runs (see backend/devtools/app.py's /feedback
+# classification even runs (see devtools/app.py's /feedback
 # route). Replaces the old standalone "Extend timeframe" form - typing
 # the request in the normal conversation box is the only way to do this
 # now, so the phrases here need to cover how someone would actually
