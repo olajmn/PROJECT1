@@ -233,6 +233,23 @@ testing philosophy in [[09-mvp]].
 
 ## Faculties: a third axis, alongside Rooms and the pipeline (2026-08-24)
 
+> **Terminology update, later the same day:** this section originally
+> used two separate words - "Room" (one product concept, narrow) and
+> "Faculty" (a shared capability, broad) - as two different categories.
+> Simplified: **"Faculty" is now the one word for a module in this
+> project**, full stop - "module" is the plain, standard programming
+> term for it; Faculty is just this project's own name for that, the
+> same way other projects have their own house term for the same
+> concept. What used to be the Room/Faculty split is now described as
+> **narrow** (used by exactly one thing, e.g. the Goal faculty) vs.
+> **broad** (reused across more than one, e.g. the Time faculty) - a
+> property of a faculty, not a separate category name. `specialized/`
+> and `distributed/` remain the actual folder names, unchanged - only
+> the words used to talk about them changed. Everywhere below that
+> still says "Room" is the historical record of how this thinking
+> developed over the day, kept as-is rather than rewritten - read
+> "Room" as "narrow faculty" and the reasoning still holds.
+
 Raised 2026-08-24, prompted by two things that happened the same day:
 `backend/timeperiod.py` outgrew one file and was split into a package
 (`matchers.py`/`resolve.py`/`frozen.py`), and the "semantic
@@ -284,7 +301,7 @@ existing example: it's used when a goal's text is first parsed ("this
 weekend" - the User stage), when the plan is divided into steps (the
 Planning stage), and when the UI draws a countdown (display) - not
 owned by any single Room or pipeline stage, borrowed by all of them.
-"Entity, not robot" was the user's own framing for why this matters: a
+"Entity, not robot" captures why this matters: a
 handful of real, reused faculties is what makes the difference between
 a coherent agent and a pile of disconnected scripts that happen to
 share a repo.
@@ -300,19 +317,21 @@ backend/
   storage.py            <- neither Room nor Faculty - persistence
                             infrastructure, so it stays at this root
                             level rather than forcing a third category
-  specialized/           <- Rooms: goal.py, plan.py, today.py,
+  specialized/           <- narrow faculties: goal.py, plan.py, today.py,
                             outcome_classifier.py, outcome_phrases.py
-  distributed/            <- Faculties: timeperiod/, timesegments.py
+  distributed/            <- broad faculties: timeperiod/, timesegments.py
   devtools/              <- unchanged, its own separate concern
 ```
 
 Two decisions worth recording, because the reasoning generalizes to
 every future faculty/Room call:
 
-- **`storage.py` needed no third category.** `backend/` already acted
-  as a de facto "core" - a file that's neither a Room nor a Faculty
-  can simply stay at that root level, sibling to both subpackages,
-  rather than forcing every file into one of exactly two buckets.
+- **`storage.py`'s category question was revisited later the same
+  day** (see "Infrastructure: a fourth category" below) - it does NOT
+  simply stay uncategorized at `backend/`'s root by default; that
+  placement turned out to have a real reason once someone actually
+  asked what storage.py *does*, not just where it's convenient to
+  leave it.
 - **Sharing an implementation *pattern* isn't the same as sharing a
   *faculty*.** `outcome_classifier.py` (specialized/) recognizes
   feedback phrases the same deterministic way `timeperiod/matchers.py`
@@ -326,15 +345,87 @@ every future faculty/Room call:
   genuinely reused by another Room, that reuse is the signal to
   reconsider, exactly as it was for Time.
 
+### Infrastructure: a fourth category (2026-08-24)
+
+`storage.py` was left at `backend/`'s root level, un-categorized, when
+`agent/`/`world/` were first built - flagged as an open question, not
+answered. Answered the same day by applying the Faculty test honestly
+instead of by default: `storage.py` (`save_plan()`, `load_history()`,
+`get_latest_plan()`) is imported by every single Room
+(`goal.py`/`plan.py`/`today.py`) AND by `devtools/app.py` directly -
+more reuse than Time ever had. By the reuse test alone, it looks like
+the most obvious Faculty in the whole project.
+
+But a Faculty was defined above as something the agent *understands*
+- and `storage.py` understands nothing. It doesn't interpret what it
+saves, the way Time interprets "evening" or Recognition interprets a
+feedback phrase (see below) - it just moves bytes to and from a file.
+Passes the reuse test, fails the actual definition.
+
+That's not a flaw in the model - it's evidence a category was missing.
+**Infrastructure**: shared technical machinery, reused broadly like a
+Faculty, but understanding nothing, unlike one. `storage.py` stays
+exactly where it physically is (`backend/storage.py`, sibling to
+`agent/` and `world/`) - not because the question is still open, but
+because Infrastructure is a real, separate, resolved answer, not a
+default for "didn't fit the other two."
+
+The body analogy that landed this: not an eye (Perception - senses the
+outside world) but a hippocampus, or plainer, a hand writing in a
+diary - the *mechanism* of remembering, understanding nothing about
+what's actually written.
+
+### Cognition and Recognition: a sharper name for the data/logic pair (2026-08-24)
+
+A courtroom analogy, and a better name than "data vs.
+logic" for a pairing pattern this project already followed twice
+before naming it: **Cognition** is the fixed rules themselves - the
+"law," written once by a developer, that doesn't change while the
+program runs (`timesegments.py`'s `DAY_SEGMENTS`/`PERIOD_PHRASES`,
+`outcome_phrases.py`'s `GOAL_DONE_PHRASES`/`RULES`). **Recognition** is
+the "judge" - the matching logic that takes a real, specific input and
+decides what in the law it satisfies (`timeperiod/matchers.py`,
+`outcome_classifier.py`). Cognition doesn't do anything by itself;
+Recognition doesn't know anything by itself - each pairing needs both.
+
+**Acting** is the third piece of the same courtroom picture - not the
+law, not the judge, but the "bailiff" who actually carries out the
+ruling. This is exactly the still-unbuilt "agent actually doing
+things, not just explaining how" idea in [[13-ideas-parking-lot]] (the
+same 2026-08-24 entry already linked above): today, `resolve_duration()`
+and `classify_outcome()` (Recognition) both stop at a verdict - they
+never *act* on it. Naming this "Acting" doesn't move it out of the
+parking lot, it just gives the eventual faculty a name once it's real.
+
+**Not a new folder split.** Cognition/Recognition/Acting describes a
+pairing *inside* both `specialized/` and `distributed/` (each already
+has a Cognition file next to its Recognition file) - it doesn't
+compete with the Room/Faculty axis or the User/World/Memory axis
+above, it's a third, orthogonal lens on the same code, same as the
+data/logic language it replaces.
+
+**A deeper version of the same idea, from Norwegian law** (raised the
+same day, kept here only for the one useful mapping, not the full
+legal system): Cognition/Recognition already match "Lov" (the fixed
+rule) and "Vedtak" (the ruling that applies it) reasonably well. One
+extra rung is worth naming because it already exists, just not under
+this label: **CONVENTIONS.md and [[12-decisions]]** are this project's
+own "Grunnlov" - the highest-level, rarely-changed principles ("code
+decides, model is just told") that every Cognition file's rules are
+themselves answerable to. "Forskrifter" (a rung between law and
+ruling) has no equivalent in the code today - not built, not needed
+yet, noted here only so it isn't reinvented from scratch if a real
+in-between layer ever shows up.
+
 **Not decided yet, deliberately:**
 - The full list of faculties - Time is the only one with real code
   behind it today; `distributed/` has exactly one resident. Candidates
-  raised in conversation but NOT settled: Language, Semantics,
+  identified but NOT settled: Language, Semantics,
   Memory/Knowledge (overlaps the Knowledge room above - relationship
   not resolved), Action/Doing (overlaps the ACTION node in the
   pipeline diagram above - relationship not resolved; see
   [[13-ideas-parking-lot]]'s "agent actually doing things" entry, same
-  day). The user's own estimate: "maybe around 5 total."
+  day). Rough estimate: around 5 total.
 - Whether Semantics and Language end up being the same faculty or two.
 - How a faculty differs from a Room in cases where they clearly
   overlap (Knowledge, Action) - whether one contains the other, or
@@ -362,15 +453,15 @@ The useful result wasn't adopting all eight boxes - it was locating
 `specialized/`/`distributed/` as one small piece of a bigger, mostly
 *unbuilt* picture, and answering a real question along the way: where
 does "external info" (weather, calendar, web search, documents) fit,
-versus the agent's own accumulated memory of one user? The user's own
-long-term diagram above already answers this - it has MEMORY, WORLD,
+versus the agent's own accumulated memory of one user? The long-term
+diagram above already answers this - it has MEMORY, WORLD,
 and USER as three *separate* nodes, not two. World = live external
 data sources. User = the channel a human actually talks to the agent
 through. Easy to conflate (both are "outside memory"), but they're not
 the same thing.
 
 **Naming footnote:** "memory" was considered and rejected as the name
-for the wrapper folder - the user's own instinct was to use it broadly
+for the wrapper folder - the initial instinct was to use it broadly
 (phylogenetic/instinctual "memory," DNA-coded, as a metaphor for
 hardcoded cognition generally - a real, named distinction in biology:
 phylogenetic vs. ontogenetic memory), but this doc had already claimed
@@ -420,7 +511,7 @@ docs/                       <- documentation, no code
 
 Unlike every other folder decision on this page, `world/` was built
 empty deliberately, as a scaffold for future direction rather than
-because real code exists yet - the user's own stated reason, not a
+because real code exists yet - a deliberate exception, not a
 violation of the "earn it" principle followed everywhere else on this
 page, an explicit exception to it.
 

@@ -1,11 +1,14 @@
 """
-Recognized time-phrase DATA only - no logic, no functions that resolve
-or interpret any of it. Split out of timeperiod.py (2026-08-21) purely
-for overview: everything the code currently knows how to recognize
-about "when" lives in this one file, scannable at a glance, without
-wading through the resolution logic that uses it (that logic - actual
-date/time arithmetic, matching, describing - stays in
-backend/agent/distributed/timeperiod/, whose matchers.py imports these tables from here).
+Cognition, not Recognition - the fixed rules themselves (the "law"),
+not the machinery that applies them to a real case. No logic, no
+functions that resolve or interpret any of it. Split out of
+timeperiod.py (2026-08-21) purely for overview: everything the code
+currently knows how to recognize about "when" lives in this one file,
+scannable at a glance, without wading through the matching/resolution
+logic that reads it (that's Recognition - the "judge" - see
+backend/agent/distributed/timeperiod/matchers.py, which imports these
+tables from here and decides what actually satisfies them for a given
+piece of text).
 
 Nothing here does anything by itself - these are just tables and
 patterns; see backend/agent/distributed/timeperiod/ for what turns them into an actual

@@ -46,9 +46,9 @@ discussion — capabilities the agent could eventually have, explicitly
 
 ## Architecture framing: Program / Rooms / Sitemap (2026-08-21)
 
-The user's own framing, borrowed from building architecture, for
-thinking about what the agent actually is - kept here as the product
-definition, and as the mental model to build from going forward.
+A framing borrowed from building architecture, for thinking about what
+the agent actually is - kept here as the product definition, and as
+the mental model to build from going forward.
 
 **Program** (what the building is for):
 > The agent should help a person go from a goal to a concrete plan.

@@ -1,11 +1,13 @@
 """
-Recognized feedback-phrase DATA only - no logic, no functions that
-classify anything. Split out of outcome_classifier.py (2026-08-21),
-same reasoning as backend/agent/distributed/timesegments.py vs backend/agent/distributed/timeperiod/:
-the phrase lists (what's recognized) are meant to grow over time as
-real usage turns up new phrasings people actually type, and living in
-their own file keeps that growth from cluttering the matching logic
-that uses them (backend/agent/specialized/outcome_classifier.py).
+Cognition, not Recognition - the fixed rules themselves (the "law"),
+not the machinery that applies them to a real case. No logic, no
+functions that classify anything. Split out of outcome_classifier.py
+(2026-08-21), same reasoning as backend/agent/distributed/timesegments.py
+vs backend/agent/distributed/timeperiod/: the phrase lists (what's
+recognized) are meant to grow over time as real usage turns up new
+phrasings people actually type, and living in their own file keeps
+that growth from cluttering the matching logic that reads them (the
+"judge" - backend/agent/specialized/outcome_classifier.py).
 
 Nothing here does anything by itself - see outcome_classifier.py for
 what turns these into an actual done/not_done/in_progress/goal_done

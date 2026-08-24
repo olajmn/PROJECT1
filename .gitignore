@@ -10,3 +10,8 @@ data/
 # Generated output from tools/architecture_mapper - a build artifact,
 # regenerate anytime with generate_diagram.py rather than committing it.
 tools/architecture_mapper/output/
+
+# Obsidian's own workspace state (window layout, app settings) for the
+# docs/ vault - personal/machine-specific, not project content. The
+# .md files and their [[links]] are the actual vault; this is not.
+docs/.obsidian/

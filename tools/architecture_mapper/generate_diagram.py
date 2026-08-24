@@ -453,7 +453,6 @@ def order_layers(
     for l in layers:
         layers[l].sort()  # stable, deterministic starting order
 
-    max_layer = max(layers)
     successors: dict[str, list[str]] = {n: [] for n in nodes}
     predecessors: dict[str, list[str]] = {n: [] for n in nodes}
     for e in edges:

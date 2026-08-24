@@ -21,9 +21,9 @@ an outcome; a deterministic phrase-matcher, same approach as
 `backend/timeperiod.py`'s `resolve_duration()` (at the time this was
 written, that logic still lived in `goal_to_plan.py` as
 `_resolve_duration()` - both since renamed/moved).
-**Why this choice:** the user wanted to stop having to map what
-actually happened onto one of four fixed boxes before writing
-anything, but explicitly did not want that decision handed to an LLM -
+**Why this choice:** the goal was to stop requiring what actually
+happened to be mapped onto one of four fixed boxes before writing
+anything, while explicitly keeping that decision away from an LLM -
 classifying true/false from ambiguous text is the same kind of guess
 that produced this project's hallucination findings, just one step
 earlier in the pipeline. `backend/outcome_classifier.py` recognizes a
@@ -49,8 +49,8 @@ both are localized changes, not a redesign.
 
 **Alternatives considered:** Anthropic Claude API (`claude-opus-5`), a
 local model via Ollama.
-**Why:** The Anthropic key that was set was invalid, and the user wanted
-to explore a completely free/keyless option while learning. Ollama runs
+**Why:** The Anthropic key that was set was invalid, and a completely
+free/keyless option was worth exploring while learning. Ollama runs
 locally, no key or internet required.
 **Trade-off:** `llama3.1:8b` is weaker at reasoning/planning than Claude
 Opus 5. Both SDKs (`ollama`, `anthropic`) are kept installed in
@@ -147,8 +147,8 @@ problem.
 hand-maintained (matches "don't build it before it's needed" -
 `docs/12-decisions.md`'s own recurring principle); build a code-to-diagram
 generator now.
-**Why this choice:** the user explicitly asked for it after hearing the
-overengineering concern, with a specific future intent - lift it out of
+**Why this choice:** built specifically in response to the
+overengineering concern above, with a specific future intent - lift it out of
 this repo later as an external tool/capability the agent itself could
 call on (see [[13-ideas-parking-lot]] "Tools / APIs the agent can use").
 Built as `tools/architecture_mapper/` (see its own README.md), not

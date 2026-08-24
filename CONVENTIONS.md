@@ -17,6 +17,35 @@ Technical standards for this codebase. Applies to every file going forward.
 - No emojis anywhere in the UI (button labels, status text, headings)
   or in generated content. Plain text only.
 
+## Documentation neutrality
+
+- Code comments, docstrings, and `docs/` files state the reasoning or
+  consequence itself, not the personal narrative of how/when/by whom
+  it was noticed - "X breaks without Y" instead of naming the real
+  screenshot that happened to reveal it, "the goal was X" instead of
+  framing X as something personally wanted.
+  Already applied to code comments (see git history, "Depersonalize
+  comments: state facts/consequences, not discovery narrative"); the
+  same standard applies to everything in `docs/`, since it's the
+  material most likely to be read by someone outside this project one
+  day. Doesn't apply to genuinely dated, historical log entries where
+  a specific date/event is the actual point (`docs/10-development.md`,
+  `docs/11-experiments.md`, `docs/12-decisions.md`'s "Date:" field) -
+  those record when something happened; only the surrounding voice
+  gets depersonalized, not the fact that it happened on a given day.
+- "The user" as a term still refers to the *product's* end-user where
+  that's the actual subject (e.g. "the user's own device holds a
+  complete copy of their data") - this rule is about not narrating
+  this project's own build process as a personal story, not about
+  avoiding the word.
+- The exact, checkable patterns this rule means are defined once, in
+  `tools/docs_lint.py` (`_CONFIRMED_PATTERNS`/`REVIEW_PATTERN`) - not
+  restated here, same as `GOAL_DONE_PHRASES`/`DAY_SEGMENTS` aren't
+  reproduced in prose anywhere outside the code that owns them. Run it
+  (`.venv/bin/python3 tools/docs_lint.py`) rather than checking by eye;
+  update the patterns there, not this paragraph, when a new case of
+  the same problem turns up.
+
 ## Project structure
 
 Root only holds folders + standard project metadata files (`.gitignore`,
