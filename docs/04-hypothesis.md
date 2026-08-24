@@ -42,9 +42,9 @@ create real value for the user."** See [[09-mvp]] for build status.
 
 ## How we test it
 
-*(to be filled in — which experiments/user tests confirm or disprove this?)*
-
-- See [[11-experiments]]
+Real usage by the project owner, logged as it happens - see
+[[11-experiments]] for individual test entries and the Status section
+directly below for where that testing currently stands.
 
 ## Status
 

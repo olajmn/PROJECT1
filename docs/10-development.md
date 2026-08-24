@@ -2,7 +2,31 @@
 
 > Phase 7-9 in [[00-project-brief]]. Running log, newest first.
 
-## 2026-08-21 (latest)
+## 2026-08-24 (latest)
+
+- Board cleanup: 15 test/debris `goal_id`s (duplicate goals and dev-task
+  goals from earlier testing sessions - "make dinner" x3, "make
+  user_id", "fix active column," etc.) marked `completed=True` via
+  `save_plan()`, the same mechanism the real "Goal complete" feedback
+  path uses - not a raw JSON edit. Active board went from 22 to 7 real
+  goals. `data/plans.json` is git-ignored, so this is the only durable
+  record of the cleanup; history itself is untouched and append-only.
+- Major `backend/` reorganization - `agent/{specialized,distributed}`,
+  `world/` (empty placeholder), `devtools/` moved to a top-level
+  sibling of `backend/`, `backend/devtools/view.py` removed as unused.
+  See [[08-technical-architecture]] § Faculties for the full reasoning
+  and vocabulary (Rooms/Faculties -> narrow/broad faculty, Cognition/
+  Recognition/Acting, Infrastructure as a fourth category).
+- `docs/14-semantic-time.md` drafted, expanding the "semantic
+  understanding of time" idea in [[13-ideas-parking-lot]].
+- `tools/docs_lint.py` added: checks docs/ and code comments for
+  personal-narrative language (CONVENTIONS.md § Documentation
+  neutrality) - two confidence tiers, same reasoning as
+  `outcome_classifier.py`. Applied retroactively to fix several
+  existing instances across [[07-features]], [[08-technical-architecture]],
+  and [[12-decisions]].
+
+## 2026-08-21
 
 - Split `backend/` into paired data/logic modules, matching a mental
   model the user generalized themselves during this session: "every

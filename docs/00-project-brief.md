@@ -491,6 +491,27 @@ Especially:
 
 Building and documenting the software itself.
 
+### Meta-coherence
+
+A loose guideline, not a rule (2026-08-24): documentation counts as
+real project information, not scratch, even though it isn't code - the
+reasoning behind a decision, or the shape of an idea before it's
+built, is still part of what the project actually is. This doesn't
+mean every file needs a matching write-up somewhere - it means the
+vault as a whole, especially anything that could potentially become
+public, should read as one coherent, connected thing rather than
+disconnected fragments.
+
+Nothing new to adopt - just naming how this vault already works:
+
+- Cross-linked via `[[references]]` rather than left as isolated files
+- Historical, dated entries preserved as accurate records of what was
+  true when written, rather than rewritten once something later
+  changes (see [[12-decisions]])
+- Code and docs reference each other in both directions - a docstring
+  points to the doc that explains why, a doc points to the file that
+  implements it
+
 ## 14. The Most Important Question Right Now
 
 We've actually moved from:

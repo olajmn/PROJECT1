@@ -13,6 +13,11 @@ it concretely enough that it could be proven wrong.
 
 *(to be filled in)*
 
+**Status note (2026-08-24):** left unfilled by choice, not oversight -
+this formal write-up was bypassed in favor of validating directly by
+building and using the agent (see [[09-mvp]] § Testing philosophy).
+Revisit if that validation approach stops being enough on its own.
+
 - Who has this problem?
 - When is the problem felt (what situation)?
 - What do they do today instead (workaround)?

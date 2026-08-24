@@ -27,6 +27,12 @@ available as a spreadsheet for heavier sorting/filtering — see
 
 *(to be filled in once the table is complete)*
 
+**Status note (2026-08-24):** the table above was left unfilled by
+choice, not oversight - formal competitor testing was bypassed in
+favor of validating directly by building and using the agent (see
+[[09-mvp]] § Testing philosophy). Revisit if that validation approach
+stops being enough.
+
 ## See also
 
 - [[04-hypothesis]] — differentiation should build on the gaps found here

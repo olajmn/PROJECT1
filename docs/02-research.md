@@ -21,6 +21,11 @@ Goaltree, LifePilot, Mentra, Daysfold, Goaliath, GoalsFlow, Skedul.AI, Vakit, Go
 
 *(to be filled in as research happens)*
 
+**Status note (2026-08-24):** left unfilled by choice, not oversight -
+formal competitor research was bypassed in favor of validating
+directly by building and using the agent (see [[09-mvp]] § Testing
+philosophy). Revisit if that validation approach stops being enough.
+
 ## See also
 
 - [[03-competitors]] — structured comparison
