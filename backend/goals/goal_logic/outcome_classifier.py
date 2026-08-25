@@ -3,7 +3,7 @@ Deterministic classification of free-text feedback into one of the
 agent's four outcomes: "done", "not_done", "in_progress", "goal_done".
 
 No LLM call - just recognized phrases, the same approach as
-backend/foundation/time/logic/duration_resolution.py's resolve_duration() and for the same reason:
+backend/foundation/time/time_logic/duration_resolution.py's resolve_duration() and for the same reason:
 predictable, inspectable, and free of the hallucination/drift risk an
 LLM classification call would carry for exactly the kind of true/false
 decision this project has already been burned by trusting a model with
@@ -14,10 +14,10 @@ pipeline - so it gets the same "recognize what you can name, admit what
 you can't" treatment duration parsing already uses, not a model call.
 
 The recognized phrases themselves (GOAL_DONE_PHRASES, etc.) live in
-backend/agent/specialized/outcome_phrases.py, not here - this file is the logic that
-matches and classifies using them. Split apart 2026-08-21, same
-data/logic separation as backend/agent/distributed/time_segments.py vs backend/
-timeperiod.py: the phrase lists are meant to grow over time as real
+the sibling goal_data/outcome_phrases.py, not here - this file is the
+logic that matches and classifies using them. Split apart 2026-08-21,
+same data/logic separation as foundation/time/'s time_data/ vs
+time_logic/: the phrase lists are meant to grow over time as real
 usage turns up new phrasings people actually type, without that growth
 cluttering the matching logic that uses them.
 """
@@ -46,7 +46,7 @@ def classify_outcome(text: str) -> str | None:
     """
     Return one of "done", "not_done", "in_progress", "goal_done" if
     `text` confidently contains a recognized phrase (see
-    backend/agent/specialized/outcome_phrases.py's RULES), else None.
+    backend/goals/goal_data/outcome_phrases.py's RULES), else None.
 
     None means "genuinely don't know" - callers must never treat it as
     a guessed default toward a risky outcome (done/goal_done); see

@@ -188,7 +188,7 @@ def save_plan(
     yet.
 
     `frozen_duration` is `duration` resolved to a real start/end/
-    description ONCE (see backend/agent/distributed/temporal/frozen_duration.py's freeze_duration()),
+    description ONCE (see backend/foundation/time/time_logic/frozen_duration.py's freeze_duration()),
     stored as-is rather than re-derived from "now" on every later page
     render - fixes a real bug, 2026-08-21: a forward-looking duration
     like "within the next 1 hour" was silently resetting its countdown
@@ -228,7 +228,7 @@ def save_plan(
         "current_step": current_step,
         "completed": completed,
         # Local time, naive (no tzinfo) - matches every other timestamp
-        # in this project (backend/agent/distributed/temporal/'s whole resolution/
+        # in this project (backend/foundation/time/'s whole resolution/
         # bar/countdown system uses datetime.now(), local). Was UTC
         # since the very first commit for no documented reason (no
         # multi-timezone need in a single-machine personal tool) -

@@ -6,7 +6,7 @@ This is the "zoom all the way in" step from the project vision: the user
 shouldn't have to re-read the whole plan every day, just be told what to
 do right now.
 
-Run from the PROJECT ROOT: .venv/bin/python -m backend.agent.specialized.today
+Run from the PROJECT ROOT: .venv/bin/python -m backend.planning.today
 """
 
 from backend.infrastructure.data_persistence import get_latest_plan

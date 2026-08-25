@@ -45,7 +45,7 @@ app = Flask(__name__, template_folder="html", static_folder="css")
 app.jinja_env.globals["describe_duration"] = describe_duration
 # Same reasoning, for the start/now/end progress bar in
 # active_goal/_timeperiod.html - percent/status/labels computed once in
-# temporal/ (see duration_progress()'s docstring), not recomputed
+# foundation/time/ (see duration_progress()'s docstring), not recomputed
 # in template logic.
 app.jinja_env.globals["duration_progress"] = duration_progress
 # Same reasoning - the vertical step list in active_goal/_task.html and

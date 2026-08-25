@@ -1,7 +1,7 @@
 """
 Phrase-matching primitives: recognize a known time phrase somewhere in
 free text and turn it into hard values (hours, dates, offsets), using
-the pattern tables in backend/agent/distributed/time_segments.py. Nothing here decides
+the pattern tables in the sibling time_data/ package's time_segments.py. Nothing here decides
 what to DO with a match (see duration_resolution.py) or how to describe it to the
 user (also duration_resolution.py) - just "is this phrase here, and what does it
 concretely mean".

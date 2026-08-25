@@ -1,9 +1,9 @@
 """
 The fixed rules themselves - the tables and patterns recognized about
 "when"/"how long", not the machinery that applies them to a real case.
-No logic beyond the tables themselves; see
-backend/agent/distributed/temporal/, which imports these and decides
-what actually satisfies them for a given piece of text.
+No logic beyond the tables themselves; see the sibling time_logic/
+package, which imports these and decides what actually satisfies them
+for a given piece of text.
 
 Split out of timeperiod.py (2026-08-21) purely for overview: everything
 the code currently knows how to recognize about "when" lives in this
@@ -14,8 +14,8 @@ resolution logic that reads it. The raw time-unit arithmetic
 typed text, only used to build the tables below.
 
 Nothing here does anything by itself - these are just tables and
-patterns; see backend/agent/distributed/temporal/ for what turns them into an actual
-answer.
+patterns; see the sibling time_logic/ package for what turns them into
+an actual answer.
 """
 
 import re
@@ -141,7 +141,7 @@ DAY_FRACTIONS = {
 
 # Recognized day segments: word -> (start_hour, end_hour) in 24h local
 # time, both in [0, 24). "night" wraps past midnight (23 -> 6), handled
-# specially in temporal.resolve_duration(). This is the code
+# specially in time_logic.resolve_duration(). This is the code
 # actually *knowing* what "evening" means (a real clock window) instead
 # of handing the raw word to the model and hoping it guesses sensibly -
 # see docs/11-experiments.md, 2026-08-19. Moved to this section
@@ -157,7 +157,7 @@ DAY_FRACTIONS = {
 # still flows into the prompt sent to the model, and mixed-language
 # input is exactly the failure mode already found there. Anyone typing
 # a day segment in Norwegian now gets the honest "not parsed/verified
-# by code" fallback (see temporal.describe_duration()) instead of
+# by code" fallback (see time_logic.describe_duration()) instead of
 # silent recognition.
 DAY_SEGMENTS = {
     "morning": (6, 12),
@@ -170,19 +170,19 @@ DAY_SEGMENTS = {
 # Same idea as DAY_SEGMENTS above, one level up: recognized whole-period
 # phrases -> (unit, offset). Unlike DAY_SEGMENTS these can't be a fixed
 # (start, end) tuple - "this week" means a different date range every
-# time depending on today's date - so temporal._period_range()
+# time depending on today's date - so time_logic._period_range()
 # resolves each at call time instead of storing a fixed value here.
 # Added 2026-08-21 alongside week/month/year so the model has the same
 # real grounding for "by this evening" (a DAY_SEGMENTS phrase) and
 # "this month" (a PERIOD_PHRASES one): both become an actual date/time
 # range instead of a bare word. Deliberately still just a recognition
 # table, not the folder-per-time-period hierarchy from
-# docs/08-technical-architecture.md - see temporal/__init__.py's docstring.
+# docs/08-technical-architecture.md - see time_logic/__init__.py's docstring.
 #
 # "day" as a unit (added 2026-08-21) is the same mechanism one level
 # down from week/month/year: "tomorrow" is today's date + 1, exactly
 # the same offset arithmetic as "next week" being this week + 1 - just
-# a single day instead of a 7-day range, so temporal._period_range()
+# a single day instead of a 7-day range, so time_logic._period_range()
 # returns (that day, that day) rather than (start, end).
 PERIOD_PHRASES = {
     "yesterday": ("day", -1),
@@ -223,7 +223,7 @@ WEEKDAY_NUMBERS = {name.lower(): number for number, name in WEEKDAY_NAMES.items(
 # A bare weekday name with no prefix ("Monday", no "next"/"this"/
 # "last") is deliberately not a fourth entry here with offset 0 - it
 # doesn't mean the same thing as "this Monday". See
-# temporal._weekday_name_date() for why a bare name gets its own,
+# time_logic._weekday_name_date() for why a bare name gets its own,
 # different resolution (the *nearest* occurrence, counting today).
 WEEKDAY_PREFIXES = {
     "next": 1,
@@ -240,7 +240,7 @@ WEEKDAY_PREFIXES = {
 #
 # A bare "o'clock" with no am/pm ("1 o'clock") is genuinely ambiguous -
 # the text alone can't say whether that's 01:00 or 13:00. Rather than
-# leave it unrecognized, temporal._matched_clock_time() resolves it
+# leave it unrecognized, time_logic._matched_clock_time() resolves it
 # to PM - a deliberate, named CONVENTION (not a fact the code actually
 # knows), same trade WEEKS_PER_MONTH=4 already makes in time_units.py: a
 # fixed, documented default beats silently guessing differently each
@@ -250,11 +250,11 @@ CLOCK_12H_RE = re.compile(
 )
 
 # Strict 24-hour "HH:MM", including midnight ("00:00") - HH must be
-# 00-23 and MM 00-59. Checked in temporal only after CLOCK_12H_RE
+# 00-23 and MM 00-59. Checked in time_logic only after CLOCK_12H_RE
 # has already had a chance to match, so a 12-hour time like "11:30am"
 # is never mistaken for a bare 24-hour one - the trailing "am" doesn't
 # leave a word boundary for this regex to match on anyway (see
-# temporal._matched_clock_time()).
+# time_logic._matched_clock_time()).
 CLOCK_24H_RE = re.compile(r"\b([01]\d|2[0-3]):([0-5]\d)\b")
 
 # A deadline tied to a personal routine event, not a clock time - found
@@ -297,7 +297,7 @@ DEADLINE_RE = re.compile(
 # 2026-08-21 alongside PERIOD_PHRASES - until then this only recognized
 # minute/hour/day, so "12 months" or "2 weeks" fell all the way through
 # to "not parsed/verified by code", not even as far as "recognized as a
-# length". temporal._length_end_date() turns (number, unit) into an
+# length". time_logic._length_end_date() turns (number, unit) into an
 # actual end date - minute/hour have no useful calendar date to compute
 # (see that function), day/week/month/year do.
 DURATION_LENGTH_RE = re.compile(
@@ -311,7 +311,7 @@ DURATION_LENGTH_RE = re.compile(
 # values already sitting in HOUR_SEGMENTS/MINUTE_SEGMENTS/DAY_FRACTIONS
 # (section 2 above) rather than a fourth copy of them. This regex only
 # recognizes the phrase - it doesn't carry a value itself;
-# temporal._matched_named_fraction() looks the matched (segment,
+# time_logic._matched_named_fraction() looks the matched (segment,
 # unit) pair up in whichever of those three tables the matched unit
 # belongs to. No "year" here (YEAR_FRACTIONS removed 2026-08-21, see
 # docs/12-decisions.md) - "half a year"/"quarter of a year" are no

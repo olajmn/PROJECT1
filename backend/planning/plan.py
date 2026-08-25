@@ -12,14 +12,16 @@ and the model pulled (ollama pull llama3.1:8b).
 Renamed from goal_to_plan.py (2026-08-21) to match the product model in
 docs/07-features.md ("Architecture framing: Program / Rooms /
 Sitemap") - this file is the "Plan" room. Temporal understanding
-(duration parsing/grounding) moved out to backend/foundation/time/, its
-own room, in the same pass - see that package's docstring. PLAN_KEYS/
-HORIZON_LABELS moved in from storage.py the same day, for the same
-reason: they describe the Plan's shape, not anything about how it's
-persisted - storage.py never used them internally, only re-exported
-them, so this is a clean move with nothing left importing them back.
+(duration parsing/grounding) moved out the same day, its own room -
+now backend/foundation/time/ (moved there 2026-08-25, see that
+package's docstring). PLAN_KEYS/HORIZON_LABELS moved in from
+data_persistence.py the same day (2026-08-21, then called storage.py),
+for the same reason: they describe the Plan's shape, not anything
+about how it's persisted - that module never used them internally,
+only re-exported them, so this was a clean move with nothing left
+importing them back.
 
-Run from the PROJECT ROOT: .venv/bin/python -m backend.agent.specialized.plan
+Run from the PROJECT ROOT: .venv/bin/python -m backend.planning.plan
 """
 
 import json

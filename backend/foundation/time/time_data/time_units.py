@@ -1,16 +1,17 @@
 """
-The real-world time-unit constants everything else in this package
-(and temporal/'s arithmetic) is actually built from - written down
-explicitly in one place instead of left as bare numbers (60, 24, 7,
-12) scattered through the code with no name attached. No logic, no
-functions - just facts.
+The real-world time-unit constants everything else in this faculty
+(time_segments.py's tables, time_logic/'s arithmetic) is actually
+built from - written down explicitly in one place instead of left as
+bare numbers (60, 24, 7, 12) scattered through the code with no name
+attached. No logic, no functions - just facts.
 
-Split out of time_segments.py (2026-08-25) once that file grew a second,
-genuinely different kind of table alongside its phrase-recognition
-tables: these constants aren't matched against typed text the way
-DAY_SEGMENTS/PERIOD_PHRASES/etc. are, they're the raw arithmetic
-time_segments.py's own tables (MINUTE_SEGMENTS, HOUR_SEGMENTS,
-DAY_FRACTIONS) and temporal/'s resolvers are built from.
+Split out of time_segments.py (2026-08-25) once that file grew a
+second, genuinely different kind of table alongside its
+phrase-recognition tables: these constants aren't matched against
+typed text the way DAY_SEGMENTS/PERIOD_PHRASES/etc. are, they're the
+raw arithmetic time_segments.py's own tables (MINUTE_SEGMENTS,
+HOUR_SEGMENTS, DAY_FRACTIONS) and time_logic/'s resolvers are built
+from.
 """
 
 SECONDS_PER_MINUTE = 60
@@ -42,7 +43,7 @@ MINUTES_PER_DAY = MINUTES_PER_HOUR * HOURS_PER_DAY
 #     worse version of the average.
 #
 # For a *specific* month, the exact day count already exists elsewhere
-# too - temporal/ uses calendar.monthrange(year, month) when it
+# too - time_logic/ uses calendar.monthrange(year, month) when it
 # actually needs to know how many days September has, say (see
 # MONTH_DAYS below for a non-leap-year reference table of the same
 # fact). The averages here are for estimation across an unspecified
@@ -60,7 +61,7 @@ AVERAGE_WEEKS_PER_YEAR = 365.25 / DAYS_PER_WEEK  # ~52.18
 # (the common case, not a leap year) - the one month where "how many
 # days" doesn't have a single year-independent answer;
 # calendar.monthrange(year, 2) is the exact answer for a specific year
-# (see temporal/), this is the everyday reference value.
+# (see time_logic/), this is the everyday reference value.
 MONTH_DAYS = {
     1: 31, 2: 28, 3: 31, 4: 30,
     5: 31, 6: 30, 7: 31, 8: 31,

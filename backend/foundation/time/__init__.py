@@ -27,7 +27,7 @@ logic/ - what acts on that data:
 
 Every name below is re-exported here so nothing outside this package
 needs to know its internal shape - `from backend.foundation.time import
-resolve_duration` works regardless of which logic/data/ file actually
+resolve_duration` works regardless of which time_logic/time_data/ file actually
 defines it.
 
 Moved 2026-08-25 from backend/agent/distributed/temporal/ (itself
