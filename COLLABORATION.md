@@ -13,7 +13,10 @@ project is (see `docs/04-current-state.md`) or how code should look (see
    `docs_check`/`docs_lint` findings) — the doc is the fuller narrative.
    Treat the doc's claims as *believed*, not *verified*, until the scan
    confirms them or you check further yourself. Don't reconstruct the
-   project's shape by guessing from memory or git history alone.
+   project's shape by guessing from memory or git history alone. A
+   clean scan means the mechanical checks it ran found nothing wrong -
+   not that the project as a whole is verified; it only covers what it
+   actually checks.
 
 ## While working
 
@@ -71,15 +74,21 @@ project is (see `docs/04-current-state.md`) or how code should look (see
 11. Before renaming, moving, or deleting anything another file might
     reference, grep the vault and the code for the old name first.
     Every hit gets updated or deliberately left with a reason - never
-    silently skipped. Run `tools/docs_check.py` after, as the
-    mechanical backstop, not a substitute for the grep.
+    silently skipped. Run `tools/project_check.py` (it includes
+    `tools/docs_check.py`) after, as the mechanical backstop, not a
+    substitute for the grep.
 12. This session's own earlier statements are also orientation, not
     proof - re-check a claim against actual current state before
     acting on it, not against what was said many turns ago, even in
-    this same conversation.
+    this same conversation. Re-run `tools/project_check.py` rather
+    than trusting an earlier scan once meaningful time or changes
+    have passed since it ran.
 13. Verification effort scales with what's riding on the claim -
     casual orientation doesn't need the rigor a claim that will drive
     an edit or get written into a doc as fact does.
+    `tools/project_check.py` is cheap enough that "should I re-run
+    it" is rarely the wrong question to ask before a consequential
+    claim or change.
 
 ## Documentation tooling
 

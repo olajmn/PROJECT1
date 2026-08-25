@@ -2,9 +2,9 @@
 Goal identity and grouping - which records belong to which goal, and
 what a goal's current state is.
 
-Split out of storage.py (2026-08-21) to match the product model in
-docs/02-product.md ("Architecture framing: Program / Rooms /
-Sitemap") - Goal is its own room. Built entirely on
+Split out of storage.py (2026-08-21) to match the product model, see
+docs/03-architecture.md § System structure - Goal is its own Domain.
+Built entirely on
 data_persistence.load_history() (the public read API), not that
 module's private _load_all()/_save_all().
 

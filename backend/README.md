@@ -5,67 +5,60 @@ a plan into "what to do right now."
 
 Named `backend` to match the architecture terminology in
 `../docs/03-architecture.md` (backend vs. future frontend).
-As of 2026-08-24, "the agent itself" more precisely means `agent/`
-inside here - `backend/` is the wider umbrella, also holding `world/`
-(external data, not built) and `storage.py`.
 
 Run everything from the **project root**, using `-m` (see `../CONVENTIONS.md`
 § Environment for why).
 
-Split 2026-08-24 into `agent/` (the agent's own cognition -
-`specialized/` and `distributed/` inside it) and `world/` (external
-data the agent could reach out for - deliberately empty, see its own
-`__init__.py`), with `storage.py` staying at this root level - see
-`../docs/03-architecture.md` § Faculties for the full
+Organized by topic since 2026-08-25, replacing an earlier
+`agent/specialized/` vs. `agent/distributed/` reuse-based split:
+`foundation/` (what the agent understands, by topic), `goals/` and
+`planning/` (Domains, direct siblings rather than nested under an
+`agent/` wrapper - `agent/` is gone entirely), `infrastructure/`
+(shared technical machinery), and `world/` (external data, not built) -
+see `../docs/03-architecture.md` § System structure for the full
 reasoning.
 
-**Vocabulary note (same day):** "Faculty" is this project's word for a
-module. `specialized/` holds narrow faculties (one product concept
-each); `distributed/` holds broad faculties (reused across more than
-one narrow faculty). Two folder names, one concept, described by
-breadth rather than by two separate category words - see
-`../docs/03-architecture.md` § Faculties, terminology note.
-
-**Resolved, same day:** `storage.py` passes the broad-faculty reuse
-test (imported by every narrow faculty, and by `devtools/app.py`
-directly) but fails the actual Faculty definition - it understands
-nothing about what it saves, just moves bytes. That gap is
-**Infrastructure**, a fourth category - see
-`../docs/03-architecture.md` § Faculties, "Infrastructure: a
-fourth category," for the full reasoning.
-
-### `agent/specialized/` — narrow faculties: one product concept each
+### `foundation/` — what the agent understands
 
 | File | Responsibility | Run with |
 |---|---|---|
-| `agent/specialized/plan.py` | Goal → structured plan, and `replan()` (plan + feedback → updated plan). Both call the LLM | `.venv/bin/python -m backend.agent.specialized.plan` |
-| `agent/specialized/goal.py` | Goal identity/grouping - `get_board()`, `get_latest_for_goal()`, `get_history_for_goal()` | (imported by others, not run directly) |
-| `agent/specialized/outcome_classifier.py` | Deterministic (no LLM) classification of free-text feedback into done/not_done/in_progress/goal_done - the logic; `outcome_phrases.py` is the data it uses. Currently used only by Goal's own feedback flow - not (yet) reused elsewhere, which is why it lives here and not in `distributed/` despite sharing its phrase-matching technique with `distributed/temporal/` | (imported by others, not run directly) |
-| `agent/specialized/outcome_phrases.py` | The recognized feedback phrases themselves (`GOAL_DONE_PHRASES`, `RULES`, etc.) - Cognition (the fixed "law"), not Recognition (the "judge" that applies it - see `outcome_classifier.py`) | (imported by others, not run directly) |
-| `agent/specialized/today.py` | Show just today's immediate action from the latest plan | `.venv/bin/python -m backend.agent.specialized.today` |
+| `foundation/time/` | Deterministic interpretation of temporal expressions and durations - the temporal understanding Faculty (Time is the corresponding Domain). Split into `time_data/` (recognized phrase tables) and `time_logic/` (`phrase_matching.py`, `duration_resolution.py`, `frozen_duration.py`, `relative_time.py`) | (imported by others, not run directly) |
+| `foundation/language/` | Empty scaffold, no code yet | — |
+| `foundation/memory/` | Empty scaffold, no code yet | — |
+| `foundation/meaning(maybe)/` | Empty scaffold, name itself marks it as unresolved | — |
 
-### `agent/distributed/` — broad faculties: reused across more than one narrow faculty
+### `goals/` — Domain
 
 | File | Responsibility | Run with |
 |---|---|---|
-| `agent/distributed/temporal/` | Understanding "when" a plan should span - resolves/describes recognized day segments and week/month/year phrases into a real clock window or calendar date range, honest about what it can't parse. A package (`phrase_matching.py`/`duration_resolution.py`/`frozen_duration.py`) since 2026-08-24, once one file stopped being the natural unit - renamed from `timeperiod/` 2026-08-25 (see its own `__init__.py`) | (imported by others, not run directly) |
-| `agent/distributed/time_segments.py` | The recognized time phrases/patterns themselves (`DAY_SEGMENTS`, `PERIOD_PHRASES`, etc.) - fixed tables, not the matching logic that applies them (see `temporal/phrase_matching.py`) | (imported by others, not run directly) |
-| `agent/distributed/time_units.py` | Raw time-unit constants (`SECONDS_PER_MINUTE`, `MONTH_DAYS`, etc.) `time_segments.py`'s tables and `temporal/`'s arithmetic are built from - split out of `time_segments.py` 2026-08-25, a different kind of fact (not itself matched against typed text) | (imported by others, not run directly) |
+| `goals/goal_logic/goal.py` | Goal identity/grouping - `get_board()`, `get_latest_for_goal()`, `get_history_for_goal()` | (imported by others, not run directly) |
+| `goals/goal_logic/outcome_classifier.py` | Deterministic (no LLM) classification of free-text feedback into done/not_done/in_progress/goal_done - the logic; `goal_data/outcome_phrases.py` is the data it uses | (imported by others, not run directly) |
+| `goals/goal_data/outcome_phrases.py` | The recognized feedback phrases themselves (`GOAL_DONE_PHRASES`, `RULES`, etc.) | (imported by others, not run directly) |
+
+### `planning/` — Domain
+
+| File | Responsibility | Run with |
+|---|---|---|
+| `planning/plan.py` | Goal → structured plan, and `replan()` (plan + feedback → updated plan). Both call the LLM | `.venv/bin/python -m backend.planning.plan` |
+| `planning/today.py` | Show just today's immediate action from the latest plan | `.venv/bin/python -m backend.planning.today` |
+
+Not yet split into a data/logic pair the way `foundation/time/` and
+`goals/` have.
 
 ### Root level
 
 | File | Responsibility | Run with |
 |---|---|---|
-| `storage.py` | Save/load plans (and feedback) to/from `../data/plans.json` - **Infrastructure**, not a Room or Faculty: reused by everything, understands none of it | (imported by others, not run directly) |
+| `infrastructure/data_persistence.py` | Save/load plans (and feedback) to/from `../data/plans.json` - **Infrastructure**, not a Domain or Faculty: reused by everything, understands none of it | (imported by others, not run directly) |
 | `world/` | Empty - see its own `__init__.py` for why it exists at all | — |
 
 ## Where the interface lives
 
-`devtools/` (the local web UI for talking to this agent) moved to be a
-top-level sibling of `backend/`, not a subpackage inside it, 2026-08-24
-- see `../devtools/README.md` and `../docs/03-architecture.md`
-§ Faculties for why: it's the channel a human reaches the agent
+`devtools/` (the local web UI for talking to this agent) is a
+top-level sibling of `backend/`, not a subpackage inside it - see
+`../devtools/README.md` and `../docs/03-architecture.md`
+§ System structure for why: it's the channel a human reaches the agent
 through, not part of the agent's own cognition.
 
 See `../docs/03-architecture.md` for the full architecture and
-`../docs/02-product.md` for what's built vs. still planned.
+`../docs/04-current-state.md` for what's built vs. still planned.

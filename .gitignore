@@ -4,7 +4,7 @@ __pycache__/
 .DS_Store
 
 # Personal data - goals, plans, history. Never commit this, even once
-# the code itself is public. See docs/12-decisions.md.
+# the code itself is public. See docs/05-decisions.md.
 data/
 
 # Generated output from tools/architecture_mapper - a build artifact,

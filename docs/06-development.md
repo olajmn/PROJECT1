@@ -300,8 +300,8 @@ across days). Mixed signal:
   See [[03-architecture]] § Faculties for the full reasoning
   and vocabulary (Rooms/Faculties -> narrow/broad faculty, Cognition/
   Recognition/Acting, Infrastructure as a fourth category).
-- `docs/14-semantic-time.md` drafted, expanding the "semantic
-  understanding of time" idea in § Parking Lot below. (Merged into
+- The "semantic understanding of time" idea, first logged in § Parking
+  Lot below, was expanded into its own draft doc. (Merged into
   [[03-architecture]] § Time, 2026-08-25.)
 - `tools/docs_lint.py` added: checks docs/ and code comments for
   personal-narrative language (CONVENTIONS.md § Documentation

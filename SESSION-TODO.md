@@ -24,7 +24,7 @@ built - see [[06-development]] and [[03-architecture]] for what's
 done vs. still open. The other four stay parked, unstarted:
 
 - **Memory** - the agent starting to actively use its own history
-  (`storage.py` today is Infrastructure - pure persistence, understands
+  (`data_persistence.py` today is Infrastructure - pure persistence, understands
   nothing it stores; "Memory" as a real capability isn't built).
 - **Better step hierarchy** - see the existing open item directly below;
   this is the same thing, just renamed by the same reflection.
@@ -39,7 +39,7 @@ done vs. still open. The other four stay parked, unstarted:
       concrete trigger: "improve my diet" over 3 months produces
       steps like "Sep 06-Sep 22 Make a list of healthy grocery items" -
       a single step spanning 16 days, because today's step_count()/
-      MIN_STEPS/MAX_STEPS (backend/timeperiod.py) was tuned for
+      MIN_STEPS/MAX_STEPS (backend/foundation/time/) was tuned for
       single-session goals (a 20-minute goal breaking into ~15-minute
       steps), not multi-month ones, so a long goal's "steps" are really
       acting as coarse PHASES, not the granular actions they're meant

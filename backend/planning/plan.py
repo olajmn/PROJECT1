@@ -9,10 +9,10 @@ Runs 100% locally - no API key, no internet, no cost.
 Requires Ollama running in the background (start with: brew services start ollama)
 and the model pulled (ollama pull llama3.1:8b).
 
-Renamed from goal_to_plan.py (2026-08-21) to match the product model in
-docs/02-product.md ("Architecture framing: Program / Rooms /
-Sitemap") - this file is the "Plan" room. Temporal understanding
-(duration parsing/grounding) moved out the same day, its own room -
+Renamed from goal_to_plan.py (2026-08-21) to match the product model,
+see docs/03-architecture.md § System structure - this file is the
+"Plan" Domain. Temporal understanding
+(duration parsing/grounding) moved out the same day, its own Domain -
 now backend/foundation/time/ (moved there 2026-08-25, see that
 package's docstring). PLAN_KEYS/HORIZON_LABELS moved in from
 data_persistence.py the same day (2026-08-21, then called storage.py),
