@@ -96,8 +96,6 @@ unfounded detail (see `06-development.md`).
 
 - `planning/` has not yet been split into a data/logic structure the
   way `foundation/time/` and `goals/` have.
-- `backend/README.md` still describes the pre-2026-08-25 `agent/`
-  structure - not yet rewritten to match the current tree above.
 
 ## 4. What's not built
 
@@ -176,7 +174,5 @@ Full list with reasoning: `05-decisions.md`.
 
 ## 8. Next step
 
-1. Update `backend/README.md` to match the 2026-08-25 reorg (the last
-   piece of stale documentation left after the `docs/` restructuring).
-2. Pick one of Memory / hierarchical steps / Knowledge-RAG / Acting to
+1. Pick one of Memory / hierarchical steps / Knowledge-RAG / Acting to
    actually build - not more than one at a time.

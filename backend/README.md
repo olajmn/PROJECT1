@@ -57,7 +57,7 @@ Not yet split into a data/logic pair the way `foundation/time/` and
 `devtools/` (the local web UI for talking to this agent) is a
 top-level sibling of `backend/`, not a subpackage inside it - see
 `../devtools/README.md` and `../docs/03-architecture.md`
-§ System structure for why: it's the channel a human reaches the agent
+§ Long-term architecture for why: it's the channel a human reaches the agent
 through, not part of the agent's own cognition.
 
 See `../docs/03-architecture.md` for the full architecture and

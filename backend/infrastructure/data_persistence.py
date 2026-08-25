@@ -32,7 +32,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-DATA_DIR = Path(__file__).parent.parent / "data"
+DATA_DIR = Path(__file__).parent.parent.parent / "data"
 PLANS_FILE = DATA_DIR / "plans.json"
 
 # The only user_id that exists today - see module docstring. Not a
