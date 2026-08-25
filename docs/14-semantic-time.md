@@ -1,15 +1,21 @@
 # 14 — Semantic Understanding of Time
 
 > Draft, 2026-08-24. Expands the "semantic understanding of time" idea
-> first logged in [[13-ideas-parking-lot]] the same day. Not designed
-> or built - this is the starting point for that design conversation,
-> not the result of one.
+> first logged in [[13-ideas-parking-lot]] the same day.
+>
+> **2026-08-25: first piece built.** `relative_length()` in
+> `backend/agent/distributed/temporal/relative_time.py` answers the
+> "relative duration" half of the idea (see "The core idea" point 2
+> below) - deterministic, placed in the Time faculty. The
+> "activity-specific meaning" half (point 1 below) is still fully
+> unbuilt and unresolved - see "Open design questions" below for what
+> that decision narrowed down, and what's still genuinely open.
 
 ## The core idea
 
 The agent today only knows time as a number or a resolved clock
 window (see [[08-technical-architecture]] § Faculties -
-`backend/agent/distributed/timeperiod/`). `resolve_duration("1 hour")`
+`backend/agent/distributed/temporal/`). `resolve_duration("1 hour")`
 always means exactly 60 minutes, no matter what it's 60 minutes *of*.
 
 A human doesn't experience duration that way. Two things are true at
@@ -39,51 +45,46 @@ session aren't the same kind of *smaller* - depending on the goal, 45
 minutes might call for a genuinely different activity or plan shape,
 not a shorter version of the one already chosen.
 
-## Open design questions - none of these are answered yet
+## Open design questions
 
-- **Where does "what this duration means" come from?** Two very
-  different approaches, with the project's existing "code decides,
-  model is just told" principle ([[12-decisions]], 2026-08-20) in
-  tension with itself here:
-  - A lookup/table approach (deterministic): some notion of typical
-    session length per activity type, so the code itself can say "45
-    minutes is short for running, long for stretching." Needs a real
-    source for these norms - not obviously something code can just
-    know, unlike a calendar date.
-  - A model-informed approach: give the LLM richer context (the goal's
-    activity type, the requested duration, and how that compares to a
-    "typical" session for that kind of activity) and let it reason
-    about fit, rather than have code pre-judge "short" or "long."
-    Tension: this project has repeatedly moved AWAY from letting the
-    model judge things code could decide instead (see the horizon-scope
-    fix, outcome classification, [[12-decisions]]) - it's not obvious
-    this is the same kind of decision or a different one.
+- **Where does "what this duration means" come from?** RESOLVED for
+  the relative-duration half (point 2 in "The core idea" above):
+  deterministic, hardcoded thresholds
+  (`_RELATIVE_LENGTH_THRESHOLDS` in `relative_time.py`) - the "code
+  decides, model is just told" principle ([[12-decisions]],
+  2026-08-20) applies here too, not in tension with it after all.
+  STILL OPEN for the activity-specific half (point 1): lookup table vs.
+  model-informed reasoning, not decided, not built.
 - **Is this actually part of the Time faculty, or a different one?**
-  [[08-technical-architecture]] § Faculties flags this exact tension:
-  Time (`timeperiod/`) understands *when*, grounded in clock time and
-  calendar dates - deterministic, verifiable, no notion of "activity."
-  "What does this duration mean for this activity" needs to know about
-  the activity itself, which sounds closer to a Language/Semantics
-  faculty (also unbuilt, also just a name so far) than to Time.
-  Possibly two faculties cooperating, not one faculty doing both jobs.
-- **What does "relative" duration require?** "Long compared to what?"
-  needs some reference scale - the goal's own overall duration
-  (this connects to `broadest_relevant_horizon()` in
-  `backend/agent/distributed/timeperiod/frozen.py`, which already
-  computes a coarse duration-scale bucket for a different purpose -
-  possibly reusable, possibly a coincidence of shape, not decided).
-- **What's the actual trigger?** Does this run every time a plan is
-  generated, or only when a plan needs to *shrink* (the concrete
-  scenario in the original brainstorm)? Those are different scopes -
-  "always understand duration semantically" vs. "when shrinking,
-  consider a different shape, not just a smaller one."
+  RESOLVED, but only for the relative-duration half: it lives in
+  `backend/agent/distributed/temporal/relative_time.py` - pure magnitude
+  comparison needs no knowledge of activities, so it fits Time
+  cleanly. The activity-specific half is STILL OPEN, and still looks
+  like it belongs to a Language/Semantics faculty that doesn't exist
+  yet, not Time - `relative_time.py`'s own docstring is explicit that it
+  says nothing about what either span is FOR.
+- **What does "relative" duration require?** RESOLVED: a second
+  duration string to compare against (`reference` in
+  `relative_length(duration, reference)`), resolved the same way via
+  `resolve_span()` - not `broadest_relevant_horizon()`'s bucket
+  system after all, a simpler direct ratio instead. Nothing calls
+  `relative_length()` yet - no caller passes a real `reference` (the
+  goal's overall duration, a previous step's length, etc.) in
+  practice yet.
+- **What's the actual trigger?** STILL OPEN. `relative_length()` exists
+  as a capability, but isn't wired into `plan.py`/`replan()` or the UI
+  anywhere yet - whether it runs on every plan generation or only when
+  a plan shrinks is still undecided, because nothing calls it yet.
 
-## Not started
+## Built so far
 
-No code, no schema, no prompt changes. This is deliberately just the
-shape of the problem and the real tensions in solving it - the design
-conversation itself (which approach, which faculty, which trigger)
-hasn't happened yet.
+`backend/agent/distributed/temporal/relative_time.py` -
+`relative_length(duration, reference)` returns `"short"`/`"medium"`/
+`"long"` based on a fixed, tunable ratio table, or `None` if either
+side doesn't resolve to a real span. Not yet wired into any caller
+(`plan.py`, `replan()`, the UI) - see "What's the actual trigger?"
+above. The activity-specific half of the original idea (point 1 in
+"The core idea") is untouched - no code, no schema, no prompt changes.
 
 ## See also
 

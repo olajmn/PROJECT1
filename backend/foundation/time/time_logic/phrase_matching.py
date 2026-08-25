@@ -1,15 +1,15 @@
 """
 Phrase-matching primitives: recognize a known time phrase somewhere in
 free text and turn it into hard values (hours, dates, offsets), using
-the pattern tables in backend/agent/distributed/timesegments.py. Nothing here decides
-what to DO with a match (see resolve.py) or how to describe it to the
-user (also resolve.py) - just "is this phrase here, and what does it
+the pattern tables in backend/agent/distributed/time_segments.py. Nothing here decides
+what to DO with a match (see duration_resolution.py) or how to describe it to the
+user (also duration_resolution.py) - just "is this phrase here, and what does it
 concretely mean".
 
 extract_duration_phrase() is the one function in this file meant to be
 called from outside the package: the raw phrase text itself (not a
 resolved description), for pulling a duration out of a longer
-free-text sentence typed together with the goal - see resolve.py's
+free-text sentence typed together with the goal - see duration_resolution.py's
 resolve_duration() for the resolved-description counterpart, and
 docs/12-decisions.md, 2026-08-23, for why the two return different
 things.
@@ -19,25 +19,24 @@ import calendar
 import re
 from datetime import date, datetime, timedelta
 
-from backend.agent.distributed.timesegments import (
+from backend.foundation.time.time_data.time_segments import (
     CLOCK_12H_RE,
     CLOCK_24H_RE,
     DAY_FRACTIONS,
     DAY_SEGMENTS,
-    DAYS_PER_WEEK,
     DEADLINE_RE,
     DURATION_LENGTH_RE,
     HOUR_SEGMENTS,
     MINUTE_SEGMENTS,
     MONTH_NUMBERS,
-    MONTHS_PER_YEAR,
     NAMED_FRACTION_RE,
     PERIOD_PHRASES,
     WEEKDAY_NUMBERS,
     WEEKDAY_PREFIXES,
 )
+from backend.foundation.time.time_data.time_units import DAYS_PER_WEEK, MONTHS_PER_YEAR
 
-# Which of the three section-3 tables a NAMED_FRACTION_RE match's unit
+# Which of the three section-2 tables a NAMED_FRACTION_RE match's unit
 # word belongs to - the single place that dispatch is decided, so
 # _matched_named_fraction() doesn't need an if/elif chain of its own.
 # No "year" entry (YEAR_FRACTIONS removed 2026-08-21, see
@@ -78,7 +77,7 @@ def _matched_day_segment(duration: str) -> tuple[str, tuple[int, int]] | None:
 def _matched_day_offset(duration: str) -> int:
     """
     0 (today) by default, or the +/-N day offset if `duration` also
-    names yesterday/today/tomorrow (see timesegments.PERIOD_PHRASES'
+    names yesterday/today/tomorrow (see time_segments.PERIOD_PHRASES'
     "day" entries) - so a day segment can combine with it correctly.
 
     Without this (2026-08-21): "tomorrow evening" would resolve against
@@ -98,11 +97,11 @@ def _matched_clock_time(duration: str) -> tuple[int, int] | None:
     """
     Return (hour, minute) in 24h form for a recognized literal clock
     time in `duration` - 12-hour ("1 o'clock", "3pm", "11:30am") or
-    24-hour ("14:30", "00:00") (see timesegments.CLOCK_12H_RE/
+    24-hour ("14:30", "00:00") (see time_segments.CLOCK_12H_RE/
     CLOCK_24H_RE). None if none match.
 
     A bare "o'clock" with no am/pm ("1 o'clock") resolves to PM - see
-    CLOCK_12H_RE's comment in timesegments.py for why that's a named
+    CLOCK_12H_RE's comment in time_segments.py for why that's a named
     convention, not a guess.
     """
     match = CLOCK_12H_RE.search(duration)
@@ -131,7 +130,7 @@ def _clock_time_date(duration: str, hour: int, minute: int) -> datetime:
 
 def _matched_deadline_phrase(duration: str) -> str | None:
     """Return the actual matched text if `duration` names a routine-
-    event deadline (see timesegments.DEADLINE_RE), or None if none match."""
+    event deadline (see time_segments.DEADLINE_RE), or None if none match."""
     match = DEADLINE_RE.search(duration)
     return match.group(0) if match else None
 
@@ -150,7 +149,7 @@ def _period_range(unit: str, offset: int) -> tuple[date, date]:
     """
     The actual (start, end) calendar date range "yesterday/today/
     tomorrow/last/this/next week/month/year" refers to, computed from
-    today's real date - see timesegments.PERIOD_PHRASES. "day" returns
+    today's real date - see time_segments.PERIOD_PHRASES. "day" returns
     a single-day range (that day, that day) - same offset arithmetic as
     every other unit, just a range of one.
     """
@@ -173,7 +172,7 @@ def _period_range(unit: str, offset: int) -> tuple[date, date]:
 def _matched_month_name(duration: str) -> tuple[str, int] | None:
     """
     Return (name, month_number) for a recognized "in <month>" phrase in
-    `duration` (see timesegments.MONTH_NUMBERS), or None if none match.
+    `duration` (see time_segments.MONTH_NUMBERS), or None if none match.
 
     Requires the literal "in" right before the name - NOT a bare
     word-boundary match on the month name alone (2026-08-21): without
@@ -214,8 +213,8 @@ def _matched_weekday_name(duration: str) -> tuple[str, int, str | None] | None:
     """
     Return (weekday_name, isoweekday_number, prefix) for the first
     recognized weekday name found in `duration` (see
-    timesegments.WEEKDAY_NUMBERS) - `prefix` is "next"/"this"/"last" if
-    one of those (timesegments.WEEKDAY_PREFIXES) directly precedes the
+    time_segments.WEEKDAY_NUMBERS) - `prefix` is "next"/"this"/"last" if
+    one of those (time_segments.WEEKDAY_PREFIXES) directly precedes the
     name, else None for a bare name ("Monday" on its own). See
     _weekday_name_date() for why a bare name resolves differently from
     an explicit prefix rather than defaulting to one of them.
@@ -254,11 +253,11 @@ def _matched_named_fraction(duration: str) -> tuple[str, str, int] | None:
     """
     Return (segment_word, unit, value) for a recognized "quarter/half/
     three quarters (of a/an) hour/minute/day" phrase (see
-    timesegments.NAMED_FRACTION_RE), or None if none match. `value` is
+    time_segments.NAMED_FRACTION_RE), or None if none match. `value` is
     looked up in whichever of HOUR_SEGMENTS/MINUTE_SEGMENTS/
     DAY_FRACTIONS matches `unit` (see _FRACTION_TABLES above) -
     minutes/seconds/hours respectively, matching each table's own scale
-    (see timesegments.py).
+    (see time_segments.py).
     """
     match = NAMED_FRACTION_RE.search(duration)
     if not match:
@@ -289,7 +288,7 @@ def _named_fraction_end(unit: str, value: int) -> datetime:
 def _matched_length(duration: str) -> tuple[int, str] | None:
     """Return (number, unit) for the first recognized "N minutes/hours/
     days/weeks/months/years" phrase in `duration` (see
-    timesegments.DURATION_LENGTH_RE), or None if none match. `unit` is
+    time_segments.DURATION_LENGTH_RE), or None if none match. `unit` is
     always singular ("day", not "days")."""
     match = DURATION_LENGTH_RE.search(duration)
     if not match:

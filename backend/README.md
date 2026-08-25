@@ -40,7 +40,7 @@ fourth category," for the full reasoning.
 |---|---|---|
 | `agent/specialized/plan.py` | Goal → structured plan, and `replan()` (plan + feedback → updated plan). Both call the LLM | `.venv/bin/python -m backend.agent.specialized.plan` |
 | `agent/specialized/goal.py` | Goal identity/grouping - `get_board()`, `get_latest_for_goal()`, `get_history_for_goal()` | (imported by others, not run directly) |
-| `agent/specialized/outcome_classifier.py` | Deterministic (no LLM) classification of free-text feedback into done/not_done/in_progress/goal_done - the logic; `outcome_phrases.py` is the data it uses. Currently used only by Goal's own feedback flow - not (yet) reused elsewhere, which is why it lives here and not in `distributed/` despite sharing its phrase-matching technique with `distributed/timeperiod/` | (imported by others, not run directly) |
+| `agent/specialized/outcome_classifier.py` | Deterministic (no LLM) classification of free-text feedback into done/not_done/in_progress/goal_done - the logic; `outcome_phrases.py` is the data it uses. Currently used only by Goal's own feedback flow - not (yet) reused elsewhere, which is why it lives here and not in `distributed/` despite sharing its phrase-matching technique with `distributed/temporal/` | (imported by others, not run directly) |
 | `agent/specialized/outcome_phrases.py` | The recognized feedback phrases themselves (`GOAL_DONE_PHRASES`, `RULES`, etc.) - Cognition (the fixed "law"), not Recognition (the "judge" that applies it - see `outcome_classifier.py`) | (imported by others, not run directly) |
 | `agent/specialized/today.py` | Show just today's immediate action from the latest plan | `.venv/bin/python -m backend.agent.specialized.today` |
 
@@ -48,8 +48,9 @@ fourth category," for the full reasoning.
 
 | File | Responsibility | Run with |
 |---|---|---|
-| `agent/distributed/timeperiod/` | Understanding "when" a plan should span - resolves/describes recognized day segments and week/month/year phrases into a real clock window or calendar date range, honest about what it can't parse. A package (`matchers.py`/`resolve.py`/`frozen.py`) since 2026-08-24, once one file stopped being the natural unit - see its own `__init__.py` | (imported by others, not run directly) |
-| `agent/distributed/timesegments.py` | The recognized time phrases/patterns themselves (`DAY_SEGMENTS`, `PERIOD_PHRASES`, etc.) - Cognition (the fixed "law"), not Recognition (the "judge" that applies it - see `timeperiod/matchers.py`) | (imported by others, not run directly) |
+| `agent/distributed/temporal/` | Understanding "when" a plan should span - resolves/describes recognized day segments and week/month/year phrases into a real clock window or calendar date range, honest about what it can't parse. A package (`phrase_matching.py`/`duration_resolution.py`/`frozen_duration.py`) since 2026-08-24, once one file stopped being the natural unit - renamed from `timeperiod/` 2026-08-25 (see its own `__init__.py`) | (imported by others, not run directly) |
+| `agent/distributed/time_segments.py` | The recognized time phrases/patterns themselves (`DAY_SEGMENTS`, `PERIOD_PHRASES`, etc.) - fixed tables, not the matching logic that applies them (see `temporal/phrase_matching.py`) | (imported by others, not run directly) |
+| `agent/distributed/time_units.py` | Raw time-unit constants (`SECONDS_PER_MINUTE`, `MONTH_DAYS`, etc.) `time_segments.py`'s tables and `temporal/`'s arithmetic are built from - split out of `time_segments.py` 2026-08-25, a different kind of fact (not itself matched against typed text) | (imported by others, not run directly) |
 
 ### Root level
 

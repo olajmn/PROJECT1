@@ -131,9 +131,9 @@
   of the current one. Overlaps with the "only shrink once" constraint
   noted in the step-list drift fix above ([[12-decisions]]) and with
   the existing `duration`/`PLAN_KEYS` machinery ([[07-features]] §
-  Time periods, `backend/agent/distributed/timeperiod/`). Directly what prompted the
+  Time periods, `backend/agent/distributed/temporal/`). Directly what prompted the
   "Faculties" framing in [[08-technical-architecture]], same day -
-  `backend/agent/distributed/timeperiod/` is that framing's first concrete example.
+  `backend/agent/distributed/temporal/` is that framing's first concrete example.
   Expanded into its own draft doc the same day - see [[14-semantic-time]].
 - **The agent actually doing things, not just explaining how.**
   Discussed 2026-08-24: distinguishes an agent that tells the user how

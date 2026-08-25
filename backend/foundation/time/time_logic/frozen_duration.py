@@ -3,13 +3,13 @@ The "frozen duration" lifecycle: everything computed ONCE when a goal
 is created (see freeze_duration()) and then read back unchanged on
 every later render, rather than re-resolved against the current moment
 each time (see freeze_duration()'s docstring for the bug this fixes).
-Builds on resolve.py's resolve_span()/describe_duration() - nothing
+Builds on duration_resolution.py's resolve_span()/describe_duration() - nothing
 here re-implements phrase matching itself.
 """
 
 from datetime import datetime, timedelta
 
-from backend.agent.distributed.timeperiod.resolve import describe_duration, resolve_span
+from backend.foundation.time.time_logic.duration_resolution import describe_duration, resolve_span
 
 
 def freeze_duration(duration: str | None) -> dict | None:
@@ -29,7 +29,7 @@ def freeze_duration(duration: str | None) -> dict | None:
     and call resolve_span() fresh each time) - so its countdown quietly
     reset to a full hour on every refresh instead of counting down from
     when the goal was actually created. Calling this once at creation
-    time (see backend/storage.py's `save_plan(..., frozen_duration=...)`)
+    time (see backend/infrastructure/data_persistence.py's `save_plan(..., frozen_duration=...)`)
     and reading the stored result from then on is the fix - see
     duration_progress()/step_plan() below, which now take this dict
     instead of raw duration text.
@@ -135,7 +135,7 @@ MAX_STEPS = 6
 # honest one_year answer, only up through one_month. Checked broadest
 # to narrowest, first threshold cleared wins. Deliberately coarse
 # buckets (a "month" close enough to 30 days, not read from
-# backend.agent.distributed.timesegments.AVERAGE_DAYS_PER_MONTH) rather than a precise
+# backend.agent.distributed.time_units.AVERAGE_DAYS_PER_MONTH) rather than a precise
 # formula - same convention-over-precision trade WEEKS_PER_MONTH=4
 # already makes elsewhere in this module; the actual question here
 # ("is this goal roughly year-scale, month-scale, ...") doesn't need
@@ -200,7 +200,7 @@ def step_count(duration: str | None) -> int | None:
 
 def step_plan(frozen: dict | None, steps: list[str] | None) -> list[dict] | None:
     """
-    Zips stored step descriptions (the model's job - see backend/agent/specialized/plan.py's
+    Zips stored step descriptions (the model's job - see backend/planning/plan.py's
     `_generate_steps()`) with a deterministically-computed time slice of
     the goal's frozen span (`freeze_duration()` - this module's job),
     ready for the UI to render as a plain list:

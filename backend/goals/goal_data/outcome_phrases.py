@@ -2,8 +2,8 @@
 Cognition, not Recognition - the fixed rules themselves (the "law"),
 not the machinery that applies them to a real case. No logic, no
 functions that classify anything. Split out of outcome_classifier.py
-(2026-08-21), same reasoning as backend/agent/distributed/timesegments.py
-vs backend/agent/distributed/timeperiod/: the phrase lists (what's
+(2026-08-21), same reasoning as backend/agent/distributed/time_segments.py
+vs backend/foundation/time/: the phrase lists (what's
 recognized) are meant to grow over time as real usage turns up new
 phrasings people actually type, and living in their own file keeps
 that growth from cluttering the matching logic that reads them (the

@@ -9,7 +9,7 @@ do right now.
 Run from the PROJECT ROOT: .venv/bin/python -m backend.agent.specialized.today
 """
 
-from backend.storage import get_latest_plan
+from backend.infrastructure.data_persistence import get_latest_plan
 
 if __name__ == "__main__":
     latest = get_latest_plan()

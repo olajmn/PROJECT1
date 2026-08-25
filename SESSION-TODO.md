@@ -8,6 +8,31 @@ has been moved into a proper dev log/decision entry (most recently
 2026-08-24 - see [[10-development]] and [[12-decisions]] for what was
 moved out before this cleared).
 
+## Next session — pick ONE of these five, not more
+
+Raised 2026-08-24, at the end of a long architecture-heavy session
+(see [[10-development]] and [[08-technical-architecture]] § Faculties)
+- a ChatGPT reflection on that session's own summary put it well: the
+  project now has "a conscious structure and a beginning architectural
+  language... the next challenge is not to fall so in love with the
+  architecture that building the agent itself stops." Explicit decision:
+  next session picks ONE of these to actually build, not more naming/
+  restructuring work.
+
+**2026-08-25: Semantic understanding of time picked.** First piece
+built - see [[10-development]] and [[14-semantic-time]] for what's
+done vs. still open. The other four stay parked, unstarted:
+
+- **Memory** - the agent starting to actively use its own history
+  (`storage.py` today is Infrastructure - pure persistence, understands
+  nothing it stores; "Memory" as a real capability isn't built).
+- **Better step hierarchy** - see the existing open item directly below;
+  this is the same thing, just renamed by the same reflection.
+- **Knowledge / RAG** - sketched in [[07-features]], not built.
+- **Acting** - the agent actually doing things (making a file, calling
+  an API), not just reasoning about what should happen - see
+  [[13-ideas-parking-lot]]'s "agent actually doing things" entry.
+
 ## Open — noticed, not yet decided/fixed
 
 - [ ] **Vertical/hierarchical step list, not one flat list per goal** -

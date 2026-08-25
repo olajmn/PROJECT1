@@ -5,13 +5,13 @@ what a goal's current state is.
 Split out of storage.py (2026-08-21) to match the product model in
 docs/07-features.md ("Architecture framing: Program / Rooms /
 Sitemap") - Goal is its own room. Built entirely on
-storage.load_history() (the public read API), not storage's private
-_load_all()/_save_all().
+data_persistence.load_history() (the public read API), not that
+module's private _load_all()/_save_all().
 
-goal_id itself is still minted and backfilled inside storage.py (see
-_next_goal_id()/_backfill_goal_ids()), not moved here: that happens at
-save/load time, tightly coupled to the persistence mechanism itself -
-splitting it out would mean storage.py importing back from this file
+goal_id itself is still minted and backfilled inside data_persistence.py
+(see _next_goal_id()/_backfill_goal_ids()), not moved here: that
+happens at save/load time, tightly coupled to the persistence
+mechanism itself - splitting it out would mean data_persistence.py importing back from this file
 just to save a record, a real circular dependency rather than a clean
 cut. What lives here is everything that only *reads* history and
 groups it by goal_id, after the fact.
@@ -19,7 +19,7 @@ groups it by goal_id, after the fact.
 
 from datetime import datetime
 
-from backend.storage import load_history
+from backend.infrastructure.data_persistence import load_history
 
 
 def _created_at_key(record: dict) -> datetime:
@@ -27,7 +27,7 @@ def _created_at_key(record: dict) -> datetime:
     A sortable, comparable `created_at` for one record - naive local
     time, always. Records saved before 2026-08-21 stored `created_at`
     in UTC (timezone-aware, e.g. "...+00:00"); everything since is
-    naive local (see storage.save_plan()'s comment on why that
+    naive local (see data_persistence.save_plan()'s comment on why that
     changed). Comparing an aware and a naive datetime directly raises
     TypeError in Python, so any aware timestamp is converted to local
     time and its tzinfo dropped here - not just to avoid the crash, but
@@ -62,7 +62,7 @@ def get_latest_for_goal(goal_id: int) -> dict | None:
     no record has that goal_id.
 
     Needed once more than one goal can be active at a time (see
-    docs/10-development.md, 2026-08-20): get_latest_plan() (storage.py)
+    docs/10-development.md, 2026-08-20): get_latest_plan() (data_persistence.py)
     answers "what was touched most recently, across every goal", which
     stops being the right question the moment two goals are both active
     side by side on the board - giving feedback on one must never
@@ -82,7 +82,7 @@ def get_board() -> dict:
     A "goal" isn't its own stored entity - it's a chain of records
     sharing the same `goal_id`, created by generate_plan() and then
     extended by replan() each time feedback comes in (see
-    storage.save_plan()). So the only way to know a goal's current
+    data_persistence.save_plan()). So the only way to know a goal's current
     state is to find its most recent record. Records are loaded
     oldest-first, so iterating in order and overwriting by goal_id
     naturally leaves the latest record per goal.

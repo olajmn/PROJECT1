@@ -2,7 +2,66 @@
 
 > Phase 7-9 in [[00-project-brief]]. Running log, newest first.
 
-## 2026-08-24 (latest)
+## 2026-08-25 (latest)
+
+- Picked "Semantic understanding of time" off [[SESSION-TODO]]'s
+  five-item list (the other four stay parked). Built the first,
+  narrower half of the idea in [[14-semantic-time]]: `relative_length()`
+  in a new `backend/agent/distributed/temporal/relative_time.py` - given
+  two duration strings, returns whether the first is "short"/"medium"/
+  "long" relative to the second (e.g. the goal's overall duration),
+  via a fixed, hardcoded ratio table, not a model call. Placed inside
+  the Time faculty rather than a new one - it needs no knowledge of
+  what either span is FOR, only their relative magnitude; the doc's
+  own "Future hook" note (see `temporal/__init__.py`'s history)
+  had already anticipated this. The harder "activity-specific
+  meaning" half of the original idea (is 45 minutes short or long FOR
+  RUNNING specifically) is untouched - stays open, see
+  [[14-semantic-time]]. Not yet wired into any caller (`plan.py`,
+  `replan()`, the UI) - exists as a capability, not yet used.
+- `timesegments.py` split: raw time-unit constants (`SECONDS_PER_MINUTE`,
+  `MONTH_DAYS`, etc.) moved to a new sibling `timeunits.py` - a
+  different kind of fact (never matched against typed text, unlike
+  `timesegments.py`'s remaining phrase-recognition tables). Sections
+  renumbered 1-4 accordingly. Both renamed `time_segments.py`/
+  `time_units.py` later the same day, for consistency with every other
+  multi-word file in the package (`phrase_matching.py` etc.).
+- `agent/distributed/timeperiod/` renamed `temporal/` (19 files
+  referenced the old name, all updated - imports, docs, `README.md`).
+  Reasoning: "period" only fit part of what the package does (point-
+  in-time and duration recognition, now also `relative_time.py`'s magnitude
+  comparison); "Temporal" was already the project's own word for this
+  (`docs/08-technical-architecture.md`'s "Temporal awareness -> the
+  Time faculty" mapping, "Temporal grounding" in this log's 2026-08-19
+  entry) - removes the recurring "Time (`timeperiod/`)" translation
+  every doc mention needed. `time/` was considered and rejected -
+  shadows Python's stdlib `time` module; safe via absolute imports but
+  needless confusion to read. Dated/historical mentions of the old
+  `backend/timeperiod.py` (the pre-2026-08-21 single-file version) left
+  unchanged, same as every other renamed term on this page - not
+  rewriting history, see [[08-technical-architecture]]'s Room->Faculty
+  precedent.
+  **Found, not touched:** a separate, pre-existing "Timeperiod" - the
+  UI **Room** name (`docs/07-features.md`'s Rooms table has "Time
+  periods"; `devtools/README.md`'s template listing and a comment in
+  `temporal/phrase_matching.py` both say "Timeperiod", one word) is a
+  different, product-facing concept from the code package just
+  renamed, spelled two different ways already before today - worth its
+  own naming conversation, not assumed to mean the same rename applies.
+- `temporal/`'s three files renamed for the same reason as the package
+  itself - short, generic nouns that didn't say what they held:
+  `matchers.py` -> `phrase_matching.py`, `resolve.py` ->
+  `duration_resolution.py`, `frozen.py` -> `frozen_duration.py`
+  (`relative.py` -> `relative_time.py` too, same pass). All internal
+  cross-imports between the four files, `temporal/__init__.py`'s
+  re-exports, and every mention elsewhere (`storage.py`, `plan.py`,
+  `outcome_classifier.py`, `devtools/app.py`, `README.md`, docs)
+  updated to match; dated mentions of the original 2026-08-24 split
+  (`docs/08-technical-architecture.md`'s "was split into a package
+  (`matchers.py`/`resolve.py`/`frozen.py`)") left as historical record,
+  same principle as every other rename today.
+
+## 2026-08-24
 
 - Board cleanup: 15 test/debris `goal_id`s (duplicate goals and dev-task
   goals from earlier testing sessions - "make dinner" x3, "make

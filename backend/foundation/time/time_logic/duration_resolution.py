@@ -1,12 +1,12 @@
 """
 Three parallel "views" over the same matched time phrase, all walking
-the matchers in matchers.py in the same broadest-signal-first order:
+the matchers in phrase_matching.py in the same broadest-signal-first order:
 
 - resolve_duration() - a human-readable description with the
   resolution appended, for showing next to the raw text in the UI.
 - resolve_span() - the same resolution as a raw (start, end) datetime
   pair, for computing with (progress bars, step slicing - see
-  frozen.py) rather than displaying.
+  frozen_duration.py) rather than displaying.
 - describe_duration() - explains HOW something was understood (which
   matcher fired, or that nothing did), rather than what it resolved to.
 
@@ -17,7 +17,7 @@ same as before this file existed.
 
 from datetime import date, datetime, timedelta
 
-from backend.agent.distributed.timeperiod.matchers import (
+from backend.foundation.time.time_logic.phrase_matching import (
     _clock_time_date,
     _length_end_date,
     _length_end_time,

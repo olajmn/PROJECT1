@@ -18,17 +18,17 @@ same category as tools/ and docs/, not backend/.
 
 from flask import Flask, redirect, render_template, request, url_for
 
-from backend.agent.distributed.timeperiod import (
+from backend.foundation.time import (
     describe_duration,
     duration_progress,
     extract_duration_phrase,
     freeze_duration,
     step_plan,
 )
-from backend.agent.specialized.goal import get_board, get_history_for_goal, get_latest_for_goal
-from backend.agent.specialized.outcome_classifier import classify_outcome, wants_duration_change
-from backend.agent.specialized.plan import HORIZON_LABELS, PLAN_KEYS, generate_plan, join_plan_prose, replan
-from backend.storage import load_history, save_plan
+from backend.goals.goal_logic.goal import get_board, get_history_for_goal, get_latest_for_goal
+from backend.goals.goal_logic.outcome_classifier import classify_outcome, wants_duration_change
+from backend.planning.plan import HORIZON_LABELS, PLAN_KEYS, generate_plan, join_plan_prose, replan
+from backend.infrastructure.data_persistence import load_history, save_plan
 
 # Custom folder names (2026-08-23, defaults were templates/ and
 # static/) - explicit split of "frontend" (html/ - every .html file,
@@ -40,17 +40,17 @@ app = Flask(__name__, template_folder="html", static_folder="css")
 # Makes describe_duration() callable directly from templates, e.g.
 # {{ describe_duration(record.duration) }} in _plan_entry.html/index.html -
 # so the "how was this understood" text stays in one place
-# (backend/agent/distributed/timeperiod/resolve.py) instead of being duplicated as static strings
+# (backend/foundation/time/logic/duration_resolution.py) instead of being duplicated as static strings
 # in the templates.
 app.jinja_env.globals["describe_duration"] = describe_duration
 # Same reasoning, for the start/now/end progress bar in
 # active_goal/_timeperiod.html - percent/status/labels computed once in
-# timeperiod.py (see duration_progress()'s docstring), not recomputed
+# temporal/ (see duration_progress()'s docstring), not recomputed
 # in template logic.
 app.jinja_env.globals["duration_progress"] = duration_progress
 # Same reasoning - the vertical step list in active_goal/_task.html and
 # active_goal/_steps.html zips a goal's stored step descriptions
-# (record.plan.steps, from backend/agent/specialized/plan.py's _generate_steps()) with
+# (record.plan.steps, from backend/planning/plan.py's _generate_steps()) with
 # their deterministically-computed time slice via step_plan() - see
 # its docstring.
 app.jinja_env.globals["step_plan"] = step_plan
@@ -85,7 +85,7 @@ def split_message_lines(text: str) -> list[str]:
     plain string everywhere else (goal_log/history.html, _plan_entry.html, the
     JSON file itself).
 
-    The exact reverse of backend/agent/specialized/plan.py's join_plan_prose() (". ".join
+    The exact reverse of backend/planning/plan.py's join_plan_prose() (". ".join
     of several texts): splits back on that same separator. A plain
     ". ".split() would silently swallow the period from every part
     except the last (join_plan_prose's job was gluing them INTO one
@@ -128,7 +128,7 @@ def new_goal():
 
     One text field now (2026-08-23; used to be two - goal and duration
     typed separately) - `extract_duration_phrase()`
-    (backend/agent/distributed/timeperiod/matchers.py) searches whatever was typed for a
+    (backend/foundation/time/logic/phrase_matching.py) searches whatever was typed for a
     recognized time phrase anywhere inside it (e.g. "clean the
     apartment this weekend"), the same matchers a dedicated duration
     field already used, just applied to the whole sentence instead of
@@ -152,7 +152,7 @@ def new_goal():
     chat thread. `_apply_new_duration()` is the shared piece of logic
     that survived that move.
 
-    Computes a FRESH `frozen_duration` (see backend/agent/distributed/timeperiod/frozen.py's
+    Computes a FRESH `frozen_duration` (see backend/foundation/time/logic/frozen_duration.py's
     freeze_duration()) whenever a real plan comes back - EXCEPT when
     `generate_plan()` comes back with `clarification` set instead (see
     that function's docstring) - the goal as typed was too vague in
@@ -205,7 +205,7 @@ def _apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
     Always calls generate_plan() again, never just patches
     duration/frozen_duration onto the existing record: changing the
     timeframe is a real new planning decision (new horizons filled, a
-    new step list from backend/agent/specialized/plan.py's _generate_steps()), not a
+    new step list from backend/planning/plan.py's _generate_steps()), not a
     countdown edit - same as it always was here, just triggered by a
     chat message now instead of a form submit. frozen_duration stays
     None if the new duration turns out too vague in CONTENT to plan at
@@ -233,7 +233,7 @@ def _apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
 def feedback():
     """
     Handle the "what's going on" form: classify the free-text note into
-    an outcome (see backend/agent/specialized/outcome_classifier.py - no LLM, recognized
+    an outcome (see backend/goals/goal_logic/outcome_classifier.py - no LLM, recognized
     phrases only), then act on it exactly as the old Yes/Still working
     on it/No/Goal complete buttons used to. There's no separate
     "outcome" field anymore - the note itself is the only signal, so
@@ -287,7 +287,7 @@ def feedback():
 
     if latest["plan"].get("clarification"):
         # This goal has no real plan yet - the agent asked a clarifying
-        # question instead (see backend/agent/specialized/plan.py's generate_plan()
+        # question instead (see backend/planning/plan.py's generate_plan()
         # docstring), and `note` is the ANSWER to that question, not a
         # status report on a task that doesn't exist yet. Route it
         # through generate_plan() again (not replan(), which is built
@@ -388,8 +388,8 @@ def feedback():
 
     # Inherited unchanged, never recomputed - a check-in isn't a new
     # planning decision, it's the SAME timeframe continuing (see
-    # backend/agent/distributed/timeperiod/frozen.py's freeze_duration() and
-    # backend/storage.py's save_plan() docstring for why re-deriving
+    # backend/foundation/time/logic/frozen_duration.py's freeze_duration() and
+    # backend/infrastructure/data_persistence.py's save_plan() docstring for why re-deriving
     # this from "now" here was the actual bug). Falls back to computing
     # one fresh only for a goal saved before frozen_duration existed
     # (2026-08-21) - a one-time "adopt now" so it isn't permanently
@@ -460,7 +460,7 @@ def step():
     goal's already-generated `plan.steps` list. No model call at all:
     unlike /feedback's free-text note (which can trigger replan() -
     the model reconsidering the plan), the step list was already fully
-    decided upfront (see backend/agent/specialized/plan.py's _generate_steps()), so
+    decided upfront (see backend/planning/plan.py's _generate_steps()), so
     moving through it is just "which one are we on now", nothing to
     ask the model about.
 
@@ -484,7 +484,7 @@ def step():
     steps = latest["plan"].get("steps")
     if not steps:
         # Nothing to advance - no step list on this goal at all (see
-        # backend/agent/specialized/plan.py's generate_plan(): only goals with a
+        # backend/planning/plan.py's generate_plan(): only goals with a
         # resolvable duration get one).
         return back_to
 
@@ -524,7 +524,7 @@ def completed():
     shows Active, so a second page repeating it never earned its keep.
     get_board() still computes both halves (it groups ALL history by
     goal_id, splitting into active/completed is just what falls out of
-    that in one pass - see backend/agent/specialized/goal.py) but only `board.completed`
+    that in one pass - see backend/goals/goal_logic/goal.py) but only `board.completed`
     is ever read here now, via completed_goal/_completed.html.
     """
     return render_template("completed_goal/completed.html", board=get_board(), horizons=_BROADER_HORIZONS)

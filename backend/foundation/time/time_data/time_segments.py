@@ -1,94 +1,32 @@
 """
-Cognition, not Recognition - the fixed rules themselves (the "law"),
-not the machinery that applies them to a real case. No logic, no
-functions that resolve or interpret any of it. Split out of
-timeperiod.py (2026-08-21) purely for overview: everything the code
-currently knows how to recognize about "when" lives in this one file,
-scannable at a glance, without wading through the matching/resolution
-logic that reads it (that's Recognition - the "judge" - see
-backend/agent/distributed/timeperiod/matchers.py, which imports these
-tables from here and decides what actually satisfies them for a given
-piece of text).
+The fixed rules themselves - the tables and patterns recognized about
+"when"/"how long", not the machinery that applies them to a real case.
+No logic beyond the tables themselves; see
+backend/agent/distributed/temporal/, which imports these and decides
+what actually satisfies them for a given piece of text.
+
+Split out of timeperiod.py (2026-08-21) purely for overview: everything
+the code currently knows how to recognize about "when" lives in this
+one file, scannable at a glance, without wading through the matching/
+resolution logic that reads it. The raw time-unit arithmetic
+(SECONDS_PER_MINUTE, MONTH_DAYS, etc.) moved out to time_units.py
+(2026-08-25) - a different kind of fact, not itself matched against
+typed text, only used to build the tables below.
 
 Nothing here does anything by itself - these are just tables and
-patterns; see backend/agent/distributed/timeperiod/ for what turns them into an actual
+patterns; see backend/agent/distributed/temporal/ for what turns them into an actual
 answer.
 """
 
 import re
 
-# =============================================================================
-# SECTION 1 — BASIC TIME-UNIT FACTS
-#
-# Not phrase recognition like sections 4-5 below - just the real-world
-# constants everything else in this file (and timeperiod.py's
-# arithmetic) is actually built from, written down explicitly in one
-# place instead of left as bare numbers (60, 24, 7, 12) scattered
-# through the code with no name attached. Sections 2-3 aren't
-# recognition either, for that matter - see their own banners: they're
-# named/derived *data*, only sections 4-5 actually match against typed
-# text.
-# =============================================================================
-
-SECONDS_PER_MINUTE = 60
-MINUTES_PER_HOUR = 60
-HOURS_PER_DAY = 24
-DAYS_PER_WEEK = 7
-MONTHS_PER_YEAR = 12
-
-# Derived, not a separate fact of its own - always exactly
-# MINUTES_PER_HOUR * HOURS_PER_DAY. Computed from those two rather than
-# hardcoded as 1440 so it can never drift out of sync with them.
-MINUTES_PER_DAY = MINUTES_PER_HOUR * HOURS_PER_DAY
-
-# Months are 28-31 days and years are 365/366 days, so neither "days
-# per month" nor "weeks per year" has a clean, exact whole-number
-# answer the way days-per-week (always 7) or months-per-year (always
-# 12) do. That doesn't mean there's only one honest answer, though -
-# there are two different, both-real facts here, not a "right" one and
-# a "wrong" one:
-#
-#   - the PRECISE mathematical average (below, computed from 365.25 to
-#     account for leap years) - what you'd actually want for a
-#     calculation that needs to be correct over many years.
-#   - the CONVENTIONAL, commonly-said number (WEEKS_PER_MONTH = 4,
-#     WEEKS_PER_YEAR = 52) - not an attempt at precision, but genuinely
-#     what people mean when they say "four weeks" or "52 weeks" out
-#     loud. Rounding 4.35 to "4" isn't an error here the way rounding a
-#     calculation would be - it's a real, separate convention, not a
-#     worse version of the average.
-#
-# For a *specific* month, the exact day count already exists elsewhere
-# too - timeperiod.py uses calendar.monthrange(year, month) when it
-# actually needs to know how many days September has, say (see
-# MONTH_DAYS below for a non-leap-year reference table of the same
-# fact). The averages here are for estimation across an unspecified
-# span, never a substitute for an exact lookup once a real month/year
-# is known.
-WEEKS_PER_MONTH = 4
-WEEKS_PER_YEAR = 52
-
-AVERAGE_DAYS_PER_MONTH = 365.25 / MONTHS_PER_YEAR  # ~30.44
-AVERAGE_WEEKS_PER_MONTH = AVERAGE_DAYS_PER_MONTH / DAYS_PER_WEEK  # ~4.35
-AVERAGE_WEEKS_PER_YEAR = 365.25 / DAYS_PER_WEEK  # ~52.18
-
-# The actual day count for each named month - 1-indexed to match
-# MONTH_NAMES/datetime.month. February is written as 28 (the common
-# case, not a leap year) - the one month where "how many days" doesn't
-# have a single year-independent answer; calendar.monthrange(year, 2)
-# is the exact answer for a specific year (see timeperiod.py), this is
-# the everyday reference value.
-MONTH_DAYS = {
-    1: 31, 2: 28, 3: 31, 4: 30,
-    5: 31, 6: 30, 7: 31, 8: 31,
-    9: 30, 10: 31, 11: 30, 12: 31,
-}
+from backend.foundation.time.time_data.time_units import HOURS_PER_DAY, MINUTES_PER_HOUR, SECONDS_PER_MINUTE
 
 # =============================================================================
-# SECTION 2 — CALENDAR NAMES
+# SECTION 1 — CALENDAR NAMES
 #
-# Its own section, not folded into section 3 below - these two tables
-# don't name a *fraction* of a unit the way everything in section 3
+# Its own section, not folded into section 2 below - these two tables
+# don't name a *fraction* of a unit the way everything in section 2
 # does, they name the unit's own individual slots (each weekday, each
 # month). A genuinely different kind of table, not a special case of
 # the same one.
@@ -110,12 +48,12 @@ MONTH_NAMES = {
 }
 
 # =============================================================================
-# SECTION 3 — NAMED SEGMENTS / FRACTIONS
+# SECTION 2 — NAMED SEGMENTS / FRACTIONS
 #
 # The *regular*, mathematical kind of named chunk - "half" is always
 # exactly half, no matter which unit (HOUR_SEGMENTS/MINUTE_SEGMENTS/
 # DAY_FRACTIONS all work the same way). DAY_SEGMENTS used to live here
-# too, but moved to section 4 (Point-in-time recognition) - it's the
+# too, but moved to section 3 (Point-in-time recognition) - it's the
 # *irregular* kind (real, named periods with their own meaning, like
 # PERIOD_PHRASES), not a fraction of anything, and it's matched
 # directly the same self-contained way PERIOD_PHRASES is, unlike every
@@ -129,10 +67,10 @@ MONTH_NAMES = {
 
 # Named segments of a minute, in seconds - "a quarter" / "half a
 # minute" / "three quarters of a minute" / a full "minute" are things
-# people actually say; recognized via NAMED_FRACTION_RE (section 5
+# people actually say; recognized via NAMED_FRACTION_RE (section 4
 # below), which looks values up in this table. Called SEGMENTS, not
 # FRACTIONS: "quarter" isn't really "1/4" to whoever's typing it, it's
-# a named chunk of the minute, same idea as DAY_SEGMENTS (section 4
+# a named chunk of the minute, same idea as DAY_SEGMENTS (section 3
 # below) being named chunks of the day - and "fractions" stopped
 # fitting the moment "minute" (the whole thing, not a fraction of
 # itself) was added anyway. Arbitrary counts ("45 minutes") are a
@@ -146,12 +84,12 @@ MINUTE_SEGMENTS = {
 
 # Same idea, one level up: named segments of an hour, in minutes -
 # "a quarter of an hour" / "half an hour" / "three quarters of an
-# hour" / a full "hour" are things people actually say, same as
-# MINUTE_SEGMENTS above, just with "an hour" instead of "a minute"
-# (English's a/an split by vowel sound, not by which unit it is). The
-# numbers happen to be identical to MINUTE_SEGMENTS (15/30/45/60) only
-# because both a minute and an hour split into 60 of the unit below
-# them - not because one is secretly reused as the other.
+# hour" are things people actually say, same as MINUTE_SEGMENTS above,
+# just with "an hour" instead of "a minute" (English's a/an split by
+# vowel sound, not by which unit it is). The numbers happen to be
+# identical to MINUTE_SEGMENTS (15/30/45/60) only because both a
+# minute and an hour split into 60 of the unit below them - not
+# because one is secretly reused as the other.
 HOUR_SEGMENTS = {
     "quarter": 15,
     "half": 30,
@@ -159,7 +97,7 @@ HOUR_SEGMENTS = {
     "hour": MINUTES_PER_HOUR,
 }
 
-# Unlike DAY_SEGMENTS (section 4 below - irregular, named real periods,
+# Unlike DAY_SEGMENTS (section 3 below - irregular, named real periods,
 # morning and afternoon aren't the same length), this is the *regular*
 # mathematical quartering of a day, in hours - "half a day" = 12 hours,
 # always, the same way "half an hour" always means 30 minutes
@@ -175,7 +113,7 @@ DAY_FRACTIONS = {
 # No WEEK_FRACTIONS: 7 doesn't divide evenly by 4 (a "quarter week"
 # would be 1.75 days) - not a clean, useful value the way DAY_FRACTIONS
 # is, so left out rather than silently rounding to something that
-# isn't actually what a quarter of a week is. WEEKDAY_NAMES (section 2
+# isn't actually what a quarter of a week is. WEEKDAY_NAMES (section 1
 # above) covers the "named segments of a week" role instead
 # (Monday..Sunday).
 #
@@ -183,11 +121,11 @@ DAY_FRACTIONS = {
 # docs/12-decisions.md) - not because a year can't be quartered
 # cleanly (it can, into months, the same way DAY_FRACTIONS quarters a
 # day into hours), but because it wasn't judged worth keeping: nothing
-# else in this file depends on it, and MONTH_NAMES (section 2 above)
+# else in this file depends on it, and MONTH_NAMES (section 1 above)
 # already covers naming a specific part of a year.
 
 # =============================================================================
-# SECTION 4 — POINT-IN-TIME RECOGNITION
+# SECTION 3 — POINT-IN-TIME RECOGNITION
 #
 # What actually gets matched against the raw duration text typed in,
 # for phrases that name a specific point in the calendar/clock - day
@@ -195,21 +133,21 @@ DAY_FRACTIONS = {
 # names used the other way around (MONTH_NUMBERS/WEEKDAY_NUMBERS/
 # WEEKDAY_PREFIXES), literal clock times (CLOCK_12H_RE/CLOCK_24H_RE),
 # and routine-event deadlines (DEADLINE_RE) - all answer "WHEN".
-# Sections 1-3 above are just the underlying facts and named chunks;
+# Sections 1-2 above are just the underlying facts and named chunks;
 # this is where free text starts turning into one of them. See section
-# 5 below for the other kind of phrase recognition - "HOW LONG", not
+# 4 below for the other kind of phrase recognition - "HOW LONG", not
 # "WHEN".
 # =============================================================================
 
 # Recognized day segments: word -> (start_hour, end_hour) in 24h local
 # time, both in [0, 24). "night" wraps past midnight (23 -> 6), handled
-# specially in timeperiod.resolve_duration(). This is the code
+# specially in temporal.resolve_duration(). This is the code
 # actually *knowing* what "evening" means (a real clock window) instead
 # of handing the raw word to the model and hoping it guesses sensibly -
 # see docs/11-experiments.md, 2026-08-19. Moved to this section
 # 2026-08-21 - matched directly by its own key, the same self-contained
 # way PERIOD_PHRASES just below is, not via a value table + separate
-# matching regex the way section 3's segments/fractions are.
+# matching regex the way section 2's segments/fractions are.
 #
 # English only (see CONVENTIONS.md) - this used to also recognize the
 # Norwegian words for each segment ("morgen"/"formiddag" - morning,
@@ -219,7 +157,7 @@ DAY_FRACTIONS = {
 # still flows into the prompt sent to the model, and mixed-language
 # input is exactly the failure mode already found there. Anyone typing
 # a day segment in Norwegian now gets the honest "not parsed/verified
-# by code" fallback (see timeperiod.describe_duration()) instead of
+# by code" fallback (see temporal.describe_duration()) instead of
 # silent recognition.
 DAY_SEGMENTS = {
     "morning": (6, 12),
@@ -232,19 +170,19 @@ DAY_SEGMENTS = {
 # Same idea as DAY_SEGMENTS above, one level up: recognized whole-period
 # phrases -> (unit, offset). Unlike DAY_SEGMENTS these can't be a fixed
 # (start, end) tuple - "this week" means a different date range every
-# time depending on today's date - so timeperiod._period_range()
+# time depending on today's date - so temporal._period_range()
 # resolves each at call time instead of storing a fixed value here.
 # Added 2026-08-21 alongside week/month/year so the model has the same
 # real grounding for "by this evening" (a DAY_SEGMENTS phrase) and
 # "this month" (a PERIOD_PHRASES one): both become an actual date/time
 # range instead of a bare word. Deliberately still just a recognition
 # table, not the folder-per-time-period hierarchy from
-# docs/08-technical-architecture.md - see timeperiod.py's docstring.
+# docs/08-technical-architecture.md - see temporal/__init__.py's docstring.
 #
 # "day" as a unit (added 2026-08-21) is the same mechanism one level
 # down from week/month/year: "tomorrow" is today's date + 1, exactly
 # the same offset arithmetic as "next week" being this week + 1 - just
-# a single day instead of a 7-day range, so timeperiod._period_range()
+# a single day instead of a 7-day range, so temporal._period_range()
 # returns (that day, that day) rather than (start, end).
 PERIOD_PHRASES = {
     "yesterday": ("day", -1),
@@ -262,7 +200,7 @@ PERIOD_PHRASES = {
 }
 
 # Reverse lookups (name -> number), derived directly from MONTH_NAMES/
-# WEEKDAY_NAMES above (section 2) rather than typed out again by hand -
+# WEEKDAY_NAMES above (section 1) rather than typed out again by hand -
 # a name and its number can never quietly drift apart, since one is
 # computed from the other every time the module loads. Lowercased
 # because every phrase this gets matched against is lowercased first,
@@ -285,7 +223,7 @@ WEEKDAY_NUMBERS = {name.lower(): number for number, name in WEEKDAY_NAMES.items(
 # A bare weekday name with no prefix ("Monday", no "next"/"this"/
 # "last") is deliberately not a fourth entry here with offset 0 - it
 # doesn't mean the same thing as "this Monday". See
-# timeperiod._weekday_name_date() for why a bare name gets its own,
+# temporal._weekday_name_date() for why a bare name gets its own,
 # different resolution (the *nearest* occurrence, counting today).
 WEEKDAY_PREFIXES = {
     "next": 1,
@@ -302,21 +240,21 @@ WEEKDAY_PREFIXES = {
 #
 # A bare "o'clock" with no am/pm ("1 o'clock") is genuinely ambiguous -
 # the text alone can't say whether that's 01:00 or 13:00. Rather than
-# leave it unrecognized, timeperiod._matched_clock_time() resolves it
+# leave it unrecognized, temporal._matched_clock_time() resolves it
 # to PM - a deliberate, named CONVENTION (not a fact the code actually
-# knows), same trade WEEKS_PER_MONTH=4 already makes elsewhere in this
-# file: a fixed, documented default beats silently guessing differently
-# each time, or refusing to answer at all.
+# knows), same trade WEEKS_PER_MONTH=4 already makes in time_units.py: a
+# fixed, documented default beats silently guessing differently each
+# time, or refusing to answer at all.
 CLOCK_12H_RE = re.compile(
     r"\b(\d{1,2})(?::([0-5]\d))?\s*(o'clock|am|pm)\b", re.IGNORECASE
 )
 
 # Strict 24-hour "HH:MM", including midnight ("00:00") - HH must be
-# 00-23 and MM 00-59. Checked in timeperiod.py only after CLOCK_12H_RE
+# 00-23 and MM 00-59. Checked in temporal only after CLOCK_12H_RE
 # has already had a chance to match, so a 12-hour time like "11:30am"
 # is never mistaken for a bare 24-hour one - the trailing "am" doesn't
 # leave a word boundary for this regex to match on anyway (see
-# timeperiod._matched_clock_time()).
+# temporal._matched_clock_time()).
 CLOCK_24H_RE = re.compile(r"\b([01]\d|2[0-3]):([0-5]\d)\b")
 
 # A deadline tied to a personal routine event, not a clock time - found
@@ -345,9 +283,9 @@ DEADLINE_RE = re.compile(
 )
 
 # =============================================================================
-# SECTION 5 — DURATION / QUANTITY RECOGNITION
+# SECTION 4 — DURATION / QUANTITY RECOGNITION
 #
-# The other kind of phrase recognition - not "WHEN" (section 4 above),
+# The other kind of phrase recognition - not "WHEN" (section 3 above),
 # but "HOW LONG": a counted span ("2 hours") or a named fraction
 # ("half an hour") of time from now, rather than a fixed point on the
 # calendar.
@@ -359,7 +297,7 @@ DEADLINE_RE = re.compile(
 # 2026-08-21 alongside PERIOD_PHRASES - until then this only recognized
 # minute/hour/day, so "12 months" or "2 weeks" fell all the way through
 # to "not parsed/verified by code", not even as far as "recognized as a
-# length". timeperiod._length_end_date() turns (number, unit) into an
+# length". temporal._length_end_date() turns (number, unit) into an
 # actual end date - minute/hour have no useful calendar date to compute
 # (see that function), day/week/month/year do.
 DURATION_LENGTH_RE = re.compile(
@@ -371,9 +309,9 @@ DURATION_LENGTH_RE = re.compile(
 # counterpart to DURATION_LENGTH_RE just above: that one is a *counted*
 # amount ("2 hours"), this one is a *named* one, reusing the actual
 # values already sitting in HOUR_SEGMENTS/MINUTE_SEGMENTS/DAY_FRACTIONS
-# (section 3 above) rather than a fourth copy of them. This regex only
+# (section 2 above) rather than a fourth copy of them. This regex only
 # recognizes the phrase - it doesn't carry a value itself;
-# timeperiod._matched_named_fraction() looks the matched (segment,
+# temporal._matched_named_fraction() looks the matched (segment,
 # unit) pair up in whichever of those three tables the matched unit
 # belongs to. No "year" here (YEAR_FRACTIONS removed 2026-08-21, see
 # docs/12-decisions.md) - "half a year"/"quarter of a year" are no

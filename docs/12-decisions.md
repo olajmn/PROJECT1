@@ -223,7 +223,7 @@ just writing "6 months" (already handled by `DURATION_LENGTH_RE`).
 "given, not parsed/verified by code" instead of resolving - an honest
 answer, not a wrong one, just a narrower one than before.
 **Reversible?** Yes, trivially - re-add `YEAR_FRACTIONS` to
-`timesegments.py`, put "year" back in `NAMED_FRACTION_RE`'s
+`time_segments.py`, put "year" back in `NAMED_FRACTION_RE`'s
 alternation and `_FRACTION_TABLES`, and re-add the `_add_months()`
 branch `_named_fraction_end()` used to have for it.
 
