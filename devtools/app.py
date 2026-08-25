@@ -40,7 +40,7 @@ app = Flask(__name__, template_folder="html", static_folder="css")
 # Makes describe_duration() callable directly from templates, e.g.
 # {{ describe_duration(record.duration) }} in _plan_entry.html/index.html -
 # so the "how was this understood" text stays in one place
-# (backend/foundation/time/logic/duration_resolution.py) instead of being duplicated as static strings
+# (backend/foundation/time/time_logic/duration_resolution.py) instead of being duplicated as static strings
 # in the templates.
 app.jinja_env.globals["describe_duration"] = describe_duration
 # Same reasoning, for the start/now/end progress bar in
@@ -128,7 +128,7 @@ def new_goal():
 
     One text field now (2026-08-23; used to be two - goal and duration
     typed separately) - `extract_duration_phrase()`
-    (backend/foundation/time/logic/phrase_matching.py) searches whatever was typed for a
+    (backend/foundation/time/time_logic/phrase_matching.py) searches whatever was typed for a
     recognized time phrase anywhere inside it (e.g. "clean the
     apartment this weekend"), the same matchers a dedicated duration
     field already used, just applied to the whole sentence instead of
@@ -152,7 +152,7 @@ def new_goal():
     chat thread. `_apply_new_duration()` is the shared piece of logic
     that survived that move.
 
-    Computes a FRESH `frozen_duration` (see backend/foundation/time/logic/frozen_duration.py's
+    Computes a FRESH `frozen_duration` (see backend/foundation/time/time_logic/frozen_duration.py's
     freeze_duration()) whenever a real plan comes back - EXCEPT when
     `generate_plan()` comes back with `clarification` set instead (see
     that function's docstring) - the goal as typed was too vague in
@@ -388,7 +388,7 @@ def feedback():
 
     # Inherited unchanged, never recomputed - a check-in isn't a new
     # planning decision, it's the SAME timeframe continuing (see
-    # backend/foundation/time/logic/frozen_duration.py's freeze_duration() and
+    # backend/foundation/time/time_logic/frozen_duration.py's freeze_duration() and
     # backend/infrastructure/data_persistence.py's save_plan() docstring for why re-deriving
     # this from "now" here was the actual bug). Falls back to computing
     # one fresh only for a goal saved before frozen_duration existed

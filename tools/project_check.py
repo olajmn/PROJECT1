@@ -5,21 +5,32 @@ session doesn't have to trust its own memory or docs/04-current-state.md's
 prose at face value. Reports observable facts: what's changed in git,
 which files under the areas docs/04-current-state.md describes are
 newer than that file itself, the actual backend/ tree, whether the
-core modules still import, and the existing docs checkers' findings.
+core modules still import, code-level hygiene (pyflakes, stale
+backend/devtools path mentions, modules with no inbound import), and
+the existing docs checkers' findings.
 
 Interprets nothing. Whether a "newer file" actually means
 docs/04-current-state.md is out of date, whether a tree mismatch
-matters, what to do about a docs_check/docs_lint finding - all of that
-is a human/Claude judgment call, not this script's. See
-../COLLABORATION.md for how a session is expected to use this output.
+matters, whether a module with no inbound import is dead code or a
+deliberate entry point, what to do about a docs_check/docs_lint
+finding - all of that is a human/Claude judgment call, not this
+script's. See ../COLLABORATION.md for how a session is expected to use
+this output.
 
-Reuses tools/docs_check.py and tools/docs_lint.py as sub-checks rather
-than duplicating their logic - this script is repository-wide
-orientation, a layer above them, not a third documentation checker:
+Reuses tools/docs_check.py, tools/docs_lint.py, and pyflakes (already
+a project dependency, see requirements.txt) as sub-checks rather than
+duplicating their logic - this script is repository-wide orientation,
+a layer above them, not a third documentation checker or a code
+analyzer in its own right:
 
     docs_lint.py     -> documentation style
     docs_check.py    -> documentation structural integrity
-    project_check.py -> repository/project orientation (this file)
+    pyflakes         -> unused imports, undefined names (code)
+    project_check.py -> repository/project orientation (this file) -
+                         also owns the two small checks below that
+                         nothing else covers: stale backend/devtools
+                         path mentions in code comments, and modules
+                         with no detected inbound import
     tests            -> actual runtime behavior (not this file's job -
                          the import check below only confirms a module
                          doesn't raise on import, nothing more)
@@ -27,13 +38,16 @@ orientation, a layer above them, not a third documentation checker:
 Run from the project root:
     .venv/bin/python3 -m tools.project_check
 
-Exit code 0 if docs_check.py, docs_lint.py, and the import smoke test
-all pass; 1 if any of them found something. The git-status and
-newer-than-04-current-state sections are pure information and never
-affect the exit code - there's nothing to "pass" or "fail" about an
-observable fact.
+Exit code 0 if docs_check.py, docs_lint.py, pyflakes, and the import
+smoke test all pass; 1 if any of them found something. Every other
+section (git status, newer-than-04-current-state, the backend/ tree,
+stale code-path mentions, modules with no inbound import) is pure
+information and never affects the exit code - none of them are
+"wrong" on their own; each one needs a human/Claude to decide whether
+the thing it observed actually means anything.
 """
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -144,6 +158,82 @@ def run_tool(module: str) -> tuple[int, str]:
     return _run([str(PYTHON), "-m", f"tools.{module}"])
 
 
+def run_pyflakes() -> tuple[int, str]:
+    """Run pyflakes (already a project dependency, see
+    requirements.txt) against backend/ and devtools/ - unused imports
+    and undefined names, reused as-is rather than reimplemented."""
+    return _run([str(PYTHON), "-m", "pyflakes", "backend", "devtools"])
+
+
+# A backend/... or devtools/...-looking .py path mentioned in a
+# comment or docstring - the same shape of pattern tools/docs_check.py
+# already uses for docs/<NN>-<name>.md references, aimed at code paths
+# instead. docs_check.py stays scoped to documentation; this stays
+# scoped to code, so the two don't overlap.
+CODE_PATH_RE = re.compile(r"\b(?:backend|devtools)/[A-Za-z0-9_/().-]+\.py\b")
+
+
+def stale_code_path_mentions() -> list[str]:
+    """Every backend/... or devtools/...-looking .py path mentioned
+    anywhere under backend/, devtools/, tools/ that doesn't resolve to
+    a real file. Doesn't distinguish a genuine leftover reference from
+    a docstring deliberately narrating "moved from X" as history - the
+    same distinction every other check in this file leaves to whoever
+    reads the report, per ../COLLABORATION.md."""
+    stale = []
+    for area in ("backend", "devtools", "tools"):
+        area_path = ROOT / area
+        if not area_path.exists():
+            continue
+        for path in sorted(area_path.rglob("*.py")):
+            if "__pycache__" in path.parts:
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            for line_number, line in enumerate(text.splitlines(), start=1):
+                for match in CODE_PATH_RE.finditer(line):
+                    referenced = match.group(0)
+                    if not (ROOT / referenced).exists():
+                        stale.append(f"{path.relative_to(ROOT)}:{line_number}: {referenced}")
+    return stale
+
+
+def modules_with_no_inbound_import() -> list[str]:
+    """Every backend/ module (excluding __init__.py) that no other
+    .py file under backend/, devtools/, or tools/ appears to mention
+    by dotted path or bare filename. A plain text search, not real
+    import-graph analysis - it only counts whether the name appears
+    anywhere, nothing more. Many entries here are legitimate (a
+    command-line entry point run directly rather than imported - see
+    SMOKE_IMPORT_MODULES above for the ones already confirmed as
+    exactly that); this function doesn't know the difference, it only
+    reports the raw list."""
+    py_files = [
+        p
+        for area in ("backend", "devtools", "tools")
+        for p in (ROOT / area).rglob("*.py")
+        if "__pycache__" not in p.parts
+    ]
+    contents = {p: p.read_text(encoding="utf-8", errors="replace") for p in py_files}
+    backend_modules = [
+        p
+        for p in (ROOT / "backend").rglob("*.py")
+        if "__pycache__" not in p.parts and p.name != "__init__.py"
+    ]
+
+    orphans = []
+    for module_path in backend_modules:
+        dotted = ".".join(module_path.relative_to(ROOT).with_suffix("").parts)
+        base = module_path.stem
+        referenced = any(
+            dotted in text or f"import {base}" in text or f".{base}" in text
+            for other_path, text in contents.items()
+            if other_path != module_path
+        )
+        if not referenced:
+            orphans.append(str(module_path.relative_to(ROOT)))
+    return sorted(orphans)
+
+
 def main() -> int:
     exit_code = 0
 
@@ -183,6 +273,41 @@ def main() -> int:
         exit_code = 1
     else:
         print("  all modules import cleanly")
+
+    print()
+    print("=== pyflakes (backend/, devtools/) ===")
+    code, output = run_pyflakes()
+    print(output if output else "  no issues found")
+    if code != 0:
+        exit_code = 1
+
+    print()
+    print("=== stale backend/devtools .py path mentions ===")
+    stale_paths = stale_code_path_mentions()
+    if stale_paths:
+        for line in stale_paths:
+            print(f"  {line}")
+        print()
+        print("  (observed fact only - a dated docstring narrating a")
+        print("  past move is expected to show up here too; whether a")
+        print("  given hit is a leftover bug or intentional history is")
+        print("  a judgment call, not this script's.)")
+    else:
+        print("  none")
+
+    print()
+    print("=== backend/ modules with no detected inbound import ===")
+    orphans = modules_with_no_inbound_import()
+    if orphans:
+        for path in orphans:
+            print(f"  {path}")
+        print()
+        print("  (observed fact only - a module can legitimately have")
+        print("  no inbound import because it's a command-line entry")
+        print("  point (see SMOKE_IMPORT_MODULES above) rather than")
+        print("  dead code; that judgment is not this script's.)")
+    else:
+        print("  none")
 
     print()
     print("=== tools/docs_check.py ===")
