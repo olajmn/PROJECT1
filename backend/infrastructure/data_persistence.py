@@ -20,7 +20,7 @@ stays in this file regardless.
 
 Every record also carries a `user_id` (added 2026-08-23), always
 DEFAULT_USER_ID for now - there is exactly one person using this app
-(see docs/12-decisions.md: real multi-user support is explicitly
+(see docs/05-decisions.md: real multi-user support is explicitly
 deferred past MVP, needs proper auth + encryption first). This is
 deliberately NOT the start of an accounts system - it's a stable field
 added now so that if/when multi-user support is ever built, existing
@@ -171,7 +171,7 @@ def save_plan(
     `completed` marks the whole goal (not just one "right_now" step) as
     done - the user said so explicitly, via the "Goal complete" button,
     rather than the agent guessing it from a missing next action. See
-    docs/11-experiments.md, 2026-08-19 entry, for why this exists.
+    docs/06-development.md, 2026-08-19 entry, for why this exists.
 
     `goal_id` is the goal's real identity, separate from its display
     text (see backend/goals/goal_logic/goal.py's get_board()). Pass the existing goal_id when this record
@@ -205,7 +205,7 @@ def save_plan(
     `current_step` is the index into `plan.steps` (see backend/planning/plan.py's
     `_generate_steps()`) that "Task (right now)" actually points at -
     "right now" isn't its own independent thing once a goal has steps,
-    it's just `plan.steps[current_step]` (see docs/13-ideas-parking-lot.md's
+    it's just `plan.steps[current_step]` (see docs/06-development.md's
     "Plan as an ordered step list" entry, and devtools/app.py's
     /step route, which is the only thing that ever advances it). 0 (the
     first step) by default - matches `plan.steps[0]` always equaling

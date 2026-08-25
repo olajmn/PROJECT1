@@ -1,4 +1,11 @@
-# Project: Personal AI Agent for Goal → Action
+# 00 — Project Brief
+
+> What this project is trying to be — its identity, vision, and central
+> question. This document describes what the project is trying to become,
+> not how it was built or what is true right now.
+>
+> See [[06-development]] for the project's development history and
+> [[04-current-state]] for its current state.
 
 ## 1. The Core Idea
 
@@ -162,28 +169,18 @@ Replans
 Acts again
 ```
 
-The agent therefore eventually needs:
-
-- an LLM
-- memory
-- a database
-- user data
-- state
-- planning logic
-- tools/APIs
-- a time/event system
-- replanning
-- communication
-- possible calendar integration
-- notifications
+The agent will require mechanisms for memory, state, planning, time,
+communication and eventually action. The exact technical implementation
+is deliberately left open — see [[03-architecture]] for what's actually
+been built.
 
 It's the system around the LLM that makes an agent harder to build than a simple AI function.
 
-We don't need to train our own AI model. The first version can use an existing API, for example from OpenAI or Anthropic.
+The project does not require building or training its own foundation model.
 
 ## 6. How Hard Is It?
 
-### MVP
+### A Possible First Version
 
 Relatively achievable.
 
@@ -230,56 +227,7 @@ The hardest part is:
 
 > Building an agent that actually feels useful over time.
 
-## 7. The Competitive Landscape
-
-We've already established that the core idea isn't new.
-
-Several products work on:
-
-- goal → milestones
-- goal → daily tasks
-- AI planning
-- replanning
-- personal coaching
-- agentic planning
-- long time horizons
-
-Examples we've looked at include Goaltree, LifePilot, Mentra, Daysfold, Goaliath, GoalsFlow, Skedul.AI, Vakit, and GoalOS.
-
-So we shouldn't build this project on the assumption that no one has done this before.
-
-Instead, we should investigate:
-
-> How good are they, really?
-
-and:
-
-> What do they NOT do?
-
-## 8. The Competitive Analysis
-
-We shouldn't just read the marketing copy.
-
-We should compare the products systematically across factors like:
-
-| Factor | Question |
-|---|---|
-| Goal input | Can the user just describe the goal naturally? |
-| Long-term planning | Can the system plan over months/years? |
-| Decomposition | How well is the goal broken down? |
-| Granularity | How small can the actions get? |
-| Daily execution | What does the user actually get to do today? |
-| Agent | Does the system make its own decisions? |
-| Replanning | What happens when the plan breaks? |
-| Memory | Does the system remember the user's history? |
-| Context | Does the system understand the user's situation? |
-| Proactivity | Does the agent reach out on its own? |
-| Tools | Can the agent actually perform actions? |
-| Autonomy | How much project-managing does the user still have to do? |
-
-This is where we'll try to find our differentiation.
-
-## 9. Product Philosophy
+## 7. Product Philosophy
 
 We've also identified something important:
 
@@ -306,7 +254,7 @@ It can be used for:
 - hobbies
 - practical tasks
 
-## 10. Possible Long-Term Positioning
+## 8. Possible Long-Term Positioning
 
 A possible brand/product position could be something along the lines of:
 
@@ -322,197 +270,7 @@ The Duolingo example we discussed is relevant here: the technology behind langua
 
 The same could be possible here.
 
-## 11. What We Are NOT Going to Do Right Now
-
-We shouldn't start with:
-
-> "How do we build the complete agent?"
-
-That's too big.
-
-We also shouldn't decide that this has to become a startup.
-
-And we shouldn't assume the idea is good just because it feels exciting.
-
-We're going to test the hypothesis.
-
-## 12. The Approach
-
-Here's how I'd set up the project:
-
-### Phase 1 — Problem
-
-Define, very concretely:
-
-> What problem are we solving?
-
-### Phase 2 — Research
-
-Investigate existing solutions.
-
-Map out:
-
-- competitors
-- features
-- user experience
-- weaknesses
-- reviews
-- what users are actually asking for
-
-### Phase 3 — Hypothesis
-
-Formulate:
-
-> "We believe that ..."
-
-Example:
-
-> "We believe that people don't primarily need help creating plans, but help continuously translating plans into concrete actions."
-
-### Phase 4 — Product Definition
-
-Decide:
-
-- who the first user is
-- what problem the MVP solves
-- what the agent does
-- what the agent does NOT do
-- what the user does
-- what the "minimum useful product" is
-
-### Phase 5 — User Flow
-
-Map out the whole journey:
-
-```
-New user
-↓
-States a goal
-↓
-Agent asks questions
-↓
-Agent creates a plan
-↓
-User approves
-↓
-Today's action
-↓
-Feedback
-↓
-Agent evaluates
-↓
-Next action
-↓
-Replanning
-```
-
-### Phase 6 — Technical Design
-
-Now we start figuring out:
-
-- frontend
-- backend
-- database
-- LLM API
-- agent architecture
-- authentication
-- scheduling
-- notifications
-- memory
-- APIs/tools
-
-### Phase 7 — MVP
-
-Build the smallest version that actually demonstrates the idea.
-
-Don't build everything.
-
-### Phase 8 — Testing
-
-Let real people use it.
-
-Look especially for:
-
-> "What does the agent do that actually helps?"
-
-and:
-
-> "When does the agent just become annoying?"
-
-### Phase 9 — Iteration
-
-Keep building based on actual usage.
-
-## 13. How We'll Document the Project
-
-We also concluded that you should use several tools with different roles:
-
-### Paper
-
-Thinking.
-
-Brainstorming, sketches, questions, random ideas.
-
-### Obsidian
-
-Understanding and documenting.
-
-The project's permanent knowledge base.
-
-Suggested structure:
-
-- 01 Problem
-- 02 Research
-- 03 Competitors
-- 04 Hypothesis
-- 05 Product
-- 06 User flows
-- 07 Features
-- 08 Technical architecture
-- 09 MVP
-- 10 Development
-- 11 Experiments
-- 12 Decisions
-- 13 Ideas / Parking lot
-
-### Excel
-
-Structuring and comparing.
-
-Especially:
-
-- competitors
-- features
-- research
-- assessments
-- experiments
-
-### GitHub
-
-Building and documenting the software itself.
-
-### Meta-coherence
-
-A loose guideline, not a rule (2026-08-24): documentation counts as
-real project information, not scratch, even though it isn't code - the
-reasoning behind a decision, or the shape of an idea before it's
-built, is still part of what the project actually is. This doesn't
-mean every file needs a matching write-up somewhere - it means the
-vault as a whole, especially anything that could potentially become
-public, should read as one coherent, connected thing rather than
-disconnected fragments.
-
-Nothing new to adopt - just naming how this vault already works:
-
-- Cross-linked via `[[references]]` rather than left as isolated files
-- Historical, dated entries preserved as accurate records of what was
-  true when written, rather than rewritten once something later
-  changes (see [[12-decisions]])
-- Code and docs reference each other in both directions - a docstring
-  points to the doc that explains why, a doc points to the file that
-  implements it
-
-## 14. The Most Important Question Right Now
+## 9. The Most Important Question Right Now
 
 We've actually moved from:
 
@@ -548,14 +306,18 @@ Goal → plan → action → feedback → replanning.
 
 Not just planning, but agentic execution.
 
-**First MVP:**
+**Central question:**
 
-The user states a goal → the agent creates a plan → the agent picks today's next action → the user gives feedback → the agent adapts the plan.
-
-**Working method:**
-
-Research → competitive analysis → hypothesis → product design → MVP → testing → iteration.
+Can we build an agent that meaningfully reduces the mental effort required to turn goals into action?
 
 And the most important rule:
 
 > We're not trying to prove the idea is good. We're trying to find out if it's good.
+
+## See also
+
+- [[01-research]] — the problem, and what exists outside this project (moved out 2026-08-25, was part of this brief)
+- [[02-product]] — the concrete product definition, user flows, features, MVP, and what's explicitly out of scope right now
+- [[06-development]] — the original phased approach, and everything that's actually happened since
+- `../COLLABORATION.md` — how documentation and collaboration work in this project
+- [[04-current-state]] — what's true right now

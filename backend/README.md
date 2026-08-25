@@ -4,7 +4,7 @@ This is the agent's brain — the code that turns a goal into a plan, and
 a plan into "what to do right now."
 
 Named `backend` to match the architecture terminology in
-`../docs/08-technical-architecture.md` (backend vs. future frontend).
+`../docs/03-architecture.md` (backend vs. future frontend).
 As of 2026-08-24, "the agent itself" more precisely means `agent/`
 inside here - `backend/` is the wider umbrella, also holding `world/`
 (external data, not built) and `storage.py`.
@@ -16,7 +16,7 @@ Split 2026-08-24 into `agent/` (the agent's own cognition -
 `specialized/` and `distributed/` inside it) and `world/` (external
 data the agent could reach out for - deliberately empty, see its own
 `__init__.py`), with `storage.py` staying at this root level - see
-`../docs/08-technical-architecture.md` § Faculties for the full
+`../docs/03-architecture.md` § Faculties for the full
 reasoning.
 
 **Vocabulary note (same day):** "Faculty" is this project's word for a
@@ -24,14 +24,14 @@ module. `specialized/` holds narrow faculties (one product concept
 each); `distributed/` holds broad faculties (reused across more than
 one narrow faculty). Two folder names, one concept, described by
 breadth rather than by two separate category words - see
-`../docs/08-technical-architecture.md` § Faculties, terminology note.
+`../docs/03-architecture.md` § Faculties, terminology note.
 
 **Resolved, same day:** `storage.py` passes the broad-faculty reuse
 test (imported by every narrow faculty, and by `devtools/app.py`
 directly) but fails the actual Faculty definition - it understands
 nothing about what it saves, just moves bytes. That gap is
 **Infrastructure**, a fourth category - see
-`../docs/08-technical-architecture.md` § Faculties, "Infrastructure: a
+`../docs/03-architecture.md` § Faculties, "Infrastructure: a
 fourth category," for the full reasoning.
 
 ### `agent/specialized/` — narrow faculties: one product concept each
@@ -63,9 +63,9 @@ fourth category," for the full reasoning.
 
 `devtools/` (the local web UI for talking to this agent) moved to be a
 top-level sibling of `backend/`, not a subpackage inside it, 2026-08-24
-- see `../devtools/README.md` and `../docs/08-technical-architecture.md`
+- see `../devtools/README.md` and `../docs/03-architecture.md`
 § Faculties for why: it's the channel a human reaches the agent
 through, not part of the agent's own cognition.
 
-See `../docs/08-technical-architecture.md` for the full architecture and
-`../docs/09-mvp.md` for what's built vs. still planned.
+See `../docs/03-architecture.md` for the full architecture and
+`../docs/02-product.md` for what's built vs. still planned.

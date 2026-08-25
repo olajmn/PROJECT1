@@ -4,7 +4,7 @@ Understanding "when" a plan should span - free text like "evening",
 calendar date range where the code can actually know one, honest about
 what it can't. Also a first, narrow sense of what a duration MEANS,
 relative to another duration (relative_time.py) - see
-docs/14-semantic-time.md.
+docs/03-architecture.md.
 
 data/ - what time IS: time_segments.py (recognized phrases/patterns -
 DAY_SEGMENTS, PERIOD_PHRASES, etc.) and time_units.py (raw constants -
@@ -34,7 +34,7 @@ Moved 2026-08-25 from backend/agent/distributed/temporal/ (itself
 renamed from timeperiod/ earlier the same day) - out of agent/
 entirely, into this topic-organized backend/foundation/, replacing the
 narrow/broad specialized//distributed/ reuse split with one folder per
-subject. See docs/08-technical-architecture.md § Faculties (due for an
+subject. See docs/03-architecture.md § Faculties (due for an
 update to match - not yet rewritten as of this move).
 """
 

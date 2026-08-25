@@ -29,8 +29,8 @@ Technical standards for this codebase. Applies to every file going forward.
   same standard applies to everything in `docs/`, since it's the
   material most likely to be read by someone outside this project one
   day. Doesn't apply to genuinely dated, historical log entries where
-  a specific date/event is the actual point (`docs/10-development.md`,
-  `docs/11-experiments.md`, `docs/12-decisions.md`'s "Date:" field) -
+  a specific date/event is the actual point (`docs/06-development.md`,
+  `docs/05-decisions.md`'s "Date:" field) -
   those record when something happened; only the surrounding voice
   gets depersonalized, not the fact that it happened on a given day.
 - "The user" as a term still refers to the *product's* end-user where
@@ -50,44 +50,27 @@ Technical standards for this codebase. Applies to every file going forward.
 
 Root only holds folders + standard project metadata files (`.gitignore`,
 `requirements.txt`, `CONVENTIONS.md` - these stay at root because Git/pip
-expect them there). All source code lives in subfolders, never loose at
+expect them there). New source code belongs in an appropriate
+subdirectory; source files must not be placed loose at the repository
 root.
 
-```
-backend/            The agent itself - see backend/README.md
-devtools/           Personal dev tools (web UI) - not the product's frontend, moved
-                    out of backend/ 2026-08-24 (see devtools/README.md): this talks
-                    TO the agent, it isn't part of the agent's own cognition
-data/               Local storage, git-ignored (personal data - see Security & Privacy below)
-docs/               Obsidian vault - product/research/decision docs (see docs/00-project-brief.md)
-tools/              Standalone dev utilities with no runtime relationship to the
-                    agent (e.g. tools/architecture_mapper)
-```
+See `docs/04-current-state.md` for which directories actually exist
+today and what's in each.
 
 ## Environment
 
 - Dependencies are installed in a project-local virtual environment at
   `.venv/`, not system-wide. This avoids conflicts between the multiple
   Python installations present on this machine.
-- `backend/` and `devtools/` are each a real Python **package**
-  (`backend/__init__.py`, `devtools/__init__.py`), because files inside
-  them import from each other, and `devtools/app.py` imports from
-  `backend/` (e.g. `app.py` needs `storage.py`). This means every
-  script must be run **from the project root**, using `-m` and dots
-  instead of a file path:
-  ```bash
-  .venv/bin/python -m backend.agent.specialized.plan
-  .venv/bin/python -m backend.agent.specialized.today
-  .venv/bin/python -m devtools.app
-  ```
-  `python backend/agent/specialized/plan.py` (a plain file path) will NOT work
-  anymore - the imports inside these files rely on Python treating them
-  as package members, which only happens via `-m`.
-  Or activate the environment once per terminal session:
-  ```bash
-  source .venv/bin/activate
-  python -m backend.agent.specialized.today
-  ```
+- `backend/` and `devtools/` are Python packages. Because their
+  modules import from each other, project scripts must be run from
+  the repository root using `-m` rather than as file paths - a plain
+  file path will not work, since the imports rely on Python treating
+  them as package members. Activate the environment once per terminal
+  session (`source .venv/bin/activate`) to run things as plain `python
+  -m ...` instead of `.venv/bin/python -m ...` each time.
+  See `docs/04-current-state.md` for which modules actually exist and
+  how to run them today.
 - New dependencies: install into `.venv`, then refresh the lockfile:
   ```bash
   .venv/bin/pip install <package>
@@ -100,29 +83,23 @@ tools/              Standalone dev utilities with no runtime relationship to the
 Security/privacy by design: every architecture, storage, or sync
 decision explicitly considers its privacy/security trade-off *before*
 being made, not patched on afterward. Every deferral is written down
-with why in `docs/12-decisions.md`, and revisited when the risk profile
-changes (e.g. going from single-user local to multi-user/cloud) — see
-`docs/08-technical-architecture.md` § Security & Privacy Goals.
+with why in `docs/05-decisions.md`, and revisited when the risk profile
+changes (e.g. going from single-user local to multi-user/cloud).
 
 This does not mean gold-plating an MVP — effort should match actual
-current risk (e.g. no password-encrypted local file yet while the
-project is single-user and disk-level encryption already covers the
-realistic threat). It means the trade-off is always explicit, never
-silent.
+current risk. It means the trade-off is always explicit, never silent.
 
-Two standing long-term goals, already documented:
-
-1. End-to-end encryption for any synced/cloud data (Bitwarden-style —
-   server never sees plaintext)
-2. Local-first architecture so no single company can lock the user out
-   of their own data (the user's device is always the source of truth;
-   any sync server is a replaceable relay, never the owner of the data)
+The long-term principles this implies (local-first, end-to-end
+encryption for any synced data) are architecture, not a coding
+convention — see `docs/03-architecture.md` § Architectural principles.
+Current security status (what's encrypted today, what isn't yet): see
+`docs/04-current-state.md`.
 
 ## LLM backend
 
-- Currently using **Ollama** (`llama3.1:8b`) running locally — no API key,
-  no cost, no internet required. Started via `brew services start ollama`.
-- The `anthropic` package is also installed and kept up to date in
-  `requirements.txt`, so the project can switch to Claude (`claude-opus-5`)
-  later by setting `ANTHROPIC_API_KEY` and swapping the client — no
-  reinstall needed. See `backend/agent/specialized/plan.py` for the current call site.
+LLM provider configuration must remain replaceable; provider-specific
+implementation details (which provider, which model, the current call
+site) belong in `docs/04-current-state.md` and `docs/05-decisions.md`,
+not here — keeping this file accurate whenever the provider changes
+would otherwise mean editing a coding-standards document every time a
+current-state fact changes.

@@ -7,7 +7,7 @@ backend/foundation/time/time_logic/duration_resolution.py's resolve_duration() a
 predictable, inspectable, and free of the hallucination/drift risk an
 LLM classification call would carry for exactly the kind of true/false
 decision this project has already been burned by trusting a model with
-(see docs/11-experiments.md). Classifying "did you finish this?" from
+(see docs/06-development.md). Classifying "did you finish this?" from
 free text is structurally the same kind of guess as the model
 inventing a hallucinated detail - just one step earlier in the
 pipeline - so it gets the same "recognize what you can name, admit what

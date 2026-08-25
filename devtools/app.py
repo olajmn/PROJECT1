@@ -3,7 +3,7 @@ Local interactive web interface for the agent.
 
 This is a personal dev tool for talking to the agent through a browser
 instead of running separate terminal scripts - NOT the product's real
-frontend (see docs/08-technical-architecture.md "Frontend direction").
+frontend (see docs/03-architecture.md "Frontend direction").
 Runs 100% locally, only reachable from this machine, no internet needed.
 
 Run from the PROJECT ROOT (not from inside devtools/):
@@ -11,7 +11,7 @@ Run from the PROJECT ROOT (not from inside devtools/):
 The -m flag is required (not `python devtools/app.py`) so the
 `from backend...` imports below can find the backend package. Lives as
 a top-level sibling of backend/, not inside it (moved 2026-08-24) -
-this talks TO the agent (the USER node in docs/08-technical-architecture.md's
+this talks TO the agent (the USER node in docs/03-architecture.md's
 long-term diagram), it isn't part of the agent's own cognition, the
 same category as tools/ and docs/, not backend/.
 """
@@ -138,7 +138,7 @@ def new_goal():
     is saved asking for one, same "code decides, model is just told"
     reasoning as the horizon-scope fix (see plan.py's
     _horizon_scope_instruction()) rather than relying on the model to
-    reliably notice this itself (see docs/12-decisions.md, 2026-08-23,
+    reliably notice this itself (see docs/05-decisions.md, 2026-08-23,
     for why the model isn't trusted with judgment calls like this one
     when code can decide them outright).
 
@@ -238,7 +238,7 @@ def feedback():
     on it/No/Goal complete buttons used to. There's no separate
     "outcome" field anymore - the note itself is the only signal, so
     typing doesn't mean picking which of four boxes your situation
-    best fits; see docs/12-decisions.md, 2026-08-20, for why this
+    best fits; see docs/05-decisions.md, 2026-08-20, for why this
     replaced the buttons and why it still never lets an LLM decide
     true/false.
 
@@ -280,7 +280,7 @@ def feedback():
     # goal's thread only ever grows, so reloading straight to the top of
     # the page buries the message that just confirms the click actually
     # registered below however much history came before it (2026-08-20,
-    # see docs/11-experiments.md): without it, repeated "Still working
+    # see docs/06-development.md): without it, repeated "Still working
     # on it" clicks look broken for exactly this reason - the save
     # always worked, the confirmation was just scrolled out of view.
     back_to = redirect(url_for("index") + f"#goal-{latest['goal_id']}")
@@ -416,7 +416,7 @@ def feedback():
 
     if outcome_value == "in_progress":
         # Mid-task, not stalled or failed - a real, distinct signal from
-        # "No" (see docs/11-experiments.md, 2026-08-20): three rapid
+        # "No" (see docs/06-development.md, 2026-08-20): three rapid
         # "not done" clicks in a row, each meant as "still working on
         # it", instead shrank the task further each time (30 min -> 15
         # min -> 5 min, "without even taking a note") because replan()

@@ -29,7 +29,7 @@ can verify" reasoning as backend/agent/specialized/outcome_classifier.py:
 Run from the project root:
     .venv/bin/python3 tools/docs_lint.py
     .venv/bin/python3 tools/docs_lint.py --strict   # REVIEW also fails
-    .venv/bin/python3 tools/docs_lint.py docs/08-technical-architecture.md
+    .venv/bin/python3 tools/docs_lint.py docs/03-architecture.md
 
 Exit code 0 if no CONFIRMED hits (REVIEW hits alone don't fail, unless
 --strict); exit code 1 if any CONFIRMED hit is found. Safe to wire into

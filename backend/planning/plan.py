@@ -10,7 +10,7 @@ Requires Ollama running in the background (start with: brew services start ollam
 and the model pulled (ollama pull llama3.1:8b).
 
 Renamed from goal_to_plan.py (2026-08-21) to match the product model in
-docs/07-features.md ("Architecture framing: Program / Rooms /
+docs/02-product.md ("Architecture framing: Program / Rooms /
 Sitemap") - this file is the "Plan" room. Temporal understanding
 (duration parsing/grounding) moved out the same day, its own room -
 now backend/foundation/time/ (moved there 2026-08-25, see that
@@ -136,7 +136,7 @@ REPLAN_SYSTEM_PROMPT = (
 # or timing. Only used from generate_plan(), and only when `duration`
 # resolves to a real span - see that function. New goals only for now
 # (2026-08-21) - replan() doesn't touch steps yet, see
-# docs/13-ideas-parking-lot.md's "Plan as an ordered step list" entry
+# docs/06-development.md's "Plan as an ordered step list" entry
 # for the open questions (multi-horizon step lists, what happens to
 # steps on replan) still to work out before extending this further.
 STEPS_SYSTEM_PROMPT = (
@@ -337,7 +337,7 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     e.g. from "research 4 companies" down to "check the news for 30
     seconds" over 13 replans (2026-08-20), never advancing toward the
     goal's actual action (sending an application) - see
-    docs/11-experiments.md.
+    docs/06-development.md.
     """
     # Named history_lines, not "steps" - unrelated to this file's
     # `steps` plan field/_generate_steps() (added later the same day);

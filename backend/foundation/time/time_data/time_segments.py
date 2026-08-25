@@ -118,7 +118,7 @@ DAY_FRACTIONS = {
 # (Monday..Sunday).
 #
 # No YEAR_FRACTIONS either (removed 2026-08-21, see
-# docs/12-decisions.md) - not because a year can't be quartered
+# docs/05-decisions.md) - not because a year can't be quartered
 # cleanly (it can, into months, the same way DAY_FRACTIONS quarters a
 # day into hours), but because it wasn't judged worth keeping: nothing
 # else in this file depends on it, and MONTH_NAMES (section 1 above)
@@ -144,7 +144,7 @@ DAY_FRACTIONS = {
 # specially in time_logic.resolve_duration(). This is the code
 # actually *knowing* what "evening" means (a real clock window) instead
 # of handing the raw word to the model and hoping it guesses sensibly -
-# see docs/11-experiments.md, 2026-08-19. Moved to this section
+# see docs/06-development.md, 2026-08-19. Moved to this section
 # 2026-08-21 - matched directly by its own key, the same self-contained
 # way PERIOD_PHRASES just below is, not via a value table + separate
 # matching regex the way section 2's segments/fractions are.
@@ -153,7 +153,7 @@ DAY_FRACTIONS = {
 # Norwegian words for each segment ("morgen"/"formiddag" - morning,
 # "ettermiddag" - afternoon, "kveld" - evening, "natt" - night).
 # Dropped 2026-08-21 for the same reason goals are written in English
-# (docs/12-decisions.md, 2026-08-19): a duration typed in Norwegian
+# (docs/05-decisions.md, 2026-08-19): a duration typed in Norwegian
 # still flows into the prompt sent to the model, and mixed-language
 # input is exactly the failure mode already found there. Anyone typing
 # a day segment in Norwegian now gets the honest "not parsed/verified
@@ -177,7 +177,7 @@ DAY_SEGMENTS = {
 # "this month" (a PERIOD_PHRASES one): both become an actual date/time
 # range instead of a bare word. Deliberately still just a recognition
 # table, not the folder-per-time-period hierarchy from
-# docs/08-technical-architecture.md - see time_logic/__init__.py's docstring.
+# docs/03-architecture.md - see time_logic/__init__.py's docstring.
 #
 # "day" as a unit (added 2026-08-21) is the same mechanism one level
 # down from week/month/year: "tomorrow" is today's date + 1, exactly
@@ -259,7 +259,7 @@ CLOCK_24H_RE = re.compile(r"\b([01]\d|2[0-3]):([0-5]\d)\b")
 
 # A deadline tied to a personal routine event, not a clock time - found
 # via real test usage 2026-08-19 ("any time before i got to bed", see
-# docs/11-experiments.md). Deliberately NOT given the same treatment as
+# docs/06-development.md). Deliberately NOT given the same treatment as
 # DAY_SEGMENTS: there's no real, known clock time to compute (we don't
 # track when the user actually goes to bed), so resolving this to a
 # fake hour would be inventing grounding that doesn't exist. Recognized
@@ -314,7 +314,7 @@ DURATION_LENGTH_RE = re.compile(
 # time_logic._matched_named_fraction() looks the matched (segment,
 # unit) pair up in whichever of those three tables the matched unit
 # belongs to. No "year" here (YEAR_FRACTIONS removed 2026-08-21, see
-# docs/12-decisions.md) - "half a year"/"quarter of a year" are no
+# docs/05-decisions.md) - "half a year"/"quarter of a year" are no
 # longer recognized this way.
 #
 # One combined regex across all three units (same style as

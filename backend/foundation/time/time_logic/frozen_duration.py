@@ -141,7 +141,7 @@ MAX_STEPS = 6
 # ("is this goal roughly year-scale, month-scale, ...") doesn't need
 # more precision than that. Added 2026-08-23, replacing two earlier,
 # worse answers tried the same night: the model guessing relevance
-# itself (inconsistent - see docs/12-decisions.md) and always filling
+# itself (inconsistent - see docs/05-decisions.md) and always filling
 # every horizon regardless of scope (concrete, realistic-sounding but
 # fabricated content for horizons broader than what was actually asked
 # for - e.g. a "3 months" goal getting a full one_year answer). Code
@@ -162,7 +162,7 @@ def broadest_relevant_horizon(duration: str | None) -> str:
     The PLAN_KEYS name of the broadest horizon actually worth filling
     in for `duration` - see _HORIZON_LENGTH_THRESHOLDS above.
     "right_now" (the narrowest, always-filled one - see
-    docs/07-features.md's "right_now is a trigger, not a time
+    docs/02-product.md's "right_now is a trigger, not a time
     variable") if `duration` doesn't resolve to a real span at all -
     nothing grounded to measure, same honesty as every other
     "not parsed/verified by code" case in this module.

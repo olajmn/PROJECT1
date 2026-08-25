@@ -15,13 +15,13 @@ project-specific (no "goal", no "plan", no Flask routes). That's what
 makes it safe to lift out of this repo intact later and reuse as an
 external capability/tool the agent itself could call on - see
 [[13-ideas-parking-lot]] "Tools / APIs the agent can use" and
-docs/12-decisions.md for why it was built now despite that not being
+docs/05-decisions.md for why it was built now despite that not being
 an MVP priority.
 
 ## What it does NOT do
 
 It can only ever describe what's true **today**, straight from the
-code - it has no way to know about `docs/08-technical-architecture.md`'s
+code - it has no way to know about `docs/03-architecture.md`'s
 future/"VISION" components, since those aren't code yet.
 `docs/08-architecture.drawio` (hand-maintained, NOW + VISION sections)
 stays the source of truth for the full picture. This script's output is

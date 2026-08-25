@@ -7,12 +7,12 @@ WHY THIS LIVES OUTSIDE backend/: this is deliberately a standalone,
 generic tool - it only reads Python source with the `ast` module and
 knows nothing about this specific project (not "goal", not "plan", not
 Flask). That's what makes it safe to lift out of this repo later and
-reuse as an external capability, per docs/12-decisions.md. It imports
+reuse as an external capability, per docs/05-decisions.md. It imports
 nothing from `backend`, and `backend` imports nothing from here.
 
 WHAT IT DOES NOT DO: it only ever describes what's true today (the
 "NOW" section of an architecture diagram) - it cannot know about
-`docs/08-technical-architecture.md`'s future/"VISION" components, since
+`docs/03-architecture.md`'s future/"VISION" components, since
 those don't exist as code yet. docs/08-architecture.drawio (hand-
 maintained) stays the source of truth for the full NOW+VISION picture;
 this script's output is a cross-check, not a replacement.

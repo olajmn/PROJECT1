@@ -5,13 +5,13 @@ nothing gets lost while it's figured out what to tackle first. Not
 part of the docs/ vault (that's permanent project documentation) -
 this is scratch, meant to be cleared once everything on it is done or
 has been moved into a proper dev log/decision entry (most recently
-2026-08-24 - see [[10-development]] and [[12-decisions]] for what was
+2026-08-24 - see [[06-development]] and [[05-decisions]] for what was
 moved out before this cleared).
 
 ## Next session — pick ONE of these five, not more
 
 Raised 2026-08-24, at the end of a long architecture-heavy session
-(see [[10-development]] and [[08-technical-architecture]] § Faculties)
+(see [[06-development]] and [[03-architecture]] § Faculties)
 - a ChatGPT reflection on that session's own summary put it well: the
   project now has "a conscious structure and a beginning architectural
   language... the next challenge is not to fall so in love with the
@@ -20,7 +20,7 @@ Raised 2026-08-24, at the end of a long architecture-heavy session
   restructuring work.
 
 **2026-08-25: Semantic understanding of time picked.** First piece
-built - see [[10-development]] and [[14-semantic-time]] for what's
+built - see [[06-development]] and [[03-architecture]] for what's
 done vs. still open. The other four stay parked, unstarted:
 
 - **Memory** - the agent starting to actively use its own history
@@ -28,10 +28,10 @@ done vs. still open. The other four stay parked, unstarted:
   nothing it stores; "Memory" as a real capability isn't built).
 - **Better step hierarchy** - see the existing open item directly below;
   this is the same thing, just renamed by the same reflection.
-- **Knowledge / RAG** - sketched in [[07-features]], not built.
+- **Knowledge / RAG** - sketched in [[02-product]], not built.
 - **Acting** - the agent actually doing things (making a file, calling
   an API), not just reasoning about what should happen - see
-  [[13-ideas-parking-lot]]'s "agent actually doing things" entry.
+  [[06-development]]'s "agent actually doing things" entry.
 
 ## Open — noticed, not yet decided/fixed
 
@@ -48,7 +48,7 @@ done vs. still open. The other four stay parked, unstarted:
       hierarchy (a `this_week` step has its own `today`-level sub-steps,
       etc) than today's one flat list stretched across the whole span.
       This is the SAME open question already sitting in
-      docs/13-ideas-parking-lot.md under "Plan as an ordered step
+      docs/06-development.md under "Plan as an ordered step
       list" ("which horizons actually become step-lists... we take it
       bit by bit") - not a new idea, a real elaboration of that
       existing deferred one. Not designed or built - needs its own

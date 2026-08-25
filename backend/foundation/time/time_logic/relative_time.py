@@ -1,5 +1,5 @@
 """
-The "DNA" of duration understanding (see docs/14-semantic-time.md): a
+The "DNA" of duration understanding (see docs/03-architecture.md): a
 duration has no fixed meaning as "long" or "short" on its own - only
 ever relative to some other duration it's being measured against. "15
 minutes" isn't short or long in itself; it's short next to a full day,

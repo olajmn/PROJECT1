@@ -3,7 +3,7 @@ Goal identity and grouping - which records belong to which goal, and
 what a goal's current state is.
 
 Split out of storage.py (2026-08-21) to match the product model in
-docs/07-features.md ("Architecture framing: Program / Rooms /
+docs/02-product.md ("Architecture framing: Program / Rooms /
 Sitemap") - Goal is its own room. Built entirely on
 data_persistence.load_history() (the public read API), not that
 module's private _load_all()/_save_all().
@@ -62,7 +62,7 @@ def get_latest_for_goal(goal_id: int) -> dict | None:
     no record has that goal_id.
 
     Needed once more than one goal can be active at a time (see
-    docs/10-development.md, 2026-08-20): get_latest_plan() (data_persistence.py)
+    docs/06-development.md, 2026-08-20): get_latest_plan() (data_persistence.py)
     answers "what was touched most recently, across every goal", which
     stops being the right question the moment two goals are both active
     side by side on the board - giving feedback on one must never
@@ -77,7 +77,7 @@ def get_latest_for_goal(goal_id: int) -> dict | None:
 def get_board() -> dict:
     """
     Group history into "active" and "completed" goals, for a board view
-    (see docs/10-development.md, 2026-08-19).
+    (see docs/06-development.md, 2026-08-19).
 
     A "goal" isn't its own stored entity - it's a chain of records
     sharing the same `goal_id`, created by generate_plan() and then
@@ -91,7 +91,7 @@ def get_board() -> dict:
     retyping a goal's text slightly differently ("take a shower" vs.
     "take shower") used to fragment it into separate board entries.
     goal_id is a stable identity assigned once and carried forward
-    regardless of text - see docs/12-decisions.md, 2026-08-20.
+    regardless of text - see docs/05-decisions.md, 2026-08-20.
 
     Returns {"active": [...], "completed": [...]} - "active" is newest
     first (most recently created/updated goal on top, see

@@ -11,7 +11,7 @@ called from outside the package: the raw phrase text itself (not a
 resolved description), for pulling a duration out of a longer
 free-text sentence typed together with the goal - see duration_resolution.py's
 resolve_duration() for the resolved-description counterpart, and
-docs/12-decisions.md, 2026-08-23, for why the two return different
+docs/05-decisions.md, 2026-08-23, for why the two return different
 things.
 """
 
@@ -40,7 +40,7 @@ from backend.foundation.time.time_data.time_units import DAYS_PER_WEEK, MONTHS_P
 # word belongs to - the single place that dispatch is decided, so
 # _matched_named_fraction() doesn't need an if/elif chain of its own.
 # No "year" entry (YEAR_FRACTIONS removed 2026-08-21, see
-# docs/12-decisions.md).
+# docs/05-decisions.md).
 _FRACTION_TABLES = {
     "hour": HOUR_SEGMENTS,
     "minute": MINUTE_SEGMENTS,

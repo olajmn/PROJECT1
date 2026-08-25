@@ -1,7 +1,11 @@
-# 12 — Decisions
+# 05 — Decisions
 
 > Decision log — why we chose what we chose, so we don't re-litigate it
-> in three months.
+> in three months. Renamed 2026-08-25 from the original `12-decisions.md`
+> (content unchanged; only cross-references to other renamed docs
+> updated - dated entries otherwise describe the project as it was on
+> that date, including old code paths, same convention this log already
+> followed for itself).
 
 ## Template
 
@@ -13,7 +17,7 @@
 
 ---
 
-## 2026-08-20 — Replace the Yes/Still working on it/No/Goal complete buttons with a classified free-text note
+## 1. 2026-08-20 — Replace the Yes/Still working on it/No/Goal complete buttons with a classified free-text note
 
 **Alternatives considered:** keep the four buttons as the only signal
 (note stays a footnote); let the LLM classify the free-text note into
@@ -45,7 +49,7 @@ both are localized changes, not a redesign.
 
 ---
 
-## 2026-08-18 — LLM backend: Ollama (local) instead of Anthropic Claude
+## 2. 2026-08-18 — LLM backend: Ollama (local) instead of Anthropic Claude
 
 **Alternatives considered:** Anthropic Claude API (`claude-opus-5`), a
 local model via Ollama.
@@ -55,27 +59,27 @@ locally, no key or internet required.
 **Trade-off:** `llama3.1:8b` is weaker at reasoning/planning than Claude
 Opus 5. Both SDKs (`ollama`, `anthropic`) are kept installed in
 `requirements.txt`, so switching to Claude later is a small code change,
-see [[08-technical-architecture]].
+see [[03-architecture]].
 **Reversible?** Yes, trivially.
 
-## 2026-08-18 — Project language: English (code and docs)
+## 3. 2026-08-18 — Project language: English (code and docs)
 
 **Why:** Standard practice, makes the whole project (code + documentation)
 easier to share/open up later. See `../CONVENTIONS.md`.
 **Reversible?** Yes, but costly to change once the project grows.
 
-## 2026-08-18 — Isolated Python virtual environment (`.venv/`)
+## 4. 2026-08-18 — Isolated Python virtual environment (`.venv/`)
 
 **Why:** The machine has two competing Python 3.14 installations that
 caused confusion about where packages get installed. A project-local
 venv solves this permanently and is standard practice anyway.
 **Reversible?** Yes.
 
-## 2026-08-18 — Storage: local plaintext JSON, history not overwrite
+## 5. 2026-08-18 — Storage: local plaintext JSON, history not overwrite
 
 **Alternatives considered:** overwrite a single "current plan" file, keep
 full history, use a real database.
-**Why:** "Memory" is a named differentiator in [[03-competitors]] — an
+**Why:** "Memory" is a named differentiator in [[01-research]] — an
 agent that forgets the previous plan the moment a new goal is set isn't
 better than a todo app. A real database is overkill before the hypothesis
 is validated, so we start with an append-only JSON history file.
@@ -87,28 +91,28 @@ decision is logged so it isn't forgotten once the project has multiple
 users or lives in the cloud — at that point this needs encryption at
 rest, proper auth, and a real privacy policy.
 **Reversible?** Yes — swapping JSON for a database later doesn't change
-the rest of the architecture (see [[08-technical-architecture]]).
+the rest of the architecture (see [[03-architecture]]).
 
-## 2026-08-18 — Reframe: the agent is the product, not a planner app
+## 6. 2026-08-18 — Reframe: the agent is the product, not a planner app
 
 **Why:** Planning is one capability the agent uses, not the product
 itself. Reframes the hypothesis as testing a continuous loop (goal →
 plan → action → feedback → replan → memory), not a one-time plan
 generator. Arrived at independently in a parallel ChatGPT discussion —
-treated as a useful consistency check. See [[04-hypothesis]] § Refined framing.
+treated as a useful consistency check. See [[06-development]] § Hypothesis, Refined framing.
 **Reversible?** Yes — doesn't change any code, only framing/priorities.
 
-## 2026-08-18 — Testing takes priority over further ideation
+## 7. 2026-08-18 — Testing takes priority over further ideation
 
 **Why:** A lot of time went into exploring what the project *could*
 become (memory architecture, cloud, web UI, aggregation, multi-device).
 None of that is needed to test the core hypothesis. Decision: finish
 Prototype 0.1 (the feedback/replan loop) and test on the project owner
-first, before any further scope expansion. See [[09-mvp]] § Testing philosophy.
+first, before any further scope expansion. See [[02-product]] § Testing philosophy.
 **Reversible?** Yes, but the point is specifically to resist reversing it
 prematurely.
 
-## 2026-08-18 — Static HTML view (`backend/view.py`) for personal use only
+## 8. 2026-08-18 — Static HTML view (`backend/view.py`) for personal use only
 
 **Why:** the user thinks visually, not abstractly — raw JSON/terminal
 text makes it hard to follow what the agent is actually doing. This is
@@ -118,7 +122,7 @@ frontend — no server, no JS, regenerated on demand from
 (see above) because it isn't a feature, it's a way to see existing data.
 **Reversible?** Yes, trivially — delete the file, nothing else depends on it.
 
-## 2026-08-18 — Cleanup pass: fixed correctness/reuse issues, skipped premature efficiency optimization
+## 9. 2026-08-18 — Cleanup pass: fixed correctness/reuse issues, skipped premature efficiency optimization
 
 **Ran `/code-review` + `/simplify` (4 parallel angles) on `backend/`.**
 Fixed: `today.py` crash on legacy string-format plans (now normalized
@@ -136,42 +140,42 @@ properly means changing the storage format (e.g. append-only JSONL) —
 real behavior change for real cost, at a scale (single user, ~10 records,
 human click speed) where the cost is negligible. Matches the
 already-documented "JSON is sufficient for MVP, don't over-engineer"
-stance in [[08-technical-architecture]] § Memory & Data Architecture.
+stance in [[03-architecture]] § Architectural principles.
 Revisit only if history size or request volume actually becomes a
 problem.
 **Reversible?** Yes.
 
-## 2026-08-20 — Built an auto-generated architecture diagram anyway, kept outside `backend/`
+## 10. 2026-08-20 — Built an auto-generated architecture diagram anyway, kept outside `backend/`
 
 **Alternatives considered:** keep the architecture diagram fully
 hand-maintained (matches "don't build it before it's needed" -
-`docs/12-decisions.md`'s own recurring principle); build a code-to-diagram
+this log's own recurring principle); build a code-to-diagram
 generator now.
 **Why this choice:** built specifically in response to the
 overengineering concern above, with a specific future intent - lift it out of
 this repo later as an external tool/capability the agent itself could
-call on (see [[13-ideas-parking-lot]] "Tools / APIs the agent can use").
+call on (see [[06-development]] § Parking Lot, "Tools / APIs the agent can use"). 
 Built as `tools/architecture_mapper/` (see its own README.md), not
 inside `backend/`: it only uses Python's `ast` module on the target
 source, imports nothing from `backend`, and knows nothing project-
 specific - a deliberate boundary so it stays extractable intact.
 **Trade-off:** it's a second thing to maintain, and it only ever
 describes the NOW section (functions/imports it can see in code) - it
-has no way to represent `docs/08-technical-architecture.md`'s VISION
-section, so `docs/08-architecture.drawio` stays hand-maintained as the
+has no way to represent `docs/03-architecture.md`'s VISION
+section, so `docs/03-architecture.drawio` stays hand-maintained as the
 full source of truth; the generator's output
 (`tools/architecture_mapper/output/`, git-ignored) is a cross-check, not
 a replacement.
 **Reversible?** Yes - it's fully self-contained in one folder with no
 inbound or outbound imports to the rest of the project, by design.
 
-## 2026-08-19 — Write goals in English, don't switch LLM backend yet
+## 11. 2026-08-19 — Write goals in English, don't switch LLM backend yet
 
 **Alternatives considered:** keep writing goals in Norwegian and accept
 the failures, switch to Claude API now, write goals in English.
 **Why:** Norwegian goal text causes severe, reproducible hallucination
 in `llama3.1:8b` (entire responses disconnected from the actual goal -
-see [[11-experiments]], 2026-08-19). English phrasing of the identical
+see [[06-development]] § Experiments, 2026-08-19). English phrasing of the identical
 goal produced grounded, sensible answers. Writing goals in English
 sidesteps the failure immediately, at zero cost, and doesn't block
 starting the real usage test that's been the priority all evening.
@@ -181,7 +185,7 @@ real, felt friction, not a free workaround.
 multilingual handling) if English-only friction becomes a real problem,
 per the already-logged Ollama-vs-Claude decision above.
 
-## 2026-08-21 — Don't recognize bare 4-digit clock times ("1400")
+## 12. 2026-08-21 — Don't recognize bare 4-digit clock times ("1400")
 
 **Alternatives considered:** recognize a bare 4-digit number as a
 24-hour clock time whenever it's a plausible time (0000-2359); require
@@ -205,7 +209,7 @@ dressed up as a right one.
 the signal-word option ("kl"/"at" + 4 digits) is the safer middle
 ground to revisit, not the bare-number option.
 
-## 2026-08-21 — Remove YEAR_FRACTIONS ("half a year"/"quarter of a year")
+## 13. 2026-08-21 — Remove YEAR_FRACTIONS ("half a year"/"quarter of a year")
 
 **Alternatives considered:** keep `YEAR_FRACTIONS` as-is (4th entry in
 `_FRACTION_TABLES` alongside hour/minute/day); keep the table but drop
@@ -227,7 +231,7 @@ answer, not a wrong one, just a narrower one than before.
 alternation and `_FRACTION_TABLES`, and re-add the `_add_months()`
 branch `_named_fraction_end()` used to have for it.
 
-## 2026-08-22 — Not moving to SQL; future personal knowledge base gets RAG, not a database
+## 14. 2026-08-22 — Not moving to SQL; future personal knowledge base gets RAG, not a database
 
 **Alternatives considered:** migrate `data/plans.json` to SQL now;
 migrate to SQL once the project grows into a multi-domain/"advanced"
@@ -241,7 +245,7 @@ user, one machine, ~100 records, and every actual lookup so far ("latest
 record for this goal_id", "group by active/completed") is already a
 plain, fast Python scan. This also runs directly against the project's
 own Data Ownership principle
-([[08-technical-architecture]] § Data Ownership) - a human-readable
+([[03-architecture]] § Architectural principles) - a human-readable
 file the user can open and inspect without the app - which a SQL file
 doesn't give up easily. Separately, discussed extending the agent to
 multiple life-domains (health/work/finance) reasoning about each other
@@ -251,8 +255,8 @@ so it doesn't move the SQL calculus either. Separately again, discussed
 a future personal knowledge base (user-supplied documents, e.g. "text
 files with documented science") - concluded that's a RAG (Retrieval-
 Augmented Generation) problem, retrieved by embedding similarity, not
-exact-match SQL querying - see [[07-features]] § Knowledge (RAG over
-user documents) for the sketched design (flat file of chunk+vector
+exact-match SQL querying - see [[03-architecture]] § Knowledge for the
+sketched design (flat file of chunk+vector
 pairs, Ollama embeddings, brute-force similarity search - no vector
 database either, for the same "simplest thing that works at this
 scale" reasoning).
@@ -265,7 +269,87 @@ schedule.
 that would need un-migrating; this is a decision about what to build
 next, not a lock-in.
 
+## 15. 2026-08-18 — Local-first architecture for multi-device sync, not blockchain
+
+**Alternatives considered:** blockchain-based consensus for multi-device
+sync; a conventional server-owns-the-data model; local-first
+architecture with end-to-end encryption.
+**Why this choice:** the actual problem is two-fold - (1) a new device
+should be able to get the full agent back (history, context) via just a
+password/key, without the server operator being able to read the data,
+and (2) no single company should be able to lock the user out of or
+control access to their own data. Blockchain solves consensus among
+mutually-distrusting *strangers* via a public ledger - the wrong tool
+here both because "public" is the opposite of private, and because the
+actual problem is ownership/lock-out, not consensus. End-to-end
+encryption (the Bitwarden/1Password/Signal pattern - key derived
+locally from password, only the encrypted blob ever uploaded, server
+never sees plaintext) solves (1). Local-first (the user's own device
+always holds a complete copy, data stays in an open format, any sync
+server is a replaceable relay never the owner of the truth) solves (2).
+**Trade-off:** requires a real backend + account system to build at
+all - not an MVP concern, tracked in [[06-development]] § Parking Lot.
+**Reversible?** Yes - the project is already 100% local-first today by
+construction (no server exists yet); this is a design goal to preserve
+when sync is eventually added, not a commitment already built.
+
+## 16. 2026-08-24 — Faculty categorization: reuse, understanding, and Infrastructure as a separate category
+
+**Alternatives considered:** treat any broadly reused code as a
+Faculty; treat any code with a plausible conceptual name as a Faculty;
+or require a module to be both genuinely reusable and represent a
+capability through which the agent understands or interprets
+something.
+**Why this choice:** a Faculty is not simply a reusable module, nor is
+it a conceptual label for a topic. It is a reusable capability through
+which the agent can understand or interpret something.
+
+This creates a distinction between Domains and Faculties:
+
+- A **Domain** is an area of responsibility or subject matter the
+  system operates on.
+- A **Faculty** is a reusable capability for understanding or
+  interpreting something within or across those areas.
+- A Faculty does not need to exist for every Domain. It should emerge
+  when a capability proves genuinely reusable, rather than being
+  predetermined as part of the architecture.
+- **Infrastructure** is shared technical machinery that may be widely
+  reused but does not itself represent something the agent
+  understands.
+
+Time provides the first concrete example. Time is a Domain because the
+system operates on durations, timeframes, dates and deadlines.
+Temporal understanding is a Faculty because it provides the reusable
+capability to interpret temporal expressions and durations. The two
+are related, but they are not the same thing.
+
+The same principle explains why `infrastructure/data_persistence.py`
+is Infrastructure rather than a Faculty. It is reused broadly by every
+Domain and by `devtools/app.py` directly, but it does not understand
+what the data represents - it only stores and retrieves it.
+
+Similarly, `outcome_classifier.py` is not currently a Faculty merely
+because it shares a deterministic phrase-matching *pattern* with
+`foundation/time/time_logic/phrase_matching.py`. It is currently
+specific to Goal's feedback flow and has not demonstrated reuse as a
+general agent capability.
+
+The rule is therefore not "reused code = Faculty." The question is:
+does this represent a genuinely reusable capability through which the
+agent understands or interprets something? If not, it should not be
+elevated to Faculty status merely because it has a good name or is
+technically reusable.
+
+Also decided the same day: `world/` remains separate from
+`foundation/`. World represents live external information and
+services; foundation represents the agent's own reusable understanding
+and capabilities. They may both sit outside immediate reasoning, but
+they serve fundamentally different purposes.
+**Reversible?** Yes - these are architectural categorization
+principles rather than load-bearing implementation decisions. A module
+can be reclassified or moved later without requiring a redesign.
+
 ## See also
 
-- [[08-technical-architecture]]
-- [[10-development]]
+- [[03-architecture]]
+- [[06-development]]
