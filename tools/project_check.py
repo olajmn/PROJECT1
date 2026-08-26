@@ -6,16 +6,18 @@ prose at face value. Reports observable facts: what's changed in git,
 which files under the areas docs/04-current-state.md describes are
 newer than that file itself, the actual backend/ tree, whether the
 core modules still import, code-level hygiene (pyflakes, stale
-backend/devtools path mentions, modules with no inbound import), and
-the existing docs checkers' findings.
+backend/devtools path mentions, modules with no inbound import),
+whether architecture_foundation/ (when present) still has its expected
+shape, and the existing docs checkers' findings.
 
-Interprets nothing. Whether a "newer file" actually means
-docs/04-current-state.md is out of date, whether a tree mismatch
-matters, whether a module with no inbound import is dead code or a
-deliberate entry point, what to do about a docs_check/docs_lint
-finding - all of that is a human/Claude judgment call, not this
-script's. See ../COLLABORATION.md for how a session is expected to use
-this output.
+Interprets nothing about content or correctness. Whether a "newer file"
+actually means docs/04-current-state.md is out of date, whether a tree
+mismatch matters, whether a module with no inbound import is dead code
+or a deliberate entry point, whether an architecture_foundation/
+component's status or content is actually right, what to do about a
+docs_check/docs_lint finding - all of that is a human/Claude judgment
+call, not this script's. See ../COLLABORATION.md for how a session is
+expected to use this output.
 
 Reuses tools/docs_check.py, tools/docs_lint.py, and pyflakes (already
 a project dependency, see requirements.txt) as sub-checks rather than
@@ -27,10 +29,13 @@ analyzer in its own right:
     docs_check.py    -> documentation structural integrity
     pyflakes         -> unused imports, undefined names (code)
     project_check.py -> repository/project orientation (this file) -
-                         also owns the two small checks below that
-                         nothing else covers: stale backend/devtools
-                         path mentions in code comments, and modules
-                         with no detected inbound import
+                         also owns the small checks below that nothing
+                         else covers: stale backend/devtools path
+                         mentions in code comments, modules with no
+                         detected inbound import, and whether
+                         architecture_foundation/'s expected files
+                         (when that directory exists at all) are still
+                         there and non-empty
     tests            -> actual runtime behavior (not this file's job -
                          the import check below only confirms a module
                          doesn't raise on import, nothing more)
@@ -38,13 +43,17 @@ analyzer in its own right:
 Run from the project root:
     .venv/bin/python3 -m tools.project_check
 
-Exit code 0 if docs_check.py, docs_lint.py, pyflakes, and the import
-smoke test all pass; 1 if any of them found something. Every other
-section (git status, newer-than-04-current-state, the backend/ tree,
-stale code-path mentions, modules with no inbound import) is pure
-information and never affects the exit code - none of them are
-"wrong" on their own; each one needs a human/Claude to decide whether
-the thing it observed actually means anything.
+Exit code 0 if docs_check.py, docs_lint.py, pyflakes, the import smoke
+test, and the architecture_foundation/ skeleton check (see
+architecture_skeleton_check()) all pass; 1 if any of them found
+something. The skeleton check only ever fails on a missing/emptied
+expected file - never on whether a component's status or content is
+right, which stays a human/Claude judgment call same as everything
+else here. Every other section (git status, newer-than-04-current-
+state, the backend/ tree, stale code-path mentions, modules with no
+inbound import) is pure information and never affects the exit code -
+none of them are "wrong" on their own; each one needs a human/Claude
+to decide whether the thing it observed actually means anything.
 """
 
 import re
@@ -55,6 +64,25 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 CURRENT_STATE = ROOT / "docs" / "04-current-state.md"
 PYTHON = ROOT / ".venv" / "bin" / "python3"
+
+# Only present on branches that actually carry the architecture skeleton
+# (e.g. architecture-skeleton) - not main. See
+# architecture_skeleton_check()'s docstring for why its absence is a
+# silent skip, never a failure.
+ARCHITECTURE_SKELETON = ROOT / "architecture_foundation"
+
+# The five docs every architecture_foundation/ is expected to have at
+# its root, regardless of which components currently exist under it -
+# unlike component folders (checked dynamically, see
+# architecture_skeleton_check()), this list is small and stable enough
+# to name directly, same reasoning as SMOKE_IMPORT_MODULES above.
+ARCHITECTURE_SKELETON_CORE_DOCS = [
+    "README.md",
+    "ARCHITECTURE.md",
+    "COMPONENT_MAP.md",
+    "DECISIONS.md",
+    "ROADMAP.md",
+]
 
 # Areas docs/04-current-state.md actually describes - not all of the
 # repo, just the parts relevant to whether it might need a fresh look.
@@ -234,6 +262,54 @@ def modules_with_no_inbound_import() -> list[str]:
     return sorted(orphans)
 
 
+def architecture_skeleton_check() -> list[str] | None:
+    """
+    Structural sanity check for architecture_foundation/ (see that
+    directory's own README.md) - not every branch has it, and that's
+    not a problem this function reports: returns None if
+    ARCHITECTURE_SKELETON doesn't exist at all, meaning "nothing to
+    check here", distinct from an empty list, meaning "checked, found
+    nothing wrong".
+
+    Checks only that the skeleton's shape hasn't silently eroded -
+    the five core docs (ARCHITECTURE_SKELETON_CORE_DOCS) exist and are
+    non-empty, and every directory under architecture_foundation/, at
+    any depth, has its own non-empty README.md. Component folders are
+    discovered by walking the tree, not a hardcoded list - same
+    reasoning backend_tree() already follows: the set of components is
+    expected to change as the skeleton evolves, so nothing here should
+    need updating just because a folder was added, renamed, or removed.
+
+    Deliberately does not check: whether a component's status
+    (CURRENT/NEXT/FUTURE/EXPLORATORY) is accurate, whether its content
+    is correct or complete, or whether a component should exist at
+    all - "does the structure exist" is an objective, checkable fact;
+    "is the architecture right" is a human/Claude judgment call, the
+    same boundary every other check in this file already respects.
+    """
+    if not ARCHITECTURE_SKELETON.exists():
+        return None
+
+    problems = []
+    for doc_name in ARCHITECTURE_SKELETON_CORE_DOCS:
+        path = ARCHITECTURE_SKELETON / doc_name
+        if not path.exists():
+            problems.append(f"missing core doc: {path.relative_to(ROOT)}")
+        elif path.stat().st_size == 0:
+            problems.append(f"empty core doc: {path.relative_to(ROOT)}")
+
+    for dir_path in sorted(ARCHITECTURE_SKELETON.rglob("*")):
+        if not dir_path.is_dir() or "__pycache__" in dir_path.parts:
+            continue
+        readme = dir_path / "README.md"
+        if not readme.exists():
+            problems.append(f"component folder missing README.md: {readme.relative_to(ROOT)}")
+        elif readme.stat().st_size == 0:
+            problems.append(f"empty README.md: {readme.relative_to(ROOT)}")
+
+    return problems
+
+
 def main() -> int:
     exit_code = 0
 
@@ -308,6 +384,18 @@ def main() -> int:
         print("  dead code; that judgment is not this script's.)")
     else:
         print("  none")
+
+    print()
+    print("=== architecture_foundation/ skeleton check ===")
+    skeleton_problems = architecture_skeleton_check()
+    if skeleton_problems is None:
+        print("  architecture_foundation/ not present on this branch - skipping")
+    elif skeleton_problems:
+        for problem in skeleton_problems:
+            print(f"  {problem}")
+        exit_code = 1
+    else:
+        print("  all core docs and component READMEs present")
 
     print()
     print("=== tools/docs_check.py ===")
