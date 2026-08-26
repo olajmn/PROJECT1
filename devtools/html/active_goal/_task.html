@@ -1,8 +1,13 @@
-{# Task (right now) + Done? - the single next action, and (once a goal
-   has steps) the Yes/No control that advances through them. Split out
-   of _active_goal.html (2026-08-23).
+{# Action (right now) + Done? - the single next action, and (once a
+   goal has steps) the Yes/No control that advances through them.
+   Split out of _active_goal.html (2026-08-23). Labeled "Action" here
+   (was "Task" until 2026-08-26 - see docs/06-development.md for the
+   terminology consolidation) to match the conceptual model
+   (Vision/Goal/Plan/Action/Feedback, see docs/03-architecture.md) -
+   the underlying field is still called `right_now`, deliberately not
+   renamed (see that same doc entry for why).
 
-   Task (right now) is no longer its own independently-generated thing
+   Action (right now) is no longer its own independently-generated thing
    once a goal has steps - step 1 always equals plan.right_now exactly
    (see backend/agent/specialized/plan.py's _generate_steps() docstring), and "right now"
    is just steps[current_step]: a pointer into the list, not separate
@@ -17,7 +22,7 @@
    the same two values and a {% set %} inside one included template
    can't hand them to a sibling include. #}
 <div class="model-row">
-  <span class="model-label">Task (right now)</span>
+  <span class="model-label">Action (right now)</span>
   <span>
     {% if steps %}
       {% if current_index < steps | length %}

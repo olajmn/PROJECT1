@@ -1,0 +1,23 @@
+{# "Set a vision" - creates a Vision on its own, independent of any
+   goal (see app.py's /vision route). Deliberately a separate, smaller
+   box above "Set a goal" (see docs/03-architecture.md § Long-term
+   architecture) - a Vision isn't a step you pass through to create a
+   goal, it's optional context that may or may not exist yet. Visually
+   quieter than the goal form (.card-muted) for the same reason: this
+   is the less-often-used action of the two.
+
+   Expects `visions` in context (from app.py's index() route) only to
+   decide whether to show the existing list - creating one doesn't
+   need it. #}
+<div class="card card-muted">
+  <div class="vision-label">Vision <span class="yaml-comment">(optional, spans multiple goals)</span></div>
+  {% if visions %}
+    <ul class="vision-list">
+      {% for v in visions %}<li>{{ v.text }}</li>{% endfor %}
+    </ul>
+  {% endif %}
+  <form method="post" action="/vision">
+    <input type="text" name="text" placeholder="e.g. Improve physical health and quality of life">
+    <button class="btn-goal" type="submit">Add vision</button>
+  </form>
+</div>

@@ -10,6 +10,7 @@
 
 <div class="layout">
 <div class="col col-goal">
+{% include "set_goal/_vision_form.html" %}
 {% include "set_goal/_goal_form.html" %}
 </div>
 
@@ -26,8 +27,21 @@
   {% if not board.active %}
     <p>No active goals.</p>
   {% else %}
-    {% for record in board.active %}
-      {% include "_active_goal.html" %}
+    {# Vision sits above the Goal collection, not inside any one Goal's
+       card (see docs/03-architecture.md § Long-term architecture) -
+       goals sharing a vision_id render grouped under its heading;
+       goals with none (the normal case) render after, unheaded. See
+       app.py's _group_active_by_vision(). #}
+    {% for vision, records in vision_groups %}
+      {% if vision %}
+        <div class="vision-heading">
+          <span class="vision-label">Vision</span>
+          <strong>{{ vision.text }}</strong>
+        </div>
+      {% endif %}
+      {% for record in records %}
+        {% include "_active_goal.html" %}
+      {% endfor %}
     {% endfor %}
   {% endif %}
 </div>

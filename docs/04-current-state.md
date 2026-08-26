@@ -18,13 +18,15 @@ backend/
     language/       Empty scaffold, no established Faculty
     memory/         Empty scaffold, no established Faculty
     meaning(maybe)/  Empty scaffold, unresolved
-  goals/            Domain - goal identity/grouping, feedback classification
-  planning/         Domain - goal -> plan, plan + feedback -> replan, today's action
+  goals/            Domain - goal identity/grouping, feedback parsing
+  planning/         Domain - goal -> plan, plan + feedback -> replan, action (right_now)
   infrastructure/   Shared technical machinery - data_persistence.py
-                    saves/loads JSON, understands none of what it stores
+                    saves/loads JSON (goals/plans and, since 2026-08-26,
+                    Vision separately), understands none of what it stores
   world/            Domain - empty by design, no live external data access today
 devtools/           Local Flask web UI - the only working interface
-data/               Local storage, git-ignored (personal data)
+data/               Local storage, git-ignored (personal data) - plans.json
+                    and, since 2026-08-26, visions.json
 docs/               This vault
 tools/              Standalone dev utilities, no runtime relationship
                     to the agent (e.g. tools/architecture_mapper,
@@ -50,6 +52,16 @@ Other potential Faculties are not yet established. Empty scaffolds such
 as `language/`, `memory/`, and `meaning(maybe)/` do not by themselves
 constitute Faculties.
 
+**Vision** (added 2026-08-26) is a fifth concept, deliberately none of
+the four above - not a Domain, Faculty, or pipeline stage. It's
+optional, cross-goal context (`data/visions.json`, an optional
+`vision_id` on a Goal record); see `03-architecture.md` § Vision for
+what it is and isn't. The conceptual model is now
+**Vision / Goal / Plan / Action / Feedback** - "Action" replaces
+"Task"/"today's action" as the term used across docs and the UI
+(the `right_now` field name and `today.py`'s script name are
+unchanged - see `06-development.md` for why).
+
 **Security status:** whole-disk encryption via macOS FileVault is on
 for this machine (covers the "stolen/lost laptop" scenario). No
 application-level encryption of `data/plans.json` itself yet - deferred
@@ -66,7 +78,7 @@ Goal
  ↓
 Plan
  ↓
-Today's action
+Action
  ↓
 User feedback
  ↓
@@ -81,11 +93,12 @@ Concretely:
 |---|---|
 | Goal -> plan | `backend/planning/plan.py` (`generate_plan`) |
 | Plan saved | `backend/infrastructure/data_persistence.py` |
-| Today's action | `backend/planning/today.py` |
+| Action (right now) | `backend/planning/today.py` reads `plan.right_now` |
 | User reports progress | `devtools/app.py` (`/feedback`) |
 | Plan adjusts | `backend/planning/plan.py` (`replan`) |
 | Temporal understanding | `backend/foundation/time/` |
-| Local web UI | `devtools/app.py` - goal form, feedback, per-step done/no, history, completed |
+| Vision created / linked to a Goal | `devtools/app.py` (`/vision`, `/goal`) |
+| Local web UI | `devtools/app.py` - vision form, goal form, feedback, per-step done/no, history, completed |
 
 "Works" means the mechanism runs correctly - the code calls the LLM,
 saves, and displays a result. It does not mean the LLM's answers are
@@ -96,6 +109,10 @@ unfounded detail (see `06-development.md`).
 
 - `planning/` has not yet been split into a data/logic structure the
   way `foundation/time/` and `goals/` have.
+- **Vision** - create and link-to-a-goal are built; editing/deleting an
+  existing Vision is not. A Goal's Vision is never actually supplied to
+  the LLM yet (`generate_plan()`/`replan()` both ignore `vision_id`) -
+  deliberate for now, see `03-architecture.md` § Vision.
 
 ## 4. What's not built
 
@@ -135,6 +152,10 @@ this describes the architectural concepts currently recognized by the
 project; § What exists, § What works, and § What's not built above are
 the authoritative source for what's actually built.
 
+Vision is not in the Domains list above, deliberately - see
+`03-architecture.md` § Vision for why (not a Domain, Faculty, or
+pipeline stage; a small capability inside Goals/Planning).
+
 Time is currently the only Domain that has produced an established
 Faculty: temporal understanding. Other Domains may or may not
 eventually produce corresponding Faculties. Temporal understanding
@@ -157,9 +178,12 @@ Stable, not casually revisited (see `COLLABORATION.md` rule 4):
   internet dependency.
 - Storage: local plaintext JSON, append history, never overwrite. Not
   moving to SQL.
-- Feedback outcome (done/not-done/in-progress) is classified
-  deterministically, never left to the LLM to judge.
+- Feedback outcome (action_completed/action_not_completed/action_in_progress/
+  goal_completed) is parsed deterministically, never left to the LLM to judge.
 - Testing on real use takes priority over adding more features.
+- Vision is optional, lightweight context (an id+text store, an optional
+  foreign-key-style reference on a Goal) - not a relational hierarchy, not
+  duplicated free text per goal.
 
 Full list with reasoning: `05-decisions.md`.
 
@@ -171,8 +195,18 @@ Full list with reasoning: `05-decisions.md`.
 - Future Faculties should emerge from demonstrated reuse, not be
   predetermined now - none beyond temporal understanding are settled.
 - Visual design - wants a holistic pass, not one color fixed at a time.
+- Whether/how a Goal's Vision ever gets summarized into the LLM's
+  context when planning/replanning - deliberately not decided or built
+  yet, see `03-architecture.md` § Vision.
+- Whether editing/deleting an existing Vision is worth building, once
+  there's real usage to learn from.
 
 ## 8. Next step
 
 1. Pick one of Memory / hierarchical steps / Knowledge-RAG / Acting to
    actually build - not more than one at a time.
+
+(The Action/Task/`right_now`/"today's task" terminology drift an
+earlier architectural pass flagged as worth resolving before picking
+one of these is now done, alongside implementing Vision - see
+`06-development.md`, 2026-08-26.)

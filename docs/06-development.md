@@ -213,9 +213,148 @@ across days). Mixed signal:
 
 ## 3. Development Log
 
+### 1. 2026-08-26 (latest x6)
+
+- Implemented the clarified conceptual model
+  (Vision/Goal/Plan/Action/Feedback) across the project, per the
+  architectural clarification pass logged above. Vision: new, separate
+  `data/visions.json` store (`save_vision()`/`load_visions()`/
+  `get_vision()` in `data_persistence.py`), an optional `vision_id` on
+  Goal records (carried forward unchanged across every replan, same
+  treatment as `frozen_duration`), a "Set a vision" form and route
+  (`/vision`), and an optional vision select/new-vision field on the
+  goal form. `devtools/app.py`'s new `_group_active_by_vision()` groups
+  the active board by `vision_id` for `index.html`, rendering each
+  Vision as a heading above the goals that share it (`.vision-heading`/
+  `.vision-label` in `style.css`, deliberately not styled like
+  `.model-label`) - goals with no vision (the normal case) render
+  unheaded, last. See [[05-decisions]] #17 for why this shape (a small
+  separate store + a reference, not a hierarchy or duplicated text) and
+  [[03-architecture]] § Vision for the full model. Not built: editing/
+  deleting an existing Vision, and supplying a Vision's text to the LLM
+  at all - `generate_plan()`/`replan()` (`backend/planning/plan.py`)
+  both gained a docstring note marking exactly where that would be
+  added later, without adding it now.
+
+  Terminology: consolidated Action/Task/`right_now`/"today's task" into
+  "Action" as the conceptual/UI term (`active_goal/_task.html`'s label,
+  `active_goal/_conversation.html`'s "Feedback" section heading -
+  previously "Conversation" - plus every doc/comment reference this
+  touched). The `right_now` field name, `PLAN_KEYS`, and `today.py`'s
+  filename are deliberately unchanged - all three are embedded in
+  persisted data, the LLM prompts, or a documented run command, and
+  renaming them would be a real migration for a purely cosmetic gain.
+
+  Verified without touching real data: `backend/infrastructure/
+  test_data_persistence.py` (new, isolated temp-directory checks for
+  Vision persistence) and `backend/goals/goal_logic/
+  test_feedback_parser.py` both pass; a one-off Flask test-client run
+  (not committed - would need Ollama to exercise the real LLM paths)
+  confirmed `/vision`, `/goal`, and index()'s vision grouping render
+  correctly end to end via the deterministic clarification path.
+  `data/plans.json`'s checksum was confirmed unchanged before and after
+  every check.
+
+### 2. 2026-08-26 (latest x5)
+
+- Logged an exploratory hypothesis into [[03-architecture]] § Long-term
+  architecture: a concept above Goal (working name "Vision") providing
+  shared context for multiple Goals, explicitly not a new stage in the
+  Goal -> Plan -> Action -> Feedback -> Replan pipeline. Documentation
+  only, nothing decided as architecture. Critical finding while
+  evaluating the name: the two motivating examples described different
+  things - a single goal's own longer-horizon content (already exists,
+  as `one_year`/`one_month` in `PLAN_KEYS`) versus context genuinely
+  shared across separate goal_ids (not represented anywhere today) -
+  only the second is actually new. Connected to prior art: [[05-decisions]]
+  #14 already considered the same underlying need ("multiple
+  life-domains reasoning about each other") and concluded it should be
+  lightweight context on existing records, not a new structural entity;
+  [[00-project-brief]] § Product Philosophy's "the life domain is
+  secondary" is noted as a standing caution against over-building this.
+  Flagged "Domain" specifically as the wrong name regardless of
+  preference, since [[03-architecture]] § System structure already
+  claims it for something else.
+
+### 3. 2026-08-26 (latest x4)
+
+- Renamed `feedback_parser.py`'s vocabulary to be self-explanatory
+  without prior context: phrase-list names (`GOAL_DONE_PHRASES` etc.)
+  and the outcome strings `classify_outcome()` returns are now
+  `GOAL_COMPLETED_PHRASES`/`ACTION_NOT_COMPLETED_PHRASES`/
+  `ACTION_IN_PROGRESS_PHRASES`/`ACTION_COMPLETED_PHRASES`, returning
+  "goal_completed"/"action_not_completed"/"action_in_progress"/
+  "action_completed" instead of "goal_done"/"not_done"/"in_progress"/
+  "done" (this also lines up "goal_completed" with the app's existing
+  `completed`/`/completed` vocabulary, which it feeds into). Function
+  names: `classify_outcome()` -> `parse_outcome()` (it matches explicit
+  phrases, not a general classifier); `wants_duration_change()` ->
+  `requests_duration_change()`. `duration` was deliberately kept
+  (not renamed to "timeframe") - it's the term used throughout
+  `plan.py`/`data_persistence.py`, and `_contains_phrase()` keeps its
+  leading underscore - both to stay consistent with the rest of the
+  codebase's own conventions rather than introduce a second vocabulary
+  for the same thing. Local variable `lowered` -> `normalized_text`.
+  Behavior, phrases, check order, and the None-means-unknown fallback
+  are all unchanged. Updated every call site: `devtools/app.py`
+  (import, two function calls, four outcome-string comparisons, several
+  comments), two devtools templates that referenced the function by its
+  old name, `backend/goals/__init__.py`, `backend/README.md`. Added
+  `goal_logic/test_feedback_parser.py` - small assert-based checks for
+  the outcome/duration-request cases and the negation/word-boundary
+  edge cases (`"know"`/`"now"` must not match `"no"`), run directly
+  (no test framework), not a coverage effort.
+
+### 4. 2026-08-26 (latest x3)
+
+- Renamed `goals/goal_logic/outcome_classifier.py` to
+  `goals/goal_logic/feedback_parser.py` - the file's actual scope is
+  parsing feedback into two different kinds of signal (outcome status,
+  duration-change requests), not just classifying an outcome, and the
+  new name reflects that instead of only the first half. Added clear
+  section dividers inside the file separating OUTCOME PARSING from
+  DURATION CHANGE PARSING, and tightened a couple of comments/
+  docstrings that referenced the removed RULES tuple (from the merge
+  logged above) or the old filename. Behavior, phrases, check order,
+  and the None-means-unknown fallback are all unchanged. Updated every
+  reference: `devtools/app.py`'s import and two comments,
+  `backend/goals/__init__.py`, `backend/goals/goal_logic/__init__.py`,
+  `backend/README.md`, `tools/docs_lint.py`. Historical entries above
+  and in [[05-decisions]] that describe the file under its old name
+  are left as-is - they record what was true when they were written.
+
+### 5. 2026-08-26 (latest x2)
+
+- Merged `goals/goal_data/outcome_phrases.py`'s phrase lists directly
+  into `goals/goal_logic/outcome_classifier.py`, removing the
+  data/logic split for this one classifier (`goal_data/` now empty,
+  removed). For this small, rarely-growing set of phrase lists,
+  readability and being able to read the whole classifier in one file
+  were prioritized over the data/logic separation pattern used
+  elsewhere (e.g. `foundation/time/`'s time_data/time_logic). Behavior
+  unchanged - same phrases, same word-boundary matching, same check
+  order, same None-means-unknown fallback ([[05-decisions]] #1). The
+  RULES tuple-of-tuples was also replaced with an explicit if-chain in
+  classify_outcome() for the same reason. `backend/README.md` and the
+  `goals`/`goal_logic` package docstrings updated to match.
+
+### 6. 2026-08-26 (latest)
+
+- Logged an exploratory hypothesis into [[03-architecture]] § Long-term
+  architecture (an adaptive, persistent representation of the user,
+  informally "primal intelligence", and relational continuity through
+  recognition rather than simulated personality) and two related
+  interface ideas into § Parking Lot below (a minimal, stable visual
+  identity for the agent; a "notice" state for surfacing a detected
+  discrepancy). Documentation only, nothing decided as architecture -
+  see those sections for the actual distinctions: raw memory vs. a
+  derived representation, expectation/discrepancy as an update loop, a
+  neural network as one possible future implementation rather than a
+  requirement, and an explicit non-claim about machine consciousness.
+
 > § The Approach above, Phase 7-9. Running log, newest first.
 
-### 1. 2026-08-25 (latest)
+### 7. 2026-08-25
 
 - Later the same day, `backend/` was reorganized again: `agent/
   {specialized,distributed}` (see the 2026-08-24 entry below) was
@@ -285,7 +424,7 @@ across days). Mixed signal:
   (`matchers.py`/`resolve.py`/`frozen.py`)") left as historical record,
   same principle as every other rename today.
 
-### 2. 2026-08-24
+### 8. 2026-08-24
 
 - Board cleanup: 15 test/debris `goal_id`s (duplicate goals and dev-task
   goals from earlier testing sessions - "make dinner" x3, "make
@@ -310,7 +449,7 @@ across days). Mixed signal:
   existing instances across [[02-product]] § Capabilities, [[03-architecture]],
   and [[05-decisions]].
 
-### 3. 2026-08-21
+### 9. 2026-08-21
 
 - Split `backend/` into paired data/logic modules, matching a mental
   model the user generalized themselves during this session: "every
@@ -372,7 +511,7 @@ across days). Mixed signal:
   session, cleared as items get done or logged properly here / in
   § Experiments below.
 
-### 4. 2026-08-20 (latest x4)
+### 10. 2026-08-20 (latest x4)
 
 - Added `tools/architecture_mapper/`: a standalone script (only uses
   Python's `ast` module on the target source, imports nothing from
@@ -386,7 +525,7 @@ across days). Mixed signal:
   Generated output is git-ignored - a regenerable build artifact, not
   tracked.
 
-### 5. 2026-08-20 (latest x3)
+### 11. 2026-08-20 (latest x3)
 
 - Rebuilt `docs/08-architecture.drawio`'s NOW section at module/file
   level (mirrors `backend/README.md`'s table), fixing several real
@@ -400,7 +539,7 @@ across days). Mixed signal:
   `tools/architecture_mapper` decision (why build it now, why keep it
   outside `backend/`) in [[05-decisions]].
 
-### 6. 2026-08-20 (latest x2)
+### 12. 2026-08-20 (latest x2)
 
 - Frontend: board/index layout is now N equal `.col` columns (was a
   fixed 2-column main/side layout) - `index.html` shows Set a goal |
@@ -419,7 +558,7 @@ across days). Mixed signal:
   in a growing thread - not (as first suspected) an Enter-key bug.
   Fixed with `id="goal-{{ goal_id }}"` + a redirect to that anchor.
 
-### 7. 2026-08-20 (latest)
+### 13. 2026-08-20 (latest)
 
 - Backend: `goal_id` is now a stable identity separate from a goal's
   display text (backfilled for legacy records so history's grouping
@@ -439,7 +578,7 @@ across days). Mixed signal:
   usage: repeated "not done" clicks meant as "still working on it" had
   been shrinking a task 30min -> 15min -> 5min.
 
-### 8. 2026-08-19 (latest x2)
+### 14. 2026-08-19 (latest x2)
 
 - Found via the first real test goal ("take shower", duration "any
   time before i got to bed") that day-segment resolution missed a 4th
@@ -452,7 +591,7 @@ across days). Mixed signal:
   Deliberately does NOT invent a clock time for it, unlike day segments
   - there's no real bedtime to compute.
 
-### 9. 2026-08-19 (latest)
+### 15. 2026-08-19 (latest)
 
 - Added a "Goal complete" button/state: the user can now explicitly
   mark a whole goal done (new `completed` field on each record) instead
@@ -496,7 +635,7 @@ across days). Mixed signal:
   records, nothing deleted - 32 history entries intact) to give a clean
   "Active" board before starting real usage testing.
 
-### 10. 2026-08-19
+### 16. 2026-08-19
 
 - Temporal grounding: `goal_to_plan.py` now sends the real current
   date/time (`_now_str()`) to the model on every `generate_plan()` and
@@ -535,7 +674,7 @@ across days). Mixed signal:
   § Parking Lot below — not built, matches the existing
   "testing over further ideation" decision in [[05-decisions]].
 
-### 11. 2026-08-18 (latest x5)
+### 17. 2026-08-18 (latest x5)
 
 - Cleanup pass via `/code-review` + `/simplify` on `backend/` (5 parallel
   agents: correctness, reuse, simplification, efficiency, altitude —
@@ -549,7 +688,7 @@ across days). Mixed signal:
   empty history. Tested: `today.py`, `view.py`, and `app.py` (including
   the fixed edge cases and the XSS-escaping fix) all re-verified working.
 
-### 12. 2026-08-18 (latest x4)
+### 18. 2026-08-18 (latest x4)
 
 - Initialized git, verified `.gitignore` correctly excludes `data/`
   (personal goals/plans), `.venv/`, `__pycache__/`, `.DS_Store` before
@@ -557,7 +696,7 @@ across days). Mixed signal:
   ([github.com/olajmn/personal-ai-agent](https://github.com/olajmn/personal-ai-agent))
   and pushed initial commit (Prototype 0.1, full loop closed).
 
-### 13. 2026-08-18 (latest, latest, latest)
+### 19. 2026-08-18 (latest, latest, latest)
 
 - Split off `backend/devtools/` (proper Python subpackage) for the
   personal dev tools (`app.py`, `view.py`, `templates/`), separate from
@@ -571,7 +710,7 @@ across days). Mixed signal:
   `from backend.storage import ...` too, since they're now accessed as
   package members via `app.py`. Fixed and re-tested end-to-end.
 
-### 14. 2026-08-18 (latest, latest)
+### 20. 2026-08-18 (latest, latest)
 
 - Built `backend/app.py`: local interactive web page (Flask) — set a
   goal, see "right now", give feedback via buttons/text. Closes
@@ -584,7 +723,7 @@ across days). Mixed signal:
 - Tested end-to-end via curl: goal → plan → feedback ("too busy today")
   → replan produced a smaller, easier next action, as intended
 
-### 15. 2026-08-18 (latest)
+### 21. 2026-08-18 (latest)
 
 - Integrated a parallel ChatGPT discussion into the vault: refined
   hypothesis as a closed loop ("Prototype 0.1"), added temporal
@@ -593,7 +732,7 @@ across days). Mixed signal:
   logged two decisions in [[05-decisions]] (agent-not-planner-app reframe,
   testing over further ideation). No code changed in this pass.
 
-### 16. 2026-08-18 (even even later)
+### 22. 2026-08-18 (even even later)
 
 - Reorganized: all Python code moved into `backend/` (a "src layout" -
   root now holds only folders + standard project metadata files like
@@ -601,7 +740,7 @@ across days). Mixed signal:
   expect them there). Added `backend/README.md`. Fixed `storage.py`'s
   data path for the new nesting level. Verified no data lost.
 
-### 17. 2026-08-18 (even later)
+### 23. 2026-08-18 (even later)
 
 - Switched `goal_to_plan.py` to structured JSON output (`format="json"`
   in Ollama) instead of free text — keys: `one_year`, `one_month`,
@@ -609,7 +748,7 @@ across days). Mixed signal:
 - Added `today.py`: prints just `right_now` from the latest saved plan —
   the "zoom all the way in" step from [[00-project-brief]] §2
 
-### 18. 2026-08-18 (later)
+### 24. 2026-08-18 (later)
 
 - Added `storage.py`: goal+plan history persisted to `data/plans.json`
   (append-only, not overwritten). See [[05-decisions]] for why history
@@ -618,7 +757,7 @@ across days). Mixed signal:
   committed
 - Added `docs/08-architecture.drawio` — full visual architecture diagram
 
-### 19. 2026-08-18
+### 25. 2026-08-18
 
 - Set up `goal_to_plan.py` (v0.1): goal → plan via LLM, no storage yet
 - Tried Anthropic Claude (`claude-opus-5`) first — invalid API key (401)
@@ -1022,3 +1161,25 @@ before any real (non-owner) user tests the agent.
   (not settled) in [[03-architecture]]'s "Faculties" section,
   logged the same day - overlaps the ACTION node in that doc's
   long-term pipeline diagram, relationship not resolved.
+
+- Minimal, stable visual identity for the agent (e.g. an abstract,
+  non-human shape rather than a face or avatar) that the user
+  encounters consistently across sessions - explored 2026-08-26
+  alongside the relational-continuity hypothesis (see
+  [[03-architecture]] § Long-term architecture). The identity itself
+  is not meant to carry personality or simulated emotion, only stable
+  recognizability; any later states (idle/processing/speaking/noticing)
+  should reflect real internal events, not simulated affect. Not
+  scoped or designed - open question raised the same day: a face-like
+  shape recruits face-perception more strongly than a fully abstract
+  one (a light, a ring, a waveform), which may work against the "not a
+  simulated person" intent.
+- "Notice" as a possible interface for surfacing a detected
+  discrepancy (see [[03-architecture]] § Long-term architecture) -
+  instead of, or before, an explicit verbal statement from the agent,
+  a subtle visual signal the user can choose to investigate. Explored
+  2026-08-26 alongside the same hypothesis; not designed. The same
+  confidence/threshold/cooldown/"don't guess" discipline needed for
+  any other intervention applies here - a signal fired on
+  low-confidence data is exactly as costly to trust as a wrong verbal
+  statement would be.

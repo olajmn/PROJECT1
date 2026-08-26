@@ -26,9 +26,9 @@ from backend.foundation.time import (
     step_plan,
 )
 from backend.goals.goal_logic.goal import get_board, get_history_for_goal, get_latest_for_goal
-from backend.goals.goal_logic.outcome_classifier import classify_outcome, wants_duration_change
+from backend.goals.goal_logic.feedback_parser import parse_outcome, requests_duration_change
 from backend.planning.plan import HORIZON_LABELS, PLAN_KEYS, generate_plan, join_plan_prose, replan
-from backend.infrastructure.data_persistence import load_history, save_plan
+from backend.infrastructure.data_persistence import load_history, load_visions, save_plan, save_vision
 
 # Custom folder names (2026-08-23, defaults were templates/ and
 # static/) - explicit split of "frontend" (html/ - every .html file,
@@ -111,14 +111,64 @@ def split_message_lines(text: str) -> list[str]:
 app.jinja_env.filters["split_message_lines"] = split_message_lines
 
 
+def _group_active_by_vision(active_records: list[dict], visions: list[dict]) -> list[tuple[dict | None, list[dict]]]:
+    """
+    Group active board records by vision_id, for index.html - goals
+    sharing a Vision render together under its heading; goals with no
+    vision_id (the normal case) render in their own group, unheaded,
+    last. Returns a list of (vision_record_or_None, [records]) pairs,
+    vision groups oldest-vision-first, the no-vision group always last
+    regardless of where it would otherwise fall.
+
+    Presentation-only grouping for this one page, not a general Goal/
+    Vision capability - deliberately kept here rather than added to
+    goal_logic/goal.py's get_board() (which stays about goal_id
+    identity/grouping only, unchanged by Vision existing at all).
+    """
+    visions_by_id = {v["id"]: v for v in visions}
+    groups: dict[int | None, list[dict]] = {}
+    for record in active_records:
+        groups.setdefault(record.get("vision_id"), []).append(record)
+
+    with_vision = sorted(
+        ((visions_by_id[vid], records) for vid, records in groups.items() if vid in visions_by_id),
+        key=lambda pair: pair[0]["id"],
+    )
+    without_vision = groups.get(None, [])
+    return with_vision + ([(None, without_vision)] if without_vision else [])
+
+
 @app.route("/")
 def index():
+    board = get_board()
+    visions = load_visions()
     return render_template(
         "index.html",
         horizons=_BROADER_HORIZONS,
         history=load_history(),
-        board=get_board(),
+        board=board,
+        visions=visions,
+        vision_groups=_group_active_by_vision(board["active"], visions),
     )
+
+
+@app.route("/vision", methods=["POST"])
+def new_vision():
+    """
+    Handle the "set a vision" form: save a new Vision and return to the
+    board. Create-only - see save_vision()'s docstring for why editing/
+    deleting an existing one isn't built yet.
+
+    Deliberately does not attach itself to any goal - a Vision exists
+    independently first (see docs/03-architecture.md § Long-term
+    architecture: it "provides optional context to multiple Goals", it
+    isn't itself the first step of a pipeline). Attaching one to a goal
+    happens in /goal's own form instead, via `vision_id`/`new_vision`.
+    """
+    text = request.form.get("text", "").strip()
+    if text:
+        save_vision(text)
+    return redirect(url_for("index"))
 
 
 @app.route("/goal", methods=["POST"])
@@ -147,7 +197,7 @@ def new_goal():
     Extending an EXISTING goal's timeframe used to also go through here
     (`continue_goal_id`, posted by a standalone "Extend timeframe" form
     on that goal's own board card), but that's now done conversationally
-    instead - see /feedback's `wants_duration_change()` branch below,
+    instead - see /feedback's `requests_duration_change()` branch below,
     which asks for and applies a new duration through the goal's own
     chat thread. `_apply_new_duration()` is the shared piece of logic
     that survived that move.
@@ -168,10 +218,30 @@ def new_goal():
     plan and freezes it then. Redirects straight to the card either way
     (`#goal-{id}`, same anchor /feedback uses) so the question is
     immediately visible, not buried below the fold.
+
+    `vision_id`/`new_vision` (added 2026-08-26): optional. A goal can
+    be linked to an existing Vision (the `vision_id` select) or a
+    freshly-typed one (`new_vision`, created here via save_vision() if
+    non-empty - checked first, so typing a new one always wins over
+    whatever the select happened to have selected). Neither is
+    required - most goals have no vision at all, and that's the normal
+    case, not a partial state. Set once, at creation, like `goal_id`
+    itself; carried forward unchanged on every later replan for this
+    goal (see _apply_new_duration() and /feedback below) - a goal's
+    vision doesn't change just because its plan does.
     """
     typed_text = request.form.get("goal", "").strip()
 
     if typed_text:
+        new_vision_text = request.form.get("new_vision", "").strip()
+        vision_id_value = request.form.get("vision_id", "").strip()
+        if new_vision_text:
+            vision_id = save_vision(new_vision_text)["id"]
+        elif vision_id_value:
+            vision_id = int(vision_id_value)
+        else:
+            vision_id = None
+
         duration = extract_duration_phrase(typed_text)
         if duration is None:
             # Nothing recognized as a timeframe anywhere in what was
@@ -183,12 +253,13 @@ def new_goal():
             clarification_plan = {key: None for key in PLAN_KEYS}
             clarification_plan["clarification"] = "When do you want to do this, or how long should it take?"
             clarification_plan["steps"] = None
-            record = save_plan(typed_text, clarification_plan, duration=None, frozen_duration=None)
+            record = save_plan(typed_text, clarification_plan, duration=None, frozen_duration=None, vision_id=vision_id)
             return redirect(url_for("index") + f"#goal-{record['goal_id']}")
         plan = generate_plan(typed_text, duration)
         record = save_plan(
             typed_text, plan, duration=duration,
             frozen_duration=None if plan.get("clarification") else freeze_duration(duration),
+            vision_id=vision_id,
         )
         return redirect(url_for("index") + f"#goal-{record['goal_id']}")
     return redirect(url_for("index"))
@@ -200,7 +271,7 @@ def _apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
     of logic that survived /goal's old `continue_goal_id` branch (moved
     here 2026-08-23 when that branch's only caller, the standalone
     "Extend timeframe" form, was replaced by /feedback's conversational
-    wants_duration_change() flow below).
+    requests_duration_change() flow below).
 
     Always calls generate_plan() again, never just patches
     duration/frozen_duration onto the existing record: changing the
@@ -221,11 +292,16 @@ def _apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
     not a rendering bug, an actual empty bubble in the saved history
     (the "You" reply to "How long do you want this to run now?" showed
     the label with no text under it).
+
+    `existing["vision_id"]` is carried forward unchanged, same as
+    `goal_id` - a changed duration is still the same goal continuing,
+    not a new decision about which Vision it belongs to.
     """
     plan = generate_plan(existing["goal"], duration)
     return save_plan(
         existing["goal"], plan, feedback=feedback, duration=duration, goal_id=existing["goal_id"],
         frozen_duration=None if plan.get("clarification") else freeze_duration(duration),
+        vision_id=existing.get("vision_id"),
     )
 
 
@@ -233,7 +309,7 @@ def _apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
 def feedback():
     """
     Handle the "what's going on" form: classify the free-text note into
-    an outcome (see backend/goals/goal_logic/outcome_classifier.py - no LLM, recognized
+    an outcome (see backend/goals/goal_logic/feedback_parser.py - no LLM, recognized
     phrases only), then act on it exactly as the old Yes/Still working
     on it/No/Goal complete buttons used to. There's no separate
     "outcome" field anymore - the note itself is the only signal, so
@@ -248,7 +324,7 @@ def feedback():
       about the goal itself (see that branch below).
     - `plan.pending_duration_question` set -> the note answers "how
       long do you want this to run now?" (see _apply_new_duration()).
-    - otherwise, `wants_duration_change(note)` -> the note is a NEW
+    - otherwise, `requests_duration_change(note)` -> the note is a NEW
       request to change the timeframe (e.g. "can we change timeframe"),
       not a status report; applies immediately if a new duration is
       ALSO already in this same message (e.g. "change timeframe to 1
@@ -293,10 +369,10 @@ def feedback():
         # through generate_plan() again (not replan(), which is built
         # entirely around "did you complete right_now" - there is no
         # right_now here to have completed), never through
-        # classify_outcome() below: an answer like "speed and
-        # comprehension" isn't a done/not-done/in-progress signal at
-        # all, forcing it through that classifier would be a category
-        # error, not just an inaccurate guess.
+        # parse_outcome() below: an answer like "speed and
+        # comprehension" isn't an action_completed/action_not_completed/
+        # action_in_progress signal at all, forcing it through that
+        # parser would be a category error, not just an inaccurate guess.
         #
         # Every prior answer in this goal's history rides along too,
         # not just this latest note - same reasoning replan() passing
@@ -336,12 +412,13 @@ def feedback():
             latest["goal"], plan, feedback=note, duration=duration,
             goal_id=latest["goal_id"],
             frozen_duration=None if plan.get("clarification") else freeze_duration(duration),
+            vision_id=latest.get("vision_id"),
         )
         return back_to
 
     if latest["plan"].get("pending_duration_question"):
         # The PREVIOUS record in this goal's thread asked "how long do
-        # you want this to run now?" (see wants_duration_change() below)
+        # you want this to run now?" (see requests_duration_change() below)
         # - this note is the answer, a duration phrase, not a status
         # report on right_now. Falls back to the existing duration
         # unchanged if nothing recognized, same as the old "Extend
@@ -352,12 +429,12 @@ def feedback():
         _apply_new_duration(latest, new_duration, feedback=note)
         return back_to
 
-    if wants_duration_change(note):
+    if requests_duration_change(note):
         # A request to change the TIMEFRAME, not a progress report -
-        # checked before classify_outcome() so it can never be
+        # checked before parse_outcome() so it can never be
         # misread as one of its four outcomes (see
-        # outcome_classifier.wants_duration_change()'s docstring for
-        # why this can't just be a fifth RULES entry).
+        # feedback_parser.requests_duration_change()'s docstring for why
+        # this can't just be another branch in parse_outcome()).
         #
         # The new duration might already be IN this same message (e.g.
         # "can we change timeframe to 1 hour") - checked first so that
@@ -383,6 +460,7 @@ def feedback():
             {**latest["plan"], "pending_duration_question": "How long do you want this to run now?"},
             feedback=note, duration=duration, goal_id=latest["goal_id"],
             frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
+            vision_id=latest.get("vision_id"),
         )
         return back_to
 
@@ -395,14 +473,15 @@ def feedback():
     # (2026-08-21) - a one-time "adopt now" so it isn't permanently
     # stuck without a bar, not a recurring recompute.
     frozen = latest.get("frozen_duration") or freeze_duration(duration)
-    classified = classify_outcome(note)
+    classified = parse_outcome(note)
     # Anything not confidently recognized defaults to the same safe
-    # no-op as "in_progress" - check in without changing the plan,
-    # rather than guess toward a riskier outcome (done/goal_done) from
-    # ambiguous text. See classify_outcome()'s docstring.
-    outcome_value = classified or "in_progress"
+    # no-op as "action_in_progress" - check in without changing the
+    # plan, rather than guess toward a riskier outcome
+    # (action_completed/goal_completed) from ambiguous text. See
+    # parse_outcome()'s docstring.
+    outcome_value = classified or "action_in_progress"
 
-    if outcome_value == "goal_done":
+    if outcome_value == "goal_completed":
         # The whole goal is done, not just this one "right_now" step -
         # nothing left to plan, so no replan() call. Keep the existing
         # plan content, just mark this record as the completed one.
@@ -410,11 +489,11 @@ def feedback():
         save_plan(
             latest["goal"], latest["plan"], feedback=feedback_text,
             duration=duration, completed=True, goal_id=latest["goal_id"],
-            frozen_duration=frozen,
+            frozen_duration=frozen, vision_id=latest.get("vision_id"),
         )
         return back_to
 
-    if outcome_value == "in_progress":
+    if outcome_value == "action_in_progress":
         # Mid-task, not stalled or failed - a real, distinct signal from
         # "No" (see docs/06-development.md, 2026-08-20): three rapid
         # "not done" clicks in a row, each meant as "still working on
@@ -432,10 +511,11 @@ def feedback():
         save_plan(
             latest["goal"], latest["plan"], feedback=feedback_text,
             duration=duration, goal_id=latest["goal_id"], frozen_duration=frozen,
+            vision_id=latest.get("vision_id"),
         )
         return back_to
 
-    outcome = "Completed the action" if outcome_value == "done" else "Did not complete the action"
+    outcome = "Completed the action" if outcome_value == "action_completed" else "Did not complete the action"
     feedback_text = f"{outcome}." + (f" Note: {note}" if note else "")
 
     # The full chain, not just latest["plan"] - see replan()'s docstring
@@ -447,7 +527,7 @@ def feedback():
     # entry instead of continuing the existing goal's chain.
     save_plan(
         latest["goal"], new_plan, feedback=feedback_text, duration=duration,
-        goal_id=latest["goal_id"], frozen_duration=frozen,
+        goal_id=latest["goal_id"], frozen_duration=frozen, vision_id=latest.get("vision_id"),
     )
     return back_to
 
@@ -507,6 +587,7 @@ def step():
         latest["goal"], latest["plan"], feedback=feedback_text,
         duration=latest.get("duration"), goal_id=latest["goal_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=next_index,
+        vision_id=latest.get("vision_id"),
     )
     return back_to
 

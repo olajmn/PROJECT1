@@ -85,10 +85,10 @@
          actually convey that. Reuses `horizon_texts` by index rather
          than Plan's join_plan_prose() - Plan wants everything woven
          into one continuous read, this wants each level kept distinct
-         and labeled. NOW/right_now added at the end, same text Task
-         shows as the ORIGINAL first action (see backend/agent/specialized/plan.py's
+         and labeled. NOW/right_now added at the end, same text Action
+         shows as the ORIGINAL first action (see backend/planning/plan.py's
          _generate_steps() docstring: step 1 always equals right_now,
-         unchanged) - not step-aware like Task's own current_step
+         unchanged) - not step-aware like Action's own current_step
          pointer, since this is an overview of the plan's original
          shape, not a live progress tracker. #}
       <div class="horizon-scale">

@@ -1,6 +1,6 @@
 # Collaboration
 
-How an AI session or developer should work with this project — not what the
+How an AI coding session should work with this project — not what the
 project is (see `docs/04-current-state.md`) or how code should look (see
 `CONVENTIONS.md`).
 

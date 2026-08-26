@@ -349,6 +349,41 @@ they serve fundamentally different purposes.
 principles rather than load-bearing implementation decisions. A module
 can be reclassified or moved later without requiring a redesign.
 
+## 17. 2026-08-26 — Represent Vision as a separate, lightweight id+text store, not a hierarchy
+
+**Alternatives considered:** duplicate the Vision's text directly onto
+every Goal record that shares it (no separate store, no id); a fully
+relational structure (a Vision "owns" its Goals, cascading updates/
+deletes, parent-child constraints); a separate, lightweight store
+(`data/visions.json`, `{id, text}`) with Goal records carrying an
+optional `vision_id` reference.
+**Why this choice:** duplicating text was rejected for the same reason
+Goal identity itself moved off free-text matching years ago in this
+project's own history (see the 2026-08-20 decision on `goal_id`) - two
+goals with independently-typed, slightly different vision wording would
+silently fork into two visions instead of sharing one, the exact bug
+that decision already fixed once. A full relational structure was
+rejected as solving a problem that doesn't exist yet: [[03-architecture]]
+already discussed extending the agent to "multiple life-domains
+reasoning about each other" (decision #14 above) and concluded that
+should be a context-passed-to-the-prompt problem, not a JOIN - a
+Vision doesn't need to cascade anything, own anything, or enforce
+referential integrity beyond "does this id exist." The chosen shape -
+a small separate store plus an optional foreign-key-style id - is
+exactly the pattern `goal_id` itself already uses, applied to a second,
+much smaller identity.
+**Trade-off:** no editing or deleting an existing Vision yet (create-
+only) - a typo in a Vision's text has to be lived with or a new one
+created, until real usage shows whether that's worth building. No
+Vision text is supplied to the LLM yet either - `generate_plan()`/
+`replan()` both ignore `vision_id` completely; the relationship, if
+ever built, is meant to stay "Vision contextualizes Goals," never
+"Vision generates Goals" (see [[03-architecture]] § Vision).
+**Reversible?** Yes - `save_vision()`/`load_visions()`/`get_vision()`
+are three small, pure functions in `data_persistence.py`; moving to a
+richer structure later (or dropping Vision entirely) touches an
+optional field and a handful of call sites, not a schema migration.
+
 ## See also
 
 - [[03-architecture]]

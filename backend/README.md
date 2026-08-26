@@ -32,8 +32,7 @@ reasoning.
 | File | Responsibility | Run with |
 |---|---|---|
 | `goals/goal_logic/goal.py` | Goal identity/grouping - `get_board()`, `get_latest_for_goal()`, `get_history_for_goal()` | (imported by others, not run directly) |
-| `goals/goal_logic/outcome_classifier.py` | Deterministic (no LLM) classification of free-text feedback into done/not_done/in_progress/goal_done - the logic; `goal_data/outcome_phrases.py` is the data it uses | (imported by others, not run directly) |
-| `goals/goal_data/outcome_phrases.py` | The recognized feedback phrases themselves (`GOAL_DONE_PHRASES`, `RULES`, etc.) | (imported by others, not run directly) |
+| `goals/goal_logic/feedback_parser.py` | Deterministic (no LLM) parsing of free-text feedback: outcome parsing (action_completed/action_not_completed/action_in_progress/goal_completed) and duration-change requests, including the recognized phrases themselves (`GOAL_COMPLETED_PHRASES`, etc.) | (imported by others, not run directly) |
 
 ### `planning/` — Domain
 

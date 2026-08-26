@@ -282,6 +282,17 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
     nothing honest to break into steps without a real timeframe to
     divide - same reasoning DEADLINE_RE's ungrounded deadlines already
     follow elsewhere in this project.
+
+    Does NOT take a `vision_id`/Vision text yet (added 2026-08-26, see
+    docs/03-architecture.md § Long-term architecture) - a goal's
+    optional Vision is stored (data_persistence.save_plan()'s
+    `vision_id`) but not yet supplied to the model here. If/when it is,
+    this is the natural place: a caller would resolve `vision_id` to
+    its text (data_persistence.get_vision()) and add one short line to
+    `user_content` below, the same way `duration` is added - contextual
+    framing for the model, never something Vision generates or decides
+    on its own (see that doc section: "Vision -> contextualizes Goals",
+    not "Vision -> generates every Goal").
     """
     user_content = f"The current date and time is: {_now_str()}\n\nMy goal is: {goal}"
     if duration:
@@ -338,6 +349,8 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     seconds" over 13 replans (2026-08-20), never advancing toward the
     goal's actual action (sending an application) - see
     docs/06-development.md.
+
+    Same Vision note as generate_plan() above: not supplied here either yet.
     """
     # Named history_lines, not "steps" - unrelated to this file's
     # `steps` plan field/_generate_steps() (added later the same day);

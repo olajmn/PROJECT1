@@ -1,13 +1,18 @@
-{# Conversation - the goal's full history rendered as a back-and-forth
+{# Feedback - the goal's full history rendered as a back-and-forth
    thread (You / Agent), not a flat data dump - the goal's full history,
    oldest first: the original goal, then each feedback -> replan round.
-   See storage.get_history_for_goal() for why this chain already *is* a
-   conversation, just not shown as one until now. Split out of
-   _active_goal.html (2026-08-23).
+   Labeled "Feedback" here (was "Conversation" until 2026-08-26 - see
+   docs/06-development.md) to match the conceptual model
+   (Vision/Goal/Plan/Action/Feedback, see docs/03-architecture.md) -
+   still the full two-way thread underneath (your feedback AND the
+   agent's resulting Action each round), not only the raw feedback
+   text alone; that's a deliberate, unchanged scope, not an oversight.
+   See storage.get_history_for_goal() for why this chain already *is*
+   a conversation. Split out of _active_goal.html (2026-08-23).
 
    Expects `record` in context. #}
 <div class="model-row">
-  <span class="model-label">Conversation</span>
+  <span class="model-label">Feedback</span>
 </div>
 <div class="chat-thread">
   {% for msg in get_history_for_goal(record.goal_id) %}
@@ -37,7 +42,7 @@
         {% for line in msg.plan.clarification | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
       {% elif msg.plan.get('pending_duration_question') %}
         {# A "change timeframe" request (see
-           outcome_classifier.wants_duration_change()) was just made -
+           feedback_parser.requests_duration_change()) was just made -
            this is a DIFFERENT kind of pending question from
            clarification above: the goal's actual plan/right_now is
            still fully intact underneath (deliberately not touched
@@ -63,8 +68,8 @@
      not a form asking something with one correct answer. No more
      Yes/Still working on it/No/Goal complete buttons either: what you
      write is classified deterministically (recognized phrases, no LLM
-     - see backend/agent/specialized/outcome_classifier.py) into
-     done/not_done/in_progress/goal_done. Anything not confidently
+     - see backend/goals/goal_logic/feedback_parser.py) into
+     action_completed/action_not_completed/action_in_progress/goal_completed. Anything not confidently
      recognized checks in without changing the plan - never a silent
      guess toward a riskier outcome. See docs/12-decisions.md,
      2026-08-20/2026-08-21. #}

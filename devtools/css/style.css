@@ -77,6 +77,34 @@ h1 {
   margin-bottom: 16px;
 }
 
+/* Vision - deliberately NOT styled like .model-label (the Goal/Plan/
+   Action row labels inside one goal's card) or another Plan horizon -
+   it groups the goals below it, it isn't a field inside any one of
+   them (see docs/03-architecture.md § Long-term architecture). Reads
+   as a section divider (uppercase, letter-spaced, its own color, a
+   rule underneath) rather than another data row. */
+.vision-heading {
+  margin-top: 28px;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #ddd;
+}
+.vision-label {
+  display: block;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+  color: #6d28d9;
+  margin-bottom: 2px;
+}
+.vision-list {
+  margin: 4px 0 10px;
+  padding-left: 1.2em;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
 .card {
   border: 1px solid #ddd;
   padding: 20px;

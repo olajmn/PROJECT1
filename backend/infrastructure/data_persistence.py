@@ -18,6 +18,19 @@ Goal identity/grouping (get_board() and friends) lives in backend/goals/goal_log
 not here - see that module's docstring for why goal_id minting/backfill
 stays in this file regardless.
 
+Vision (added 2026-08-26, see docs/05-decisions.md) is a second, much
+smaller store of the same shape as a goal's identity - a plain list of
+{id, text, created_at} records in data/visions.json, no history, no
+normalization, no backfill (there is no legacy shape to migrate: it
+didn't exist before now). A Goal record MAY carry an optional
+`vision_id` pointing into this list; most won't, and that's the normal
+case, not a gap. See save_vision()/load_visions()/get_vision() below,
+and save_plan()'s `vision_id` parameter. Deliberately not its own
+module under goals/goal_logic/ the way goal.py is - there is no
+grouping/derivation logic here yet, just create/list/get, so a
+separate file would be structure without a use for it yet (see
+docs/05-decisions.md for the fuller reasoning).
+
 Every record also carries a `user_id` (added 2026-08-23), always
 DEFAULT_USER_ID for now - there is exactly one person using this app
 (see docs/05-decisions.md: real multi-user support is explicitly
@@ -34,6 +47,7 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 PLANS_FILE = DATA_DIR / "plans.json"
+VISIONS_FILE = DATA_DIR / "visions.json"
 
 # The only user_id that exists today - see module docstring. Not a
 # counter like goal_id: there is exactly one person using this app.
@@ -154,6 +168,7 @@ def save_plan(
     goal_id: int | None = None,
     frozen_duration: dict | None = None,
     current_step: int = 0,
+    vision_id: int | None = None,
 ) -> dict:
     """
     Append a new goal+plan record to history and persist it to disk.
@@ -203,7 +218,7 @@ def save_plan(
     /goal and /feedback routes.
 
     `current_step` is the index into `plan.steps` (see backend/planning/plan.py's
-    `_generate_steps()`) that "Task (right now)" actually points at -
+    `_generate_steps()`) that "Action (right now)" actually points at -
     "right now" isn't its own independent thing once a goal has steps,
     it's just `plan.steps[current_step]` (see docs/06-development.md's
     "Plan as an ordered step list" entry, and devtools/app.py's
@@ -213,6 +228,17 @@ def save_plan(
     all, or one that's never had this touched, behaves exactly as
     before.
 
+    `vision_id` (added 2026-08-26) optionally links this goal to a
+    Vision - broader, cross-goal context, not part of the operational
+    goal -> plan -> action -> feedback loop itself (see
+    docs/03-architecture.md § Long-term architecture). None is the
+    normal case: most goals have no vision. Like `goal_id`, this is an
+    identity reference, never invented by a caller - pass an id from
+    save_vision()/load_visions(), or an existing record's own
+    `vision_id` to carry it forward unchanged across a replan (a goal's
+    vision doesn't change just because its plan does - same reasoning
+    `frozen_duration` is carried forward rather than recomputed).
+
     Returns the record that was saved (useful for confirming to the user).
     """
     records = _load_all()
@@ -220,6 +246,7 @@ def save_plan(
         "id": len(records) + 1,
         "user_id": DEFAULT_USER_ID,
         "goal_id": goal_id if goal_id is not None else _next_goal_id(records),
+        "vision_id": vision_id,
         "goal": goal,
         "plan": plan,
         "feedback": feedback,
@@ -253,3 +280,83 @@ def get_latest_plan() -> dict | None:
     """Return the most recently saved record, or None if there's no history yet."""
     records = _load_all()
     return records[-1] if records else None
+
+
+# ---------------------------------------------------------------------------
+# Vision
+#
+# A separate, much smaller store - see this module's docstring for why
+# it isn't part of the goal/plan records above. No normalization, no
+# backfill: nothing saved before this existed could have a vision_id,
+# so there's no legacy shape to migrate.
+# ---------------------------------------------------------------------------
+
+
+def _load_all_visions() -> list[dict]:
+    """Read every saved vision from disk. Empty list if the file doesn't exist yet."""
+    if not VISIONS_FILE.exists():
+        return []
+    try:
+        with open(VISIONS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(
+            f"{VISIONS_FILE} is corrupted and can't be read as JSON ({e}). "
+            "It may have been interrupted mid-write. Restore it from a "
+            "backup or fix it by hand before continuing."
+        ) from e
+
+
+def _save_all_visions(visions: list[dict]) -> None:
+    """Write the full list of visions back to disk - same atomic-rename approach as _save_all()."""
+    ensure_data_dir()
+    tmp_file = VISIONS_FILE.with_suffix(".json.tmp")
+    with open(tmp_file, "w", encoding="utf-8") as f:
+        json.dump(visions, f, indent=2, ensure_ascii=False)
+    tmp_file.replace(VISIONS_FILE)
+
+
+def _next_vision_id(visions: list[dict]) -> int:
+    """One higher than the largest vision id in history, or 1 if there are none yet."""
+    existing = [v["id"] for v in visions]
+    return max(existing, default=0) + 1
+
+
+def save_vision(text: str) -> dict:
+    """
+    Create a new Vision and persist it - broader, cross-goal context a
+    Goal can optionally reference (see save_plan()'s `vision_id`
+    parameter and docs/03-architecture.md § Long-term architecture).
+
+    No history, no revisions: unlike a goal/plan record, a vision is a
+    single mutable fact ("this is what the text currently says"), not
+    a chain - there's nothing here yet that needs to look back at how
+    a vision's wording changed over time. Editing/deleting an existing
+    vision is intentionally not built yet (see docs/05-decisions.md) -
+    this only ever appends a new one.
+
+    Returns the record that was saved.
+    """
+    visions = _load_all_visions()
+    record = {
+        "id": _next_vision_id(visions),
+        "user_id": DEFAULT_USER_ID,
+        "text": text,
+        "created_at": datetime.now().isoformat(),
+    }
+    visions.append(record)
+    _save_all_visions(visions)
+    return record
+
+
+def load_visions() -> list[dict]:
+    """Return every saved Vision, oldest first."""
+    return _load_all_visions()
+
+
+def get_vision(vision_id: int) -> dict | None:
+    """Return the Vision with this id, or None if it doesn't exist (e.g. a stale reference)."""
+    for vision in _load_all_visions():
+        if vision["id"] == vision_id:
+            return vision
+    return None
