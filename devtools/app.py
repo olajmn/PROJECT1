@@ -10,8 +10,8 @@ reachable from this machine, no internet needed.
 
 Contents
 1. Setup
-2. Board building
-3. Routes - board & vision
+2. Goal overview building
+3. Routes - overview & vision
 4. Routes - goal creation & duration changes
 5. Routes - feedback & step tracking
 6. Routes - history views
@@ -43,7 +43,13 @@ from backend.goals.goal.resolver import (
 )
 from backend.goals.feedback.feedback_parser import parse_outcome, requests_duration_change
 from backend.goals.feedback.acknowledger import acknowledge
-from backend.goals.plan.planner import PLAN_KEYS, generate_plan, replan
+from backend.goals.plan.planner import (
+    PLAN_KEYS,
+    apply_new_duration,
+    frozen_duration_for,
+    generate_plan,
+    replan,
+)
 from backend.infrastructure.data_persistence import load_history, load_visions, save_plan, save_vision
 
 # ============================================================
@@ -80,7 +86,7 @@ app.jinja_env.globals["step_plan"] = step_plan
 app.jinja_env.globals["get_history_for_goal"] = get_history_for_goal
 
 # ============================================================
-# 2. Board building
+# 2. Goal overview building
 # ============================================================
 
 # A display label per PLAN_KEYS entry - not part of the Plan's shape
@@ -176,7 +182,7 @@ app.jinja_env.filters["split_message_lines"] = split_message_lines
 
 def _group_active_by_vision(active_records: list[dict], visions: list[dict]) -> list[tuple[dict | None, list[dict]]]:
     """
-    Group active board records by vision_id, for index.html - goals
+    Group active goal records by vision_id, for index.html - goals
     sharing a Vision render together under its heading; goals with no
     vision_id (the normal case) render in their own group, unheaded,
     last. Returns a list of (vision_record_or_None, [records]) pairs,
@@ -186,8 +192,8 @@ def _group_active_by_vision(active_records: list[dict], visions: list[dict]) -> 
     Presentation-only grouping for this one page, not a general Goal/
     Vision capability - deliberately kept here rather than added to
     goal/resolver.py (which only resolves goal_id identity, not
-    board shape - see _build_board() below - and is unchanged by
-    Vision existing at all).
+    presentation shape - see _build_goal_overview() below - and is
+    unchanged by Vision existing at all).
     """
     visions_by_id = {v["id"]: v for v in visions}
     groups: dict[int | None, list[dict]] = {}
@@ -202,11 +208,11 @@ def _group_active_by_vision(active_records: list[dict], visions: list[dict]) -> 
     return with_vision + ([(None, without_vision)] if without_vision else [])
 
 
-def _build_board() -> dict:
+def _build_goal_overview() -> dict:
     """
     Split every goal's latest record into "active" and "completed",
-    for the board views (index.html, completed_goal/_completed.html).
-    Board-only shaping - see get_latest_for_all_goals()'s docstring
+    for the goal overview views (index.html, completed_goal/_completed.html).
+    Presentation-only shaping - see get_latest_for_all_goals()'s docstring
     for why this doesn't live in goal/resolver.py.
 
     Returns {"active": [...], "completed": [...]}. "active" is newest
@@ -223,21 +229,21 @@ def _build_board() -> dict:
 
 
 # ============================================================
-# 3. Routes - board & vision
+# 3. Routes - overview & vision
 # ============================================================
 
 
 @app.route("/")
 def index():
-    board = _build_board()
+    goal_overview = _build_goal_overview()
     visions = load_visions()
     return render_template(
         "index.html",
         horizons=_BROADER_HORIZONS,
         history=load_history(),
-        board=board,
+        board=goal_overview,  # template-facing name, unchanged - see index.html
         visions=visions,
-        vision_groups=_group_active_by_vision(board["active"], visions),
+        vision_groups=_group_active_by_vision(goal_overview["active"], visions),
     )
 
 
@@ -245,7 +251,7 @@ def index():
 def new_vision():
     """
     Handle the "set a vision" form: save a new Vision and return to the
-    board. Create-only - see save_vision()'s docstring for why editing/
+    goal overview. Create-only - see save_vision()'s docstring for why editing/
     deleting an existing one isn't built yet.
 
     Deliberately does not attach itself to any goal - a Vision exists
@@ -289,7 +295,7 @@ def new_goal():
     goal's timeframe is a conversational flow instead - see
     /feedback's `requests_duration_change()` branch below, which asks
     for and applies a new duration through the goal's own chat thread
-    via `_apply_new_duration()`.
+    via `planner.apply_new_duration()`.
 
     Computes a FRESH `frozen_duration` (see backend/foundation/time/time_logic/frozen_duration.py's
     freeze_duration()) whenever a real plan comes back - EXCEPT when
@@ -297,7 +303,7 @@ def new_goal():
     that function's docstring) - the goal as typed was too vague in
     CONTENT (a bare noun/verb, e.g. "read") to plan at all, a different
     case from missing TIME below. That round is saved too (as a new
-    active board entry) so the question shows up in the goal's own
+    active goal entry) so the question shows up in the goal's own
     conversation thread and the user can answer it right there via the
     normal feedback box - see /feedback below, which is what actually
     resolves a pending clarification into a real plan. But its
@@ -316,8 +322,8 @@ def new_goal():
     required - most goals have no vision at all, and that's the normal
     case, not a partial state. Set once, at creation, like `goal_id`
     itself; carried forward unchanged on every later replan for this
-    goal (see _apply_new_duration() and /feedback below) - a goal's
-    vision doesn't change just because its plan does.
+    goal (see planner.apply_new_duration() and /feedback below) - a
+    goal's vision doesn't change just because its plan does.
     """
     typed_text = request.form.get("goal", "").strip()
 
@@ -347,45 +353,11 @@ def new_goal():
         plan = generate_plan(typed_text, duration)
         record = save_plan(
             typed_text, plan, duration=duration,
-            frozen_duration=None if plan.get("clarification") else freeze_duration(duration),
+            frozen_duration=frozen_duration_for(plan, duration),
             vision_id=vision_id,
         )
         return redirect(url_for("index") + f"#goal-{record['goal_id']}")
     return redirect(url_for("index"))
-
-
-def _apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
-    """
-    Regenerate `existing`'s plan around a new duration span - the
-    shared logic behind /feedback's conversational
-    requests_duration_change() flow below (asking for and applying a
-    new timeframe through the goal's own chat thread).
-
-    Always calls generate_plan() again, never just patches
-    duration/frozen_duration onto the existing record: changing the
-    timeframe is a real new planning decision (new horizons filled, a
-    new step list from backend/goals/plan/step_generator.py's generate_steps()), not a
-    countdown edit. frozen_duration stays None if the new duration
-    turns out too vague in CONTENT to plan at all (generate_plan()
-    comes back with `clarification` set) - nothing has actually
-    started yet in that case, same reasoning /goal and /feedback's own
-    clarification handling already follow.
-
-    `feedback` is the user's own raw typed note (e.g. "5 months", or
-    "can we change timeframe to 1 hour") - stored as-is, same as every
-    other /feedback branch does with `note`, so it shows up as the
-    "You" message in the conversation thread.
-
-    `existing["vision_id"]` is carried forward unchanged, same as
-    `goal_id` - a changed duration is still the same goal continuing,
-    not a new decision about which Vision it belongs to.
-    """
-    plan = generate_plan(existing["goal"], duration)
-    return save_plan(
-        existing["goal"], plan, feedback=feedback, duration=duration, goal_id=existing["goal_id"],
-        frozen_duration=None if plan.get("clarification") else freeze_duration(duration),
-        vision_id=existing.get("vision_id"),
-    )
 
 
 # ============================================================
@@ -411,7 +383,7 @@ def feedback():
     - `plan.clarification` set -> the note ANSWERS a pending question
       about the goal itself (see that branch below).
     - `plan.pending_duration_question` set -> the note answers "how
-      long do you want this to run now?" (see _apply_new_duration()).
+      long do you want this to run now?" (see planner.apply_new_duration()).
     - otherwise, `requests_duration_change(note)` -> the note is a NEW
       request to change the timeframe (e.g. "can we change timeframe"),
       not a status report; applies immediately if a new duration is
@@ -423,9 +395,9 @@ def feedback():
       card.
 
     Which goal this applies to comes from the form's `goal_id` (each
-    active board card posts its own) - not "whatever was touched most
-    recently overall". With more than one active goal on the board at
-    once, that distinction is the difference between feedback landing
+    active goal's card posts its own) - not "whatever was touched most
+    recently overall". With more than one active goal shown at once,
+    that distinction is the difference between feedback landing
     on the goal you actually meant versus a different one entirely.
     """
     goal_id_value = request.form.get("goal_id", "").strip()
@@ -499,7 +471,7 @@ def feedback():
         save_plan(
             latest["goal"], plan, feedback=note, duration=duration,
             goal_id=latest["goal_id"],
-            frozen_duration=None if plan.get("clarification") else freeze_duration(duration),
+            frozen_duration=frozen_duration_for(plan, duration),
             vision_id=latest.get("vision_id"),
         )
         return back_to
@@ -514,7 +486,7 @@ def feedback():
         # wipes a working timeframe just because the answer wasn't
         # understood.
         new_duration = extract_duration_phrase(note) or duration
-        _apply_new_duration(latest, new_duration, feedback=note)
+        apply_new_duration(latest, new_duration, feedback=note)
         return back_to
 
     if requests_duration_change(note):
@@ -531,7 +503,7 @@ def feedback():
         # when nothing recognized turns up.
         new_duration = extract_duration_phrase(note)
         if new_duration:
-            _apply_new_duration(latest, new_duration, feedback=note)
+            apply_new_duration(latest, new_duration, feedback=note)
             return back_to
 
         # Carries the current plan/duration/steps forward completely
@@ -612,8 +584,8 @@ def feedback():
     # notice it has already shrunk right_now several times in a row.
     new_plan = replan(latest["goal"], get_history_for_goal(latest["goal_id"]), feedback_text, duration=duration)
     # goal_id carried forward explicitly - without this, save_plan() would
-    # mint a fresh one and this replan would silently start a *new* board
-    # entry instead of continuing the existing goal's chain.
+    # mint a fresh one and this replan would silently start a *new*
+    # goal entry instead of continuing the existing goal's chain.
     save_plan(
         latest["goal"], new_plan, feedback=feedback_text, duration=duration,
         goal_id=latest["goal_id"], frozen_duration=frozen, vision_id=latest.get("vision_id"),
@@ -696,12 +668,13 @@ def completed():
     """
     Completed goals only, on their own page - index.html already shows
     Active, so a second page repeating it never earned its keep.
-    _build_board() still computes both halves (it groups ALL history
-    by goal_id, splitting into active/completed is just what falls out
-    of that in one pass) but only `board.completed` is ever read here
-    now, via completed_goal/_completed.html.
+    _build_goal_overview() still computes both halves (it groups ALL
+    history by goal_id, splitting into active/completed is just what
+    falls out of that in one pass) but only the completed half is ever
+    read here now, via completed_goal/_completed.html (passed to the
+    template as `board.completed`, its unchanged template-facing name).
     """
-    return render_template("completed_goal/completed.html", board=_build_board(), horizons=_BROADER_HORIZONS)
+    return render_template("completed_goal/completed.html", board=_build_goal_overview(), horizons=_BROADER_HORIZONS)
 
 
 # ============================================================

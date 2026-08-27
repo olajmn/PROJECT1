@@ -35,7 +35,7 @@ Run from the PROJECT ROOT: .venv/bin/python -m backend.goals.plan.planner
 
 from datetime import datetime
 
-from backend.foundation.time import broadest_relevant_horizon, resolve_duration, step_count
+from backend.foundation.time import broadest_relevant_horizon, freeze_duration, resolve_duration, step_count
 from backend.infrastructure.data_persistence import save_plan
 from backend.goals.plan.model_client import ask_model
 from backend.goals.plan.step_generator import generate_steps
@@ -170,6 +170,18 @@ def _horizon_scope_instruction(duration: str | None) -> str:
     return instruction
 
 
+def frozen_duration_for(plan: dict, duration: str | None) -> dict | None:
+    """
+    The frozen_duration to save alongside `plan` - None while `plan` is
+    a clarification (nothing has actually started yet, so there's no
+    honest countdown to freeze), otherwise freeze_duration(duration).
+    Shared by generate_plan()'s and replan()'s callers (devtools/app.py)
+    so this rule is expressed once instead of repeated at every call
+    site that saves a plan.
+    """
+    return None if plan.get("clarification") else freeze_duration(duration)
+
+
 # ============================================================
 # 4. Plan generation
 # ============================================================
@@ -279,6 +291,40 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
         user_content += f"\n\nThis plan should still span roughly: {resolve_duration(duration)}"
     user_content += _horizon_scope_instruction(duration)
     return ask_model(REPLAN_SYSTEM_PROMPT, user_content, PLAN_KEYS)
+
+
+def apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
+    """
+    Regenerate `existing`'s plan around a new duration span - the
+    shared logic behind /feedback's conversational
+    requests_duration_change() flow (devtools/app.py; asking for and
+    applying a new timeframe through the goal's own chat thread).
+
+    Always calls generate_plan() again, never just patches
+    duration/frozen_duration onto the existing record: changing the
+    timeframe is a real new planning decision (new horizons filled, a
+    new step list from step_generator.py's generate_steps()), not a
+    countdown edit. frozen_duration_for() handles the case where the
+    new duration turns out too vague in CONTENT to plan at all
+    (generate_plan() comes back with `clarification` set) - nothing has
+    actually started yet in that case, same reasoning /goal and
+    /feedback's own clarification handling already follow.
+
+    `feedback` is the user's own raw typed note (e.g. "5 months", or
+    "can we change timeframe to 1 hour") - stored as-is, same as every
+    other /feedback branch does with `note`, so it shows up as the
+    "You" message in the conversation thread.
+
+    `existing["vision_id"]` is carried forward unchanged, same as
+    `goal_id` - a changed duration is still the same goal continuing,
+    not a new decision about which Vision it belongs to.
+    """
+    plan = generate_plan(existing["goal"], duration)
+    return save_plan(
+        existing["goal"], plan, feedback=feedback, duration=duration, goal_id=existing["goal_id"],
+        frozen_duration=frozen_duration_for(plan, duration),
+        vision_id=existing.get("vision_id"),
+    )
 
 
 # ============================================================
