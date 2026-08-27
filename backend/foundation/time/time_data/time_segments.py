@@ -1,21 +1,21 @@
 """
-The fixed rules themselves - the tables and patterns recognized about
-"when"/"how long", not the machinery that applies them to a real case.
-No logic beyond the tables themselves; see the sibling time_logic/
-package, which imports these and decides what actually satisfies them
-for a given piece of text.
+Time Segments
+=============
 
-Split out of timeperiod.py (2026-08-21) purely for overview: everything
-the code currently knows how to recognize about "when" lives in this
-one file, scannable at a glance, without wading through the matching/
-resolution logic that reads it. The raw time-unit arithmetic
-(SECONDS_PER_MINUTE, MONTH_DAYS, etc.) moved out to time_units.py
-(2026-08-25) - a different kind of fact, not itself matched against
-typed text, only used to build the tables below.
+The fixed rules recognized about "when"/"how long" - tables and
+patterns only, no logic. See the sibling time_logic/ package for what
+actually applies these to a piece of text.
 
-Nothing here does anything by itself - these are just tables and
-patterns; see the sibling time_logic/ package for what turns them into
-an actual answer.
+Contents
+1. Calendar names
+2. Named segments / fractions
+3. Point-in-time recognition
+4. Duration / quantity recognition
+
+Raw time-unit arithmetic (SECONDS_PER_MINUTE, MONTH_DAYS, etc.) lives
+in time_units.py, not here - a different kind of fact, never itself
+matched against typed text. Full history: docs/06-development.md,
+2026-08-21/25.
 """
 
 import re

@@ -1,8 +1,11 @@
 # Reasoning
 
-**Status: NEXT** - works today, but only informally, buried inside Planning.
-Worth making an explicit boundary before more components need to call a
-model.
+**Status: NEXT** - a small step taken (2026-08-27): the call+validation
+mechanism now lives in its own file within Planning, and is already
+generic (no Plan-specific knowledge of its own - see below). Still only
+ever called by Planning, though - worth making a real cross-component
+boundary once a second caller (Decision, Knowledge) actually needs a
+model, not before.
 
 The one boundary every call to a language model passes through: building
 the prompt, validating the shape of what comes back, and keeping the model
@@ -41,6 +44,8 @@ diagram, where it sits between Conversation and Memory.
 
 ## Reference implementation
 
-`backend/planning/plan.py`'s `_ask_model()` - shared shape-validation
-already exists, just scoped to Planning alone rather than factored out as
-its own boundary.
+`backend/planning/model_client.py`'s `ask_model()` - shared shape-validation,
+already its own module and already generic (the caller passes in which
+keys to require; this function has no idea what a "plan" is). Not yet
+promoted to a real cross-cutting component, since Planning is still its
+only caller.

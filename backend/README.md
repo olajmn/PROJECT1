@@ -31,18 +31,22 @@ reasoning.
 
 | File | Responsibility | Run with |
 |---|---|---|
-| `goals/goal_logic/goal.py` | Goal identity/grouping - `get_board()`, `get_latest_for_goal()`, `get_history_for_goal()` | (imported by others, not run directly) |
+| `goals/goal_logic/resolver.py` | Goal identity/grouping - `get_board()`, `get_latest_for_goal()`, `get_history_for_goal()` | (imported by others, not run directly) |
 | `goals/goal_logic/feedback_parser.py` | Deterministic (no LLM) parsing of free-text feedback: outcome parsing (action_completed/action_not_completed/action_in_progress/goal_completed) and duration-change requests, including the recognized phrases themselves (`GOAL_COMPLETED_PHRASES`, etc.) | (imported by others, not run directly) |
 
 ### `planning/` — Domain
 
 | File | Responsibility | Run with |
 |---|---|---|
-| `planning/plan.py` | Goal → structured plan, and `replan()` (plan + feedback → updated plan). Both call the LLM | `.venv/bin/python -m backend.planning.plan` |
-| `planning/today.py` | Show just today's immediate action from the latest plan | `.venv/bin/python -m backend.planning.today` |
+| `planning/planner.py` | Goal → structured plan, and `replan()` (plan + feedback → updated plan). Orchestration + Plan shape/prompts | `.venv/bin/python -m backend.planning.planner` |
+| `planning/model_client.py` | Generic LLM call + response-shape validation (`ask_model()`), no Plan-specific knowledge | (imported by others, not run directly) |
+| `planning/step_generator.py` | The narrower model call that fills in a plan's step list (`generate_steps()`) | (imported by others, not run directly) |
+| `planning/action_reader.py` | Show just the current Action (`right_now`) from the latest plan | `.venv/bin/python -m backend.planning.action_reader` |
 
-Not yet split into a data/logic pair the way `foundation/time/` and
-`goals/` have.
+Split three ways as of 2026-08-27 (orchestration / LLM-call mechanism /
+step generation) - not yet a data/logic pair the way `foundation/time/`
+and `goals/` have, since planner.py's PLAN_KEYS and prompts stay
+alongside generate_plan()/replan() (see that file's docstring for why).
 
 ### Root level
 

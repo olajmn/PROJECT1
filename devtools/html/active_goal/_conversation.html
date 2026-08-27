@@ -34,7 +34,7 @@
       <span class="chat-label">Agent</span>
       {% if msg.plan.get('clarification') %}
         {# The goal as typed (or as last answered) was too vague to
-           plan - see backend/agent/specialized/plan.py's generate_plan() docstring.
+           plan - see backend/planning/planner.py's generate_plan() docstring.
            Shown ahead of right_now: a pending question means right_now
            is None anyway (both null together, never both set - see
            that same docstring), so this can't accidentally hide a

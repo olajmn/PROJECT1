@@ -1,52 +1,58 @@
 """
-Goal -> structured Plan, via a local LLM.
+Planner
+=======
 
-The user writes a goal, a local LLM (via Ollama) generates a plan as
-STRUCTURED data (JSON) instead of free text, so the code can later pull
-out exactly "what to do right now" instead of the whole plan.
+Goal -> structured Plan, via a local LLM (Ollama). Produces a plan
+across seven time horizons and revises it based on feedback. Never
+persists anything itself (see infrastructure/data_persistence.py) and
+never talks to the model directly (see model_client.py/step_generator.py).
 
-Runs 100% locally - no API key, no internet, no cost.
-Requires Ollama running in the background (start with: brew services start ollama)
+Contents
+1. Plan schema
+2. Model prompts
+3. Time helpers
+4. Plan generation
+5. Replanning
+6. CLI entry point
+
+Runs 100% locally - no API key, no internet, no cost. Requires Ollama
+running in the background (start with: brew services start ollama)
 and the model pulled (ollama pull llama3.1:8b).
 
-Renamed from goal_to_plan.py (2026-08-21) to match the product model,
-see docs/03-architecture.md § System structure - this file is the
-"Plan" Domain. Temporal understanding
-(duration parsing/grounding) moved out the same day, its own Domain -
-now backend/foundation/time/ (moved there 2026-08-25, see that
-package's docstring). PLAN_KEYS/HORIZON_LABELS moved in from
-data_persistence.py the same day (2026-08-21, then called storage.py),
-for the same reason: they describe the Plan's shape, not anything
-about how it's persisted - that module never used them internally,
-only re-exported them, so this was a clean move with nothing left
-importing them back.
+This file was goal_to_plan.py, then plan.py, then planner.py - "plan"
+generates/orchestrates a plan, it doesn't define one, so the agent noun
+fits its job better than the domain noun did. HORIZON_LABELS/
+join_plan_prose() (presentation), ask_model() (model_client.py), and
+generate_steps()/STEPS_SYSTEM_PROMPT (step_generator.py) have all since
+moved to their own modules - none of them were Plan-orchestration
+itself. PLAN_KEYS stayed - it's genuine Plan shape, passed INTO
+ask_model() as a parameter rather than read by it directly, so the
+split doesn't create a circular import. Full history:
+docs/06-development.md, 2026-08-21/25.
 
-Run from the PROJECT ROOT: .venv/bin/python -m backend.planning.plan
+Run from the PROJECT ROOT: .venv/bin/python -m backend.planning.planner
 """
 
-import json
 from datetime import datetime
-
-import ollama
 
 from backend.foundation.time import broadest_relevant_horizon, resolve_duration, step_count
 from backend.infrastructure.data_persistence import save_plan
+from backend.planning.model_client import ask_model
+from backend.planning.step_generator import generate_steps
 
-MODEL = "llama3.1:8b"
+# ============================================================
+# 1. Plan schema
+# ============================================================
 
-# The plan schema, defined once. _ask_model() validates the LLM's
-# response has exactly these keys; the templates (via devtools/
-# app.py) iterate this same list to render every horizon in order.
+# Defined once. ask_model() validates the LLM's response has exactly
+# these keys (passed in by generate_plan()/replan() below); the
+# templates (via devtools/app.py) iterate this same list to render
+# every horizon in order.
 PLAN_KEYS = ("one_year", "one_month", "this_week", "today", "this_hour", "this_minute", "right_now")
-HORIZON_LABELS = {
-    "one_year": "1 year",
-    "one_month": "1 month",
-    "this_week": "This week",
-    "today": "Today",
-    "this_hour": "This hour",
-    "this_minute": "This minute",
-    "right_now": "Right now",
-}
+
+# ============================================================
+# 2. Model prompts
+# ============================================================
 
 SYSTEM_PROMPT = (
     "You are a personal execution agent. You will be told the current "
@@ -129,101 +135,9 @@ REPLAN_SYSTEM_PROMPT = (
 )
 
 
-# Separate, narrow prompt for _generate_steps() - deliberately NOT
-# folded into SYSTEM_PROMPT/one bigger call: the step count itself is
-# already decided deterministically (backend/foundation/time/time_logic/frozen_duration.py's
-# step_count()), so the model's only job here is content, never count
-# or timing. Only used from generate_plan(), and only when `duration`
-# resolves to a real span - see that function. New goals only for now
-# (2026-08-21) - replan() doesn't touch steps yet, see
-# docs/06-development.md's "Plan as an ordered step list" entry
-# for the open questions (multi-horizon step lists, what happens to
-# steps on replan) still to work out before extending this further.
-STEPS_SYSTEM_PROMPT = (
-    "You are continuing a goal's plan. Its first step is already fixed "
-    "and given to you exactly as written - you never rewrite or "
-    "rephrase it. Your only job is to produce the steps that come "
-    "AFTER it: a fixed number of further short, specific, realistic "
-    "actions, continuing in order, that together with the first step "
-    "would plausibly accomplish the goal. Do not repeat the first "
-    "step, and do not repeat any step you already produced.\n\n"
-    "Respond with ONLY a JSON object (no other text) with exactly one "
-    "key, \"steps\", whose value is a JSON array of exactly the "
-    "requested number of short strings - ONLY the steps after the "
-    "first one, in the order they should be done.\n"
-)
-
-
-def _generate_steps(goal: str, right_now: str, count: int) -> list[str]:
-    """
-    `count` short step descriptions, step 1 ALWAYS being `right_now`
-    itself, unchanged - never a second, independently-worded idea of
-    "the first action" from the model. Only steps 2..count are an
-    actual model call (see STEPS_SYSTEM_PROMPT).
-
-    Without this (2026-08-21): the model's own idea of "the first
-    concrete action" (asked for as context, not fixed) can come out
-    worded differently from - and overlap awkwardly with - right_now
-    itself, so Task (right now) and the step list visibly disagree
-    (e.g. steps 2-3 re-covering what right_now already said, step 4
-    repeating step 1's idea). Fixing step 1 to be the
-    literal same string removes the disagreement structurally, instead
-    of trying to word a prompt carefully enough to avoid it.
-
-    `count` itself always comes from backend/foundation/time/time_logic/frozen_duration.py's
-    step_count(), never from the model. Raises ValueError if the model
-    didn't return exactly `count - 1` strings for the remainder, same
-    "trust the shape or fail loudly" approach as _ask_model().
-    """
-    if count <= 1:
-        return [right_now]
-    remaining = count - 1
-    user_content = (
-        f"My goal is: {goal}\n\n"
-        f"The first step, already decided, is: {right_now}\n\n"
-        f"Produce exactly {remaining} further steps, after that one."
-    )
-    response = ollama.chat(
-        model=MODEL,
-        format="json",
-        messages=[
-            {"role": "system", "content": STEPS_SYSTEM_PROMPT},
-            {"role": "user", "content": user_content},
-        ],
-    )
-    data = json.loads(response["message"]["content"])
-    steps = data.get("steps")
-    if not isinstance(steps, list) or len(steps) != remaining or not all(isinstance(s, str) for s in steps):
-        raise ValueError(f"Model did not return exactly {remaining} step strings: {data}")
-    return [right_now] + steps
-
-
-def _ask_model(system_prompt: str, user_content: str, extra_keys: tuple[str, ...] = ()) -> dict:
-    """
-    Shared call used by both generate_plan() and replan(): sends a system
-    prompt + user message to the local model asking for JSON, parses the
-    response, and validates it has the expected plan shape (PLAN_KEYS,
-    plus `extra_keys` if the caller's prompt asks for more than that -
-    see generate_plan()'s "clarification" key) before handing it back -
-    so every caller can trust the shape instead of re-checking it
-    themselves.
-    """
-    response = ollama.chat(
-        model=MODEL,
-        format="json",  # ask Ollama to constrain output to valid JSON
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_content},
-        ],
-    )
-    plan = json.loads(response["message"]["content"])
-
-    missing = [key for key in PLAN_KEYS + extra_keys if key not in plan]
-    if missing:
-        raise ValueError(
-            f"Model response is missing required plan key(s) {missing}: {plan}"
-        )
-    return plan
+# ============================================================
+# 3. Time helpers
+# ============================================================
 
 
 def _now_str() -> str:
@@ -241,7 +155,7 @@ def _horizon_scope_instruction(duration: str | None) -> str:
     The exact "fill these horizons in, leave these as null" line to
     append to a prompt's user_content - shared by generate_plan() and
     replan() so both ever compute the boundary the same one way (see
-    backend/foundation/time/time_logic/frozen_duration.py's broadest_relevant_horizon()). Always names
+    frozen_duration.py §3 - Horizon scoping). Always names
     right_now as one to fill (it's never the broadest relevant horizon
     itself, but the loop below still includes it since it's always the
     last/narrowest PLAN_KEYS entry).
@@ -254,6 +168,11 @@ def _horizon_scope_instruction(duration: str | None) -> str:
     if null_keys:
         instruction += f" Leave these horizons as JSON null: {', '.join(null_keys)}."
     return instruction
+
+
+# ============================================================
+# 4. Plan generation
+# ============================================================
 
 
 def generate_plan(goal: str, duration: str | None = None) -> dict:
@@ -276,7 +195,7 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
 
     `steps` (added 2026-08-21) is a list of short step descriptions
     only when `duration` actually resolves to a real span (see
-    backend/foundation/time/time_logic/frozen_duration.py's step_count()) - None otherwise (no
+    frozen_duration.py §4 - Step planning) - None otherwise (no
     duration given, or free text that isn't grounded in a real span, or
     a clarification question came back instead of a plan). There's
     nothing honest to break into steps without a real timeframe to
@@ -298,7 +217,7 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
     if duration:
         user_content += f"\n\nI want this plan to span roughly: {resolve_duration(duration)}"
     user_content += _horizon_scope_instruction(duration)
-    plan = _ask_model(SYSTEM_PROMPT, user_content, extra_keys=("clarification",))
+    plan = ask_model(SYSTEM_PROMPT, user_content, PLAN_KEYS + ("clarification",))
 
     plan["steps"] = None
     if plan.get("clarification"):
@@ -306,28 +225,13 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
     if duration:
         count = step_count(duration)
         if count is not None:
-            plan["steps"] = _generate_steps(goal, plan.get("right_now") or goal, count)
+            plan["steps"] = generate_steps(goal, plan.get("right_now") or goal, count)
     return plan
 
 
-def join_plan_prose(texts: list[str]) -> str:
-    """
-    Join a plan's filled-horizon sentences into one flowing paragraph
-    (see devtools/html/active_goal/_plan.html,
-    2026-08-23 - horizons used to render as separate labeled lines,
-    now as one continuous piece of text). Strips each piece's own
-    trailing punctuation/whitespace before re-joining with ". " and a
-    final period, rather than a bare space - the model doesn't
-    consistently end a horizon's text with a period itself, so a plain
-    space-join produces run-on-looking text with no visible sentence
-    boundary (e.g. "...long-term Develop a meal planning system...").
-    Empty string for an empty list -
-    nothing to join, same as the template's own empty check.
-    """
-    cleaned = [text.strip().rstrip(".") for text in texts if text]
-    if not cleaned:
-        return ""
-    return ". ".join(cleaned) + "."
+# ============================================================
+# 5. Replanning
+# ============================================================
 
 
 def replan(goal: str, history: list[dict], feedback: str, duration: str | None = None) -> dict:
@@ -353,8 +257,9 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     Same Vision note as generate_plan() above: not supplied here either yet.
     """
     # Named history_lines, not "steps" - unrelated to this file's
-    # `steps` plan field/_generate_steps() (added later the same day);
-    # this is prose lines for the replan prompt, not the step list.
+    # `steps` plan field/step_generator.generate_steps() (added later
+    # the same day); this is prose lines for the replan prompt, not
+    # the step list.
     history_lines = []
     for record in history:
         right_now = record["plan"].get("right_now") or "(none)"
@@ -373,8 +278,12 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     if duration:
         user_content += f"\n\nThis plan should still span roughly: {resolve_duration(duration)}"
     user_content += _horizon_scope_instruction(duration)
-    return _ask_model(REPLAN_SYSTEM_PROMPT, user_content)
+    return ask_model(REPLAN_SYSTEM_PROMPT, user_content, PLAN_KEYS)
 
+
+# ============================================================
+# 6. CLI entry point
+# ============================================================
 
 # Only runs when this file is executed directly
 # (not when other files import functions from it)

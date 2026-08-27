@@ -1,19 +1,29 @@
 """
-Local interactive web interface for the agent.
+Devtools App
+============
 
-This is a personal dev tool for talking to the agent through a browser
-instead of running separate terminal scripts - NOT the product's real
-frontend (see docs/03-architecture.md "Frontend direction").
-Runs 100% locally, only reachable from this machine, no internet needed.
+Local interactive web interface for the agent - a personal dev tool
+for talking to the agent through a browser instead of running separate
+terminal scripts. NOT the product's real frontend (see
+docs/03-architecture.md "Frontend direction"). Runs 100% locally, only
+reachable from this machine, no internet needed.
+
+Contents
+1. Setup
+2. Board building
+3. Routes - board & vision
+4. Routes - goal creation & duration changes
+5. Routes - feedback & step tracking
+6. Routes - history views
+7. CLI entry point
 
 Run from the PROJECT ROOT (not from inside devtools/):
     .venv/bin/python -m devtools.app
 The -m flag is required (not `python devtools/app.py`) so the
 `from backend...` imports below can find the backend package. Lives as
-a top-level sibling of backend/, not inside it (moved 2026-08-24) -
-this talks TO the agent (the USER node in docs/03-architecture.md's
-long-term diagram), it isn't part of the agent's own cognition, the
-same category as tools/ and docs/, not backend/.
+a top-level sibling of backend/ (this talks TO the agent, it isn't
+part of the agent's own cognition - the same category as tools/ and
+docs/, not backend/); full history: docs/06-development.md, 2026-08-24.
 """
 
 from flask import Flask, redirect, render_template, request, url_for
@@ -25,13 +35,22 @@ from backend.foundation.time import (
     freeze_duration,
     step_plan,
 )
-from backend.goals.goal_logic.goal import get_board, get_history_for_goal, get_latest_for_goal
+from backend.goals.goal_logic.resolver import (
+    created_at_key,
+    get_history_for_goal,
+    get_latest_for_all_goals,
+    get_latest_for_goal,
+)
 from backend.goals.goal_logic.feedback_parser import parse_outcome, requests_duration_change
-from backend.planning.plan import HORIZON_LABELS, PLAN_KEYS, generate_plan, join_plan_prose, replan
+from backend.planning.planner import PLAN_KEYS, generate_plan, replan
 from backend.infrastructure.data_persistence import load_history, load_visions, save_plan, save_vision
 
-# Custom folder names (2026-08-23, defaults were templates/ and
-# static/) - explicit split of "frontend" (html/ - every .html file,
+# ============================================================
+# 1. Setup
+# ============================================================
+
+# Custom folder names (defaults were templates/ and static/) - explicit
+# split of "frontend" (html/ - every .html file,
 # nothing else) from CSS (css/) within this devtools app. Flask's
 # `static` endpoint name and the url_for('static', ...) calls in the
 # templates don't change just because the on-disk folder does - only
@@ -50,7 +69,7 @@ app.jinja_env.globals["describe_duration"] = describe_duration
 app.jinja_env.globals["duration_progress"] = duration_progress
 # Same reasoning - the vertical step list in active_goal/_task.html and
 # active_goal/_steps.html zips a goal's stored step descriptions
-# (record.plan.steps, from backend/planning/plan.py's _generate_steps()) with
+# (record.plan.steps, from backend/planning/step_generator.py's generate_steps()) with
 # their deterministically-computed time slice via step_plan() - see
 # its docstring.
 app.jinja_env.globals["step_plan"] = step_plan
@@ -58,10 +77,24 @@ app.jinja_env.globals["step_plan"] = step_plan
 # conversation (see get_history_for_goal's docstring) without every
 # route that renders it having to fetch and pass that separately.
 app.jinja_env.globals["get_history_for_goal"] = get_history_for_goal
-# Same reasoning - joins Plan's filled-horizon sentences into one
-# flowing paragraph (see active_goal/_plan.html, 2026-08-23) rather than a
-# bare space-join done in the template itself.
-app.jinja_env.globals["join_plan_prose"] = join_plan_prose
+
+# ============================================================
+# 2. Board building
+# ============================================================
+
+# A display label per PLAN_KEYS entry - not part of the Plan's shape
+# (planner.PLAN_KEYS is that), just how each horizon is worded here.
+# Lives here, not in planner.py, alongside join_plan_prose() below -
+# both are presentation-only, never read by Plan's own logic.
+HORIZON_LABELS = {
+    "one_year": "1 year",
+    "one_month": "1 month",
+    "this_week": "This week",
+    "today": "Today",
+    "this_hour": "This hour",
+    "this_minute": "This minute",
+    "right_now": "Right now",
+}
 
 # The broader horizons shown alongside "right_now", on both the index
 # page and the history page, in order, excluding "right_now" itself
@@ -70,6 +103,35 @@ app.jinja_env.globals["join_plan_prose"] = join_plan_prose
 # come back as null/None - the templates skip any horizon that's falsy,
 # so only the levels actually relevant to the goal show up.
 _BROADER_HORIZONS = [(key, HORIZON_LABELS[key]) for key in PLAN_KEYS if key != "right_now"]
+
+
+def join_plan_prose(texts: list[str]) -> str:
+    """
+    Join a plan's filled-horizon sentences into one flowing paragraph
+    (see devtools/html/active_goal/_plan.html). Strips each piece's own
+    trailing punctuation/whitespace before re-joining with ". " and a
+    final period, rather than a bare space - the model doesn't
+    consistently end a horizon's text with a period itself, so a plain
+    space-join produces run-on-looking text with no visible sentence
+    boundary (e.g. "...long-term Develop a meal planning system...").
+    Empty string for an empty list - nothing to join, same as the
+    template's own empty check.
+
+    A DISPLAY concern (how devtools renders a plan), not Plan-domain
+    logic - lives here, not in planner.py; see split_message_lines()
+    below, its exact reverse.
+    """
+    cleaned = [text.strip().rstrip(".") for text in texts if text]
+    if not cleaned:
+        return ""
+    return ". ".join(cleaned) + "."
+
+
+# Same reasoning as split_message_lines below - joins Plan's
+# filled-horizon sentences into one flowing paragraph (see
+# active_goal/_plan.html) rather than a bare space-join done in the
+# template itself.
+app.jinja_env.globals["join_plan_prose"] = join_plan_prose
 
 
 def split_message_lines(text: str) -> list[str]:
@@ -85,7 +147,7 @@ def split_message_lines(text: str) -> list[str]:
     plain string everywhere else (goal_log/history.html, _plan_entry.html, the
     JSON file itself).
 
-    The exact reverse of backend/planning/plan.py's join_plan_prose() (". ".join
+    The exact reverse of join_plan_prose() above (". ".join
     of several texts): splits back on that same separator. A plain
     ". ".split() would silently swallow the period from every part
     except the last (join_plan_prose's job was gluing them INTO one
@@ -122,8 +184,9 @@ def _group_active_by_vision(active_records: list[dict], visions: list[dict]) -> 
 
     Presentation-only grouping for this one page, not a general Goal/
     Vision capability - deliberately kept here rather than added to
-    goal_logic/goal.py's get_board() (which stays about goal_id
-    identity/grouping only, unchanged by Vision existing at all).
+    goal_logic/resolver.py (which only resolves goal_id identity, not
+    board shape - see _build_board() below - and is unchanged by
+    Vision existing at all).
     """
     visions_by_id = {v["id"]: v for v in visions}
     groups: dict[int | None, list[dict]] = {}
@@ -138,9 +201,34 @@ def _group_active_by_vision(active_records: list[dict], visions: list[dict]) -> 
     return with_vision + ([(None, without_vision)] if without_vision else [])
 
 
+def _build_board() -> dict:
+    """
+    Split every goal's latest record into "active" and "completed",
+    for the board views (index.html, completed_goal/_completed.html).
+    Board-only shaping - see get_latest_for_all_goals()'s docstring
+    for why this doesn't live in goal_logic/resolver.py.
+
+    Returns {"active": [...], "completed": [...]}. "active" is newest
+    first; "completed" stays in the order it always has (oldest-first,
+    by when each goal_id first appeared in history).
+    """
+    latest = get_latest_for_all_goals()
+    # .get(), not [] - records saved before the "completed" field
+    # existed don't have the key at all.
+    active = [r for r in latest if not r.get("completed")]
+    completed = [r for r in latest if r.get("completed")]
+    active.sort(key=created_at_key, reverse=True)
+    return {"active": active, "completed": completed}
+
+
+# ============================================================
+# 3. Routes - board & vision
+# ============================================================
+
+
 @app.route("/")
 def index():
-    board = get_board()
+    board = _build_board()
     visions = load_visions()
     return render_template(
         "index.html",
@@ -171,36 +259,36 @@ def new_vision():
     return redirect(url_for("index"))
 
 
+# ============================================================
+# 4. Routes - goal creation & duration changes
+# ============================================================
+
+
 @app.route("/goal", methods=["POST"])
 def new_goal():
     """
     Handle the "set a goal" form: generate a fresh plan and save it.
 
-    One text field now (2026-08-23; used to be two - goal and duration
-    typed separately) - `extract_duration_phrase()`
-    (backend/foundation/time/time_logic/phrase_matching.py) searches whatever was typed for a
-    recognized time phrase anywhere inside it (e.g. "clean the
-    apartment this weekend"), the same matchers a dedicated duration
-    field already used, just applied to the whole sentence instead of
-    a field reserved for only that. If NOTHING recognized turns up at
-    all, that's treated as "no timeframe given" DETERMINISTICALLY,
-    before even calling the model - a fixed clarifying-question round
-    is saved asking for one, same "code decides, model is just told"
-    reasoning as the horizon-scope fix (see plan.py's
-    _horizon_scope_instruction()) rather than relying on the model to
-    reliably notice this itself (see docs/05-decisions.md, 2026-08-23,
-    for why the model isn't trusted with judgment calls like this one
-    when code can decide them outright).
+    One text field, not a separate goal/duration pair -
+    `extract_duration_phrase()` (phrase_matching.py §5 - Public entry
+    point) searches whatever was typed for a recognized time phrase
+    anywhere inside it (e.g. "clean the apartment this weekend"), the
+    same matchers a dedicated duration field would use, just applied
+    to the whole sentence. If NOTHING recognized turns up at all,
+    that's treated as "no timeframe given" DETERMINISTICALLY, before
+    even calling the model - a fixed clarifying-question round is
+    saved asking for one, same "code decides, model is just told"
+    reasoning as the horizon-scope fix (see planner.py §3 - Time
+    helpers, _horizon_scope_instruction()) rather than relying on the
+    model to reliably notice this itself (see docs/05-decisions.md,
+    2026-08-23).
 
-    Only ever starts a genuinely NEW goal now (2026-08-23) - always
-    requires typed text, and mints its own goal_id via save_plan().
-    Extending an EXISTING goal's timeframe used to also go through here
-    (`continue_goal_id`, posted by a standalone "Extend timeframe" form
-    on that goal's own board card), but that's now done conversationally
-    instead - see /feedback's `requests_duration_change()` branch below,
-    which asks for and applies a new duration through the goal's own
-    chat thread. `_apply_new_duration()` is the shared piece of logic
-    that survived that move.
+    Only ever starts a genuinely NEW goal - always requires typed text,
+    and mints its own goal_id via save_plan(). Extending an EXISTING
+    goal's timeframe is a conversational flow instead - see
+    /feedback's `requests_duration_change()` branch below, which asks
+    for and applies a new duration through the goal's own chat thread
+    via `_apply_new_duration()`.
 
     Computes a FRESH `frozen_duration` (see backend/foundation/time/time_logic/frozen_duration.py's
     freeze_duration()) whenever a real plan comes back - EXCEPT when
@@ -267,31 +355,25 @@ def new_goal():
 
 def _apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
     """
-    Regenerate `existing`'s plan around a new duration span - the piece
-    of logic that survived /goal's old `continue_goal_id` branch (moved
-    here 2026-08-23 when that branch's only caller, the standalone
-    "Extend timeframe" form, was replaced by /feedback's conversational
-    requests_duration_change() flow below).
+    Regenerate `existing`'s plan around a new duration span - the
+    shared logic behind /feedback's conversational
+    requests_duration_change() flow below (asking for and applying a
+    new timeframe through the goal's own chat thread).
 
     Always calls generate_plan() again, never just patches
     duration/frozen_duration onto the existing record: changing the
     timeframe is a real new planning decision (new horizons filled, a
-    new step list from backend/planning/plan.py's _generate_steps()), not a
-    countdown edit - same as it always was here, just triggered by a
-    chat message now instead of a form submit. frozen_duration stays
-    None if the new duration turns out too vague in CONTENT to plan at
-    all (generate_plan() comes back with `clarification` set) - nothing
-    has actually started yet in that case, same reasoning /goal and
-    /feedback's own clarification handling already follow.
+    new step list from backend/planning/step_generator.py's generate_steps()), not a
+    countdown edit. frozen_duration stays None if the new duration
+    turns out too vague in CONTENT to plan at all (generate_plan()
+    comes back with `clarification` set) - nothing has actually
+    started yet in that case, same reasoning /goal and /feedback's own
+    clarification handling already follow.
 
     `feedback` is the user's own raw typed note (e.g. "5 months", or
     "can we change timeframe to 1 hour") - stored as-is, same as every
     other /feedback branch does with `note`, so it shows up as the
-    "You" message in the conversation thread. Missing until 2026-08-23:
-    this call never passed it at all, so the record got feedback=None -
-    not a rendering bug, an actual empty bubble in the saved history
-    (the "You" reply to "How long do you want this to run now?" showed
-    the label with no text under it).
+    "You" message in the conversation thread.
 
     `existing["vision_id"]` is carried forward unchanged, same as
     `goal_id` - a changed duration is still the same goal continuing,
@@ -303,6 +385,11 @@ def _apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
         frozen_duration=None if plan.get("clarification") else freeze_duration(duration),
         vision_id=existing.get("vision_id"),
     )
+
+
+# ============================================================
+# 5. Routes - feedback & step tracking
+# ============================================================
 
 
 @app.route("/feedback", methods=["POST"])
@@ -330,9 +417,9 @@ def feedback():
       ALSO already in this same message (e.g. "change timeframe to 1
       hour"), otherwise asks the follow-up question and lets the
       pending_duration_question branch above catch the answer on the
-      NEXT message. Replaces the old standalone "Extend timeframe"
-      form (2026-08-23) - the goal's own conversation box is now the
-      only way to do this, no separate control on the card.
+      NEXT message. The goal's own conversation box is the only way to
+      do this - there's no separate "extend timeframe" control on the
+      card.
 
     Which goal this applies to comes from the form's `goal_id` (each
     active board card posts its own) - not "whatever was touched most
@@ -363,7 +450,7 @@ def feedback():
 
     if latest["plan"].get("clarification"):
         # This goal has no real plan yet - the agent asked a clarifying
-        # question instead (see backend/planning/plan.py's generate_plan()
+        # question instead (see backend/planning/planner.py's generate_plan()
         # docstring), and `note` is the ANSWER to that question, not a
         # status report on a task that doesn't exist yet. Route it
         # through generate_plan() again (not replan(), which is built
@@ -439,10 +526,8 @@ def feedback():
         # The new duration might already be IN this same message (e.g.
         # "can we change timeframe to 1 hour") - checked first so that
         # case applies it immediately instead of asking a question
-        # you've already answered - the first version (2026-08-23)
-        # always asked "how long...?" even when the answer was right
-        # there, silently discarding it. Only asks
-        # the follow-up when nothing recognized turns up.
+        # already answered in the same breath. Only asks the follow-up
+        # when nothing recognized turns up.
         new_duration = extract_duration_phrase(note)
         if new_duration:
             _apply_new_duration(latest, new_duration, feedback=note)
@@ -466,7 +551,7 @@ def feedback():
 
     # Inherited unchanged, never recomputed - a check-in isn't a new
     # planning decision, it's the SAME timeframe continuing (see
-    # backend/foundation/time/time_logic/frozen_duration.py's freeze_duration() and
+    # frozen_duration.py §1 (Freezing a duration) and
     # backend/infrastructure/data_persistence.py's save_plan() docstring for why re-deriving
     # this from "now" here was the actual bug). Falls back to computing
     # one fresh only for a goal saved before frozen_duration existed
@@ -540,7 +625,7 @@ def step():
     goal's already-generated `plan.steps` list. No model call at all:
     unlike /feedback's free-text note (which can trigger replan() -
     the model reconsidering the plan), the step list was already fully
-    decided upfront (see backend/planning/plan.py's _generate_steps()), so
+    decided upfront (see backend/planning/step_generator.py's generate_steps()), so
     moving through it is just "which one are we on now", nothing to
     ask the model about.
 
@@ -564,7 +649,7 @@ def step():
     steps = latest["plan"].get("steps")
     if not steps:
         # Nothing to advance - no step list on this goal at all (see
-        # backend/planning/plan.py's generate_plan(): only goals with a
+        # backend/planning/planner.py's generate_plan(): only goals with a
         # resolvable duration get one).
         return back_to
 
@@ -592,6 +677,11 @@ def step():
     return back_to
 
 
+# ============================================================
+# 6. Routes - history views
+# ============================================================
+
+
 @app.route("/history")
 def history():
     return render_template("goal_log/history.html", history=load_history(), horizons=_BROADER_HORIZONS)
@@ -600,16 +690,19 @@ def history():
 @app.route("/completed")
 def completed():
     """
-    Completed goals only, on their own page (2026-08-23; used to be
-    /board, showing Active alongside Completed) - index.html already
-    shows Active, so a second page repeating it never earned its keep.
-    get_board() still computes both halves (it groups ALL history by
-    goal_id, splitting into active/completed is just what falls out of
-    that in one pass - see backend/goals/goal_logic/goal.py) but only `board.completed`
-    is ever read here now, via completed_goal/_completed.html.
+    Completed goals only, on their own page - index.html already shows
+    Active, so a second page repeating it never earned its keep.
+    _build_board() still computes both halves (it groups ALL history
+    by goal_id, splitting into active/completed is just what falls out
+    of that in one pass) but only `board.completed` is ever read here
+    now, via completed_goal/_completed.html.
     """
-    return render_template("completed_goal/completed.html", board=get_board(), horizons=_BROADER_HORIZONS)
+    return render_template("completed_goal/completed.html", board=_build_board(), horizons=_BROADER_HORIZONS)
 
+
+# ============================================================
+# 7. CLI entry point
+# ============================================================
 
 if __name__ == "__main__":
     # Port 5050, not 5000: on modern macOS, port 5000 is often already

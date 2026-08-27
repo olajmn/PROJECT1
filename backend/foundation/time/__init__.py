@@ -30,12 +30,9 @@ needs to know its internal shape - `from backend.foundation.time import
 resolve_duration` works regardless of which time_logic/time_data/ file actually
 defines it.
 
-Moved 2026-08-25 from backend/agent/distributed/temporal/ (itself
-renamed from timeperiod/ earlier the same day) - out of agent/
-entirely, into this topic-organized backend/foundation/, replacing the
-narrow/broad specialized//distributed/ reuse split with one folder per
-subject. See docs/03-architecture.md § Faculties (due for an
-update to match - not yet rewritten as of this move).
+Moved 2026-08-25 into this topic-organized backend/foundation/ - full
+history: docs/06-development.md, 2026-08-25. See docs/03-architecture.md
+§ Faculties for the current design.
 """
 
 from backend.foundation.time.time_logic.frozen_duration import (

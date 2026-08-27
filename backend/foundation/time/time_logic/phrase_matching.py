@@ -1,16 +1,24 @@
 """
-Phrase-matching primitives: recognize a known time phrase somewhere in
-free text and turn it into hard values (hours, dates, offsets), using
-the pattern tables in the sibling time_data/ package's time_segments.py. Nothing here decides
-what to DO with a match (see duration_resolution.py) or how to describe it to the
-user (also duration_resolution.py) - just "is this phrase here, and what does it
-concretely mean".
+Phrase Matching
+===============
 
-extract_duration_phrase() is the one function in this file meant to be
-called from outside the package: the raw phrase text itself (not a
-resolved description), for pulling a duration out of a longer
-free-text sentence typed together with the goal - see duration_resolution.py's
-resolve_duration() for the resolved-description counterpart, and
+Recognize a known time phrase somewhere in free text and turn it into
+hard values (hours, dates, offsets), using the pattern tables in the
+sibling time_data/ package. Nothing here decides what to DO with a
+match or how to describe it to the user (see duration_resolution.py
+for both) - just "is this phrase here, and what does it concretely
+mean".
+
+Contents
+1. Shared matching helper
+2. Day segments & clock times
+3. Deadlines & calendar periods
+4. Named fractions & lengths
+5. Public entry point
+
+extract_duration_phrase() (§5) is the only function meant to be called
+from outside this package - the raw phrase text itself, not a resolved
+description; see duration_resolution.resolve_duration() for that, and
 docs/05-decisions.md, 2026-08-23, for why the two return different
 things.
 """
@@ -48,20 +56,27 @@ _FRACTION_TABLES = {
 }
 
 
+# ============================================================
+# 1. Shared matching helper
+# ============================================================
+
+
 def _contains_phrase(text: str, phrase: str) -> bool:
     """
     Whether `phrase` (already lowercase) appears in `text` as whole
     word(s), not just as a substring - `"this week" in "this weekend"`
-    is True with a plain substring check but wrong, the same shape of
-    bug `_matched_month_name()` already found and fixed for month names
-    colliding with everyday words ("I may go" - see its docstring).
-    Only mattered lightly before 2026-08-23 (duration used to live in
-    its own short, dedicated field, where an accidental collision was
-    unlikely) - became a real risk once goal text and duration are
-    typed together as one free-text sentence, where "weekend"/
-    "midnight"/etc are much more likely to actually appear.
+    is True with a plain substring check but wrong, same risk as a
+    month name colliding with an everyday word ("I may go" - see
+    `_matched_month_name()`). Matters more since goal text and duration
+    are typed together as one free-text sentence (2026-08-23), where
+    words like "weekend"/"midnight" are more likely to actually appear.
     """
     return re.search(r"\b" + re.escape(phrase) + r"\b", text) is not None
+
+
+# ============================================================
+# 2. Day segments & clock times
+# ============================================================
 
 
 def _matched_day_segment(duration: str) -> tuple[str, tuple[int, int]] | None:
@@ -126,6 +141,11 @@ def _clock_time_date(duration: str, hour: int, minute: int) -> datetime:
     """
     target_date = datetime.now().date() + timedelta(days=_matched_day_offset(duration))
     return datetime.combine(target_date, datetime.min.time().replace(hour=hour, minute=minute))
+
+
+# ============================================================
+# 3. Deadlines & calendar periods
+# ============================================================
 
 
 def _matched_deadline_phrase(duration: str) -> str | None:
@@ -249,6 +269,11 @@ def _weekday_name_date(number: int, prefix: str | None) -> date:
     return week_start + timedelta(days=number - 1)
 
 
+# ============================================================
+# 4. Named fractions & lengths
+# ============================================================
+
+
 def _matched_named_fraction(duration: str) -> tuple[str, str, int] | None:
     """
     Return (segment_word, unit, value) for a recognized "quarter/half/
@@ -353,25 +378,26 @@ def _matched_period_phrase(duration: str) -> tuple[str, tuple[date, date]] | Non
     return None
 
 
+# ============================================================
+# 5. Public entry point
+# ============================================================
+
+
 def extract_duration_phrase(text: str) -> str | None:
     """
     The raw, literal time-phrase found somewhere within `text` (e.g.
     "30 minutes", "this week", "before bed") - for when goal text and
-    duration are typed together as one free-text sentence (2026-08-23),
-    e.g. "clean the apartment this weekend", rather than two separate
-    form fields. None if nothing in `text` is recognized at all - see
-    resolve.describe_duration()'s "not parsed/verified by code"
-    fallback for the same honesty applied to a whole dedicated duration
-    field.
+    duration are typed together as one free-text sentence, e.g. "clean
+    the apartment this weekend", rather than two separate form fields.
+    None if nothing in `text` is recognized at all.
 
-    Tries the same matchers resolve.resolve_duration() does, in the
-    same broadest-signal-first order, returning as soon as one hits.
-    Doesn't just call resolve_duration() and reuse its output, though:
-    that returns a RESOLVED description ("evening (resolved: ...)"),
-    not the plain phrase on its own - callers here want something short
-    enough to still read naturally as `duration` on its own (e.g. in
-    the Timeperiod row), not the goal's whole sentence repeated back
-    with a resolution note stapled on.
+    Tries the same matchers duration_resolution.resolve_duration()
+    does, in the same broadest-signal-first order, returning as soon as
+    one hits. Doesn't call resolve_duration() and reuse its output,
+    though: that returns a RESOLVED description ("evening (resolved:
+    ...)"), not the plain phrase on its own - callers here want
+    something short enough to still read naturally as `duration` on its
+    own, not the goal's whole sentence with a resolution note stapled on.
     """
     if not text:
         return None

@@ -1,9 +1,9 @@
-{# Steps - the full ordered list (see backend/agent/specialized/plan.py's
-   _generate_steps()), current/done state shown via CSS classes only
+{# Steps - the full ordered list (see backend/planning/step_generator.py's
+   generate_steps()), current/done state shown via CSS classes only
    (see backend/agent/distributed/timeperiod/frozen.py's step_plan()). Split out of
    _active_goal.html (2026-08-23) - only for goals created after
    2026-08-21 with a duration that resolves to a real span (see
-   backend/agent/specialized/plan.py's generate_plan()); older goals simply have no
+   backend/planning/planner.py's generate_plan()); older goals simply have no
    `steps`, so nothing here renders for them.
 
    Expects `steps` and `current_index` in context - see

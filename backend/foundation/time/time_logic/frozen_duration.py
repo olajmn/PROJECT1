@@ -1,15 +1,27 @@
 """
+Frozen Duration
+===============
+
 The "frozen duration" lifecycle: everything computed ONCE when a goal
-is created (see freeze_duration()) and then read back unchanged on
-every later render, rather than re-resolved against the current moment
-each time (see freeze_duration()'s docstring for the bug this fixes).
-Builds on duration_resolution.py's resolve_span()/describe_duration() - nothing
-here re-implements phrase matching itself.
+is created (see freeze_duration()) and read back unchanged on every
+later render, rather than re-resolved against the current moment each
+time. Builds on duration_resolution.py's resolve_span()/
+describe_duration() - nothing here re-implements phrase matching.
+
+Contents
+1. Freezing a duration
+2. Progress bar
+3. Horizon scoping
+4. Step planning
 """
 
 from datetime import datetime, timedelta
 
 from backend.foundation.time.time_logic.duration_resolution import describe_duration, resolve_span
+
+# ============================================================
+# 1. Freezing a duration
+# ============================================================
 
 
 def freeze_duration(duration: str | None) -> dict | None:
@@ -22,17 +34,14 @@ def freeze_duration(duration: str | None) -> dict | None:
     freeze - a same-day deadline or fully open text stays exactly as
     unresolved as describe_duration() already shows it).
 
-    Fixes a real bug (2026-08-21): a forward-looking duration like
-    "within the next 1 hour" was being re-resolved against the CURRENT
-    moment on every single page render
-    (duration_progress()/step_plan() used to take raw `duration` text
-    and call resolve_span() fresh each time) - so its countdown quietly
-    reset to a full hour on every refresh instead of counting down from
-    when the goal was actually created. Calling this once at creation
-    time (see backend/infrastructure/data_persistence.py's `save_plan(..., frozen_duration=...)`)
-    and reading the stored result from then on is the fix - see
-    duration_progress()/step_plan() below, which now take this dict
-    instead of raw duration text.
+    Re-resolving a forward-looking duration like "within the next 1
+    hour" against the CURRENT moment on every render would silently
+    reset its countdown to a full hour on every refresh, instead of
+    counting down from when the goal was actually created. Calling
+    this once at creation time (see data_persistence.save_plan()'s
+    `frozen_duration` parameter) and reading the stored result from
+    then on is the fix - duration_progress()/step_plan() below take
+    this dict, never raw duration text.
     """
     span = resolve_span(duration)
     if span is None:
@@ -47,6 +56,11 @@ def _span_from_frozen(frozen: dict | None) -> tuple[datetime, datetime] | None:
     if not frozen:
         return None
     return datetime.fromisoformat(frozen["start"]), datetime.fromisoformat(frozen["end"])
+
+
+# ============================================================
+# 2. Progress bar
+# ============================================================
 
 
 def duration_progress(frozen: dict | None) -> dict | None:
@@ -118,13 +132,15 @@ def duration_progress(frozen: dict | None) -> dict | None:
     }
 
 
-# A goal's resolved span divided into this many minutes per step is the
-# concrete example that shaped this rule (2026-08-21): "1 hour" of
-# grocery-shopping-and-cooking naturally breaks into about four ~15
-# minute actions. MIN/MAX_STEPS keep that same target sane at the
-# extremes a fixed 15-minute chunk wouldn't handle well on its own - a
-# "this week" or "in March" goal would otherwise produce hundreds of
-# steps, and a 20-minute goal would produce just one.
+# ============================================================
+# 3. Horizon scoping
+# ============================================================
+
+# Target: a goal's resolved span divided into ~15-minute steps (e.g.
+# "1 hour" of grocery-shopping-and-cooking breaks into about four).
+# MIN/MAX_STEPS keep that sane at the extremes a fixed chunk size
+# wouldn't handle well alone - a "this week" goal would otherwise
+# produce hundreds of steps, a 20-minute goal just one.
 TARGET_STEP_MINUTES = 15
 MIN_STEPS = 3
 MAX_STEPS = 6
@@ -139,14 +155,12 @@ MAX_STEPS = 6
 # formula - same convention-over-precision trade WEEKS_PER_MONTH=4
 # already makes elsewhere in this module; the actual question here
 # ("is this goal roughly year-scale, month-scale, ...") doesn't need
-# more precision than that. Added 2026-08-23, replacing two earlier,
-# worse answers tried the same night: the model guessing relevance
-# itself (inconsistent - see docs/05-decisions.md) and always filling
-# every horizon regardless of scope (concrete, realistic-sounding but
-# fabricated content for horizons broader than what was actually asked
-# for - e.g. a "3 months" goal getting a full one_year answer). Code
-# decides the boundary; the model is just told
-# where it is, nothing left to its own judgment.
+# more precision than that. Rejected alternatives (see
+# docs/05-decisions.md): the model guessing relevance itself
+# (inconsistent), and always filling every horizon regardless of scope
+# (fabricates content for horizons broader than what was actually
+# asked for - e.g. a full one_year answer for a "3 months" goal). Code
+# decides the boundary; the model is just told where it is.
 _HORIZON_LENGTH_THRESHOLDS = (
     ("one_year", 300),
     ("one_month", 25),
@@ -178,6 +192,11 @@ def broadest_relevant_horizon(duration: str | None) -> str:
     return "right_now"  # pragma: no cover - defensive; the 0-day threshold above already catches everything
 
 
+# ============================================================
+# 4. Step planning
+# ============================================================
+
+
 def step_count(duration: str | None) -> int | None:
     """
     How many steps `duration`'s resolved span should be broken into -
@@ -200,8 +219,8 @@ def step_count(duration: str | None) -> int | None:
 
 def step_plan(frozen: dict | None, steps: list[str] | None) -> list[dict] | None:
     """
-    Zips stored step descriptions (the model's job - see backend/planning/plan.py's
-    `_generate_steps()`) with a deterministically-computed time slice of
+    Zips stored step descriptions (the model's job - see backend/planning/step_generator.py's
+    `generate_steps()`) with a deterministically-computed time slice of
     the goal's frozen span (`freeze_duration()` - this module's job),
     ready for the UI to render as a plain list:
     [{"text", "start_label", "end_label"}, ...]. None if there are no
@@ -210,11 +229,7 @@ def step_plan(frozen: dict | None, steps: list[str] | None) -> list[dict] | None
     Takes the SAME frozen dict duration_progress() does (see its
     docstring for why raw duration text isn't used here either) - the
     parent span is divided evenly into `len(steps)` pieces, against the
-    frozen start/end rather than a fresh resolve_span() call (there
-    used to be a separate step_spans(duration) doing this same division
-    against a freshly-resolved span - removed 2026-08-21 once nothing
-    called it any more; this function's own arithmetic below replaced
-    it when steps moved to reading the frozen span instead).
+    frozen start/end rather than a fresh resolve_span() call.
     """
     if not steps:
         return None

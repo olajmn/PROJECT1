@@ -59,8 +59,11 @@ optional, cross-goal context (`data/visions.json`, an optional
 what it is and isn't. The conceptual model is now
 **Vision / Goal / Plan / Action / Feedback** - "Action" replaces
 "Task"/"today's action" as the term used across docs and the UI
-(the `right_now` field name and `today.py`'s script name are
-unchanged - see `06-development.md` for why).
+(the `right_now` field name is unchanged, still embedded in persisted
+data/the LLM prompts - see `06-development.md`, 2026-08-20, for why.
+`today.py`'s script name was left as-is for the same reason at the
+time, then renamed to `action_reader.py` on 2026-08-27 once it was
+clear that one was just a rename, no persisted-data cost).
 
 **Security status:** whole-disk encryption via macOS FileVault is on
 for this machine (covers the "stolen/lost laptop" scenario). No
@@ -91,11 +94,11 @@ Concretely:
 
 | Capability | File |
 |---|---|
-| Goal -> plan | `backend/planning/plan.py` (`generate_plan`) |
+| Goal -> plan | `backend/planning/planner.py` (`generate_plan`) |
 | Plan saved | `backend/infrastructure/data_persistence.py` |
-| Action (right now) | `backend/planning/today.py` reads `plan.right_now` |
+| Action (right now) | `backend/planning/action_reader.py` reads `plan.right_now` |
 | User reports progress | `devtools/app.py` (`/feedback`) |
-| Plan adjusts | `backend/planning/plan.py` (`replan`) |
+| Plan adjusts | `backend/planning/planner.py` (`replan`) |
 | Temporal understanding | `backend/foundation/time/` |
 | Vision created / linked to a Goal | `devtools/app.py` (`/vision`, `/goal`) |
 | Local web UI | `devtools/app.py` - vision form, goal form, feedback, per-step done/no, history, completed |

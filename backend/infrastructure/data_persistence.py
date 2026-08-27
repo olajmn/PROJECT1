@@ -1,44 +1,40 @@
 """
-Local storage for goals and plans.
+Data Persistence
+================
 
-Everything is stored as a simple JSON file: a list of records, oldest
-first. This is intentionally the simplest possible "database" - no
-server, no schema migrations, just a list of dictionaries written to disk.
+Local storage for goals, plans, and Visions. Everything is stored as a
+simple JSON file: a list of records, oldest first - no server, no
+schema migrations, just dictionaries written to disk. Data lives in
+data/plans.json and data/visions.json, both git-ignored (see
+.gitignore) - this is personal information, never committed.
 
-Data lives in data/plans.json, which is git-ignored (see .gitignore) -
-this is personal information and must never be committed to a repository.
+Contents
+1. Setup & legacy normalization
+2. Goal/Plan persistence
+3. Vision
 
-This module normalizes legacy shapes on read: records saved before the
-switch to structured JSON (v0.1) had `plan` as a plain string; _load_all()
-converts those into the current dict shape (see plan.PLAN_KEYS) so every
-caller - today.py, the templates, plan.py - can always assume `plan` is
-a dict with those keys, without special-casing it themselves.
+Goal identity/grouping lives in goal_logic/resolver.py, not here - see
+that module's docstring for why goal_id minting/backfill stays in this
+file regardless.
 
-Goal identity/grouping (get_board() and friends) lives in backend/goals/goal_logic/goal.py,
-not here - see that module's docstring for why goal_id minting/backfill
-stays in this file regardless.
-
-Vision (added 2026-08-26, see docs/05-decisions.md) is a second, much
-smaller store of the same shape as a goal's identity - a plain list of
-{id, text, created_at} records in data/visions.json, no history, no
-normalization, no backfill (there is no legacy shape to migrate: it
-didn't exist before now). A Goal record MAY carry an optional
-`vision_id` pointing into this list; most won't, and that's the normal
-case, not a gap. See save_vision()/load_visions()/get_vision() below,
-and save_plan()'s `vision_id` parameter. Deliberately not its own
-module under goals/goal_logic/ the way goal.py is - there is no
-grouping/derivation logic here yet, just create/list/get, so a
-separate file would be structure without a use for it yet (see
+Vision is a second, much smaller store of the same shape as a goal's
+identity - a plain list of {id, text, created_at} records, no history,
+no normalization, no backfill (nothing predates it). A Goal record MAY
+carry an optional `vision_id` into this list; most won't, and that's
+normal, not a gap. Not its own module the way resolver.py is - there's
+no grouping/derivation logic here, just create/list/get, so a separate
+file would be structure without a use for it yet (see
 docs/05-decisions.md for the fuller reasoning).
 
-Every record also carries a `user_id` (added 2026-08-23), always
-DEFAULT_USER_ID for now - there is exactly one person using this app
-(see docs/05-decisions.md: real multi-user support is explicitly
-deferred past MVP, needs proper auth + encryption first). This is
-deliberately NOT the start of an accounts system - it's a stable field
-added now so that if/when multi-user support is ever built, existing
-history doesn't need a migration to grow one. Unlike goal_id, there is
-no minting/counter for it: there's only ever one value.
+Every record also carries a `user_id`, always DEFAULT_USER_ID for now -
+there is exactly one person using this app (real multi-user support is
+explicitly deferred past MVP, needs proper auth + encryption first; see
+docs/05-decisions.md). Not the start of an accounts system - a stable
+field so existing history won't need a migration if multi-user support
+is ever built. Unlike goal_id, there is no minting/counter for it:
+there's only ever one value.
+
+Full history: docs/06-development.md, 2026-08-21/23/26.
 """
 
 import json
@@ -52,6 +48,10 @@ VISIONS_FILE = DATA_DIR / "visions.json"
 # The only user_id that exists today - see module docstring. Not a
 # counter like goal_id: there is exactly one person using this app.
 DEFAULT_USER_ID = 1
+
+# ============================================================
+# 1. Setup & legacy normalization
+# ============================================================
 
 
 def ensure_data_dir() -> None:
@@ -116,6 +116,11 @@ def _next_goal_id(records: list[dict]) -> int:
     """One higher than the largest goal_id in history, or 1 if there are none yet."""
     existing = [r["goal_id"] for r in records if r.get("goal_id")]
     return max(existing, default=0) + 1
+
+
+# ============================================================
+# 2. Goal/Plan persistence
+# ============================================================
 
 
 def _load_all() -> list[dict]:
@@ -189,7 +194,7 @@ def save_plan(
     docs/06-development.md, 2026-08-19 entry, for why this exists.
 
     `goal_id` is the goal's real identity, separate from its display
-    text (see backend/goals/goal_logic/goal.py's get_board()). Pass the existing goal_id when this record
+    text (see backend/goals/goal_logic/resolver.py's get_board()). Pass the existing goal_id when this record
     continues a goal already in history (e.g. a replan after feedback,
     or explicitly picking "continue an existing goal"); leave it None
     for a genuinely new goal, and one is minted here. Callers should
@@ -203,28 +208,26 @@ def save_plan(
     yet.
 
     `frozen_duration` is `duration` resolved to a real start/end/
-    description ONCE (see backend/foundation/time/time_logic/frozen_duration.py's freeze_duration()),
+    description ONCE (see frozen_duration.py §1 - Freezing a duration),
     stored as-is rather than re-derived from "now" on every later page
-    render - fixes a real bug, 2026-08-21: a forward-looking duration
-    like "within the next 1 hour" was silently resetting its countdown
-    to a full hour on every page refresh, because it used to be
-    re-resolved against the current moment each time instead of the
-    moment the goal was actually created. Callers should compute a
-    fresh one when a genuinely new plan/timeframe decision is being
+    render - re-deriving it live would silently reset a countdown like
+    "within the next 1 hour" to a full hour on every refresh, instead
+    of counting down from when the goal was actually created. Callers
+    should compute a fresh one when a genuinely new plan/timeframe decision is being
     made (a new goal, or "continue an existing goal" with a new
     duration), and otherwise pass the PREVIOUS record's frozen_duration
     through unchanged (a replan after feedback keeps the same
     timeframe, it doesn't restart it) - see devtools/app.py's
     /goal and /feedback routes.
 
-    `current_step` is the index into `plan.steps` (see backend/planning/plan.py's
-    `_generate_steps()`) that "Action (right now)" actually points at -
+    `current_step` is the index into `plan.steps` (see backend/planning/step_generator.py's
+    `generate_steps()`) that "Action (right now)" actually points at -
     "right now" isn't its own independent thing once a goal has steps,
     it's just `plan.steps[current_step]` (see docs/06-development.md's
     "Plan as an ordered step list" entry, and devtools/app.py's
     /step route, which is the only thing that ever advances it). 0 (the
     first step) by default - matches `plan.steps[0]` always equaling
-    `plan.right_now` (see _generate_steps()), so a goal with no steps at
+    `plan.right_now` (see step_generator.generate_steps()), so a goal with no steps at
     all, or one that's never had this touched, behaves exactly as
     before.
 
@@ -256,14 +259,10 @@ def save_plan(
         "completed": completed,
         # Local time, naive (no tzinfo) - matches every other timestamp
         # in this project (backend/foundation/time/'s whole resolution/
-        # bar/countdown system uses datetime.now(), local). Was UTC
-        # since the very first commit for no documented reason (no
-        # multi-timezone need in a single-machine personal tool) -
-        # switched 2026-08-21 after the mismatch was noticed directly
-        # in the log: created_at said "18:24" while the very next line
-        # (duration's frozen description) said "now 20:24" for the
-        # exact same real moment - correct, just confusing, two
-        # different clocks shown side by side for one event.
+        # bar/countdown system uses datetime.now(), local). Records
+        # saved before 2026-08-21 stored this in UTC instead; see
+        # resolver.created_at_key() for how mixed-era history is still
+        # sorted correctly despite the format change.
         "created_at": datetime.now().isoformat(),
     }
     records.append(record)
@@ -282,14 +281,15 @@ def get_latest_plan() -> dict | None:
     return records[-1] if records else None
 
 
-# ---------------------------------------------------------------------------
-# Vision
+# ============================================================
+# 3. Vision
+# ============================================================
 #
 # A separate, much smaller store - see this module's docstring for why
 # it isn't part of the goal/plan records above. No normalization, no
 # backfill: nothing saved before this existed could have a vision_id,
 # so there's no legacy shape to migrate.
-# ---------------------------------------------------------------------------
+# ============================================================
 
 
 def _load_all_visions() -> list[dict]:

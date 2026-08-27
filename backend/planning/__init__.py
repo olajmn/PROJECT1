@@ -1,6 +1,9 @@
 """Turning a goal into a plan, and a plan into "what to do right now" -
-plan.py (goal -> structured plan via the LLM, plus replan()) and
-today.py (just today's immediate action from the latest saved plan).
-Not yet split into data/logic like goal/ or time/ - plan.py currently
-mixes both (PLAN_KEYS/HORIZON_LABELS/prompts alongside generate_plan()/
-replan()), unresolved as of 2026-08-25."""
+planner.py (goal -> structured plan via the LLM, plus replan()),
+model_client.py (generic LLM call + shape validation), step_generator.py
+(the narrower model call that fills in a plan's step list), and
+action_reader.py (read-only: just the current Action/`right_now` from
+the latest saved plan).
+
+Split into these four modules 2026-08-27 (previously one file,
+plan.py)."""

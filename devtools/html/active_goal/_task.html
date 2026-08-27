@@ -9,7 +9,7 @@
 
    Action (right now) is no longer its own independently-generated thing
    once a goal has steps - step 1 always equals plan.right_now exactly
-   (see backend/agent/specialized/plan.py's _generate_steps() docstring), and "right now"
+   (see backend/planning/step_generator.py's generate_steps() docstring), and "right now"
    is just steps[current_step]: a pointer into the list, not separate
    text (see docs/13-ideas-parking-lot.md's "Plan as an ordered step
    list" entry). current_step advances via the Done? Yes/No form below,
