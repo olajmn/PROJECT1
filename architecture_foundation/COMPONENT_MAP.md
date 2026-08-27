@@ -22,7 +22,7 @@ not end up built at all).
 | `user_model/` | EXPLORATORY | Derived, adaptive representation of this user's patterns | Reads Memory only; informs Reasoning and Decision |
 | `decision/` | CURRENT (routing) / EXPLORATORY (intervention) | What happens next, given parsed input + state | Sits between Reasoning and Action/Execution |
 | `execution/` | FUTURE | The agent performing something in the real world | Distinct from Action - see `ARCHITECTURE.md` |
-| `reasoning/` | NEXT | The one boundary every LLM call passes through | Called by Planning today; potentially Decision/Knowledge later |
+| `reasoning/` | CURRENT | The one boundary every LLM call passes through | Called by Plan and Feedback today; potentially Decision/Knowledge later |
 | `world/` | FUTURE | Live external information (weather, calendar, etc.) | Deliberate empty placeholder, unchanged from the prototype |
 | `foundation/` | CURRENT | The Domain/Faculty/Infrastructure/Pipeline lens itself, and proven Faculties | Cross-cutting - not part of the operational loop |
 | `infrastructure/` | CURRENT | Persistence and other shared technical machinery | Used by every component that stores or moves data |

@@ -13,7 +13,7 @@ Named for the "Action" concept (architecture_foundation/goals/action/
 README.md), not "today" - avoids colliding with PLAN_KEYS' own,
 unrelated `"today"` horizon. Renamed from today.py, 2026-08-27.
 
-Run from the PROJECT ROOT: .venv/bin/python -m backend.planning.action_reader
+Run from the PROJECT ROOT: .venv/bin/python -m backend.goals.plan.action_reader
 """
 
 from backend.infrastructure.data_persistence import get_latest_plan

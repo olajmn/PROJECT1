@@ -27,6 +27,6 @@ pass, not a decision made here.
 
 ## Reference implementation
 
-`backend/planning/planner.py` - `generate_plan()`, `replan()`. See its
+`backend/goals/plan/planner.py` - `generate_plan()`, `replan()`. See its
 docstrings for exactly where a future Vision summary (see `../../vision/`)
 could be added to the model's context - noted, not wired in yet.

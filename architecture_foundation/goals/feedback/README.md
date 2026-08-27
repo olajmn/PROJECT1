@@ -25,6 +25,6 @@ explicitly structured is an open question, not decided here - see
 
 ## Reference implementation
 
-`backend/goals/goal_logic/feedback_parser.py` - `parse_outcome()`,
+`backend/goals/feedback/feedback_parser.py` - `parse_outcome()`,
 `requests_duration_change()`. Deliberately not LLM-based; see that file's
 own docstring and the prototype's `docs/05-decisions.md` #1 for why.

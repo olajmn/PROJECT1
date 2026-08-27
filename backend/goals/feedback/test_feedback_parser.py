@@ -5,10 +5,10 @@ to document intended behavior (especially the negation/word-boundary
 safety), not to chase full coverage.
 
 Run from the project root:
-    .venv/bin/python -m backend.goals.goal_logic.test_feedback_parser
+    .venv/bin/python -m backend.goals.feedback.test_feedback_parser
 """
 
-from backend.goals.goal_logic.feedback_parser import (
+from backend.goals.feedback.feedback_parser import (
     parse_outcome,
     requests_duration_change,
 )

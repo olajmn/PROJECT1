@@ -30,15 +30,15 @@ ask_model() as a parameter rather than read by it directly, so the
 split doesn't create a circular import. Full history:
 docs/06-development.md, 2026-08-21/25.
 
-Run from the PROJECT ROOT: .venv/bin/python -m backend.planning.planner
+Run from the PROJECT ROOT: .venv/bin/python -m backend.goals.plan.planner
 """
 
 from datetime import datetime
 
 from backend.foundation.time import broadest_relevant_horizon, resolve_duration, step_count
 from backend.infrastructure.data_persistence import save_plan
-from backend.planning.model_client import ask_model
-from backend.planning.step_generator import generate_steps
+from backend.goals.plan.model_client import ask_model
+from backend.goals.plan.step_generator import generate_steps
 
 # ============================================================
 # 1. Plan schema

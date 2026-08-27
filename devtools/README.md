@@ -10,8 +10,9 @@ Lives as a top-level sibling of `backend/`, not inside it (moved
 this is the channel a human talks TO the agent through (the USER node
 in that doc's long-term diagram), not part of the agent's own
 cognition. It still imports directly from `backend/` (`app.py` calls
-`generate_plan()`, `get_board()`, etc.) - it's the only functioning way
-to actually use the agent today, just not a permanent part of it.
+`generate_plan()`, `get_latest_for_all_goals()`, etc.) - it's the only
+functioning way to actually use the agent today, just not a permanent
+part of it.
 
 Run everything from the **project root**, using `-m` (see
 `../CONVENTIONS.md` § Environment for why).

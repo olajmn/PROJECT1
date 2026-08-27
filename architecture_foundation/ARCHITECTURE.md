@@ -117,8 +117,8 @@ different sources:
 ## Where the LLM fits
 
 The LLM is a mechanism inside **Reasoning** - never its own component. Every
-call to a model, regardless of which component needs it (Planning today;
-potentially Decision or Knowledge later), goes through this one boundary, so
+call to a model, regardless of which component needs it (Plan and Feedback
+today; potentially Decision or Knowledge later), goes through this one boundary, so
 the provider stays swappable and prompt-construction/response-validation
 logic isn't duplicated per component. See `reasoning/README.md`.
 

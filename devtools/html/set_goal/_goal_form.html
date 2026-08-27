@@ -25,7 +25,7 @@
 <div class="card {% if board.active %}card-muted{% endif %}">
   {# The model can decline to plan a too-vague goal (a bare noun/verb
      like "read") and ask a clarifying question instead of a real plan
-     (see backend/planning/planner.py's generate_plan() docstring) - that round is
+     (see backend/goals/plan/planner.py's generate_plan() docstring) - that round is
      saved and shown in the goal's own card/conversation thread below
      (see _active_goal.html), same as every other round, not here: this
      form always starts a genuinely new attempt, it has no goal_id yet

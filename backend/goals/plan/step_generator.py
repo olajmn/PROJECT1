@@ -8,9 +8,7 @@ Split out of planner.py (formerly plan.py) as its own module,
 
 import json
 
-import ollama
-
-from backend.planning.model_client import MODEL
+from backend.reasoning.model_client import send_message
 
 # Separate, narrow prompt for generate_steps() - deliberately NOT
 # folded into planner.py's SYSTEM_PROMPT/one bigger call: the step
@@ -67,15 +65,8 @@ def generate_steps(goal: str, right_now: str, count: int) -> list[str]:
         f"The first step, already decided, is: {right_now}\n\n"
         f"Produce exactly {remaining} further steps, after that one."
     )
-    response = ollama.chat(
-        model=MODEL,
-        format="json",
-        messages=[
-            {"role": "system", "content": STEPS_SYSTEM_PROMPT},
-            {"role": "user", "content": user_content},
-        ],
-    )
-    data = json.loads(response["message"]["content"])
+    raw = send_message(STEPS_SYSTEM_PROMPT, user_content, json_mode=True)
+    data = json.loads(raw)
     steps = data.get("steps")
     if not isinstance(steps, list) or len(steps) != remaining or not all(isinstance(s, str) for s in steps):
         raise ValueError(f"Model did not return exactly {remaining} step strings: {data}")

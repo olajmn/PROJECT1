@@ -35,14 +35,15 @@ from backend.foundation.time import (
     freeze_duration,
     step_plan,
 )
-from backend.goals.goal_logic.resolver import (
+from backend.goals.goal.resolver import (
     created_at_key,
     get_history_for_goal,
     get_latest_for_all_goals,
     get_latest_for_goal,
 )
-from backend.goals.goal_logic.feedback_parser import parse_outcome, requests_duration_change
-from backend.planning.planner import PLAN_KEYS, generate_plan, replan
+from backend.goals.feedback.feedback_parser import parse_outcome, requests_duration_change
+from backend.goals.feedback.acknowledger import acknowledge
+from backend.goals.plan.planner import PLAN_KEYS, generate_plan, replan
 from backend.infrastructure.data_persistence import load_history, load_visions, save_plan, save_vision
 
 # ============================================================
@@ -69,7 +70,7 @@ app.jinja_env.globals["describe_duration"] = describe_duration
 app.jinja_env.globals["duration_progress"] = duration_progress
 # Same reasoning - the vertical step list in active_goal/_task.html and
 # active_goal/_steps.html zips a goal's stored step descriptions
-# (record.plan.steps, from backend/planning/step_generator.py's generate_steps()) with
+# (record.plan.steps, from backend/goals/plan/step_generator.py's generate_steps()) with
 # their deterministically-computed time slice via step_plan() - see
 # its docstring.
 app.jinja_env.globals["step_plan"] = step_plan
@@ -184,7 +185,7 @@ def _group_active_by_vision(active_records: list[dict], visions: list[dict]) -> 
 
     Presentation-only grouping for this one page, not a general Goal/
     Vision capability - deliberately kept here rather than added to
-    goal_logic/resolver.py (which only resolves goal_id identity, not
+    goal/resolver.py (which only resolves goal_id identity, not
     board shape - see _build_board() below - and is unchanged by
     Vision existing at all).
     """
@@ -206,7 +207,7 @@ def _build_board() -> dict:
     Split every goal's latest record into "active" and "completed",
     for the board views (index.html, completed_goal/_completed.html).
     Board-only shaping - see get_latest_for_all_goals()'s docstring
-    for why this doesn't live in goal_logic/resolver.py.
+    for why this doesn't live in goal/resolver.py.
 
     Returns {"active": [...], "completed": [...]}. "active" is newest
     first; "completed" stays in the order it always has (oldest-first,
@@ -363,7 +364,7 @@ def _apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
     Always calls generate_plan() again, never just patches
     duration/frozen_duration onto the existing record: changing the
     timeframe is a real new planning decision (new horizons filled, a
-    new step list from backend/planning/step_generator.py's generate_steps()), not a
+    new step list from backend/goals/plan/step_generator.py's generate_steps()), not a
     countdown edit. frozen_duration stays None if the new duration
     turns out too vague in CONTENT to plan at all (generate_plan()
     comes back with `clarification` set) - nothing has actually
@@ -396,7 +397,7 @@ def _apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
 def feedback():
     """
     Handle the "what's going on" form: classify the free-text note into
-    an outcome (see backend/goals/goal_logic/feedback_parser.py - no LLM, recognized
+    an outcome (see backend/goals/feedback/feedback_parser.py - no LLM, recognized
     phrases only), then act on it exactly as the old Yes/Still working
     on it/No/Goal complete buttons used to. There's no separate
     "outcome" field anymore - the note itself is the only signal, so
@@ -450,7 +451,7 @@ def feedback():
 
     if latest["plan"].get("clarification"):
         # This goal has no real plan yet - the agent asked a clarifying
-        # question instead (see backend/planning/planner.py's generate_plan()
+        # question instead (see backend/goals/plan/planner.py's generate_plan()
         # docstring), and `note` is the ANSWER to that question, not a
         # status report on a task that doesn't exist yet. Route it
         # through generate_plan() again (not replan(), which is built
@@ -590,8 +591,11 @@ def feedback():
         # because time passed. `classified` distinguishes "you said
         # you're still working on it" from "we genuinely couldn't tell"
         # - both get the same safe treatment, but the record should be
-        # honest about which one actually happened.
-        prefix = "Still working on it." if classified else "Checked in (couldn't tell what this means yet)."
+        # honest about which one actually happened. The "couldn't tell"
+        # case asks the model for a natural acknowledgment of `note`
+        # (acknowledge() - display text only; it can never change this
+        # branch or fail this route, see its own docstring).
+        prefix = "Still working on it." if classified else acknowledge(note)
         feedback_text = prefix + (f" Note: {note}" if note else "")
         save_plan(
             latest["goal"], latest["plan"], feedback=feedback_text,
@@ -625,7 +629,7 @@ def step():
     goal's already-generated `plan.steps` list. No model call at all:
     unlike /feedback's free-text note (which can trigger replan() -
     the model reconsidering the plan), the step list was already fully
-    decided upfront (see backend/planning/step_generator.py's generate_steps()), so
+    decided upfront (see backend/goals/plan/step_generator.py's generate_steps()), so
     moving through it is just "which one are we on now", nothing to
     ask the model about.
 
@@ -649,7 +653,7 @@ def step():
     steps = latest["plan"].get("steps")
     if not steps:
         # Nothing to advance - no step list on this goal at all (see
-        # backend/planning/planner.py's generate_plan(): only goals with a
+        # backend/goals/plan/planner.py's generate_plan(): only goals with a
         # resolvable duration get one).
         return back_to
 

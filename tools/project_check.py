@@ -92,8 +92,8 @@ RELEVANT_AREAS = ["backend", "devtools", "docs"]
 # orientation smoke test, not a dependency graph. Add a module here
 # only if it's a real entry point worth confirming still imports.
 SMOKE_IMPORT_MODULES = [
-    "backend.planning.planner",
-    "backend.goals.goal_logic.resolver",
+    "backend.goals.plan.planner",
+    "backend.goals.goal.resolver",
     "backend.infrastructure.data_persistence",
     "devtools.app",
 ]

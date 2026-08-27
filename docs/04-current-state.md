@@ -15,14 +15,13 @@ finishing").
 backend/
   foundation/       Agent capabilities / understanding
     time/           Built - temporal understanding Faculty
-    language/       Empty scaffold, no established Faculty
-    memory/         Empty scaffold, no established Faculty
-    meaning(maybe)/  Empty scaffold, unresolved
-  goals/            Domain - goal identity/grouping, feedback parsing
-  planning/         Domain - goal -> plan, plan + feedback -> replan, action (right_now)
+  goals/            Domain - goal/ (identity/grouping), feedback/ (parsing),
+                    plan/ (goal -> plan, plan + feedback -> replan, action/right_now)
   infrastructure/   Shared technical machinery - data_persistence.py
                     saves/loads JSON (goals/plans and, since 2026-08-26,
                     Vision separately), understands none of what it stores
+  memory/           Domain - empty by design, agent's own history not yet
+                    organized as its own capability
   world/            Domain - empty by design, no live external data access today
 devtools/           Local Flask web UI - the only working interface
 data/               Local storage, git-ignored (personal data) - plans.json
@@ -48,9 +47,11 @@ understanding Faculty are related but distinct: Time is what the system
 operates on, temporal understanding is the capability the agent uses to
 make sense of it.
 
-Other potential Faculties are not yet established. Empty scaffolds such
-as `language/`, `memory/`, and `meaning(maybe)/` do not by themselves
-constitute Faculties.
+No other Faculty is established yet under `foundation/` - speculative
+empty scaffolds for unproven Faculties (formerly `language/`,
+`meaning(maybe)/`) were removed 2026-08-27 rather than kept as
+placeholders; a Faculty is added here only once real code earns it
+through demonstrated reuse, not proposed ahead of any.
 
 **Vision** (added 2026-08-26) is a fifth concept, deliberately none of
 the four above - not a Domain, Faculty, or pipeline stage. It's
@@ -94,11 +95,11 @@ Concretely:
 
 | Capability | File |
 |---|---|
-| Goal -> plan | `backend/planning/planner.py` (`generate_plan`) |
+| Goal -> plan | `backend/goals/plan/planner.py` (`generate_plan`) |
 | Plan saved | `backend/infrastructure/data_persistence.py` |
-| Action (right now) | `backend/planning/action_reader.py` reads `plan.right_now` |
+| Action (right now) | `backend/goals/plan/action_reader.py` reads `plan.right_now` |
 | User reports progress | `devtools/app.py` (`/feedback`) |
-| Plan adjusts | `backend/planning/planner.py` (`replan`) |
+| Plan adjusts | `backend/goals/plan/planner.py` (`replan`) |
 | Temporal understanding | `backend/foundation/time/` |
 | Vision created / linked to a Goal | `devtools/app.py` (`/vision`, `/goal`) |
 | Local web UI | `devtools/app.py` - vision form, goal form, feedback, per-step done/no, history, completed |
@@ -119,8 +120,8 @@ unfounded detail (see `06-development.md`).
 
 ## 4. What's not built
 
-- **Memory** - the agent doesn't yet use its own history; `foundation/memory/`
-  is an empty scaffold.
+- **Memory** - the agent doesn't yet use its own history; `memory/`
+  is an empty placeholder (a Domain, not nested under `foundation/`).
 - **Hierarchical step list** - a goal's plan is currently one flat step
   list, not nested phases with their own sub-steps.
 - **Knowledge / RAG** - sketched, not implemented.

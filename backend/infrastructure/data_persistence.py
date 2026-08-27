@@ -13,7 +13,7 @@ Contents
 2. Goal/Plan persistence
 3. Vision
 
-Goal identity/grouping lives in goal_logic/resolver.py, not here - see
+Goal identity/grouping lives in goal/resolver.py, not here - see
 that module's docstring for why goal_id minting/backfill stays in this
 file regardless.
 
@@ -194,7 +194,7 @@ def save_plan(
     docs/06-development.md, 2026-08-19 entry, for why this exists.
 
     `goal_id` is the goal's real identity, separate from its display
-    text (see backend/goals/goal_logic/resolver.py's get_board()). Pass the existing goal_id when this record
+    text (see backend/goals/goal/resolver.py's get_latest_for_all_goals()). Pass the existing goal_id when this record
     continues a goal already in history (e.g. a replan after feedback,
     or explicitly picking "continue an existing goal"); leave it None
     for a genuinely new goal, and one is minted here. Callers should
@@ -220,7 +220,7 @@ def save_plan(
     timeframe, it doesn't restart it) - see devtools/app.py's
     /goal and /feedback routes.
 
-    `current_step` is the index into `plan.steps` (see backend/planning/step_generator.py's
+    `current_step` is the index into `plan.steps` (see backend/goals/plan/step_generator.py's
     `generate_steps()`) that "Action (right now)" actually points at -
     "right now" isn't its own independent thing once a goal has steps,
     it's just `plan.steps[current_step]` (see docs/06-development.md's

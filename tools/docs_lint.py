@@ -15,7 +15,7 @@ script IS specific to this project's own house style rule - it doesn't
 make sense as a reusable external tool, and isn't trying to be one.
 
 Two confidence tiers, same "code decides, doesn't guess past what it
-can verify" reasoning as backend/goals/goal_logic/feedback_parser.py:
+can verify" reasoning as backend/goals/feedback/feedback_parser.py:
 
 - CONFIRMED: unambiguous regardless of context ("raised in
   conversation", "the user wanted", "found via a real ...").

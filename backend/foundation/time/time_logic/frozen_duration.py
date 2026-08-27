@@ -219,7 +219,7 @@ def step_count(duration: str | None) -> int | None:
 
 def step_plan(frozen: dict | None, steps: list[str] | None) -> list[dict] | None:
     """
-    Zips stored step descriptions (the model's job - see backend/planning/step_generator.py's
+    Zips stored step descriptions (the model's job - see backend/goals/plan/step_generator.py's
     `generate_steps()`) with a deterministically-computed time slice of
     the goal's frozen span (`freeze_duration()` - this module's job),
     ready for the UI to render as a plain list:

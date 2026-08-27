@@ -23,7 +23,7 @@ resolved, in this skeleton.
 
 ## Reference implementation
 
-`plan["right_now"]` and `plan["steps"]` in `backend/planning/planner.py`;
+`plan["right_now"]` and `plan["steps"]` in `backend/goals/plan/planner.py`;
 advanced via `devtools/app.py`'s `/step` route (pure index arithmetic, no
 model call - the step list was already decided upfront). The prototype's UI
 labels this row "Action (right now)" - the same terminology consolidation

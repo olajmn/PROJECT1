@@ -2,10 +2,9 @@
 Deliberately empty as of 2026-08-24 - live external data the agent
 could reach out for (weather, calendar, maps, web search, documents),
 as opposed to its own hardcoded cognition (backend/foundation/) or its
-future memory/ (what it accumulates about the user, also under
-foundation/). Distinct from the USER node (devtools/, outside backend/
-entirely) - World is data pulled in from outside, User is the human
-the agent serves.
+own recorded history (backend/memory/). Distinct from the USER node
+(devtools/, outside backend/ entirely) - World is data pulled in from
+outside, User is the human the agent serves.
 
 This project has zero live external-data access today, by design - see
 docs/06-development.md's "Aggregation / world-data capability"
