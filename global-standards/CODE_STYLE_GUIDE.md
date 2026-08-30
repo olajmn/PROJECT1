@@ -103,6 +103,8 @@ Source File → Major Section → Structural Unit → Sub-unit → Details
 
 This mirrors `DOCUMENTATION_STYLE_GUIDE.md`'s Document Structure principle, applied to code — not a requirement that every file use all four levels. A short file may only have a Major Section and a Structural Unit; collapse whatever levels the file doesn't need.
 
+A file's own opening docstring should be brief: state what the file is responsible for, not a tutorial, a full history, or an architecture explanation that already lives in project documentation. A short pointer to where that fuller context lives is enough.
+
 ## 3. Naming
 
 - Use descriptive names for classes, functions, and variables — names should make the code easier to navigate, not just shorter to type.
@@ -115,6 +117,10 @@ Comments should explain **why**, not repeat **what** the code already makes obvi
 
 - Use comments for non-obvious logic, constraints, workarounds, or design decisions — not to narrate every line.
 - If a comment would only restate what the code already says, it is not needed.
+- A function or method docstring should document what a caller needs to know that isn't obvious from its name, signature, or body — a real contract, invariant, or non-obvious design choice. It should not restate the function's name in sentence form.
+- Keeping a comment because it happens to contain true information is not enough — ask whether that information is actually needed to understand or safely change *this* piece of code. If the same information already lives in project documentation, a short pointer there is usually better than repeating it.
+- Removing restatement, repetition, and narrated history is not the same as removing real reasoning — a comment explaining an actual architectural or domain-specific "why" earns its place regardless of length.
+- There is no target ratio of comments to code. A section of simple, self-explanatory code needs little or none; a section implementing genuinely difficult logic may legitimately need substantial explanation. Judge each comment on whether it contributes information, not against a percentage.
 
 ## 5. Consistency and Change Management
 
@@ -142,6 +148,17 @@ Complexity should be justified by the project's actual requirements, not added b
 - Do not change existing architecture or code structure without a clear reason.
 - Do not create new files without an actual need for them.
 - Do not rewrite working code merely to make it "cleaner."
+- Do not add headings, a Contents block, comments, or new files for the sake of visible structure — each should exist only because it gives a real reader navigation or understanding value.
+- Treat an already-clean file as a legitimate target picture, not a problem to fix — do not edit it just to match this guide's patterns mechanically if it already satisfies their intent.
 - Flag uncertainty rather than inventing a solution.
+
+Before creating or substantially editing a source file, briefly weigh — not as a checklist every file must satisfy, but as the judgment call that decides how much structure and documentation this particular file actually needs:
+
+1. How large or complex is this file actually?
+2. Does it need a Contents block, or would one add structure without navigation value?
+3. What is this file's actual responsibility, in one or two sentences?
+4. Which design choices in it are not obvious, and deserve a comment or docstring?
+5. What can be left undocumented because the code already expresses it clearly?
+6. Does this information already exist elsewhere in the project's documentation, such that a short pointer is enough?
 
 **Existing project requirements and established project architecture take precedence over the general preferences in this guide.**
