@@ -1,6 +1,6 @@
 """
 Checks docs/*.md and every code comment/docstring under backend/ and
-devtools/ for the personal-narrative language CONVENTIONS.md's
+frontend/ for the personal-narrative language CONVENTIONS.md's
 "Documentation neutrality" rule asks to avoid - the discovery-narrative
 style ("found via a real screenshot", "the user's own framing") this
 project already moved away from once in code comments (see git
@@ -9,10 +9,9 @@ discovery narrative") and again in docs/ on 2026-08-24. This script
 exists so that move doesn't quietly slide back the next time someone
 (human or model) writes a new entry.
 
-Unlike tools/architecture_mapper (deliberately generic, no
-project-specific knowledge, safe to lift out and reuse elsewhere), this
-script IS specific to this project's own house style rule - it doesn't
-make sense as a reusable external tool, and isn't trying to be one.
+This script IS specific to this project's own house style rule - it
+doesn't make sense as a reusable external tool, and isn't trying to be
+one.
 
 Two confidence tiers, same "code decides, doesn't guess past what it
 can verify" reasoning as backend/goals/feedback/feedback_parser.py:
@@ -48,7 +47,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # docs/ (the material most likely to be read by someone outside this
 # project one day) plus every code comment/docstring under the agent
 # and its interface, same scope CONVENTIONS.md's rule names.
-DEFAULT_TARGETS = ["docs", "backend", "devtools", "CONVENTIONS.md", "SESSION-TODO.md"]
+DEFAULT_TARGETS = ["docs", "backend", "frontend", "CONVENTIONS.md", "SESSION-TODO.md"]
 
 # Only these extensions are scanned inside a directory target - no
 # point walking .venv-style binary/cache noise, and pyc/pycache are
@@ -139,7 +138,7 @@ def main() -> int:
         "paths",
         nargs="*",
         default=DEFAULT_TARGETS,
-        help="Files/directories to scan, relative to the project root (default: docs/, backend/, devtools/, CONVENTIONS.md, SESSION-TODO.md)",
+        help="Files/directories to scan, relative to the project root (default: docs/, backend/, frontend/, CONVENTIONS.md, SESSION-TODO.md)",
     )
     parser.add_argument(
         "--strict",

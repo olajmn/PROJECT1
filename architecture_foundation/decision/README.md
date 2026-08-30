@@ -12,7 +12,7 @@ different jobs share this name:
 Given a parsed Feedback signal (or a pending clarification, or a duration-
 change request), decide which branch to take: replan, advance a step, mark
 a goal complete, or check in without changing anything. This already
-exists, today, as the branching logic inside `devtools/app.py`'s
+exists, today, as the branching logic inside `frontend/app.py`'s
 `/feedback` route - it has just never been factored out and named as its
 own responsibility.
 
@@ -37,5 +37,5 @@ which of those happens next.
 
 ## Reference implementation
 
-Routing: `devtools/app.py`'s `/feedback` route (the `if`/`elif` chain over
+Routing: `frontend/app.py`'s `/feedback` route (the `if`/`elif` chain over
 `outcome_value`). Intervention policy: none - explicitly unbuilt.

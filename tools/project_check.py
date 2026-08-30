@@ -4,11 +4,12 @@ of a session (or before a claim about current state matters), so a
 session doesn't have to trust its own memory or docs/04-current-state.md's
 prose at face value. Reports observable facts: what's changed in git,
 which files under the areas docs/04-current-state.md describes are
-newer than that file itself, the actual backend/ tree, whether the
-core modules still import, code-level hygiene (pyflakes, stale
-backend/devtools path mentions, modules with no inbound import),
-whether architecture_foundation/ (when present) still has its expected
-shape, and the existing docs checkers' findings.
+newer than that file itself, the actual backend/ and frontend/ trees,
+whether the core modules still import, code-level hygiene (pyflakes,
+stale backend/frontend path mentions in code and in docs/, modules
+with no inbound import), whether architecture_foundation/ (when
+present) still has its expected shape, and the existing docs
+checkers' findings.
 
 Interprets nothing about content or correctness. Whether a "newer file"
 actually means docs/04-current-state.md is out of date, whether a tree
@@ -30,12 +31,12 @@ analyzer in its own right:
     pyflakes         -> unused imports, undefined names (code)
     project_check.py -> repository/project orientation (this file) -
                          also owns the small checks below that nothing
-                         else covers: stale backend/devtools path
-                         mentions in code comments, modules with no
-                         detected inbound import, and whether
-                         architecture_foundation/'s expected files
-                         (when that directory exists at all) are still
-                         there and non-empty
+                         else covers: stale backend/frontend path
+                         mentions in code comments and docs/ prose,
+                         modules with no detected inbound import, and
+                         whether architecture_foundation/'s expected
+                         files (when that directory exists at all) are
+                         still there and non-empty
     tests            -> actual runtime behavior (not this file's job -
                          the import check below only confirms a module
                          doesn't raise on import, nothing more)
@@ -86,7 +87,7 @@ ARCHITECTURE_SKELETON_CORE_DOCS = [
 
 # Areas docs/04-current-state.md actually describes - not all of the
 # repo, just the parts relevant to whether it might need a fresh look.
-RELEVANT_AREAS = ["backend", "devtools", "docs"]
+RELEVANT_AREAS = ["backend", "frontend", "docs"]
 
 # Kept small and explicit rather than dynamically discovered - an
 # orientation smoke test, not a dependency graph. Add a module here
@@ -95,7 +96,7 @@ SMOKE_IMPORT_MODULES = [
     "backend.goals.plan.planner",
     "backend.goals.goal.resolver",
     "backend.infrastructure.data_persistence",
-    "devtools.app",
+    "frontend.app",
 ]
 
 
@@ -148,19 +149,20 @@ def files_newer_than_current_state() -> list[str]:
     return sorted(newer)
 
 
-def backend_tree() -> list[str]:
-    """The actual backend/ directory tree, one relative path per line -
-    a plain fact to hold up against whatever docs/04-current-state.md's
-    own "What exists" tree currently says. This script doesn't parse
-    or diff the doc's prose tree itself - reading the doc and noticing
-    a mismatch is exactly the kind of judgment call left to whoever
-    reads this report, not something to automate here."""
-    backend = ROOT / "backend"
-    if not backend.exists():
+def directory_tree(area: str) -> list[str]:
+    """The actual directory tree for `area` (e.g. "backend", "frontend"),
+    one relative path per line - a plain fact to hold up against
+    whatever docs/04-current-state.md's own "Project Structure" section
+    currently says for that area. This script doesn't parse or diff the
+    doc's prose tree itself - reading the doc and noticing a mismatch
+    is exactly the kind of judgment call left to whoever reads this
+    report, not something to automate here."""
+    area_path = ROOT / area
+    if not area_path.exists():
         return []
     return sorted(
         str(p.relative_to(ROOT)) + "/"
-        for p in backend.rglob("*")
+        for p in area_path.rglob("*")
         if p.is_dir() and "__pycache__" not in p.parts
     )
 
@@ -188,32 +190,46 @@ def run_tool(module: str) -> tuple[int, str]:
 
 def run_pyflakes() -> tuple[int, str]:
     """Run pyflakes (already a project dependency, see
-    requirements.txt) against backend/ and devtools/ - unused imports
+    requirements.txt) against backend/ and frontend/ - unused imports
     and undefined names, reused as-is rather than reimplemented."""
-    return _run([str(PYTHON), "-m", "pyflakes", "backend", "devtools"])
+    return _run([str(PYTHON), "-m", "pyflakes", "backend", "frontend"])
 
 
-# A backend/... or devtools/...-looking .py path mentioned in a
-# comment or docstring - the same shape of pattern tools/docs_check.py
-# already uses for docs/<NN>-<name>.md references, aimed at code paths
-# instead. docs_check.py stays scoped to documentation; this stays
-# scoped to code, so the two don't overlap.
-CODE_PATH_RE = re.compile(r"\b(?:backend|devtools)/[A-Za-z0-9_/().-]+\.py\b")
+# A backend/... or frontend/...-looking .py path mentioned in a
+# comment, docstring, or docs/ prose - the same shape of pattern
+# tools/docs_check.py already uses for docs/<NN>-<name>.md references,
+# aimed at code paths instead. docs_check.py checks references between
+# docs/ files themselves (wikilinks, docs/<NN>-<name>.md mentions); this
+# checks .py code-path mentions - a different reference kind, checked
+# here regardless of which of these areas the mention appears in.
+CODE_PATH_RE = re.compile(r"\b(?:backend|frontend)/[A-Za-z0-9_/().-]+\.py\b")
+
+# (area, glob pattern) pairs to scan for CODE_PATH_RE mentions - .py
+# files under backend/frontend/tools, and .md files under docs/ (e.g.
+# docs/04-current-state.md naming a file that later gets moved or
+# deleted).
+STALE_PATH_SCAN_AREAS = [
+    ("backend", "*.py"),
+    ("frontend", "*.py"),
+    ("tools", "*.py"),
+    ("docs", "*.md"),
+]
 
 
 def stale_code_path_mentions() -> list[str]:
-    """Every backend/... or devtools/...-looking .py path mentioned
-    anywhere under backend/, devtools/, tools/ that doesn't resolve to
-    a real file. Doesn't distinguish a genuine leftover reference from
-    a docstring deliberately narrating "moved from X" as history - the
-    same distinction every other check in this file leaves to whoever
-    reads the report, per ../COLLABORATION.md."""
+    """Every backend/... or frontend/...-looking .py path mentioned
+    anywhere under backend/, frontend/, tools/, or docs/ that doesn't
+    resolve to a real file. Doesn't distinguish a genuine leftover
+    reference from a docstring or doc deliberately narrating "moved
+    from X" as history - the same distinction every other check in
+    this file leaves to whoever reads the report, per
+    ../COLLABORATION.md."""
     stale = []
-    for area in ("backend", "devtools", "tools"):
+    for area, pattern in STALE_PATH_SCAN_AREAS:
         area_path = ROOT / area
         if not area_path.exists():
             continue
-        for path in sorted(area_path.rglob("*.py")):
+        for path in sorted(area_path.rglob(pattern)):
             if "__pycache__" in path.parts:
                 continue
             text = path.read_text(encoding="utf-8", errors="replace")
@@ -227,7 +243,7 @@ def stale_code_path_mentions() -> list[str]:
 
 def modules_with_no_inbound_import() -> list[str]:
     """Every backend/ module (excluding __init__.py) that no other
-    .py file under backend/, devtools/, or tools/ appears to mention
+    .py file under backend/, frontend/, or tools/ appears to mention
     by dotted path or bare filename. A plain text search, not real
     import-graph analysis - it only counts whether the name appears
     anywhere, nothing more. Many entries here are legitimate (a
@@ -237,7 +253,7 @@ def modules_with_no_inbound_import() -> list[str]:
     reports the raw list."""
     py_files = [
         p
-        for area in ("backend", "devtools", "tools")
+        for area in ("backend", "frontend", "tools")
         for p in (ROOT / area).rglob("*.py")
         if "__pycache__" not in p.parts
     ]
@@ -336,8 +352,13 @@ def main() -> int:
         print("  touched file among the areas it describes")
 
     print()
-    print("=== backend/ tree (compare against docs/04-current-state.md § What exists) ===")
-    for line in backend_tree():
+    print("=== backend/ tree (compare against docs/04-current-state.md § 1. Project Structure) ===")
+    for line in directory_tree("backend"):
+        print(f"  {line}")
+
+    print()
+    print("=== frontend/ tree (compare against docs/04-current-state.md § 1. Project Structure) ===")
+    for line in directory_tree("frontend"):
         print(f"  {line}")
 
     print()
@@ -351,14 +372,14 @@ def main() -> int:
         print("  all modules import cleanly")
 
     print()
-    print("=== pyflakes (backend/, devtools/) ===")
+    print("=== pyflakes (backend/, frontend/) ===")
     code, output = run_pyflakes()
     print(output if output else "  no issues found")
     if code != 0:
         exit_code = 1
 
     print()
-    print("=== stale backend/devtools .py path mentions ===")
+    print("=== stale backend/frontend .py path mentions ===")
     stale_paths = stale_code_path_mentions()
     if stale_paths:
         for line in stale_paths:

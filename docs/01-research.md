@@ -8,9 +8,7 @@
 
 ### Working hypothesis
 
-> People often know what they want to achieve, but turning that intention
-> into concrete, timely action requires continuous planning, prioritization,
-> and adjustment that they have to manage themselves.
+> People often know what they want to achieve, but turning that intention into concrete, timely action requires continuous planning, prioritization, and adjustment that they have to manage themselves.
 
 This is a hypothesis, not a validated finding.
 
@@ -25,9 +23,7 @@ This is a hypothesis, not a validated finding.
 
 ## 2. Existing Solutions
 
-The core idea is not new. Existing products cover areas such as goal
-planning, milestones, daily tasks, AI planning, replanning, coaching,
-and agentic planning.
+The core idea is not new. Existing products cover areas such as goal planning, milestones, daily tasks, AI planning, replanning, coaching, and agentic planning.
 
 The question is therefore not:
 
@@ -39,8 +35,7 @@ but:
 
 ### Known candidates
 
-Goaltree, LifePilot, Mentra, Daysfold, Goaliath, GoalsFlow,
-Skedul.AI, Vakit, GoalOS.
+Goaltree, LifePilot, Mentra, Daysfold, Goaliath, GoalsFlow, Skedul.AI, Vakit, GoalOS.
 
 ### What to investigate
 
@@ -55,8 +50,7 @@ Skedul.AI, Vakit, GoalOS.
 
 ## 3. Competitor Comparison
 
-We shouldn't just read the marketing copy - compare the products
-systematically across factors like these:
+We shouldn't just read the marketing copy — compare the products systematically across factors like these:
 
 | Factor | Question | Goaltree | LifePilot | Mentra | Daysfold | Goaliath | GoalsFlow | Skedul.AI | Vakit | GoalOS |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -73,9 +67,7 @@ systematically across factors like these:
 | Tools | Can the agent actually perform actions? | | | | | | | | | |
 | Autonomy | How much project-managing does the user still have to do? | | | | | | | | | |
 
-*(Fill in the cells as the products get tested. This table is also
-available as a spreadsheet for heavier sorting/filtering — see
-`../COLLABORATION.md` § Documentation tooling.)*
+*(Fill in the cells as the products get tested. This table is also available as a spreadsheet for heavier sorting/filtering — see `../COLLABORATION.md` § Documentation tooling.)*
 
 ## 4. Findings
 

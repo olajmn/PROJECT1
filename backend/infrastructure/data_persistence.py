@@ -217,14 +217,14 @@ def save_plan(
     made (a new goal, or "continue an existing goal" with a new
     duration), and otherwise pass the PREVIOUS record's frozen_duration
     through unchanged (a replan after feedback keeps the same
-    timeframe, it doesn't restart it) - see devtools/app.py's
+    timeframe, it doesn't restart it) - see frontend/app.py's
     /goal and /feedback routes.
 
     `current_step` is the index into `plan.steps` (see backend/goals/plan/step_generator.py's
     `generate_steps()`) that "Action (right now)" actually points at -
     "right now" isn't its own independent thing once a goal has steps,
     it's just `plan.steps[current_step]` (see docs/06-development.md's
-    "Plan as an ordered step list" entry, and devtools/app.py's
+    "Plan as an ordered step list" entry, and frontend/app.py's
     /step route, which is the only thing that ever advances it). 0 (the
     first step) by default - matches `plan.steps[0]` always equaling
     `plan.right_now` (see step_generator.generate_steps()), so a goal with no steps at
@@ -234,7 +234,7 @@ def save_plan(
     `vision_id` (added 2026-08-26) optionally links this goal to a
     Vision - broader, cross-goal context, not part of the operational
     goal -> plan -> action -> feedback loop itself (see
-    docs/03-architecture.md § Long-term architecture). None is the
+    docs/03-architecture.md § Vision). None is the
     normal case: most goals have no vision. Like `goal_id`, this is an
     identity reference, never invented by a caller - pass an id from
     save_vision()/load_visions(), or an existing record's own
@@ -326,7 +326,7 @@ def save_vision(text: str) -> dict:
     """
     Create a new Vision and persist it - broader, cross-goal context a
     Goal can optionally reference (see save_plan()'s `vision_id`
-    parameter and docs/03-architecture.md § Long-term architecture).
+    parameter and docs/03-architecture.md § Vision).
 
     No history, no revisions: unlike a goal/plan record, a vision is a
     single mutable fact ("this is what the text currently says"), not

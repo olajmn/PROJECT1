@@ -60,8 +60,8 @@ done vs. still open. The other four stay parked, unstarted:
       Currently it doesn't - _active_goal.html just shows "All steps
       done - mark the whole goal complete below" once
       `current_step == len(steps)`, and the user still has to type
-      something that `classify_outcome()` reads as `goal_done` (see
-      app.py's /feedback) to actually mark it complete. This IS
+      something that `parse_outcome()` reads as `goal_completed` (see
+      frontend/app.py's /feedback) to actually mark it complete. This IS
       deliberate, not an oversight: finishing the step list only means
       "did what was planned for THIS timeframe" (e.g. one 20-minute
       session), not necessarily "the whole goal is achieved" - same

@@ -42,7 +42,7 @@ EXPECTED_DOCS = [
 # references - same scope docs_lint.py already uses for its own scan.
 # docs/ itself is scanned too (for cross-references between docs), via
 # the same walk.
-REFERENCE_SCAN_TARGETS = ["docs", "backend", "devtools", "tools", "CONVENTIONS.md", "SESSION-TODO.md"]
+REFERENCE_SCAN_TARGETS = ["docs", "backend", "frontend", "tools", "CONVENTIONS.md", "SESSION-TODO.md"]
 SCANNED_SUFFIXES = {".md", ".py"}
 
 WIKILINK_RE = re.compile(r"\[\[([A-Za-z0-9_-]+)\]\]")

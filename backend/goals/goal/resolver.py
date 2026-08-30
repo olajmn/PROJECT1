@@ -10,7 +10,7 @@ data_persistence.load_history() and answers, by goal_id:
 
 Whether a goal counts as "active" or "completed", and how goals get
 grouped or sorted for display, is board-building logic, not goal
-identity - see devtools/app.py, where the board is actually built.
+identity - see frontend/app.py, where the board is actually built.
 
 goal_id itself is minted in data_persistence.py (_next_goal_id()), not
 here - moving it here would create a circular import between the two
@@ -37,7 +37,7 @@ def created_at_key(record: dict) -> datetime:
     aware timestamps are converted to local time and stripped of
     tzinfo here.
 
-    Public (not `_`-prefixed) because devtools/app.py needs it too, to
+    Public (not `_`-prefixed) because frontend/app.py needs it too, to
     sort the board it builds from get_latest_for_all_goals().
     """
     parsed = datetime.fromisoformat(record["created_at"])
@@ -57,7 +57,7 @@ def get_history_for_goal(goal_id: int) -> list[dict]:
 
     Each record's `feedback` responds to the previous record's
     `right_now`; returning the whole chain lets a template render it
-    as one conversation. See devtools/html/_active_goal.html.
+    as one conversation. See frontend/templates/_active_goal.html.
     """
     return [r for r in load_history() if r["goal_id"] == goal_id]
 
@@ -97,7 +97,7 @@ def get_latest_for_all_goals() -> list[dict]:
     and keeping the last record seen per goal_id - not meaningful on
     its own. Deciding which goals are "active" vs "completed", and how
     to group or sort them for display, is left to the caller (see
-    devtools/app.py, where the board is built from this).
+    frontend/app.py, where the board is built from this).
     """
     latest_by_goal: dict[int, dict] = {}
     for record in load_history():

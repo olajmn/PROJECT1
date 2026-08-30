@@ -5,7 +5,7 @@ for the personal AI agent - a map of what a complete version of the agent
 needs, not an implementation of it.
 
 It exists alongside, not instead of, the **prototype / existing
-implementation** in `backend/` and `devtools/`. Nothing there is touched,
+implementation** in `backend/` and `frontend/`. Nothing there is touched,
 moved, or migrated by anything in this directory. The prototype remains the
 only thing that actually runs.
 
@@ -48,7 +48,7 @@ only thing that actually runs.
 
 ## Relationship to the prototype
 
-The prototype (`backend/`, `devtools/`) already proves several of these
+The prototype (`backend/`, `frontend/`) already proves several of these
 components work in practice: Vision, Goal, Plan, Action, Feedback, temporal
 understanding (a Faculty), and persistence. Where that's true, the relevant
 `README.md` here says so explicitly and points at the prototype file as the

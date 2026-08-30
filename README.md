@@ -26,7 +26,7 @@ The backend is organized around four categories, not one folder-per-feature:
 | **Domain** | What does the system operate on? | Goals, Planning, Time |
 | **Faculty** | What can the agent understand or interpret, reusably? | Temporal understanding (`foundation/time/`) |
 | **Infrastructure** | What moves or stores data without understanding it? | `infrastructure/data_persistence.py` |
-| **Interface** | How does a human reach the agent? | `devtools/` |
+| **Interface** | How does a human reach the agent? | `frontend/` |
 
 A Domain-to-Faculty relationship is not automatic: `time/` is the only
 Domain that has produced an established Faculty (temporal
@@ -40,18 +40,17 @@ long-term architecture are in
 define goal → plan → action → feedback → replan (`goals/`, `planning/`,
 `foundation/`) live there. In the current implementation, part of that
 loop's control flow — which kind of feedback a note is, and whether it
-triggers `replan()` — is decided inside `devtools/app.py`'s routes
+triggers `replan()` — is decided inside `frontend/app.py`'s routes
 rather than inside `backend/` itself.
 
 Everything else supports building or verifying the agent:
 
-- `devtools/` — a local Flask UI for talking to the agent through a
+- `frontend/` — a local Flask UI for talking to the agent through a
   browser. Meant as a client of the backend, not a component of it —
   though today it also carries some of the feedback→replan routing
   logic described above.
 - `tools/` — standalone dev utilities (`project_check.py`,
-  `docs_lint.py`, an architecture diagram generator). No runtime
-  relationship to the agent.
+  `docs_lint.py`). No runtime relationship to the agent.
 - `docs/` — the project's documentation vault (architecture, decisions,
   development history).
 - `data/` — local, git-ignored storage for plans and history.
@@ -70,7 +69,7 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 
 # 3. Run the local web UI (must run from the project root, with -m):
-.venv/bin/python -m devtools.app
+.venv/bin/python -m frontend.app
 ```
 
 No cloud LLM, no external API key, and no network access is required —
@@ -81,12 +80,12 @@ the agent calls a model running on the same machine.
 `tools/project_check.py` is a deterministic scan, not an understanding
 of the project. It checks git status; whether a fixed list of
 explicitly named entry-point modules — not every file under `backend/`
-and `devtools/` — still import cleanly; and, as a separate mechanical
-check, `pyflakes` output for `backend/` and `devtools/`. It also runs
+and `frontend/` — still import cleanly; and, as a separate mechanical
+check, `pyflakes` output for `backend/` and `frontend/`. It also runs
 `docs_check.py` (the `docs/` vault's own structural integrity —
 expected files, `[[wikilinks]]`, headings) as a sub-check, and
 separately scans code comments/docstrings under `backend/`,
-`devtools/`, and `tools/` for `backend/…`/`devtools/…` `.py` paths that
+`frontend/`, and `tools/` for `backend/…`/`frontend/…` `.py` paths that
 no longer resolve to a real file. Nothing it reports is a judgment
 about whether the project's design is correct. Run it before trusting
 a claim about current state:

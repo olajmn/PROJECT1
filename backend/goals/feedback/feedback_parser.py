@@ -126,7 +126,7 @@ def parse_outcome(text: str) -> str | None:
 
     None means "genuinely don't know" - callers must never treat it as
     a guessed default toward a risky outcome (action_completed/
-    goal_completed); see devtools/app.py's /feedback route, which
+    goal_completed); see frontend/app.py's /feedback route, which
     falls back to the same safe no-op behavior as an explicit
     "action_in_progress" for anything unrecognized.
 
@@ -157,7 +157,7 @@ def parse_outcome(text: str) -> str | None:
 # Is the user asking to change the goal's duration, instead of
 # reporting progress? A different question entirely from OUTCOME
 # PARSING above, not a fifth outcome - checked separately, and before,
-# parse_outcome() in devtools/app.py's /feedback route.
+# parse_outcome() in frontend/app.py's /feedback route.
 # ---------------------------------------------------------------------------
 
 # Replaces the old standalone "Extend timeframe" form - typing the
@@ -184,7 +184,7 @@ def requests_duration_change(text: str) -> bool:
     True if `text` is asking to change the goal's duration (e.g. "can
     we change timeframe", "I need more time") rather than reporting on
     progress. Checked separately from, and before, parse_outcome() in
-    devtools/app.py's /feedback route - this isn't a fifth outcome,
+    frontend/app.py's /feedback route - this isn't a fifth outcome,
     it's a different kind of message entirely, so it can't live in
     parse_outcome() without that function starting to return two
     unrelated kinds of answer from one call.

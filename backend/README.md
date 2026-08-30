@@ -72,9 +72,9 @@ narrower mechanisms it calls into.
 
 ## Where the interface lives
 
-`devtools/` (the local web UI for talking to this agent) is a
+`frontend/` (the local web UI for talking to this agent) is a
 top-level sibling of `backend/`, not a subpackage inside it - see
-`../devtools/README.md` and `../docs/03-architecture.md`
+`../frontend/README.md` and `../docs/03-architecture.md`
 § Long-term architecture for why: it's the channel a human reaches the agent
 through, not part of the agent's own cognition.
 

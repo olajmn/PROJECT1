@@ -2,11 +2,11 @@
 
 > How the agent is structured: what it's made of, how the pieces relate, and what principles guide how it grows. The map, not a master note — not the story of how this structure was reached (see [[06-development]]), not the reasoning behind a specific choice (see [[05-decisions]]), and not what's actually implemented right now (see [[04-current-state]]).
 
-## 1. Architectural overview
+## 1. Architectural Overview
 
 ### Diagram
 
-See `03-architecture.drawio` in this folder — a visual map of the agent's architecture and its planned extensions. Green indicates built components; gray dashed elements are planned.
+See [[04-current-state]] § Visual Overview for a diagram of the agent's actual current structure. This document (VISION + NOW) has no single visual counterpart of its own — the long-term architecture described in § 6 below is not yet built, so there is nothing yet to diagram beyond what `04-current-state.md` already shows.
 
 ### Program
 
@@ -22,36 +22,36 @@ The conceptual model behind that progression, clarified 2026-08-26 (see [[06-dev
 - **Action** — what the user does right now. The narrowest, most immediate horizon of Plan.
 - **Feedback** — what actually happened, reported back by the user.
 
-Vision sits above this loop, providing optional context; it does not sit inside it. See § Long-term architecture for what "above" means concretely, and for why Action/Task/`right_now`/"today's task" are the same concept under different names.
+Vision sits above this loop, providing optional context; it does not sit inside it. See § Vision for what "above" means concretely; see [[06-development]] for why Action/Task/`right_now`/"today's task" are the same concept under different names.
 
 ### Three architectural lenses
 
-| Dimension     | Question                        | Examples                                      |
-| ------------- | ------------------------------- | ---------------------------------------------- |
-| **Domains**   | What does the system operate on? | Time, Goals, Planning, Conversation, Knowledge |
+| Dimension | Question | Examples |
+|---|---|---|
+| **Domains** | What does the system operate on? | Time, Goals, Planning, Conversation, Knowledge |
 | **Faculties** | What can the agent understand or interpret? | Temporal understanding, Language, Semantics |
-| **Pipeline**  | What happens, in what order?    | User → Reasoning → Planning → Action → Result |
+| **Pipeline** | What happens, in what order? | User → Reasoning → Planning → Action → Result |
 | **Infrastructure** | What technical machinery supports the system? | Persistence, storage, external services |
 
 These are complementary views of the same system rather than competing structures.
 
 ---
 
-## 2. System structure
+## 2. System Structure
 
 ### Domains
 
 A **Domain** is an area of responsibility or subject matter that the system operates on.
 
-| Domain       | Responsibility                            |
-| ------------ | ------------------------------------------ |
-| Time         | Durations, timeframes, dates, deadlines   |
-| Goals        | Define and manage user goals              |
-| Planning     | Turn goals into plans and revise them     |
-| Tasks        | Represent concrete actions                |
-| Conversation | Interaction between user and agent        |
-| History      | Preserve and retrieve past activity       |
-| Knowledge    | Retrieve relevant user-provided knowledge |
+| Domain | Responsibility |
+|---|---|
+| Time | Durations, timeframes, dates, deadlines |
+| Goals | Define and manage user goals |
+| Planning | Turn goals into plans and revise them |
+| Tasks | Represent concrete actions |
+| Conversation | Interaction between user and agent |
+| History | Preserve and retrieve past activity |
+| Knowledge | Retrieve relevant user-provided knowledge |
 
 `right_now` is currently represented inside the plan structure, but architecturally it should eventually represent an action or trigger rather than another time horizon.
 
@@ -59,7 +59,7 @@ A **Domain** is an area of responsibility or subject matter that the system oper
 
 A **Faculty** is a reusable area of agent understanding that is not tied to one Domain or one pipeline stage.
 
-A Domain does not automatically get its own Faculty just because the agent needs to reason about it. Time, for example, is a Domain (what the system operates on); temporal understanding is the corresponding Faculty (the agent's reusable capability to interpret it - recognizing what "this weekend" means, comparing durations, etc.). Temporal understanding is the first established Faculty. Other candidates include Language and Semantics, but a Faculty should emerge through actual reuse across the system rather than being created purely as a conceptual category.
+A Domain does not automatically get its own Faculty just because the agent needs to reason about it. Time, for example, is a Domain (what the system operates on); temporal understanding is the corresponding Faculty (the agent's reusable capability to interpret it — recognizing what "this weekend" means, comparing durations, etc.). Temporal understanding is the first established Faculty. Other candidates include Language and Semantics, but a Faculty should emerge through actual reuse across the system rather than being created purely as a conceptual category.
 
 ### Infrastructure
 
@@ -85,11 +85,11 @@ A Domain describes **what the system operates on**.
 A Faculty describes **what the agent understands**.
 The Pipeline describes **what happens, and in what order**.
 
-The Action stage is reasoning-only today - the agent doesn't yet perform external actions (creating a file, calling an API). Building that out is a parked idea: see [[06-development]] § Parking Lot.
+The Action stage is reasoning-only today — the agent doesn't yet perform external actions (creating a file, calling an API). Building that out is a parked idea: see [[06-development]] § Parking Lot.
 
 ---
 
-## 3. Runtime architecture
+## 3. Runtime Architecture
 
 ```text
 UI
@@ -111,25 +111,25 @@ The backend is therefore treated as the durable core, while interfaces are repla
 
 ---
 
-## 4. Architectural principles
+## 4. Architectural Principles
 
-### 1. Local-first
+### Local-first
 
 The user's device remains the authoritative copy of their data.
 
-### 2. Portable
+### Portable
 
 User data should remain in open, human-readable formats where practical.
 
-### 3. Replaceable infrastructure
+### Replaceable infrastructure
 
 Cloud services, synchronization servers and external APIs are dependencies, not the source of truth.
 
-### 4. Privacy by architecture
+### Privacy by architecture
 
 Sensitive personal data should remain local where possible. If synchronization is introduced, it should preserve end-to-end encryption and user ownership.
 
-### 5. Start simple
+### Start simple
 
 Do not introduce databases, vector stores, services or distributed infrastructure until the current implementation creates a real, felt need for them.
 
@@ -139,7 +139,7 @@ See [[05-decisions]] for the reasoning behind specific architectural decisions.
 
 ---
 
-## 5. Architectural components
+## 5. Architectural Components
 
 ### Time — Domain / Temporal understanding — Faculty
 
@@ -147,10 +147,10 @@ Time is a Domain (durations, timeframes, dates, deadlines); temporal understandi
 
 It handles concepts such as:
 
-* temporal expression matching
-* duration resolution
-* fixed goal timeframes
-* relative duration comparison
+- temporal expression matching
+- duration resolution
+- fixed goal timeframes
+- relative duration comparison
 
 Time interpretation is deliberately separated from LLM reasoning: **code decides, the model is told**.
 
@@ -172,11 +172,11 @@ Feedback
 Replan
 ```
 
-See § Vision below for a concept above this pipeline, providing optional shared context for multiple Goals - distinct from Plan and not a new stage here.
+See § Vision below for a concept above this pipeline, providing optional shared context for multiple Goals — distinct from Plan and not a new stage here.
 
 ### Vision — context shared across Goals
 
-> Minimal representation implemented 2026-08-26 (see [[06-development]]). Naming and scope were exploratory before this date; both are now settled as described here. Not a Domain, not a Faculty, not a pipeline stage - see § Domains/Faculties above and "Architectural placement" below for why.
+> Minimal representation implemented 2026-08-26 (see [[06-development]]). Naming and scope were exploratory before this date; both are now settled as described here. Not a Domain, not a Faculty, not a pipeline stage — see § Domains/Faculties above and "Architectural placement" below for why.
 
 Vision represents the user's broader direction or desired future, optionally providing shared context for more than one Goal. It sits above the Goal → Plan → Action → Feedback → Replan loop, not inside it:
 
@@ -195,20 +195,20 @@ Feedback
  ↺
 ```
 
-Two things distinguish a real Vision from a renamed Plan - this distinction is the reason the concept was worth building at all, not just documenting:
+Two things distinguish a real Vision from a renamed Plan — this distinction is the reason the concept was worth building at all, not just documenting:
 
-- A single goal's own longer-horizon content ("write lyrics, book studio time" for "make a song") is scoped to *one* goal_id. That's Plan, at a broad timescale - already correctly Plan, not Vision, and unchanged by any of this.
-- "Improve physical health and quality of life" informing *several independent* goals ("get visible abs," "improve cardio," "improve sleep") is scoped across goal_ids. Nothing represented this before 2026-08-26 - this is what Vision actually is.
+- A single goal's own longer-horizon content ("write lyrics, book studio time" for "make a song") is scoped to *one* goal_id. That's Plan, at a broad timescale — already correctly Plan, not Vision, and unchanged by any of this.
+- "Improve physical health and quality of life" informing *several independent* goals ("get visible abs," "improve cardio," "improve sleep") is scoped across goal_ids. Nothing represented this before 2026-08-26 — this is what Vision actually is.
 
-**What's built.** A Vision is `{id, user_id, text, created_at}`, stored in its own file, `data/visions.json` - deliberately separate from `data/plans.json`, no relation between the two beyond a Goal record optionally carrying the id (see below). Created via the "Set a vision" form (`devtools/html/set_goal/_vision_form.html`, `POST /vision`); listed and selectable when creating a goal. A Goal record may carry an optional `vision_id` (see `backend/infrastructure/data_persistence.py`'s `save_plan()`/`save_vision()`/`load_visions()`/`get_vision()`) - `None` is the normal case, not a gap to fill in. Set once at goal creation, carried forward unchanged across every later replan for that goal (same treatment as `frozen_duration`: a goal's Vision doesn't change just because its Plan does). In the interface, goals sharing a `vision_id` render grouped under its heading, above the goal collection, never inside an individual goal's card (`devtools/app.py`'s `_group_active_by_vision()`) - Vision is not styled as another Plan time horizon (see `devtools/css/style.css`'s `.vision-heading`, deliberately distinct from `.model-label`).
+**What's built.** A Vision is `{id, user_id, text, created_at}`, stored in its own file, `data/visions.json` — deliberately separate from `data/plans.json`, no relation between the two beyond a Goal record optionally carrying the id (see below). Created via the "Set a vision" form (`frontend/templates/set_goal/_vision_form.html`, `POST /vision`); listed and selectable when creating a goal. A Goal record may carry an optional `vision_id` (see `backend/infrastructure/data_persistence.py`'s `save_plan()`/`save_vision()`/`load_visions()`/`get_vision()`) — `None` is the normal case, not a gap to fill in. Set once at goal creation, carried forward unchanged across every later replan for that goal (same treatment as `frozen_duration`: a goal's Vision doesn't change just because its Plan does). In the interface, goals sharing a `vision_id` render grouped under its heading, above the goal collection, never inside an individual goal's card (`frontend/view_data/goal_overview.py`'s `group_active_by_vision()`) — Vision is not styled as another Plan time horizon (see `frontend/css/style.css`'s `.vision-heading`, deliberately distinct from `.model-label`).
 
-**What's not built, on purpose.** No editing or deleting an existing Vision (create-only). No automatic goal generation from a Vision, and no Vision text supplied to the LLM yet at all - `generate_plan()`/`replan()` (`backend/goals/plan/planner.py`) both currently ignore a goal's `vision_id` entirely; their docstrings mark the exact spot where a short Vision summary could eventually be appended to the model's context, the same way `duration` already is. The relationship, if that's ever built, stays "Vision contextualizes Goals," never "Vision generates Goals."
+**What's not built, on purpose.** No editing or deleting an existing Vision (create-only). No automatic goal generation from a Vision, and no Vision text supplied to the LLM yet at all — `generate_plan()`/`replan()` (`backend/goals/plan/planner.py`) both currently ignore a goal's `vision_id` entirely; their docstrings mark the exact spot where a short Vision summary could eventually be appended to the model's context, the same way `duration` already is. The relationship, if that's ever built, stays "Vision contextualizes Goals," never "Vision generates Goals."
 
-**Why this shape.** [[05-decisions]] already considered essentially this need once before, from a different angle - "multiple life-domains (health/work/finance) reasoning about each other" - and concluded it should be lightweight context, not a relational join. This implementation follows that precedent: a small separate id+text store plus an optional foreign-key-style reference, the same pattern `goal_id` itself already uses, not a hierarchy. Duplicating the Vision's text directly onto every goal record (instead of a shared id) was rejected for the same reason goal identity moved off free-text years ago in this project's own history: two goals with independently-typed, slightly different vision text would silently fork into two visions instead of sharing one. See [[05-decisions]] for the full comparison of alternatives.
+**Why this shape.** [[05-decisions]] already considered essentially this need once before, from a different angle — "multiple life-domains (health/work/finance) reasoning about each other" — and concluded it should be lightweight context, not a relational join. This implementation follows that precedent: a small separate id+text store plus an optional foreign-key-style reference, the same pattern `goal_id` itself already uses, not a hierarchy. Duplicating the Vision's text directly onto every goal record (instead of a shared id) was rejected for the same reason goal identity moved off free-text years ago in this project's own history: two goals with independently-typed, slightly different vision text would silently fork into two visions instead of sharing one. See [[05-decisions]] for the full comparison of alternatives.
 
 [[00-project-brief]] § Product Philosophy's "the life domain is secondary" remains a standing caution, not a blocker: Vision stays optional context a Goal can carry, never a required organizing layer every Goal must sit under.
 
-**Architectural placement.** Not a Domain, Faculty, or pipeline stage. Per the Faculty rule applied elsewhere in this document (see [[05-decisions]], "Faculty categorization"), nothing here has demonstrated reusable understanding across Domains - Vision's storage functions live directly in `data_persistence.py` (Infrastructure: they move/store, they don't interpret), and its only consumers today are Goals/Planning.
+**Architectural placement.** Not a Domain, Faculty, or pipeline stage. Per the Faculty rule applied elsewhere in this document (see [[05-decisions]], "Faculty categorization"), nothing here has demonstrated reusable understanding across Domains — Vision's storage functions live directly in `data_persistence.py` (Infrastructure: they move/store, they don't interpret), and its only consumers today are Goals/Planning.
 
 ### Knowledge — Domain
 
@@ -228,7 +228,7 @@ Reasoning
 
 The implementation should remain local and simple until scale creates a real need for dedicated retrieval infrastructure.
 
-A fact-checking capability built on top of this Domain - verifying a claim against retrieved sources rather than answering from training alone - is a parked idea, not yet designed: see [[06-development]] § Parking Lot.
+A fact-checking capability built on top of this Domain — verifying a claim against retrieved sources rather than answering from training alone — is a parked idea, not yet designed: see [[06-development]] § Parking Lot.
 
 ### Memory — Domain
 
@@ -246,12 +246,12 @@ World represents live external information and services the agent may eventually
 
 World is distinct from Knowledge:
 
-* **Knowledge** = material the user has supplied
-* **World** = live information from external systems
+- **Knowledge** = material the user has supplied
+- **World** = live information from external systems
 
 ---
 
-## 6. Long-term architecture
+## 6. Long-Term Architecture
 
 > Vision, not current implementation.
 
@@ -338,7 +338,7 @@ See § Parking Lot in [[06-development]] for two smaller, related interface idea
 
 ## See also
 
-* [[02-product]]
-* [[04-current-state]]
-* [[05-decisions]]
-* [[06-development]]
+- [[02-product]]
+- [[04-current-state]]
+- [[05-decisions]]
+- [[06-development]]

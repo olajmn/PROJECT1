@@ -23,6 +23,6 @@ routed to, not owned by any single one of them.
 
 ## Reference implementation
 
-None yet. `devtools/html/active_goal/_conversation.html` in the prototype
+None yet. `frontend/templates/active_goal/_conversation.html` in the prototype
 renders something conversation-shaped, but it's a per-goal view built from
 `goals/feedback/` records, not an independent Conversation capability.

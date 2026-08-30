@@ -28,10 +28,10 @@
     <p>No active goals.</p>
   {% else %}
     {# Vision sits above the Goal collection, not inside any one Goal's
-       card (see docs/03-architecture.md § Long-term architecture) -
-       goals sharing a vision_id render grouped under its heading;
-       goals with none (the normal case) render after, unheaded. See
-       app.py's _group_active_by_vision(). #}
+       card (see docs/03-architecture.md § Vision) - goals sharing a
+       vision_id render grouped under its heading; goals with none
+       (the normal case) render after, unheaded. See
+       frontend/view_data/goal_overview.py's group_active_by_vision(). #}
     {% for vision, records in vision_groups %}
       {% if vision %}
         <div class="vision-heading">

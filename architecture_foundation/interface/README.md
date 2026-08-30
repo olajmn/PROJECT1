@@ -30,6 +30,6 @@ README. Not a separate component; folded in here deliberately.
 
 ## Reference implementation
 
-`devtools/` in the prototype - a local Flask/Jinja devtool, explicitly not
+`frontend/` in the prototype - a local Flask/Jinja devtool, explicitly not
 the product's eventual real frontend (see that directory's own README in
 the prototype).

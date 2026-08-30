@@ -34,7 +34,7 @@ The long-term vision is a personal agent that tries to increase the probability 
 
 The agent can potentially operate across many different timescales:
 
-```
+```text
 10 years
  ↓
 5 years
@@ -141,7 +141,7 @@ This is the technically interesting part.
 
 A simple AI function:
 
-```
+```text
 Input
 ↓
 LLM
@@ -151,7 +151,7 @@ Output
 
 An agent:
 
-```
+```text
 Goal
 ↓
 Plan
@@ -169,10 +169,7 @@ Replans
 Acts again
 ```
 
-The agent will require mechanisms for memory, state, planning, time,
-communication and eventually action. The exact technical implementation
-is deliberately left open — see [[03-architecture]] for what's actually
-been built.
+The agent will require mechanisms for memory, state, planning, time, communication and eventually action. The exact technical implementation is deliberately left open — see [[03-architecture]] for what's actually been built.
 
 It's the system around the LLM that makes an agent harder to build than a simple AI function.
 
@@ -180,13 +177,13 @@ The project does not require building or training its own foundation model.
 
 ## 6. How Hard Is It?
 
-### A Possible First Version
+### A possible first version
 
 Relatively achievable.
 
 A first version could be:
 
-```
+```text
 User writes a goal
 ↓
 LLM creates a plan
@@ -202,7 +199,7 @@ LLM can adjust the plan
 
 This is a realistic project to build while learning backend development.
 
-### Full Vision
+### Full vision
 
 Significantly harder.
 
@@ -292,7 +289,7 @@ If we find that the problem is interesting but our solution is wrong → we chan
 
 So the first idea doesn't have to be the final idea.
 
-## Short Version
+## Short version
 
 **Vision:**
 
