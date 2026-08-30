@@ -143,11 +143,11 @@ DAY_FRACTIONS = {
 # time, both in [0, 24). "night" wraps past midnight (23 -> 6), handled
 # specially in time_logic.resolve_duration(). This is the code
 # actually *knowing* what "evening" means (a real clock window) instead
-# of handing the raw word to the model and hoping it guesses sensibly -
-# see docs/06-development.md, 2026-08-19. Moved to this section
-# 2026-08-21 - matched directly by its own key, the same self-contained
-# way PERIOD_PHRASES just below is, not via a value table + separate
-# matching regex the way section 2's segments/fractions are.
+# of handing the raw word to the model and hoping it guesses sensibly
+# (see docs/06-development.md). Matched directly by its own key, the
+# same self-contained way PERIOD_PHRASES just below is, not via a value
+# table + separate matching regex the way section 2's segments/
+# fractions are.
 #
 # English only (see CONVENTIONS.md) - this used to also recognize the
 # Norwegian words for each segment ("morgen"/"formiddag" - morning,
@@ -258,8 +258,8 @@ CLOCK_12H_RE = re.compile(
 CLOCK_24H_RE = re.compile(r"\b([01]\d|2[0-3]):([0-5]\d)\b")
 
 # A deadline tied to a personal routine event, not a clock time - found
-# via real test usage 2026-08-19 ("any time before i got to bed", see
-# docs/06-development.md). Deliberately NOT given the same treatment as
+# via real test usage (see docs/06-development.md). Deliberately NOT
+# given the same treatment as
 # DAY_SEGMENTS: there's no real, known clock time to compute (we don't
 # track when the user actually goes to bed), so resolving this to a
 # fake hour would be inventing grounding that doesn't exist. Recognized

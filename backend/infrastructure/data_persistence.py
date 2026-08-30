@@ -189,17 +189,14 @@ def save_plan(
     actually asked for, not just what came back.
 
     `completed` marks the whole goal (not just one "right_now" step) as
-    done - the user said so explicitly, via the "Goal complete" button,
-    rather than the agent guessing it from a missing next action. See
-    docs/06-development.md, 2026-08-19 entry, for why this exists.
+    done - the user said so explicitly, rather than the agent guessing
+    it from a missing next action.
 
     `goal_id` is the goal's real identity, separate from its display
-    text (see backend/goals/goal/resolver.py's get_latest_for_all_goals()). Pass the existing goal_id when this record
-    continues a goal already in history (e.g. a replan after feedback,
-    or explicitly picking "continue an existing goal"); leave it None
-    for a genuinely new goal, and one is minted here. Callers should
-    never invent a goal_id themselves - always get it from an existing
-    record or from this function's return value.
+    text. Pass the existing goal_id to continue a goal already in
+    history; leave it None for a genuinely new goal (one is minted
+    here). Never invent a goal_id - always get it from an existing
+    record or this function's return value.
 
     There is no `user_id` parameter (unlike `goal_id`): every record is
     stamped with DEFAULT_USER_ID directly, since there is exactly one
@@ -208,39 +205,26 @@ def save_plan(
     yet.
 
     `frozen_duration` is `duration` resolved to a real start/end/
-    description ONCE (see frozen_duration.py §1 - Freezing a duration),
-    stored as-is rather than re-derived from "now" on every later page
-    render - re-deriving it live would silently reset a countdown like
-    "within the next 1 hour" to a full hour on every refresh, instead
-    of counting down from when the goal was actually created. Callers
-    should compute a fresh one when a genuinely new plan/timeframe decision is being
-    made (a new goal, or "continue an existing goal" with a new
-    duration), and otherwise pass the PREVIOUS record's frozen_duration
-    through unchanged (a replan after feedback keeps the same
-    timeframe, it doesn't restart it) - see frontend/app.py's
-    /goal and /feedback routes.
+    description ONCE (see frozen_duration.py §1), stored as-is rather
+    than re-derived from "now" on every page render - re-deriving it
+    live would silently reset a countdown like "within the next 1
+    hour" on every refresh instead of counting down from creation.
+    Compute a fresh one only for a genuinely new plan/timeframe
+    decision; otherwise pass the previous record's value through
+    unchanged (a replan after feedback keeps the same timeframe).
 
-    `current_step` is the index into `plan.steps` (see backend/goals/plan/step_generator.py's
-    `generate_steps()`) that "Action (right now)" actually points at -
-    "right now" isn't its own independent thing once a goal has steps,
-    it's just `plan.steps[current_step]` (see docs/06-development.md's
-    "Plan as an ordered step list" entry, and frontend/app.py's
-    /step route, which is the only thing that ever advances it). 0 (the
-    first step) by default - matches `plan.steps[0]` always equaling
-    `plan.right_now` (see step_generator.generate_steps()), so a goal with no steps at
-    all, or one that's never had this touched, behaves exactly as
-    before.
+    `current_step` is the index into `plan.steps` that "Action (right
+    now)" points at - `plan.steps[current_step]`, not an independent
+    value. 0 by default, matching `plan.steps[0]` always equaling
+    `plan.right_now`.
 
-    `vision_id` (added 2026-08-26) optionally links this goal to a
-    Vision - broader, cross-goal context, not part of the operational
-    goal -> plan -> action -> feedback loop itself (see
-    docs/03-architecture.md § Vision). None is the
-    normal case: most goals have no vision. Like `goal_id`, this is an
-    identity reference, never invented by a caller - pass an id from
-    save_vision()/load_visions(), or an existing record's own
-    `vision_id` to carry it forward unchanged across a replan (a goal's
-    vision doesn't change just because its plan does - same reasoning
-    `frozen_duration` is carried forward rather than recomputed).
+    `vision_id` optionally links this goal to a Vision - broader,
+    cross-goal context, not part of the operational goal -> plan ->
+    action -> feedback loop (see docs/03-architecture.md § Vision).
+    None is the normal case. Like `goal_id`, never invented by a caller
+    - pass an id from save_vision()/load_visions(), or carry the
+    existing record's own `vision_id` forward unchanged across a
+    replan (same reasoning as `frozen_duration`).
 
     Returns the record that was saved (useful for confirming to the user).
     """
@@ -258,11 +242,8 @@ def save_plan(
         "current_step": current_step,
         "completed": completed,
         # Local time, naive (no tzinfo) - matches every other timestamp
-        # in this project (backend/foundation/time/'s whole resolution/
-        # bar/countdown system uses datetime.now(), local). Records
-        # saved before 2026-08-21 stored this in UTC instead; see
-        # resolver.created_at_key() for how mixed-era history is still
-        # sorted correctly despite the format change.
+        # in this project. Older records stored this in UTC; see
+        # resolver.created_at_key() for sorting mixed-era history.
         "created_at": datetime.now().isoformat(),
     }
     records.append(record)

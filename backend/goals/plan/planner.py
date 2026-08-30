@@ -23,16 +23,11 @@ Runs 100% locally - no API key, no internet, no cost. Requires Ollama
 running in the background (start with: brew services start ollama)
 and the model pulled (ollama pull llama3.1:8b).
 
-This file was goal_to_plan.py, then plan.py, then planner.py - "plan"
-generates/orchestrates a plan, it doesn't define one, so the agent noun
-fits its job better than the domain noun did. HORIZON_LABELS/
-join_plan_prose() (presentation), ask_model() (model_client.py), and
-generate_steps()/STEPS_SYSTEM_PROMPT (step_generator.py) have all since
-moved to their own modules - none of them were Plan-orchestration
-itself. PLAN_KEYS stayed - it's genuine Plan shape, passed INTO
-ask_model() as a parameter rather than read by it directly, so the
-split doesn't create a circular import. Full history:
-docs/06-development.md, 2026-08-21/25.
+PLAN_KEYS stays in this module rather than with the helpers that split
+out into their own files - it's genuine Plan shape, passed INTO
+ask_model() as a parameter rather than read by it directly, so keeping
+it here avoids a circular import. See docs/06-development.md for this
+file's naming/reorganization history.
 
 Run from the PROJECT ROOT: .venv/bin/python -m backend.goals.plan.planner
 """
@@ -154,24 +149,17 @@ REPLAN_SYSTEM_PROMPT = (
 
 
 def _now_str() -> str:
-    """
-    Human-readable current local date and time, e.g. "Wednesday,
-    2026-08-19 17:35". Passed to the model on every call so "right now"
-    is grounded in the real current moment instead of the model having
-    no sense of time at all.
-    """
+    """Grounds the model's "right now" in the real current moment - it has no other sense of time."""
     return datetime.now().strftime("%A, %Y-%m-%d %H:%M")
 
 
 def _horizon_scope_instruction(duration: str | None) -> str:
     """
-    The exact "fill these horizons in, leave these as null" line to
-    append to a prompt's user_content - shared by generate_plan() and
-    replan() so both ever compute the boundary the same one way (see
-    frozen_duration.py §3 - Horizon scoping). Always names
-    right_now as one to fill (it's never the broadest relevant horizon
-    itself, but the loop below still includes it since it's always the
-    last/narrowest PLAN_KEYS entry).
+    The "fill these horizons in, leave these as null" line, shared by
+    generate_plan() and replan() so both compute the boundary the same
+    way (see frozen_duration.py §3). right_now is always included in
+    fill_keys - it's always the last/narrowest PLAN_KEYS entry, never
+    the broadest relevant horizon itself.
     """
     broadest = broadest_relevant_horizon(duration)
     start = PLAN_KEYS.index(broadest)
@@ -227,16 +215,11 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
     divide - same reasoning DEADLINE_RE's ungrounded deadlines already
     follow elsewhere in this project.
 
-    Does NOT take a `vision_id`/Vision text yet (added 2026-08-26, see
-    docs/03-architecture.md § Vision) - a goal's
-    optional Vision is stored (data_persistence.save_plan()'s
-    `vision_id`) but not yet supplied to the model here. If/when it is,
-    this is the natural place: a caller would resolve `vision_id` to
-    its text (data_persistence.get_vision()) and add one short line to
-    `user_content` below, the same way `duration` is added - contextual
-    framing for the model, never something Vision generates or decides
-    on its own (see that doc section: "Vision -> contextualizes Goals",
-    not "Vision -> generates every Goal").
+    Does NOT take a `vision_id`/Vision text yet - it's stored
+    (data_persistence.save_plan()'s `vision_id`) but not supplied to
+    the model here. If/when it is, a caller would resolve it to text
+    and add one line to `user_content` below, same as `duration` (see
+    docs/03-architecture.md § Vision).
     """
     user_content = f"The current date and time is: {_now_str()}\n\nMy goal is: {goal}"
     if duration:
@@ -261,57 +244,33 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
 
 def create_goal(typed_text: str, new_vision_text: str, vision_id_value: str) -> dict:
     """
-    Handle the "set a goal" form: generate a fresh plan and save it.
-    `typed_text`, `new_vision_text`, and `vision_id_value` are already
-    read and stripped by the caller (frontend/app.py's new_goal()).
+    Generate a fresh plan for a new goal and save it. `typed_text`,
+    `new_vision_text`, and `vision_id_value` are already read/stripped
+    by the caller.
 
     One text field, not a separate goal/duration pair -
-    `extract_duration_phrase()` (phrase_matching.py §5 - Public entry
-    point) searches whatever was typed for a recognized time phrase
-    anywhere inside it (e.g. "clean the apartment this weekend"), the
-    same matchers a dedicated duration field would use, just applied
-    to the whole sentence. If NOTHING recognized turns up at all,
-    that's treated as "no timeframe given" DETERMINISTICALLY, before
-    even calling the model - a fixed clarifying-question round is
-    saved asking for one, same "code decides, model is just told"
-    reasoning as the horizon-scope fix (see §3 - Time helpers,
-    _horizon_scope_instruction()) rather than relying on the model to
-    reliably notice this itself (see docs/05-decisions.md, 2026-08-23).
+    `extract_duration_phrase()` searches the whole typed text for a
+    recognized time phrase (e.g. "clean the apartment this weekend").
+    If nothing recognized turns up, that's treated as "no timeframe
+    given" DETERMINISTICALLY, before calling the model - same
+    "code decides, model is just told" reasoning as
+    _horizon_scope_instruction() (see docs/05-decisions.md, 2026-08-23).
 
-    Only ever starts a genuinely NEW goal - always requires typed text
-    (enforced by the caller), and mints its own goal_id via
-    save_plan(). Extending an EXISTING goal's timeframe is a
-    conversational flow instead - see apply_feedback()'s
-    requests_duration_change() branch (§7 - Feedback & step handling),
-    which asks for and applies a new duration through the goal's own
-    chat thread via apply_new_duration().
+    Only ever starts a NEW goal (mints its own goal_id via save_plan());
+    extending an EXISTING goal's timeframe goes through
+    apply_feedback()'s requests_duration_change() branch instead.
 
-    Computes a FRESH `frozen_duration` (see
-    backend/foundation/time/time_logic/frozen_duration.py's
-    freeze_duration()) whenever a real plan comes back - EXCEPT when
-    generate_plan() comes back with `clarification` set instead (see
-    that function's docstring) - the goal as typed was too vague in
-    CONTENT (a bare noun/verb, e.g. "read") to plan at all, a different
-    case from missing TIME below. That round is saved too (as a new
-    active goal entry) so the question shows up in the goal's own
-    conversation thread and the user can answer it right there via the
-    normal feedback box - see apply_feedback() below, which is what
-    actually resolves a pending clarification into a real plan. But its
-    `frozen_duration` is left None rather than frozen now: nothing has
-    actually started yet while a question is still pending, so there's
-    no honest countdown to draw until apply_feedback() resolves it into
-    a real plan and freezes it then.
+    `frozen_duration` is left None when generate_plan() comes back with
+    `clarification` set (goal too vague in CONTENT to plan at all) -
+    nothing has actually started yet, so there's no honest countdown to
+    draw until apply_feedback() resolves the clarification into a real
+    plan. Frozen for real only once that happens.
 
-    `vision_id`/`new_vision` (added 2026-08-26): optional. A goal can
-    be linked to an existing Vision (the `vision_id` select) or a
-    freshly-typed one (`new_vision`, created here via save_vision() if
-    non-empty - checked first, so typing a new one always wins over
-    whatever the select happened to have selected). Neither is
-    required - most goals have no vision at all, and that's the normal
-    case, not a partial state. Set once, at creation, like `goal_id`
-    itself; carried forward unchanged on every later replan for this
-    goal (see apply_new_duration() and apply_feedback() below) - a
-    goal's vision doesn't change just because its plan does.
+    `new_vision_text` is checked before `vision_id_value` - typing a
+    new Vision always wins over whatever the select had chosen.
+    Neither is required; carried forward unchanged on every later
+    replan for this goal (a goal's vision doesn't change just because
+    its plan does).
     """
     if new_vision_text:
         vision_id = save_vision(new_vision_text)["id"]
@@ -322,12 +281,9 @@ def create_goal(typed_text: str, new_vision_text: str, vision_id_value: str) -> 
 
     duration = extract_duration_phrase(typed_text)
     if duration is None:
-        # Nothing recognized as a timeframe anywhere in what was
-        # typed - ask, deterministically, without spending a model
-        # call to find that out. Every other horizon stays JSON
-        # null (nothing planned yet), matching the shape a
-        # content-vagueness clarification from generate_plan()
-        # already has (see that function's docstring).
+        # Ask, deterministically, without a model call. Every other
+        # horizon stays null, matching a content-vagueness
+        # clarification's shape (see generate_plan()'s docstring).
         clarification_plan = {key: None for key in PLAN_KEYS}
         clarification_plan["clarification"] = "When do you want to do this, or how long should it take?"
         clarification_plan["steps"] = None
@@ -347,23 +303,15 @@ def create_goal(typed_text: str, new_vision_text: str, vision_id_value: str) -> 
 
 def replan(goal: str, history: list[dict], feedback: str, duration: str | None = None) -> dict:
     """
-    Takes the goal, the goal's full history so far (every record saved
-    for it, oldest first - see storage.get_history_for_goal()), and the
-    user's feedback on the most recent "right_now" action, then asks the
-    model to produce an updated plan. `duration` is the same span
-    originally given to generate_plan() (if any) - passed again here so
-    the model keeps respecting it on every replan, not just the first
-    call. Returns a dict with the same shape as generate_plan().
+    Takes the goal, its full history (oldest first), and feedback on
+    the most recent "right_now" action, and asks the model for an
+    updated plan. Returns the same shape as generate_plan().
 
-    Passing the *whole* history (not just the previous plan) is what
+    Passing the *whole* history, not just the previous plan, is what
     lets REPLAN_SYSTEM_PROMPT's "don't shrink right_now more than once"
-    rule actually work - a model only ever shown the single most recent
-    step has no way to notice it has already made the same task smaller
-    several times in a row. Without it, a goal's right_now can drift -
-    e.g. from "research 4 companies" down to "check the news for 30
-    seconds" over 13 replans (2026-08-20), never advancing toward the
-    goal's actual action (sending an application) - see
-    docs/06-development.md.
+    rule work - a model shown only the last step can't notice it has
+    already made the same task smaller several times in a row (see
+    docs/06-development.md, 2026-08-20, for the drift this fixed).
 
     Same Vision note as generate_plan() above: not supplied here either yet.
     """
@@ -396,27 +344,14 @@ def apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
     """
     Regenerate `existing`'s plan around a new duration span - the
     shared logic behind /feedback's conversational
-    requests_duration_change() flow (frontend/app.py; asking for and
-    applying a new timeframe through the goal's own chat thread).
+    requests_duration_change() flow.
 
-    Always calls generate_plan() again, never just patches
+    Always calls generate_plan() again rather than patching
     duration/frozen_duration onto the existing record: changing the
-    timeframe is a real new planning decision (new horizons filled, a
-    new step list from step_generator.py's generate_steps()), not a
-    countdown edit. frozen_duration_for() handles the case where the
-    new duration turns out too vague in CONTENT to plan at all
-    (generate_plan() comes back with `clarification` set) - nothing has
-    actually started yet in that case, same reasoning /goal and
-    /feedback's own clarification handling already follow.
-
-    `feedback` is the user's own raw typed note (e.g. "5 months", or
-    "can we change timeframe to 1 hour") - stored as-is, same as every
-    other /feedback branch does with `note`, so it shows up as the
-    "You" message in the conversation thread.
-
-    `existing["vision_id"]` is carried forward unchanged, same as
-    `goal_id` - a changed duration is still the same goal continuing,
-    not a new decision about which Vision it belongs to.
+    timeframe is a real new planning decision (new horizons, a new
+    step list), not a countdown edit. `existing["vision_id"]` is
+    carried forward unchanged, same as `goal_id` - a changed duration
+    doesn't change which Vision the goal belongs to.
     """
     plan = generate_plan(existing["goal"], duration)
     return save_plan(
@@ -433,18 +368,13 @@ def apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
 
 def apply_feedback(latest: dict, note: str) -> dict:
     """
-    Handle the "what's going on" form: classify the free-text note into
-    an outcome (see feedback_parser.parse_outcome() - no LLM,
-    recognized phrases only), then act on it exactly as the old
-    Yes/Still working on it/No/Goal complete buttons used to. There's
-    no separate "outcome" field anymore - the note itself is the only
-    signal, so typing doesn't mean picking which of four boxes your
-    situation best fits; see docs/05-decisions.md, 2026-08-20, for why
-    this replaced the buttons and why it still never lets an LLM decide
-    true/false.
+    Classify the free-text note into an outcome (parse_outcome() - no
+    LLM, recognized phrases only) and act on it. The note itself is the
+    only signal - no separate "outcome" field (see docs/05-decisions.md,
+    2026-08-20, for why, and why this never lets an LLM decide true/false).
 
-    Before any of that, two earlier checks can take over the note
-    entirely instead of treating it as a progress report:
+    Before that, two earlier checks can take over the note entirely
+    instead of treating it as a progress report:
     - `plan.clarification` set -> the note ANSWERS a pending question
       about the goal itself (see that branch below).
     - `plan.pending_duration_question` set -> the note answers "how
@@ -470,45 +400,27 @@ def apply_feedback(latest: dict, note: str) -> dict:
     duration = latest.get("duration")
 
     if latest["plan"].get("clarification"):
-        # This goal has no real plan yet - the agent asked a clarifying
-        # question instead (see generate_plan()'s docstring), and
-        # `note` is the ANSWER to that question, not a status report on
-        # a task that doesn't exist yet. Route it through generate_plan()
-        # again (not replan(), which is built entirely around "did you
-        # complete right_now" - there is no right_now here to have
-        # completed), never through parse_outcome() below: an answer
-        # like "speed and comprehension" isn't an
-        # action_completed/action_not_completed/action_in_progress
-        # signal at all, forcing it through that parser would be a
-        # category error, not just an inaccurate guess.
+        # No real plan yet - `note` answers the clarifying question, not
+        # a status report. Routed through generate_plan() (not replan(),
+        # built around right_now completion; not parse_outcome(), which
+        # would force an answer like "speed and comprehension" through
+        # outcome categories that don't apply).
         #
-        # Every prior answer in this goal's history rides along too,
-        # not just this latest note - same reasoning replan() passing
-        # the FULL history (not just the last round) already follows:
-        # a two-round clarification ("what aspect?" -> "speed" -> "how
-        # much time do you have?" -> "20 min") needs both answers
-        # together, or the second call would re-ask something the first
-        # answer already covered. Every record in this goal's history
-        # is guaranteed to be a clarification round (this branch only
-        # ever runs while `clarification` keeps coming back), so every
-        # past `feedback` here really is a prior answer, safe to join
-        # as-is.
+        # Joins every prior answer, not just this note (same reasoning
+        # as replan()'s full-history pass) - a multi-round clarification
+        # needs all answers together, or the next call re-asks what's
+        # already covered. Safe here: this branch only runs while
+        # `clarification` keeps recurring, so every past `feedback` in
+        # this goal's history is a prior answer.
         prior_answers = [r["feedback"] for r in get_history_for_goal(latest["goal_id"]) if r.get("feedback")]
         combined_goal = " - ".join([latest["goal"], *prior_answers, note])
         # `duration` can still be None here specifically when this
-        # clarification IS the "When do you want to do this, or how
-        # long should it take?" question (see create_goal()'s
-        # deterministic missing-timeframe check) - the answer to THAT
-        # question is a duration phrase, not just more goal content, so
-        # it needs the same extract_duration_phrase() extraction
-        # create_goal()'s own new-goal path already does - otherwise a
-        # real answer like "this week" stays lost as untyped prose
-        # forever (2026-08-23: "Your answer" never produced a real plan
-        # for exactly this class of clarification). Only attempted
-        # while duration is still unknown - an already-known duration
-        # (a content-vagueness clarification, e.g. "read") is left
-        # alone, since `note` there answers a different question
-        # entirely and isn't a timeframe to (mis)parse.
+        # clarification IS create_goal()'s missing-timeframe question -
+        # the answer is a duration phrase, not more goal content, so it
+        # needs the same extraction create_goal() does, or it stays
+        # lost as untyped prose. Skipped when duration is already known
+        # (a content-vagueness clarification) - `note` there answers a
+        # different question, not a timeframe to (mis)parse.
         if duration is None:
             duration = extract_duration_phrase(note)
         plan = generate_plan(combined_goal, duration)
@@ -524,29 +436,20 @@ def apply_feedback(latest: dict, note: str) -> dict:
         )
 
     if latest["plan"].get("pending_duration_question"):
-        # The PREVIOUS record in this goal's thread asked "how long do
-        # you want this to run now?" (see requests_duration_change()
-        # below) - this note is the answer, a duration phrase, not a
-        # status report on right_now. Falls back to the existing
-        # duration unchanged if nothing recognized, same as the old
-        # "Extend timeframe" form's own empty-submit behavior - never
-        # silently wipes a working timeframe just because the answer
-        # wasn't understood.
+        # The PREVIOUS record asked "how long do you want this to run
+        # now?" - this note is the answer, not a status report. Falls
+        # back to the existing duration if nothing recognized - never
+        # silently wipes a working timeframe.
         new_duration = extract_duration_phrase(note) or duration
         return apply_new_duration(latest, new_duration, feedback=note)
 
     if requests_duration_change(note):
         # A request to change the TIMEFRAME, not a progress report -
-        # checked before parse_outcome() so it can never be
-        # misread as one of its four outcomes (see
-        # feedback_parser.requests_duration_change()'s docstring for why
-        # this can't just be another branch in parse_outcome()).
-        #
-        # The new duration might already be IN this same message (e.g.
-        # "can we change timeframe to 1 hour") - checked first so that
-        # case applies it immediately instead of asking a question
-        # already answered in the same breath. Only asks the follow-up
-        # when nothing recognized turns up.
+        # checked before parse_outcome() so it's never misread as one of
+        # its outcomes (see requests_duration_change()'s docstring).
+        # Applies immediately if the new duration is already IN this
+        # message (e.g. "change timeframe to 1 hour"); only asks the
+        # follow-up when nothing recognized turns up.
         new_duration = extract_duration_phrase(note)
         if new_duration:
             return apply_new_duration(latest, new_duration, feedback=note)
@@ -568,13 +471,9 @@ def apply_feedback(latest: dict, note: str) -> dict:
 
     # Inherited unchanged, never recomputed - a check-in isn't a new
     # planning decision, it's the SAME timeframe continuing (see
-    # frozen_duration.py §1 (Freezing a duration) and
-    # infrastructure/data_persistence.py's save_plan() docstring for
-    # why re-deriving this from "now" here was the actual bug). Falls
-    # back to computing one fresh only for a goal saved before
-    # frozen_duration existed (2026-08-21) - a one-time "adopt now" so
-    # it isn't permanently stuck without a bar, not a recurring
-    # recompute.
+    # frozen_duration.py §1). Falls back to computing one fresh only
+    # for a goal saved before frozen_duration existed - a one-time
+    # "adopt now", not a recurring recompute.
     frozen = latest.get("frozen_duration") or freeze_duration(duration)
     classified = parse_outcome(note)
     # Anything not confidently recognized defaults to the same safe
@@ -596,21 +495,15 @@ def apply_feedback(latest: dict, note: str) -> dict:
         )
 
     if outcome_value == "action_in_progress":
-        # Mid-task, not stalled or failed - a real, distinct signal from
-        # "No" (see docs/06-development.md, 2026-08-20): three rapid
-        # "not done" clicks in a row, each meant as "still working on
-        # it", instead shrank the task further each time (30 min -> 15
-        # min -> 5 min, "without even taking a note") because replan()
-        # was told "not done" and reasonably tried to make it easier.
-        # No replan() call here on purpose - check in without asking
-        # the model to change anything, so the plan can't drift just
-        # because time passed. `classified` distinguishes "you said
-        # you're still working on it" from "we genuinely couldn't tell"
-        # - both get the same safe treatment, but the record should be
-        # honest about which one actually happened. The "couldn't tell"
-        # case asks the model for a natural acknowledgment of `note`
-        # (acknowledge() - display text only; it can never change this
-        # branch or fail this route, see its own docstring).
+        # Mid-task, not stalled or failed - a distinct signal from "No"
+        # (see docs/06-development.md, 2026-08-20, for the plan-drift
+        # bug this fixed). No replan() call: check in without asking
+        # the model to change anything. `classified` distinguishes "you
+        # said you're still working on it" from "we couldn't tell" -
+        # both get the same safe treatment, but the record stays honest
+        # about which happened. The "couldn't tell" case asks the model
+        # for a natural acknowledgment of `note` (acknowledge() -
+        # display text only, can never change this branch or fail it).
         prefix = "Still working on it." if classified else acknowledge(note)
         feedback_text = prefix + (f" Note: {note}" if note else "")
         return save_plan(
@@ -637,28 +530,17 @@ def apply_feedback(latest: dict, note: str) -> dict:
 
 def advance_step(latest: dict, done: bool) -> dict:
     """
-    Handle the per-step "Done?" Yes/No control (see
-    frontend/templates/active_goal/_task.html) - advances `current_step` by
-    one, purely by index arithmetic into the goal's already-generated
-    `plan.steps` list. No model call at all: unlike apply_feedback()'s
-    free-text note (which can trigger replan() - the model
-    reconsidering the plan), the step list was already fully decided
-    upfront (see step_generator.generate_steps()), so moving through it
-    is just "which one are we on now", nothing to ask the model about.
+    Advances `current_step` by one - pure index arithmetic into the
+    goal's already-generated `plan.steps` list, no model call (the step
+    list was fully decided upfront by step_generator.generate_steps()).
 
-    `done=False` doesn't move the pointer - it's logged the same safe,
-    no-replan way apply_feedback()'s "in_progress" is, so a step can't
-    be silently reworded/shrunk just because it wasn't done yet either.
+    `done=False` doesn't move the pointer - logged the same safe,
+    no-replan way as apply_feedback()'s "in_progress".
 
     `current_step` can reach `len(steps)` (one past the last valid
-    index, not a real step) to mean "every step is done" - see
-    active_goal/_task.html for how that's shown (no more Yes/No, a
-    prompt to mark the whole goal complete via the existing free-text
-    box instead, not an automatic completion this function decides on
-    its own).
-
-    Returns `latest` unchanged if there's nothing to advance (no step
-    list, or already at "all steps done"); otherwise the saved record.
+    index) to mean "every step is done" - not an automatic goal
+    completion, just what active_goal/_task.html uses to prompt marking
+    the whole goal complete via the free-text box instead.
     """
     steps = latest["plan"].get("steps")
     if not steps:
@@ -693,8 +575,6 @@ def advance_step(latest: dict, done: bool) -> dict:
 # 8. CLI entry point
 # ============================================================
 
-# Only runs when this file is executed directly
-# (not when other files import functions from it)
 if __name__ == "__main__":
     my_goal = input("What do you want to achieve? ")
     print("\nThinking...\n")

@@ -103,14 +103,11 @@ def duration_progress(frozen: dict | None) -> dict | None:
     same_day = start.date() == end.date()
     label_format = "%H:%M" if same_day else "%b %d"
     # `end` is midnight of the day AFTER the span's real last day for
-    # whole-day spans (see resolve_span()'s docstring - that's what
-    # gives a single-day span a non-zero width to draw) - shown as-is,
+    # whole-day spans (see resolve_span()'s docstring). Shown as-is,
     # "2 days" would label its end "Aug 24" while describe_duration()
-    # says "to 2026-08-23" right next to it, a real inconsistency.
-    # Roll the LABEL back a day
-    # whenever `end` lands exactly on a midnight boundary, so the two
-    # numbers next to each other always agree - the bar's internal math
-    # (`percent`) is unaffected, only this display string.
+    # says "to 2026-08-23" right next to it - roll the LABEL back a day
+    # whenever `end` lands on a midnight boundary so the two agree; the
+    # bar's internal math (`percent`) is unaffected, only this string.
     end_label_dt = end - timedelta(days=1) if end.time() == datetime.min.time() else end
     return {
         # Rounded to 2 decimals - not for display prettiness, but

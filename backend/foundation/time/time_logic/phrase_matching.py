@@ -95,11 +95,10 @@ def _matched_day_offset(duration: str) -> int:
     names yesterday/today/tomorrow (see time_segments.PERIOD_PHRASES'
     "day" entries) - so a day segment can combine with it correctly.
 
-    Without this (2026-08-21): "tomorrow evening" would resolve against
-    *today's* date ("resolved: today 2026-08-21, 17:00-23:00"), silently
-    ignoring the "tomorrow" actually typed. Day segments (DAY_SEGMENTS)
-    only ever knew about clock hours, never about which day those hours
-    belonged to - always assumed today.
+    Without this, "tomorrow evening" would resolve against today's
+    date, silently ignoring the "tomorrow" actually typed - day
+    segments (DAY_SEGMENTS) only know about clock hours, never which
+    day those hours belong to.
     """
     lowered = duration.lower()
     for phrase, (unit, offset) in PERIOD_PHRASES.items():
