@@ -12,8 +12,9 @@
       here.
    2. Include each section in order.
    Expects `record` (the goal's latest state) and `horizons` (from
-   app.py's index() route, see index.html) in context - a surrounding
-   {% for record in board.active %} is enough. Only ever rendered for
+   app.py's active_page() route, see active/_active_view.html) in
+   context - a surrounding {% for record in board.active %} is enough.
+   Only ever rendered for
    ACTIVE goals - completed ones use _plan_entry.html instead (see
    completed_goal/_completed.html), so this file only has one caller
    now (2026-08-23; used to also be reachable via a combined

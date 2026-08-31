@@ -23,11 +23,11 @@ from backend.foundation.time.time_logic.duration_resolution import resolve_span
 # _HORIZON_LENGTH_THRESHOLDS in frozen_duration.py already applies to a
 # different question (which horizon is broad enough to fill in)
 # applied here to a different one (is this span long or short next to
-# its reference). Convention over precision, same trade-off as
-# WEEKS_PER_MONTH elsewhere in this package: a reasonable starting
-# default, not derived from any study of duration perception - tune
-# freely once real usage shows these bands feel wrong. Checked
-# broadest-first, first threshold cleared wins.
+# its reference). Convention over precision, the same kind of
+# trade-off frozen_duration.py's own coarse month-bucketing makes: a
+# reasonable starting default, not derived from any study of duration
+# perception - tune freely once real usage shows these bands feel
+# wrong. Checked broadest-first, first threshold cleared wins.
 _RELATIVE_LENGTH_THRESHOLDS = (
     ("long", 0.5),
     ("medium", 0.15),

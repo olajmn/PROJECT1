@@ -60,6 +60,16 @@ state, not a gap to fill in for its own sake.
 - Whether a neural network is ever the right mechanism for User
   Representation (current position: no, not until simpler statistics prove
   insufficient at real usage scale).
+- Time/cadence as a dimension of the agent's own behavior - how often it
+  follows up, cooldown between interventions, expected cadence, shaped by
+  user preference - not just deadline/duration metadata on a Goal. Touches
+  `foundation/README.md` (the Time Faculty), `decision/README.md`
+  (intervention policy's cooldown), and `user_model/README.md`, without
+  being owned by any one of them. Referred to loosely as the agent's
+  "personality" in this sense - behavior over time, not tone or a
+  simulated persona; distinct from, and not to be confused with,
+  `interface/visual_identity/README.md`'s explicit rejection of simulated
+  personality/emotion. Raised 2026-08-31, not designed.
 
 ## Future (named, not yet designed)
 

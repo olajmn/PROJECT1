@@ -8,6 +8,11 @@ Run from the project root:
 
 The -m flag is required so the backend package can be imported correctly.
 See docs/06-development.md for development history.
+
+Routes split into a Conversation entry point (`/`) and five work
+areas (Set Goal, Vision, Active, Completed, History), each with its own
+GET route/template, linked together by navigation/_navbar.html - see
+docs/06-development.md for the navigation split.
 """
 
 from flask import Flask, redirect, render_template, request, url_for
@@ -39,34 +44,24 @@ app.jinja_env.filters["split_message_lines"] = split_message_lines
 
 
 @app.route("/")
-def index():
-    goal_overview = build_goal_overview()
-    visions = load_visions()
-    return render_template(
-        "index.html",
-        horizons=BROADER_HORIZONS,
-        history=load_history(),
-        board=goal_overview,  # template-facing name, unchanged - see index.html
-        visions=visions,
-        vision_groups=group_active_by_vision(goal_overview["active"], visions),
-    )
+def conversation():
+    """Conversation - the agent's entry point, distinct from the five
+    work areas below. Purely a static placeholder for now (see
+    conversation/_conversation.html) - no data needed yet."""
+    return render_template("index.html", current_page="conversation")
 
 
-@app.route("/vision", methods=["POST"])
-def new_vision():
-    """A Vision exists independently of a goal (docs/03-architecture.md § Vision) - attaching one happens in /goal."""
-    text = request.form.get("text", "").strip()
-    if text:
-        save_vision(text)
-    return redirect(url_for("index"))
+@app.route("/set-goal")
+def set_goal_page():
+    return render_template("set_goal/page.html", visions=load_visions(), current_page="set_goal")
 
 
-@app.route("/goal", methods=["POST"])
+@app.route("/set-goal", methods=["POST"])
 def new_goal():
     """planner.create_goal() owns the decision logic."""
     typed_text = request.form.get("goal", "").strip()
     if not typed_text:
-        return redirect(url_for("index"))
+        return redirect(url_for("active_page"))
 
     record = create_goal(
         typed_text,
@@ -74,7 +69,34 @@ def new_goal():
         request.form.get("vision_id", "").strip(),
     )
     # Anchored so a pending clarification is visible immediately.
-    return redirect(url_for("index") + f"#goal-{record['goal_id']}")
+    return redirect(url_for("active_page") + f"#goal-{record['goal_id']}")
+
+
+@app.route("/vision")
+def vision_page():
+    return render_template("vision/page.html", visions=load_visions(), current_page="vision")
+
+
+@app.route("/vision", methods=["POST"])
+def new_vision():
+    """A Vision exists independently of a goal (docs/03-architecture.md § Vision) - attaching one happens in /set-goal."""
+    text = request.form.get("text", "").strip()
+    if text:
+        save_vision(text)
+    return redirect(url_for("vision_page"))
+
+
+@app.route("/active")
+def active_page():
+    goal_overview = build_goal_overview()
+    visions = load_visions()
+    return render_template(
+        "active/page.html",
+        horizons=BROADER_HORIZONS,
+        board=goal_overview,
+        vision_groups=group_active_by_vision(goal_overview["active"], visions),
+        current_page="active",
+    )
 
 
 @app.route("/feedback", methods=["POST"])
@@ -83,12 +105,12 @@ def feedback():
     goal_id_value = request.form.get("goal_id", "").strip()
     latest = get_latest_for_goal(int(goal_id_value)) if goal_id_value else None
     if latest is None:
-        # Stale tab, or the goal was completed elsewhere - go home rather than guess.
-        return redirect(url_for("index"))
+        # Stale tab, or the goal was completed elsewhere - go to Active rather than guess.
+        return redirect(url_for("active_page"))
 
     apply_feedback(latest, request.form.get("note", "").strip())
     # Anchored so new feedback stays visible in a growing thread (docs/06-development.md).
-    return redirect(url_for("index") + f"#goal-{latest['goal_id']}")
+    return redirect(url_for("active_page") + f"#goal-{latest['goal_id']}")
 
 
 @app.route("/step", methods=["POST"])
@@ -97,21 +119,25 @@ def step():
     goal_id_value = request.form.get("goal_id", "").strip()
     latest = get_latest_for_goal(int(goal_id_value)) if goal_id_value else None
     if latest is None:
-        return redirect(url_for("index"))
+        return redirect(url_for("active_page"))
 
     advance_step(latest, request.form.get("done") == "yes")
-    return redirect(url_for("index") + f"#goal-{latest['goal_id']}")
+    return redirect(url_for("active_page") + f"#goal-{latest['goal_id']}")
 
 
 @app.route("/history")
 def history():
-    return render_template("goal_log/history.html", history=load_history(), horizons=BROADER_HORIZONS)
+    return render_template(
+        "history/history.html", history=load_history(), horizons=BROADER_HORIZONS, current_page="history"
+    )
 
 
 @app.route("/completed")
 def completed():
-    """index.html shows active goals; this route uses only the completed half of build_goal_overview()."""
-    return render_template("completed_goal/completed.html", board=build_goal_overview(), horizons=BROADER_HORIZONS)
+    """Active goals live on /active; this route uses only the completed half of build_goal_overview()."""
+    return render_template(
+        "completed_goal/completed.html", board=build_goal_overview(), horizons=BROADER_HORIZONS, current_page="completed"
+    )
 
 
 if __name__ == "__main__":

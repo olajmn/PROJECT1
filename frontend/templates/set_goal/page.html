@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Set goal</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
+</head>
+<body>
+
+{% include "navigation/_navbar.html" %}
+
+<main>
+{% include "set_goal/_goal_form.html" %}
+</main>
+
+</body>
+</html>

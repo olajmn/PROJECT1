@@ -6,24 +6,53 @@ body {
   color: #222;
 }
 
-/* A row of N equal columns - index.html's Set-goal + Active columns,
-   or completed_goal/completed.html's single Completed column - see
-   docs/10-development.md, 2026-08-19/2026-08-20. Any page can add its
-   own .col children under a .layout wrapper and they'll line up the
-   same way. Stacks on narrow viewports since this is still meant to be
-   usable on a phone. */
+/* Conversation - the agent's entry point (see
+   conversation/_conversation.html). Centered, unboxed - deliberately not
+   another .col/.card, since this isn't a domain with data the way the
+   work areas are, it's the greeting/prompt screen in front of them. */
+.conversation-intro {
+  text-align: center;
+  margin: 60px 0 32px;
+}
+.agent-avatar {
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+.conversation-title {
+  font-size: 1.4rem;
+  margin: 0 0 8px;
+}
+.conversation-prompt {
+  color: #6b7280;
+  margin: 0;
+}
+.conversation-input {
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: center;
+}
+.conversation-input textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* A row of N equal columns - Active's own column, or
+   completed_goal/completed.html's single Completed column. Any page
+   can add its own .col children under a .layout wrapper and they'll
+   line up the same way. Stacks on narrow viewports since this is
+   still meant to be usable on a phone. */
 .layout {
   display: flex;
   gap: 32px;
   align-items: flex-start;
 }
-/* Each top-level section (Set a goal / Active / Completed) as its own
-   visibly bounded panel - previously just a heading and loose cards
-   floating in a flex column with no outer boundary tying them
-   together as one section, so the page read as continuous rather than
-   clearly divided zones (2026-08-23). Same border color as .card - a
-   section is a bigger version of the same "this is one bounded thing"
-   idea, not a different visual language. */
+/* Each top-level domain area (Active / Completed) as its own visibly
+   bounded panel - previously just a heading and loose cards floating
+   in a flex column with no outer boundary tying them together as one
+   section, so the page read as continuous rather than clearly divided
+   zones. Same border color as .card - a section is a bigger version
+   of the same "this is one bounded thing" idea, not a different
+   visual language. */
 .col {
   flex: 1;
   min-width: 0; /* let long unbroken text wrap instead of overflowing the column */
@@ -32,38 +61,6 @@ body {
 }
 @media (max-width: 900px) {
   .layout { flex-direction: column; }
-}
-
-/* The "Set a goal" column holds one small form - unlike Active/
-   Completed, which can hold many cards worth of content, it never
-   needs an equal share of the row's width. Fixed max-width instead of
-   flex:1's default equal split, so Active gets the leftover space
-   instead of sitting cramped/cut off next to an oversized empty box -
-   see index.html. Still shrinks on narrow viewports (flex-shrink:1,
-   and the media query above still stacks columns under 900px)
-   (2026-08-23). */
-.col-goal {
-  flex: 0 1 340px;
-}
-
-/* A vertical stack of one-line link boxes ("Completed goals",
-   "Log / history", 2026-08-23) - THIS is the actual flex item of
-   .layout (flex: 0 1 auto: hugs its content's width, unlike .col's
-   default equal-share or .col-goal's fixed 340px, both wrong for
-   something this narrow). display: flex + column direction stacks its
-   own .col-link-box children vertically instead of .layout's normal
-   left-to-right, with the same 32px gap .layout itself uses between
-   columns, so the vertical rhythm matches. Adding a third link box
-   later means adding another .col-link-box inside this - no new CSS. */
-.col-links {
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-  flex: 0 1 auto;
-}
-.col-link-box p {
-  margin: 0;
-  white-space: nowrap;
 }
 
 h1 {
@@ -111,17 +108,8 @@ h1 {
   margin-bottom: 20px;
 }
 
-/* Secondary card (e.g. "set a different goal" above the main task) -
-   same shape as .card, but visually quieter so it doesn't compete with
-   the primary action. */
-.card-muted {
-  background: #fafafa;
-  padding: 16px 20px;
-}
-.card-muted input[type=text] { margin-bottom: 8px; }
-
 /* Plain, data-shaped display (key: value, no decoration) - used for
-   Completed goals and every entry in the log (goal_log/_history_list.html).
+   Completed goals and every entry in the log (history/_history_list.html).
    Everything shown comes from one unverified LLM call, so it's
    presented as raw data, not a styled "result" that implies more
    confidence than it deserves. Font is already monospace via body,
@@ -361,7 +349,7 @@ h1 {
   gap: 4px;
 }
 /* Deliberately tiny/quiet - this is an override for the one-time
-   auto-picked unit (see index.html's pickDefaultUnit()), not a
+   auto-picked unit (see active/page.html's pickDefaultUnit()), not a
    primary control, so it shouldn't compete with the countdown number
    itself for attention. */
 .duration-unit-select {

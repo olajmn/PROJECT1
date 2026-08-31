@@ -4,8 +4,12 @@
 <meta charset="utf-8">
 <title>Completed goals</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='navbar.css') }}">
 </head>
 <body>
+
+{% include "navigation/_navbar.html" %}
+
 <h1>Completed goals</h1>
 
 <div class="layout">

@@ -33,8 +33,6 @@ docs/05-decisions.md). Not the start of an accounts system - a stable
 field so existing history won't need a migration if multi-user support
 is ever built. Unlike goal_id, there is no minting/counter for it:
 there's only ever one value.
-
-Full history: docs/06-development.md, 2026-08-21/23/26.
 """
 
 import json
@@ -45,13 +43,10 @@ DATA_DIR = Path(__file__).parent.parent.parent / "data"
 PLANS_FILE = DATA_DIR / "plans.json"
 VISIONS_FILE = DATA_DIR / "visions.json"
 
-# The only user_id that exists today - see module docstring. Not a
-# counter like goal_id: there is exactly one person using this app.
+# The only user_id that exists today - see module docstring.
 DEFAULT_USER_ID = 1
 
-# ============================================================
-# 1. Setup & legacy normalization
-# ============================================================
+# Setup & legacy normalization
 
 
 def ensure_data_dir() -> None:
@@ -81,7 +76,7 @@ def _backfill_goal_ids(records: list[dict]) -> None:
     (fragile: "take a shower" / "take shower" / "ta en dusj" all counted
     as different goals). Give each legacy record a goal_id, one per
     distinct goal text, assigned in first-appearance order - this
-    reproduces exactly the grouping get_board() used before goal_id
+    reproduces exactly the grouping the board view used before goal_id
     existed, so old history's board layout doesn't shift silently.
 
     Records that already have a goal_id (created after this change) are
@@ -112,15 +107,13 @@ def _backfill_user_ids(records: list[dict]) -> None:
             record["user_id"] = DEFAULT_USER_ID
 
 
+# Goal/Plan persistence
+
+
 def _next_goal_id(records: list[dict]) -> int:
     """One higher than the largest goal_id in history, or 1 if there are none yet."""
     existing = [r["goal_id"] for r in records if r.get("goal_id")]
     return max(existing, default=0) + 1
-
-
-# ============================================================
-# 2. Goal/Plan persistence
-# ============================================================
 
 
 def _load_all() -> list[dict]:
@@ -262,15 +255,7 @@ def get_latest_plan() -> dict | None:
     return records[-1] if records else None
 
 
-# ============================================================
-# 3. Vision
-# ============================================================
-#
-# A separate, much smaller store - see this module's docstring for why
-# it isn't part of the goal/plan records above. No normalization, no
-# backfill: nothing saved before this existed could have a vision_id,
-# so there's no legacy shape to migrate.
-# ============================================================
+# Vision
 
 
 def _load_all_visions() -> list[dict]:

@@ -28,6 +28,12 @@ this exists yet - there is no channel in the prototype for the agent to
 say anything unprompted at all (confirmed directly against the code, not
 assumed).
 
+The cooldown above is one instance of a broader, still-unexplored idea:
+that cadence itself - how often the agent follows up, not just whether a
+given discrepancy clears the bar - could become a deliberate, user-shaped
+dimension of its behavior (loosely, "personality" as behavior over time,
+not tone). Raised 2026-08-31, not designed - see `../DECISIONS.md`.
+
 ## Boundary
 
 Decision does not itself interpret text (that's `goals/feedback/`), does

@@ -147,12 +147,10 @@ MAX_STEPS = 6
 # a goal's actual resolved length - a goal given "3 months" has no
 # honest one_year answer, only up through one_month. Checked broadest
 # to narrowest, first threshold cleared wins. Deliberately coarse
-# buckets (a "month" close enough to 30 days, not read from
-# backend.foundation.time.time_data.time_units.AVERAGE_DAYS_PER_MONTH) rather than a precise
-# formula - same convention-over-precision trade WEEKS_PER_MONTH=4
-# already makes elsewhere in this module; the actual question here
-# ("is this goal roughly year-scale, month-scale, ...") doesn't need
-# more precision than that. Rejected alternatives (see
+# buckets (a "month" close enough to 30 days) rather than a precise
+# calendar formula - the actual question here ("is this goal roughly
+# year-scale, month-scale, ...") doesn't need more precision than
+# that. Rejected alternatives (see
 # docs/05-decisions.md): the model guessing relevance itself
 # (inconsistent), and always filling every horizon regardless of scope
 # (fabricates content for horizons broader than what was actually

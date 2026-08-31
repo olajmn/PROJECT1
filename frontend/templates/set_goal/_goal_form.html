@@ -1,35 +1,22 @@
-{# The "Set a goal" form - split out of index.html (2026-08-23) into its
-   own file, same pattern as every other section on this page
-   (_active_goal.html, goal_log/_history_list.html,
-   _plan_entry.html): one file per "room" (see docs/07-features.md's
-   "Program / Rooms / Sitemap" model), glued together with
-   {% include %}. Moved into its own set_goal/ folder shortly after
-   (2026-08-23) - same idea as active_goal/ for the goal card's own six
-   sections, just with only one file in it so far. Expects `board` in
-   context, same as index.html's own template variables - nothing new
-   to pass in, this is a straight extraction, no behavior change.
+{# The "Set a goal" form - only ever starts a genuinely new goal (see
+   app.py's new_goal() route). Its own page (set_goal/page.html) since
+   the navigation split; previously sat next to Active/Vision on one
+   shared page - see docs/06-development.md.
 
-   Always renders the same, regardless of whether a goal already
-   exists. Only the surrounding card style (muted vs. normal) changes
-   when there's already at least one active goal to act on, in the
-   Active column - see index.html - to keep this quiet rather than
-   competing with it.
-
-   Deliberately just text + button (2026-08-23) - this form ONLY ever
-   starts a genuinely new goal now. Changing an EXISTING goal's
-   timeframe used to be a separate control here (first a "Continue an
-   existing goal" dropdown, later an "Extend timeframe" mini-form on
-   the goal's own card), but that's fully conversational now instead -
-   see app.py's /feedback route, requests_duration_change(). Nothing left
-   here to do that job, on purpose - this box stays single-purpose. #}
-<div class="card {% if board.active %}card-muted{% endif %}">
+   Changing an EXISTING goal's timeframe used to be a separate control
+   here (first a "Continue an existing goal" dropdown, later an
+   "Extend timeframe" mini-form on the goal's own card), but that's
+   fully conversational now instead - see app.py's /feedback route,
+   requests_duration_change(). Nothing left here to do that job, on
+   purpose - this box stays single-purpose. #}
+<div class="card">
   {# The model can decline to plan a too-vague goal (a bare noun/verb
      like "read") and ask a clarifying question instead of a real plan
      (see backend/goals/plan/planner.py's generate_plan() docstring) - that round is
-     saved and shown in the goal's own card/conversation thread below
-     (see _active_goal.html), same as every other round, not here: this
-     form always starts a genuinely new attempt, it has no goal_id yet
-     to show a reply against. #}
+     saved and shown in the goal's own card/conversation thread on the
+     Active page (see _active_goal.html), not here: this form always
+     starts a genuinely new attempt, it has no goal_id yet to show a
+     reply against. #}
   {# Generating a plan is a real LLM call (Ollama, local, synchronous) -
      ~5-10+ seconds, not instant - and nothing on the page changed at
      all while waiting (no spinner, no disabled state), so a click had
@@ -38,18 +25,18 @@
      Flask's dev server handles one request at a time, so
      a second, impatient click doesn't retry anything, it just queues
      behind the first and doubles the silent wait. #}
-  <form method="post" action="/goal" onsubmit="document.getElementById('generate-btn').disabled = true; document.getElementById('generate-btn').textContent = 'Generating plan…';">
+  <form method="post" action="/set-goal" onsubmit="document.getElementById('generate-btn').disabled = true; document.getElementById('generate-btn').textContent = 'Generating plan…';">
     {# One field for goal text AND timing together (2026-08-23, used to
-       be two separate inputs) - backend/agent/distributed/timeperiod/matchers.py's
+       be two separate inputs) - backend/foundation/time/time_logic/phrase_matching.py's
        extract_duration_phrase() searches whatever was typed for a
        recognized time phrase anywhere inside it, same as a dedicated
        duration field did, just applied to the whole sentence. See
-       app.py's /goal route docstring for what happens when nothing
+       app.py's new_goal() route docstring for what happens when nothing
        time-shaped is found at all (a clarifying question, not a
        silent guess). #}
     <input type="text" name="goal" placeholder="e.g. Learn backend development, this evening">
-    {# Optional link to a Vision (2026-08-26, see app.py's /goal route
-       docstring) - neither field is required; most goals leave both
+    {# Optional link to a Vision (2026-08-26, see app.py's new_goal()
+       route docstring) - neither field is required; most goals leave both
        blank. `new_vision` wins over `vision_id` if both are filled,
        so typing a new one here doesn't require also remembering to
        reset the select back to "— none —". #}

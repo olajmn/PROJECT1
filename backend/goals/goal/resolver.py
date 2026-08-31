@@ -10,12 +10,13 @@ data_persistence.load_history() and answers, by goal_id:
 
 Whether a goal counts as "active" or "completed", and how goals get
 grouped or sorted for display, is board-building logic, not goal
-identity - see frontend/app.py, where the board is actually built.
+identity - see frontend/view_data/goal_overview.py, where the board is
+actually built.
 
 goal_id itself is minted in data_persistence.py (_next_goal_id()), not
 here - moving it here would create a circular import between the two
-modules. See docs/05-decisions.md, 2026-08-20, for why identity is a
-minted id, not the goal's text.
+modules. See docs/05-decisions.md for why identity is a minted id, not
+the goal's text.
 """
 
 from datetime import datetime
@@ -23,9 +24,8 @@ from datetime import datetime
 from backend.infrastructure.data_persistence import load_history
 
 
-# ---------------------------------------------------------------------------
 # Timestamp handling
-# ---------------------------------------------------------------------------
+
 
 def created_at_key(record: dict) -> datetime:
     """
@@ -37,8 +37,8 @@ def created_at_key(record: dict) -> datetime:
     aware timestamps are converted to local time and stripped of
     tzinfo here.
 
-    Public (not `_`-prefixed) because frontend/app.py needs it too, to
-    sort the board it builds from get_latest_for_all_goals().
+    Public (not `_`-prefixed) because frontend/view_data/goal_overview.py
+    needs it too, to sort the board it builds from get_latest_for_all_goals().
     """
     parsed = datetime.fromisoformat(record["created_at"])
     if parsed.tzinfo is not None:
@@ -46,9 +46,8 @@ def created_at_key(record: dict) -> datetime:
     return parsed
 
 
-# ---------------------------------------------------------------------------
 # Read one goal
-# ---------------------------------------------------------------------------
+
 
 def get_history_for_goal(goal_id: int) -> list[dict]:
     """
@@ -68,8 +67,7 @@ def get_latest_for_goal(goal_id: int) -> dict | None:
 
     Distinct from data_persistence.get_latest_plan(), which answers
     "what was touched most recently across every goal" - not safe once
-    two goals can be active side by side (docs/06-development.md,
-    2026-08-20).
+    two goals can be active side by side (see docs/06-development.md).
     """
     for record in reversed(load_history()):
         if record["goal_id"] == goal_id:
@@ -77,9 +75,8 @@ def get_latest_for_goal(goal_id: int) -> dict | None:
     return None
 
 
-# ---------------------------------------------------------------------------
 # Read all goals
-# ---------------------------------------------------------------------------
+
 
 def get_latest_for_all_goals() -> list[dict]:
     """
@@ -90,14 +87,14 @@ def get_latest_for_all_goals() -> list[dict]:
     of one: a goal isn't its own stored entity - it's the chain of
     records sharing one goal_id, so its current state is just its
     latest record. Grouping by goal_id (not goal text) keeps a
-    retyped goal from fragmenting into a second entry
-    (docs/05-decisions.md, 2026-08-20).
+    retyped goal from fragmenting into a second entry (see
+    docs/05-decisions.md).
 
     Order is just whatever falls out of scanning history oldest-first
     and keeping the last record seen per goal_id - not meaningful on
     its own. Deciding which goals are "active" vs "completed", and how
     to group or sort them for display, is left to the caller (see
-    frontend/app.py, where the board is built from this).
+    frontend/view_data/goal_overview.py, where the board is built from this).
     """
     latest_by_goal: dict[int, dict] = {}
     for record in load_history():

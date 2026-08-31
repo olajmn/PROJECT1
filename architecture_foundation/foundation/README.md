@@ -24,6 +24,11 @@ scaffolds elsewhere in the prototype (`language/`, a `meaning` placeholder)
 do not by themselves constitute one - a Faculty has to actually be reused,
 not just proposed.
 
+Whether this Faculty's scope extends beyond parsing (interpreting what a
+duration *means*) into behavioral cadence (how often the agent itself
+should act, not just how a span of time is understood) is raised but not
+designed - see `../DECISIONS.md`'s Exploratory list.
+
 ## Boundary
 
 Nothing here is itself an operational component the way `goals/` or
