@@ -1,20 +1,35 @@
-{# "Set a vision" - creates a Vision on its own, independent of any
-   goal (see app.py's /vision route). Its own page (vision/page.html)
-   since the navigation split; previously sat above "Set a goal" on
-   one shared page - see docs/06-development.md.
+{# Vision Page - create a Vision (independent of any goal, see
+   app.py's /vision route) and list every existing one. Expects
+   `visions` and `goals_by_vision` in context (from vision_page()).
 
-   Expects `visions` in context (from app.py's vision_page() route)
-   only to decide whether to show the existing list - creating one
-   doesn't need it. #}
+   Each Vision renders as its own .entity, reading as its own "room"
+   rather than a line item. The form above stays .card, not .entity -
+   it's the input surface that creates a Vision, not a Vision itself
+   (see style.css's .card, .entity rule).
+
+   Each Vision's Goals render as a .group nested inside it, one
+   .entity per goal (built by goal_overview.py's
+   group_goals_by_vision_id()): Vision (Entity) > Goals (Group) > Goal
+   (Entity). An empty Vision still renders its .group, empty rather
+   than hidden, so it reads as "no Goals yet" rather than as if
+   grouping didn't apply. Only ACTIVE goals - Completed isn't wired in
+   yet. Editing the link happens on the Active page
+   (active_goal/_goal.html's Vision select), not here. #}
 <div class="card">
-  <div class="vision-label">Vision <span class="yaml-comment">(optional, spans multiple goals)</span></div>
-  {% if visions %}
-    <ul class="vision-list">
-      {% for v in visions %}<li>{{ v.text }}</li>{% endfor %}
-    </ul>
-  {% endif %}
+  <p class="yaml-comment">Optional, spans multiple goals.</p>
   <form method="post" action="/vision">
     <input type="text" name="text" placeholder="e.g. Improve physical health and quality of life">
-    <button class="btn-goal" type="submit">Add vision</button>
+    <button class="btn-goal" type="submit">Create vision</button>
   </form>
 </div>
+
+{% for v in visions %}
+  <div class="entity">
+    {{ v.text }}
+    <div class="group">
+      {% for g in goals_by_vision.get(v.id, []) %}
+        <div class="entity">{{ g.goal }}</div>
+      {% endfor %}
+    </div>
+  </div>
+{% endfor %}

@@ -17,7 +17,8 @@ Contents
 5. Goal creation
 6. Replanning
 7. Feedback & step handling
-8. CLI entry point
+8. Vision management
+9. CLI entry point
 
 Runs 100% locally - no API key, no internet, no cost. Requires Ollama
 running in the background (start with: brew services start ollama)
@@ -43,8 +44,8 @@ from backend.foundation.time import (
 )
 from backend.goals.feedback.acknowledger import acknowledge
 from backend.goals.feedback.feedback_parser import parse_outcome, requests_duration_change
-from backend.goals.goal.resolver import get_history_for_goal
-from backend.infrastructure.data_persistence import save_plan, save_vision
+from backend.goals.goal.resolver import get_history_for_goal, get_latest_for_goal
+from backend.infrastructure.data_persistence import get_vision, save_plan, save_vision
 from backend.goals.plan.model_client import ask_model
 from backend.goals.plan.step_generator import generate_steps
 
@@ -572,7 +573,78 @@ def advance_step(latest: dict, done: bool) -> dict:
 
 
 # ============================================================
-# 8. CLI entry point
+# 8. Vision management
+# ============================================================
+
+
+def set_goal_vision(goal_id: int, vision_id: int | None) -> dict | None:
+    """
+    Add, move, or remove a goal's Vision link - the manual counterpart
+    to `create_goal()`'s one-time choice, letting it be changed later
+    (see docs/03-architecture.md § Vision). `vision_id=None` removes
+    the goal from whichever Vision it currently has.
+
+    Unlike advance_step()/apply_feedback() (which take an
+    already-resolved `latest` record - the caller looks it up so a
+    route-specific "stale tab" redirect can happen around the call),
+    this resolves `goal_id` itself, since the route calling it has no
+    other reason to look the record up first.
+
+    Returns the newly saved record, or None if the change is
+    rejected - never partially applied, and never raises for an
+    ordinary bad input:
+    - `goal_id` doesn't resolve to any goal.
+    - `vision_id` is given but no such Vision exists (a stale/tampered
+      value - the real UI always offers ids from `load_visions()`, so
+      this is a defensive check, not the normal path).
+    - the goal's latest record has an unanswered `clarification` -
+      the next thing saved for this goal_id needs to be the answer to
+      that question (see `apply_feedback()`'s clarification branch,
+      which reads the newest `feedback` in this goal's history as
+      exactly that answer). A Vision-change record saved in between
+      would be misread as the answer instead, corrupting the next
+      `generate_plan()` call's goal text - rejecting outright avoids
+      that rather than trying to special-case it later.
+
+    Requesting the Vision the goal is already linked to (or already
+    has none, for `vision_id=None`) is a genuine no-op - returns
+    `latest` unchanged rather than appending an identical record.
+
+    Preserves `plan`, `duration`, `frozen_duration`, `current_step`,
+    and `completed` from the latest record exactly as they were -
+    this changes which Vision the goal belongs to, nothing about the
+    goal/plan itself, so nothing else about it should look any
+    different than it did the moment before.
+    """
+    latest = get_latest_for_goal(goal_id)
+    if latest is None:
+        return None
+    if latest["plan"].get("clarification"):
+        return None
+
+    previous_vision_id = latest.get("vision_id")
+    if vision_id == previous_vision_id:
+        return latest
+
+    if vision_id is None:
+        feedback_text = "Removed from Vision"
+    else:
+        vision = get_vision(vision_id)
+        if vision is None:
+            return None
+        verb = "Moved to" if previous_vision_id is not None else "Added to"
+        feedback_text = f"{verb} Vision: {vision['text']}"
+
+    return save_plan(
+        latest["goal"], latest["plan"], feedback=feedback_text,
+        duration=latest.get("duration"), goal_id=latest["goal_id"],
+        frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
+        completed=latest.get("completed", False), vision_id=vision_id,
+    )
+
+
+# ============================================================
+# 9. CLI entry point
 # ============================================================
 
 if __name__ == "__main__":

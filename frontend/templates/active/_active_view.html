@@ -1,28 +1,14 @@
-{# Active goals - the live collection of not-yet-completed Goal cards,
-   grouped by Vision (see docs/03-architecture.md § Vision). Its own
-   page (active/page.html) since the navigation split; previously sat
-   next to Set Goal/Vision on one shared page - see docs/06-development.md.
+{# Active goals - the live collection of not-yet-completed Goal cards.
+   Its own page (active/page.html) since the navigation split.
 
-   Expects `board` and `vision_groups` (from app.py's active_page()
-   route) in context. Goals sharing a vision_id render grouped under
-   its heading; goals with none render after, unheaded. Grouping
-   itself is built by frontend/view_data/goal_overview.py's
-   group_active_by_vision(). #}
-<div class="col">
+   Expects `board` (from app.py's active_page() route) in context. #}
+<div class="workspace">
   <h2 class="board-heading">Active ({{ board.active | length }})</h2>
   {% if not board.active %}
     <p>No active goals.</p>
   {% else %}
-    {% for vision, records in vision_groups %}
-      {% if vision %}
-        <div class="vision-heading">
-          <span class="vision-label">Vision</span>
-          <strong>{{ vision.text }}</strong>
-        </div>
-      {% endif %}
-      {% for record in records %}
-        {% include "_active_goal.html" %}
-      {% endfor %}
+    {% for record in board.active %}
+      {% include "_active_goal.html" %}
     {% endfor %}
   {% endif %}
 </div>

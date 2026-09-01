@@ -19,9 +19,9 @@ from flask import Flask, redirect, render_template, request, url_for
 
 from backend.foundation.time import describe_duration, duration_progress, step_plan
 from backend.goals.goal.resolver import get_history_for_goal, get_latest_for_goal
-from backend.goals.plan.planner import advance_step, apply_feedback, create_goal
+from backend.goals.plan.planner import advance_step, apply_feedback, create_goal, set_goal_vision
 from backend.infrastructure.data_persistence import load_history, load_visions, save_vision
-from frontend.view_data.goal_overview import build_goal_overview, group_active_by_vision
+from frontend.view_data.goal_overview import build_goal_overview, group_goals_by_vision_id
 from frontend.view_data.plan_horizons import BROADER_HORIZONS
 from frontend.view_data.text_formatting import join_plan_prose, split_message_lines
 
@@ -74,7 +74,12 @@ def new_goal():
 
 @app.route("/vision")
 def vision_page():
-    return render_template("vision/page.html", visions=load_visions(), current_page="vision")
+    return render_template(
+        "vision/page.html",
+        visions=load_visions(),
+        goals_by_vision=group_goals_by_vision_id(build_goal_overview()["active"]),
+        current_page="vision",
+    )
 
 
 @app.route("/vision", methods=["POST"])
@@ -94,7 +99,7 @@ def active_page():
         "active/page.html",
         horizons=BROADER_HORIZONS,
         board=goal_overview,
-        vision_groups=group_active_by_vision(goal_overview["active"], visions),
+        visions=visions,
         current_page="active",
     )
 
@@ -123,6 +128,18 @@ def step():
 
     advance_step(latest, request.form.get("done") == "yes")
     return redirect(url_for("active_page") + f"#goal-{latest['goal_id']}")
+
+
+@app.route("/goal-vision", methods=["POST"])
+def goal_vision():
+    """planner.set_goal_vision() owns the decision logic. Empty vision_id means remove."""
+    goal_id_value = request.form.get("goal_id", "").strip()
+    if not goal_id_value:
+        return redirect(url_for("active_page"))
+
+    vision_id_value = request.form.get("vision_id", "").strip()
+    set_goal_vision(int(goal_id_value), int(vision_id_value) if vision_id_value else None)
+    return redirect(url_for("active_page") + f"#goal-{goal_id_value}")
 
 
 @app.route("/history")

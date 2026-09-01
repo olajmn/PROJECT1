@@ -11,23 +11,18 @@ module owns shape.
 from backend.goals.goal.resolver import created_at_key, get_latest_for_all_goals
 
 
-def group_active_by_vision(active_records: list[dict], visions: list[dict]) -> list[tuple[dict | None, list[dict]]]:
+def group_goals_by_vision_id(active_records: list[dict]) -> dict[int, list[dict]]:
     """
-    Group active goals by Vision for index.html. Goals sharing a Vision
-    render together under it; goals with none form an unheaded group,
-    always last. Vision groups are ordered by Vision ID.
+    Active goals keyed by vision_id, dropping the ones with none - the
+    Vision page's per-Vision lookup (`goals_by_vision.get(v.id, [])`
+    for whichever Vision is currently being rendered).
     """
-    visions_by_id = {v["id"]: v for v in visions}
-    groups: dict[int | None, list[dict]] = {}
+    result: dict[int, list[dict]] = {}
     for record in active_records:
-        groups.setdefault(record.get("vision_id"), []).append(record)
-
-    with_vision = sorted(
-        ((visions_by_id[vid], records) for vid, records in groups.items() if vid in visions_by_id),
-        key=lambda pair: pair[0]["id"],
-    )
-    without_vision = groups.get(None, [])
-    return with_vision + ([(None, without_vision)] if without_vision else [])
+        vision_id = record.get("vision_id")
+        if vision_id is not None:
+            result.setdefault(vision_id, []).append(record)
+    return result
 
 
 def build_goal_overview() -> dict:

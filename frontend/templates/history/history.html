@@ -10,11 +10,17 @@
 
 {% include "navigation/_navbar.html" %}
 
-<h1>Agent history ({{ history|length }} entr{{ "y" if history|length == 1 else "ies" }})</h1>
+<main>
+<div class="layout">
+<div class="workspace">
+<h2 class="board-heading">History ({{ history|length }})</h2>
 
 {% include "history/_history_list.html" %}
+</div>
+</div>
 
 <p><a href="/">&larr; Back</a></p>
+</main>
 
 </body>
 </html>

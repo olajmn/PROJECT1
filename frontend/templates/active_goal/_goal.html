@@ -8,3 +8,17 @@
   <span class="model-label">Goal</span>
   <strong>{{ record.goal }}</strong>
 </div>
+
+{# `visions` comes from active_page(), shared into this include via
+   the parent context. Plain button rather than auto-submit-on-change,
+   so this needs no JS. Empty option = no Vision. #}
+<form method="post" action="/goal-vision" class="model-row">
+  <input type="hidden" name="goal_id" value="{{ record.goal_id }}">
+  <select name="vision_id">
+    <option value="">Vision: none</option>
+    {% for v in visions %}
+      <option value="{{ v.id }}"{% if record.vision_id == v.id %} selected{% endif %}>Vision: {{ v.text }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn-goal" type="submit">Update vision</button>
+</form>

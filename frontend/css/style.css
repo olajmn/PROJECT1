@@ -8,7 +8,7 @@ body {
 
 /* Conversation - the agent's entry point (see
    conversation/_conversation.html). Centered, unboxed - deliberately not
-   another .col/.card, since this isn't a domain with data the way the
+   another .group/.entity, since this isn't a domain with data the way the
    work areas are, it's the greeting/prompt screen in front of them. */
 .conversation-intro {
   text-align: center;
@@ -36,31 +36,49 @@ body {
   resize: vertical;
 }
 
-/* A row of N equal columns - Active's own column, or
-   completed_goal/completed.html's single Completed column. Any page
-   can add its own .col children under a .layout wrapper and they'll
-   line up the same way. Stacks on narrow viewports since this is
-   still meant to be usable on a phone. */
+/* A row of N equal workspaces - Active's own workspace, or
+   completed_goal/completed.html's single Completed workspace. Any
+   page can add its own .workspace children under a .layout wrapper
+   and they'll line up the same way. Stacks on narrow viewports since
+   this is still meant to be usable on a phone. */
 .layout {
   display: flex;
   gap: 32px;
   align-items: flex-start;
 }
-/* Each top-level domain area (Active / Completed) as its own visibly
-   bounded panel - previously just a heading and loose cards floating
-   in a flex column with no outer boundary tying them together as one
-   section, so the page read as continuous rather than clearly divided
-   zones. Same border color as .card - a section is a bigger version
-   of the same "this is one bounded thing" idea, not a different
-   visual language. */
-.col {
+/* A workspace (Active / Completed) is a page-level work area holding
+   entities - not itself a semantic Group of entities the way Vision's
+   Goals are (see .group below). Layout only, no border/padding: a
+   workspace isn't a bounded panel implying "these entities are
+   grouped." */
+.workspace {
   flex: 1;
-  min-width: 0; /* let long unbroken text wrap instead of overflowing the column */
-  border: 1px solid #ddd;
+  min-width: 0; /* let long unbroken text wrap instead of overflowing the workspace */
+}
+/* A Group is a semantic collection of entities - e.g. the Goals
+   belonging to one Vision (see vision/_vision_form.html). Visibly
+   bounded on purpose, unlike .workspace above: a group is a real,
+   named relationship between entities, not just a layout container. */
+.group {
+  flex: 1;
+  min-width: 0; /* let long unbroken text wrap instead of overflowing the group */
+  border: 1px solid red; /* debug color, temporary - see .card/.entity below */
   padding: 20px;
 }
 @media (max-width: 900px) {
   .layout { flex-direction: column; }
+}
+
+/* Each page's own content (everything inside its <main>) matched to
+   the width the navbar LINKS actually span, not the full page width -
+   navbar.css's own .navbar bar already stretches edge to edge, but
+   the six links inside it cluster centered and narrower than that.
+   A fixed value, not measured - the link labels/font/gap are static,
+   so the width they occupy is static too; adjust this number by hand
+   if a nav label ever changes enough to shift it. */
+main {
+  max-width: 560px;
+  margin: 0 auto;
 }
 
 h1 {
@@ -74,27 +92,6 @@ h1 {
   margin-bottom: 16px;
 }
 
-/* Vision - deliberately NOT styled like .model-label (the Goal/Plan/
-   Action row labels inside one goal's card) or another Plan horizon -
-   it groups the goals below it, it isn't a field inside any one of
-   them (see docs/03-architecture.md § Long-term architecture). Reads
-   as a section divider (uppercase, letter-spaced, its own color, a
-   rule underneath) rather than another data row. */
-.vision-heading {
-  margin-top: 28px;
-  margin-bottom: 12px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #ddd;
-}
-.vision-label {
-  display: block;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-size: 0.75rem;
-  color: #6d28d9;
-  margin-bottom: 2px;
-}
 .vision-list {
   margin: 4px 0 10px;
   padding-left: 1.2em;
@@ -102,8 +99,14 @@ h1 {
   color: #4b5563;
 }
 
-.card {
-  border: 1px solid #ddd;
+/* .entity = one concrete entity (a Goal, a Vision, a saved record).
+   .card = the same boxed styling reused for a form/input surface
+   (Set Goal, Create Vision) that isn't itself an entity - kept as a
+   separate class name rather than stretching .entity to cover it, so
+   the name stays accurate; combined into one rule here since both
+   need to look identical, not two copies of the same declarations. */
+.card, .entity {
+  border: 1px solid blue; /* debug color, temporary - see .group above */
   padding: 20px;
   margin-bottom: 20px;
 }
