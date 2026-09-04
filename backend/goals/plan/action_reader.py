@@ -1,6 +1,6 @@
 """
 Read-only view of the current Action - shows just the immediate
-`right_now` step from the most recently saved plan, instead of the
+`now` step from the most recently saved plan, instead of the
 whole plan. Never generates or changes a plan, never talks to Ollama -
 purely reads what planner.py already produced (see
 data_persistence.get_latest_plan()).
@@ -25,4 +25,4 @@ if __name__ == "__main__":
         print("No plan saved yet. Run planner.py first.")
     else:
         print(f"Goal: {latest['goal']}")
-        print(f"\nRight now: {latest['plan']['right_now']}")
+        print(f"\nRight now: {latest['plan']['now']}")

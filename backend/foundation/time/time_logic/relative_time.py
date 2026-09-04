@@ -1,33 +1,31 @@
 """
-The "DNA" of duration understanding (see docs/03-architecture.md): a
-duration has no fixed meaning as "long" or "short" on its own - only
-ever relative to some other duration it's being measured against. "15
-minutes" isn't short or long in itself; it's short next to a full day,
+A duration has no fixed meaning as "long" or "short" on its own - only
+relative to another duration it's measured against (see
+docs/03-architecture.md). "15 minutes" is short next to a full day,
 long next to a single minute.
 
-Deliberately narrow, matching the scope decided for this module's
-first version: this says nothing about what an activity NEEDS (a
-45-minute run and a 45-minute stretch are not "the same 45 minutes") -
-that's a separate, harder, still-unbuilt question (see the doc's
-"activity-specific meaning" open question), closer to a Language/
-Semantics faculty than to Time. This module answers only "is this SPAN
-long or short compared to THAT span" - pure magnitude, no knowledge of
-what either span is FOR.
+This module answers only "is this span long or short compared to that
+span" - pure magnitude. It says nothing about what an activity NEEDS
+(a 45-minute run and a 45-minute stretch aren't "the same 45 minutes") -
+that's a separate, unbuilt question.
 """
+
+# Contents
+#  1. Relative length comparison
+#      - _RELATIVE_LENGTH_THRESHOLDS
+#      - _span_minutes()
+#      - relative_length()
 
 from backend.foundation.time.time_logic.duration_resolution import resolve_span
 
 
+# 1. Relative length comparison
+
 # Fixed, hardcoded ratio thresholds - not read from anywhere, not
-# learned, not model-informed. The same "code decides" instinct
-# _HORIZON_LENGTH_THRESHOLDS in frozen_duration.py already applies to a
-# different question (which horizon is broad enough to fill in)
-# applied here to a different one (is this span long or short next to
-# its reference). Convention over precision, the same kind of
-# trade-off frozen_duration.py's own coarse month-bucketing makes: a
-# reasonable starting default, not derived from any study of duration
-# perception - tune freely once real usage shows these bands feel
-# wrong. Checked broadest-first, first threshold cleared wins.
+# learned, not model-informed. A reasonable starting convention, not
+# derived from any study of duration perception - tune freely if real
+# usage shows these bands feel wrong. Checked broadest first, first
+# threshold cleared wins.
 _RELATIVE_LENGTH_THRESHOLDS = (
     ("long", 0.5),
     ("medium", 0.15),
@@ -47,13 +45,11 @@ def _span_minutes(duration: str | None) -> float | None:
 
 def relative_length(duration: str | None, reference: str | None) -> str | None:
     """
-    Is `duration` "short", "medium", or "long" - not on its own (there
-    is no such thing, see this module's docstring), but relative to
-    `reference` (e.g. the goal's own overall duration, or the previous
-    step's length). None if either doesn't resolve to a real span, or
-    `reference` resolves to a zero-length span (nothing to divide by) -
-    nothing grounded to compare, same honesty as every other "not
-    parsed/verified by code" case in this package.
+    Is `duration` "short", "medium", or "long" relative to `reference`
+    (e.g. the goal's own duration, or the previous step's length) - never
+    in absolute terms (see this module's docstring). None if either
+    doesn't resolve to a real span, or `reference` resolves to a
+    zero-length span (nothing to divide by).
     """
     duration_minutes = _span_minutes(duration)
     reference_minutes = _span_minutes(reference)

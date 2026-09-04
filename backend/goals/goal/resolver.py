@@ -55,7 +55,7 @@ def get_history_for_goal(goal_id: int) -> list[dict]:
     back-and-forth of feedback and replanning for this goal.
 
     Each record's `feedback` responds to the previous record's
-    `right_now`; returning the whole chain lets a template render it
+    `now`; returning the whole chain lets a template render it
     as one conversation. See frontend/templates/_active_goal.html.
     """
     return [r for r in load_history() if r["goal_id"] == goal_id]

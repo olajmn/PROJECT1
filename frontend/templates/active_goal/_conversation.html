@@ -35,7 +35,7 @@
       {% if msg.plan.get('clarification') %}
         {# The goal as typed (or as last answered) was too vague to
            plan - see backend/goals/plan/planner.py's generate_plan() docstring.
-           Shown ahead of right_now: a pending question means right_now
+           Shown ahead of `now`: a pending question means `now`
            is None anyway (both null together, never both set - see
            that same docstring), so this can't accidentally hide a
            real answer. #}
@@ -44,14 +44,14 @@
         {# A "change timeframe" request (see
            feedback_parser.requests_duration_change()) was just made -
            this is a DIFFERENT kind of pending question from
-           clarification above: the goal's actual plan/right_now is
+           clarification above: the goal's actual plan/`now` is
            still fully intact underneath (deliberately not touched
            yet), only this reply is standing in for it until the next
            message answers with a new duration - see app.py's
            /feedback route. #}
         {% for line in msg.plan.pending_duration_question | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
-      {% elif msg.plan.right_now %}
-        {% for line in msg.plan.right_now | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
+      {% elif msg.plan.now %}
+        {% for line in msg.plan.now | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
       {% else %}
         {# See docs/11-experiments.md, 2026-08-19: the model sometimes
            gives no next action without marking the goal complete - say

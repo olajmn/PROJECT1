@@ -54,19 +54,31 @@ def ensure_data_dir() -> None:
     DATA_DIR.mkdir(exist_ok=True)
 
 
+# one_year/one_month/this_week/this_hour/this_minute/right_now renamed
+# to year/month/week/hour/minute/now (PLAN_KEYS, planner.py) once those
+# turned out to name plan-record slots (time levels), not literal
+# durations or deictic phrases - existing saved records still have the
+# old names.
+_LEGACY_HORIZON_KEY_RENAMES = {
+    "one_year": "year", "one_month": "month", "this_week": "week",
+    "this_hour": "hour", "this_minute": "minute", "right_now": "now",
+}
+
+
 def _normalize_plan(plan) -> dict:
     """
     Convert a legacy free-text plan (from before the switch to structured
-    JSON) into the current dict shape, so every caller only ever sees one
-    shape. Dict plans pass through unchanged.
+    JSON) into the current dict shape, and remap any pre-rename horizon
+    key names a dict-shaped plan still has (_LEGACY_HORIZON_KEY_RENAMES),
+    so every caller only ever sees the current shape/names.
     """
-    if isinstance(plan, dict):
-        return plan
-    return {
-        "one_year": "", "one_month": "", "this_week": "",
-        "today": "", "this_hour": "", "this_minute": "",
-        "right_now": plan,
-    }
+    if not isinstance(plan, dict):
+        return {
+            "year": "", "month": "", "week": "",
+            "today": "", "hour": "", "minute": "",
+            "now": plan,
+        }
+    return {_LEGACY_HORIZON_KEY_RENAMES.get(key, key): value for key, value in plan.items()}
 
 
 def _backfill_goal_ids(records: list[dict]) -> None:
@@ -173,7 +185,7 @@ def save_plan(
 
     `feedback` is the user's feedback (if any) that caused this plan to
     be created - i.e. what they said about the *previous* plan's
-    "right_now" action, which led the agent to replan. None for a brand
+    "now" action, which led the agent to replan. None for a brand
     new goal that has no prior feedback yet.
 
     `duration` is the free-text span the user asked this plan to cover
@@ -181,7 +193,7 @@ def save_plan(
     plan.generate_plan(). Stored so the history shows what was
     actually asked for, not just what came back.
 
-    `completed` marks the whole goal (not just one "right_now" step) as
+    `completed` marks the whole goal (not just one "now" step) as
     done - the user said so explicitly, rather than the agent guessing
     it from a missing next action.
 
@@ -209,7 +221,7 @@ def save_plan(
     `current_step` is the index into `plan.steps` that "Action (right
     now)" points at - `plan.steps[current_step]`, not an independent
     value. 0 by default, matching `plan.steps[0]` always equaling
-    `plan.right_now`.
+    `plan.now`.
 
     `vision_id` optionally links this goal to a Vision - broader,
     cross-goal context, not part of the operational goal -> plan ->

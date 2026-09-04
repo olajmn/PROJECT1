@@ -59,7 +59,11 @@ A **Domain** is an area of responsibility or subject matter that the system oper
 
 A **Faculty** is a reusable area of agent understanding that is not tied to one Domain or one pipeline stage.
 
-A Domain does not automatically get its own Faculty just because the agent needs to reason about it. Time, for example, is a Domain (what the system operates on); temporal understanding is the corresponding Faculty (the agent's reusable capability to interpret it — recognizing what "this weekend" means, comparing durations, etc.). Temporal understanding is the first established Faculty. Other candidates include Language and Semantics, but a Faculty should emerge through actual reuse across the system rather than being created purely as a conceptual category.
+A Domain does not automatically get its own Faculty just because the agent needs to reason about it. Time, for example, is a Domain (what the system operates on); temporal understanding is the corresponding Faculty (the agent's reusable capability to interpret it — recognizing what "this weekend" means, comparing durations, etc.).
+
+Temporal understanding and Math (quantitative reasoning, `backend/foundation/math.py`) are the two established Faculties. A Faculty is not limited to resolving ambiguous natural-language input — Time's own examples — it can equally be a fundamental, independently-existing domain of reasoning the agent needs a deterministic capability for, whether or not any single operation within it is itself ambiguous to resolve (see [[05-decisions]], "Faculty categorization" and its 2026-09-05 refinement). Math has no paired Domain the way Time does — nothing yet treats standalone quantities as first-class records the system operates on.
+
+Other candidates include Language and Semantics, but a Faculty should still emerge through actual reuse, or represent a genuine, independently-existing reasoning domain — never created purely because a concept has a plausible name.
 
 ### Infrastructure
 
@@ -154,7 +158,17 @@ It handles concepts such as:
 
 Time interpretation is deliberately separated from LLM reasoning: **code decides, the model is told**.
 
+The Faculty also owns backend's authoritative notion of current time (`now()`, `time_logic/__init__.py`) - the one place backend code reads the system clock, so a later extension (timezone, a frozen/mocked clock, etc.) only has to change there. Backend code that reads "now" for actual temporal reasoning or runtime decisions goes through it; a plain bookkeeping timestamp (e.g. `data_persistence.py`'s `created_at`) is Infrastructure, not temporal reasoning, and is left as a direct system-clock read. Frontend's own `Date.now()`/`new Date()` is separate browser runtime, untouched by this.
+
+Seasons are a context-dependent, relative temporal concept, not a fixed global date range - which months "summer" names depends on hemisphere, and "this summer"/"next winter" are further relative to today. The Faculty owns season recognition and the rule for resolving one *given* a hemisphere; it does not default to one, and has no location/hemisphere concept of its own to supply it - a season is represented as recognized-but-unresolved until that context is available, the same honesty already applied to anything else not grounded in a real span.
+
 Activity-specific interpretation of duration remains outside the established temporal-understanding Faculty for now.
+
+### Math — Faculty
+
+Math is a Faculty, not paired with a Domain — quantitative reasoning the agent can operate within, the same "code decides, the model is told" reasoning Time already established: a real numeric computation is always done deterministically in code, never guessed by the model.
+
+First version (`backend/foundation/math.py`): the four basic arithmetic operations only — `add`/`subtract`/`multiply`/`divide`. A single flat module, not a package — matches the actual complexity of four functions; grows into more structure only if/when real need or reuse shows up (percentages, algebra, statistics, and an expression parser/evaluator are all explicitly not built yet).
 
 ### Planning — Domain
 

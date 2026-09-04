@@ -15,6 +15,36 @@ GET route/template, linked together by navigation/_navbar.html - see
 docs/06-development.md for the navigation split.
 """
 
+# Contents
+#  1. Flask setup
+#      - app
+#
+#  2. Conversation
+#      - conversation()
+#
+#  3. Set Goal
+#      - set_goal_page()
+#      - new_goal()
+#
+#  4. Vision
+#      - vision_page()
+#      - new_vision()
+#
+#  5. Active
+#      - active_page()
+#      - feedback()
+#      - step()
+#      - goal_vision()
+#
+#  6. History
+#      - history()
+#
+#  7. Completed
+#      - completed()
+#
+#  8. Entry Point
+#      (module execution block; no named function)
+
 from flask import Flask, redirect, render_template, request, url_for
 
 from backend.foundation.time import describe_duration, duration_progress, step_plan
@@ -25,7 +55,7 @@ from frontend.view_data.goal_overview import build_goal_overview, group_goals_by
 from frontend.view_data.plan_horizons import BROADER_HORIZONS
 from frontend.view_data.text_formatting import join_plan_prose, split_message_lines
 
-# Flask setup
+# 1. Flask setup
 
 # "css", not Flask's default "static/" - everything in that folder is
 # served as raw downloadable files, so keeping it separate avoids
@@ -43,12 +73,18 @@ app.jinja_env.globals["join_plan_prose"] = join_plan_prose
 app.jinja_env.filters["split_message_lines"] = split_message_lines
 
 
+# 2. Conversation
+
+
 @app.route("/")
 def conversation():
     """Conversation - the agent's entry point, distinct from the five
     work areas below. Purely a static placeholder for now (see
     conversation/_conversation.html) - no data needed yet."""
     return render_template("index.html", current_page="conversation")
+
+
+# 3. Set Goal
 
 
 @app.route("/set-goal")
@@ -72,6 +108,9 @@ def new_goal():
     return redirect(url_for("active_page") + f"#goal-{record['goal_id']}")
 
 
+# 4. Vision
+
+
 @app.route("/vision")
 def vision_page():
     return render_template(
@@ -89,6 +128,9 @@ def new_vision():
     if text:
         save_vision(text)
     return redirect(url_for("vision_page"))
+
+
+# 5. Active
 
 
 @app.route("/active")
@@ -142,11 +184,17 @@ def goal_vision():
     return redirect(url_for("active_page") + f"#goal-{goal_id_value}")
 
 
+# 6. History
+
+
 @app.route("/history")
 def history():
     return render_template(
         "history/history.html", history=load_history(), horizons=BROADER_HORIZONS, current_page="history"
     )
+
+
+# 7. Completed
 
 
 @app.route("/completed")
@@ -155,6 +203,9 @@ def completed():
     return render_template(
         "completed_goal/completed.html", board=build_goal_overview(), horizons=BROADER_HORIZONS, current_page="completed"
     )
+
+
+# 8. Entry Point
 
 
 if __name__ == "__main__":

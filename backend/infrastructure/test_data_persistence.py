@@ -31,7 +31,7 @@ try:
     # A goal saved with no vision_id at all - the normal case - must
     # come back with vision_id present and None, not simply missing,
     # so every reader can rely on the key existing.
-    plain_record = dp.save_plan("Make a song", {"right_now": "Write one line"})
+    plain_record = dp.save_plan("Make a song", {"now": "Write one line"})
     assert plain_record["vision_id"] is None, plain_record["vision_id"]
 
     # Creating a Vision mints an id and is readable back by it.
@@ -47,8 +47,8 @@ try:
 
     # Two independent goals can share one vision_id - the actual point
     # of Vision: it isn't copied text, it's a shared reference.
-    abs_goal = dp.save_plan("Get visible abs", {"right_now": "..."}, vision_id=vision["id"])
-    cardio_goal = dp.save_plan("Improve cardio", {"right_now": "..."}, vision_id=vision["id"])
+    abs_goal = dp.save_plan("Get visible abs", {"now": "..."}, vision_id=vision["id"])
+    cardio_goal = dp.save_plan("Improve cardio", {"now": "..."}, vision_id=vision["id"])
     assert abs_goal["vision_id"] == cardio_goal["vision_id"] == vision["id"]
     assert abs_goal["goal_id"] != cardio_goal["goal_id"]  # still fully independent goals
 

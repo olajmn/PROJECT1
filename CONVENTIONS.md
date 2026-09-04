@@ -30,7 +30,7 @@ Technical standards for this codebase. Applies going forward.
 
 ## Code documentation
 
-- Files of roughly 200+ lines with 3-4+ distinct logical sections get a `Contents` block in the module docstring — section-level entries only, in the file's actual order, with no function/class sub-bullets beneath them. See `global-standards/CODE_STYLE_GUIDE.md` §1 for the Contents rule and §2 for the section/structural-unit hierarchy it belongs to — this project deliberately stops at major-section level and omits the structural-unit entries (classes/functions) the general guide allows. `backend/goals/plan/planner.py` for the project's example.
+Source-code Contents (what a file's navigation block should contain, and when one is warranted) is defined in `global-standards/CODE_STYLE_GUIDE.md` §1-§2, not restated here. Document-oriented Contents is `global-standards/DOCUMENTATION_STYLE_GUIDE.md`'s job; `global-standards/CONTENT_HIERARCHY.md` covers heading-hierarchy notation where that level of detail is needed. This project has no Contents rule of its own beyond those.
 
 ## Project structure
 

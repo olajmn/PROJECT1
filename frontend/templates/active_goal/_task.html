@@ -4,11 +4,15 @@
    (was "Task" until 2026-08-26 - see docs/06-development.md for the
    terminology consolidation) to match the conceptual model
    (Vision/Goal/Plan/Action/Feedback, see docs/03-architecture.md) -
-   the underlying field is still called `right_now`, deliberately not
-   renamed (see that same doc entry for why).
+   the underlying field is `now` (renamed from `right_now`, along with
+   the rest of PLAN_KEYS, once those turned out to name plan-record
+   time levels rather than literal/deictic durations - superseding the
+   2026-08-26 entry's "purely cosmetic, not worth the migration" call,
+   since existing records are now remapped on load, see
+   data_persistence._LEGACY_HORIZON_KEY_RENAMES).
 
    Action (right now) is no longer its own independently-generated thing
-   once a goal has steps - step 1 always equals plan.right_now exactly
+   once a goal has steps - step 1 always equals plan.now exactly
    (see backend/goals/plan/step_generator.py's generate_steps() docstring), and "right now"
    is just steps[current_step]: a pointer into the list, not separate
    text (see docs/13-ideas-parking-lot.md's "Plan as an ordered step
@@ -30,8 +34,8 @@
       {% else %}
         All steps done - mark the whole goal complete below.
       {% endif %}
-    {% elif record.plan.right_now %}
-      {{ record.plan.right_now }}
+    {% elif record.plan.now %}
+      {{ record.plan.now }}
     {% elif record.plan.get('clarification') %}
       (answer the agent's question below to get a real plan)
     {% else %}

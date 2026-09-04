@@ -26,12 +26,15 @@ This guide is deliberately not a general coding-style manual — it does not def
 
 ## 1. Contents / File Index
 
-Large or structurally complex source files should include a short Contents block, in a comment, near the top of the file — a map of what the file contains, not a description of what it does.
+Source files whose structure isn't obvious at a glance should include a short Contents block, in a comment, near the top of the file — a map of what the file contains, not a description of what it does. This is common in large files, but the criterion is navigational value, not length itself.
+
+This is a different thing from a document's table of contents. A document-oriented Contents section can naturally live inside a module's or file's own descriptive documentation, as part of that prose (see `DOCUMENTATION_STYLE_GUIDE.md` §11). The source-code Contents convention defined here is not that — it is a structural navigation layer placed near the top of the file, outside the module docstring where appropriate, so a developer can understand the file's architecture at a glance and use it for orientation while scanning or scrolling through the source, distinct from the file's own descriptive header text.
 
 Unlike Markdown headings, plain code comments are not auto-outlined by editors or version-control viewers: a `// 1. Setup` comment is just text to the tool, not a navigable heading. This is why a hand-written Contents block earns its place in source files, even where the equivalent is often optional in Markdown documentation (see `DOCUMENTATION_STYLE_GUIDE.md` §10, Contents).
 
-- Place it near the top of the file, typically inside the file's header comment or docstring.
-- Show the file's actual structure, in its actual order — its major logical sections, and, beneath each, the important classes, functions, methods, or event handlers it contains.
+- Place it near the top of the file, as a comment — outside the module docstring where appropriate, so it reads as a distinct navigation layer rather than part of the file's descriptive text.
+- Show the file's actual structure, in its actual order — its major logical sections, and, beneath each, its important declarations: classes, functions, methods, event handlers, constants, mappings, or other meaningful module-level elements it contains.
+- Number the major sections in Contents to match the numbers used on the corresponding section headings in the file. This lets Contents double as a navigation map: a section number seen while scanning or scrolling through the file identifies where you are against the map at the top.
 - Do not list every variable, statement, or trivial helper.
 - Do not add this to small or simple files where it provides no real navigational value.
 - Keep it synchronized with the actual code — update it when sections, classes, or functions are added, removed, renamed, or reorganized.
@@ -98,7 +101,7 @@ Where a file has real internal depth, this grouping forms a hierarchy:
 Source File → Major Section → Structural Unit → Sub-unit → Details
 
 - A **major section** groups a distinct concern (see above) and matches the top level of the Contents block (§1).
-- A **structural unit** — a class, or a top-level function/handler within that section — is normally the deepest level worth naming in the Contents block.
+- A **structural unit** — a class, a top-level function/handler, or another significant top-level declaration (e.g. a constant, mapping, or regular expression) within that section — is normally the deepest level worth naming in the Contents block.
 - A **sub-unit** (a method, a nested helper) and **details** (statements, trivial helpers) are part of the code itself and do not need a separate mention in Contents unless individually significant enough to be a navigation target.
 
 This mirrors `DOCUMENTATION_STYLE_GUIDE.md`'s Document Structure principle, applied to code — not a requirement that every file use all four levels. A short file may only have a Major Section and a Structural Unit; collapse whatever levels the file doesn't need.

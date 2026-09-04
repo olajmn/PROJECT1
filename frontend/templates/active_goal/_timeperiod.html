@@ -71,7 +71,7 @@
         </div>
       {% endif %}
     {% endif %}
-    {% if filled_horizon_labels or record.plan.right_now %}
+    {% if filled_horizon_labels or record.plan.now %}
       {# The horizon SCALE - which levels this plan actually reaches
          (broadest to narrowest).
 
@@ -85,9 +85,9 @@
          actually convey that. Reuses `horizon_texts` by index rather
          than Plan's join_plan_prose() - Plan wants everything woven
          into one continuous read, this wants each level kept distinct
-         and labeled. NOW/right_now added at the end, same text Action
+         and labeled. NOW/`now` added at the end, same text Action
          shows as the ORIGINAL first action (see backend/goals/plan/step_generator.py's
-         generate_steps() docstring: step 1 always equals right_now,
+         generate_steps() docstring: step 1 always equals `now`,
          unchanged) - not step-aware like Action's own current_step
          pointer, since this is an overview of the plan's original
          shape, not a live progress tracker. #}
@@ -98,10 +98,10 @@
             <span class="horizon-level-text">{{ horizon_texts[loop.index0] }}</span>
           </div>
         {% endfor %}
-        {% if record.plan.right_now %}
+        {% if record.plan.now %}
           <div class="horizon-level horizon-level-now">
             <span class="horizon-level-label">NOW:</span>
-            <span class="horizon-level-text">{{ record.plan.right_now }}</span>
+            <span class="horizon-level-text">{{ record.plan.now }}</span>
           </div>
         {% endif %}
       </div>

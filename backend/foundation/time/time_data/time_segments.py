@@ -7,19 +7,40 @@ patterns only, no logic. See the sibling time_logic/ package for what
 actually applies these to a piece of text. Raw time-unit arithmetic
 lives in time_units.py instead - a different kind of fact, never
 itself matched against typed text.
-
-Contents
-1. Calendar names
-2. Named segments / fractions
-3. Point-in-time recognition
-4. Duration / quantity recognition
 """
+
+# Contents
+#  1. Calendar names
+#      - WEEKDAY_NAMES
+#      - MONTH_NAMES
+#
+#  2. Named segments / fractions
+#      - MINUTE_SEGMENTS
+#      - HOUR_SEGMENTS
+#      - DAY_FRACTIONS
+#
+#  3. Point-in-time recognition
+#      - DAY_SEGMENTS
+#      - PERIOD_PHRASES
+#      - MONTH_NUMBERS
+#      - WEEKDAY_NUMBERS
+#      - WEEKDAY_PREFIXES
+#      - NORTHERN_SEASON_MONTHS
+#      - SOUTHERN_SEASON_MONTHS
+#      - SEASON_ALIASES
+#      - CLOCK_12H_RE
+#      - CLOCK_24H_RE
+#      - DEADLINE_RE
+#
+#  4. Duration / quantity recognition
+#      - DURATION_LENGTH_RE
+#      - NAMED_FRACTION_RE
 
 import re
 
 from backend.foundation.time.time_data.time_units import HOURS_PER_DAY, MINUTES_PER_HOUR, SECONDS_PER_MINUTE
 
-# Calendar names
+# 1. Calendar names
 
 # 1-indexed to match datetime.isoweekday() (1=Monday..7=Sunday) and
 # datetime.month (1-12), so a caller can index these directly.
@@ -47,7 +68,7 @@ MONTH_NAMES = {
     12: "December",
 }
 
-# Named segments / fractions
+# 2. Named segments / fractions
 
 # Named chunks of a minute, in seconds - called SEGMENTS rather than
 # FRACTIONS because "minute" (the whole unit) is included alongside
@@ -85,7 +106,7 @@ DAY_FRACTIONS = {
 # either - MONTH_NAMES above already covers naming a specific part of
 # a year, and nothing else depends on a year fraction existing.
 
-# Point-in-time recognition
+# 3. Point-in-time recognition
 
 # Named day segments as local clock ranges, both hours in [0, 24).
 # "night" wraps past midnight (23 -> 6) - handled specially in
@@ -135,6 +156,39 @@ WEEKDAY_PREFIXES = {
     "last": -1,
 }
 
+# Meteorological season boundaries, as (start_month, end_month), both
+# 1-12 inclusive - "winter"/"summer" wrap the year boundary in
+# whichever table they fall in December-February, same wrap-around
+# DAY_SEGMENTS' "night" already needs, one calendar level up.
+#
+# A season name has no universal meaning - "summer" names different
+# months depending on which hemisphere it's asked about, so there are
+# two parallel tables here rather than one default. Neither is
+# preferred; time_logic requires an explicit hemisphere to resolve a
+# season at all, and is honest (recognized, not resolved) when it
+# isn't given one - see time_logic._matched_season_name()/
+# _season_range() and docs/03-architecture.md § Temporal
+# understanding. This project has no concept of the agent's or user's
+# location/hemisphere yet - not assumed here, deliberately.
+NORTHERN_SEASON_MONTHS = {
+    "spring": (3, 5),
+    "summer": (6, 8),
+    "autumn": (9, 11),
+    "winter": (12, 2),
+}
+SOUTHERN_SEASON_MONTHS = {
+    "spring": (9, 11),
+    "summer": (12, 2),
+    "autumn": (3, 5),
+    "winter": (6, 8),
+}
+
+# "fall" is a recognized synonym for "autumn", not a fifth season -
+# time_logic._matched_season_name() normalizes it to "autumn" the same
+# way DURATION_LENGTH_RE's irregular plurals ("centuries"/"millennia")
+# get normalized to their singular form.
+SEASON_ALIASES = {"fall": "autumn"}
+
 # Exact clock times, 12-hour and 24-hour notation. Two separate
 # regexes since a bare 24h "14:30" is never followed by am/pm/o'clock.
 # A bare "o'clock" with no am/pm ("1 o'clock") is genuinely ambiguous -
@@ -157,12 +211,19 @@ DEADLINE_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Duration / quantity recognition
+# 4. Duration / quantity recognition
 
-# A plain "N minutes/hours/days/weeks/months/years" phrase - a counted
-# span, as opposed to a day segment or named period above.
+# A plain "N minutes/hours/days/weeks/months/years/decades/centuries/
+# millennia" phrase - a counted span, as opposed to a day segment or
+# named period above. "century"/"millennium" both pluralize
+# irregularly ("centuries"/"millennia", not "centurys"/"milleniums") -
+# each listed as its own alternative rather than relying on the
+# trailing "s?" like every other unit; _matched_length() below
+# normalizes both back to their singular form so callers never need to
+# know about the irregular plurals.
 DURATION_LENGTH_RE = re.compile(
-    r"\b(\d+)\s*(minute|hour|day|week|month|year)s?\b", re.IGNORECASE
+    r"\b(\d+)\s*(minute|hour|day|week|month|year|decade|century|centuries|millennium|millennia)s?\b",
+    re.IGNORECASE,
 )
 
 # A named fraction ("half an hour", "quarter of a day") - the phrase-

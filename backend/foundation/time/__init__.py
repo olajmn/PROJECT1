@@ -6,9 +6,25 @@ what it can't. Also a first, narrow sense of what a duration MEANS,
 relative to another duration (relative_time.py) - see
 docs/03-architecture.md.
 
+A season ("this summer", "next winter") is recognized the same way,
+but is a relative, context-dependent concept, not a universal date
+range - which months it names depends on hemisphere, which this
+project has no concept of yet (see docs/03-architecture.md § Temporal
+understanding). resolve_duration()/resolve_span()/describe_duration()
+all take an optional `hemisphere` ("northern"/"southern") for exactly
+this; a season is reported as recognized but not resolved, never
+guessed, when it isn't given one.
+
 data/ - what time IS: time_segments.py (recognized phrases/patterns -
 DAY_SEGMENTS, PERIOD_PHRASES, etc.) and time_units.py (raw constants -
 SECONDS_PER_MINUTE, MONTH_DAYS, etc.).
+
+now() is the Faculty's own authoritative "current time" - the one
+place backend code reads the system clock (`time_logic/__init__.py`),
+so every caller shares the same notion of "now" and a later extension
+(timezone, a frozen/mocked clock, etc.) only has to change here. Every
+current-time read inside this package's own logic/ files goes through
+it too, not `datetime.now()` directly.
 
 logic/ - what acts on that data:
 - phrase_matching.py - recognize a known phrase in free text, turn it
@@ -35,6 +51,7 @@ history: docs/06-development.md, 2026-08-25. See docs/03-architecture.md
 § Faculties for the current design.
 """
 
+from backend.foundation.time.time_logic import now
 from backend.foundation.time.time_logic.frozen_duration import (
     MAX_STEPS,
     MIN_STEPS,
@@ -55,6 +72,7 @@ __all__ = [
     "duration_progress",
     "extract_duration_phrase",
     "freeze_duration",
+    "now",
     "relative_length",
     "resolve_duration",
     "resolve_span",

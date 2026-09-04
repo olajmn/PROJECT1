@@ -9,17 +9,6 @@ persisted via infrastructure/data_persistence.py's save_plan(), not
 reimplemented here. Never talks to the model directly (see
 model_client.py/step_generator.py).
 
-Contents
-1. Plan schema
-2. Model prompts
-3. Time helpers
-4. Plan generation
-5. Goal creation
-6. Replanning
-7. Feedback & step handling
-8. Vision management
-9. CLI entry point
-
 Runs 100% locally - no API key, no internet, no cost. Requires Ollama
 running in the background (start with: brew services start ollama)
 and the model pulled (ollama pull llama3.1:8b).
@@ -33,12 +22,44 @@ file's naming/reorganization history.
 Run from the PROJECT ROOT: .venv/bin/python -m backend.goals.plan.planner
 """
 
-from datetime import datetime
+# Contents
+#  1. Plan schema
+#      - PLAN_KEYS
+#
+#  2. Model prompts
+#      - SYSTEM_PROMPT
+#      - REPLAN_SYSTEM_PROMPT
+#
+#  3. Time helpers
+#      - _now_str()
+#      - _horizon_scope_instruction()
+#      - frozen_duration_for()
+#
+#  4. Plan generation
+#      - generate_plan()
+#
+#  5. Goal creation
+#      - create_goal()
+#
+#  6. Replanning
+#      - replan()
+#      - apply_new_duration()
+#
+#  7. Feedback & step handling
+#      - apply_feedback()
+#      - advance_step()
+#
+#  8. Vision management
+#      - set_goal_vision()
+#
+#  9. CLI entry point
+#      (module execution block; no named function)
 
 from backend.foundation.time import (
     broadest_relevant_horizon,
     extract_duration_phrase,
     freeze_duration,
+    now,
     resolve_duration,
     step_count,
 )
@@ -57,7 +78,15 @@ from backend.goals.plan.step_generator import generate_steps
 # these keys (passed in by generate_plan()/replan() below); the
 # templates (via frontend/app.py) iterate this same list to render
 # every horizon in order.
-PLAN_KEYS = ("one_year", "one_month", "this_week", "today", "this_hour", "this_minute", "right_now")
+PLAN_KEYS = (
+    "year", 
+    "month", 
+    "week", 
+    "today", 
+    "hour", 
+    "minute", 
+    "now"
+)
 
 # ============================================================
 # 2. Model prompts
@@ -77,31 +106,31 @@ SYSTEM_PROMPT = (
     "which the user actually told you. If so, do NOT invent an answer: "
     "set clarification to ONE short question that would make the goal "
     "specific enough to plan, and set every one of "
-    "one_year/one_month/this_week/today/this_hour/this_minute/right_now "
+    "year/month/week/today/hour/minute/now "
     "to JSON null.\n\n"
     "Otherwise, set clarification to JSON null. The plan has seven "
-    "horizons, from broadest to narrowest: one_year, one_month, "
-    "this_week, today, this_hour, this_minute, right_now - but not "
-    "every goal's real timeframe reaches all the way up to one_year. "
+    "horizons, from broadest to narrowest: year, month, "
+    "week, today, hour, minute, now - but not "
+    "every goal's real timeframe reaches all the way up to year. "
     "You will be told exactly which of these horizons to FILL IN and "
     "which to leave as JSON null, based on the goal's actual given "
     "timeframe - respect that list exactly. Do NOT invent a value for "
     "any horizon you were told to leave null, even a plausible-sounding "
-    "one - a goal given '3 months' has no honest one_year answer, "
+    "one - a goal given '3 months' has no honest year-horizon answer, "
     "inventing one anyway is fabrication, not planning. For every "
     "horizon you WERE told to fill in, give a concrete, realistic "
     "value, framed as how this goal connects to or fits within that "
     "time window (e.g. a habit it's part of, a pattern it continues, "
-    "what stays true a year on, what's realistic to finish today, "
-    "within this one hour, within this one minute).\n"
-    "- right_now is different from the horizons above it: not a time "
+    "what stays true at that goal's own outer horizon, what's realistic "
+    "to finish today, within this one hour, within this one minute).\n"
+    "- 'now' is different from the horizons above it: not a time "
     "window description, but the actual trigger - the single most "
     "immediate, concrete action the user can take this very moment, "
     "small enough to start in the next 5 minutes. Always filled in, "
     "never one of the ones left null.\n\n"
     "Respond with ONLY a JSON object (no other text) with exactly these "
-    "eight keys - clarification, one_year, one_month, this_week, today, "
-    "this_hour, this_minute, right_now - each either a string value or "
+    "eight keys - clarification, year, month, week, today, "
+    "hour, minute, now - each either a string value or "
     "JSON null as described above.\n"
 )
 
@@ -109,21 +138,21 @@ REPLAN_SYSTEM_PROMPT = (
     "You are a personal execution agent. You will be told the current "
     "date and time. The user already has a plan for their goal and is "
     "now giving you feedback on whether they completed the most "
-    "immediate action ('right_now'). You will also see this goal's "
-    "full history: every right_now action tried so far, oldest first, "
+    "immediate action ('now'). You will also see this goal's "
+    "full history: every 'now' action tried so far, oldest first, "
     "each with the feedback that followed it - not just the single "
     "most recent step. Adjust the plan based on the latest feedback:\n"
     "- If they did NOT complete it, look at the history first. If "
-    "right_now has already been made smaller one or more times without "
+    "'now' has already been made smaller one or more times without "
     "being completed, do NOT shrink it again - repeatedly shrinking the "
     "same preparatory step is not real progress, and there is no value "
     "in an action smaller than a few minutes. Instead, either directly "
     "address a concrete obstacle they named, or move the action toward "
     "actually attempting the core thing the goal itself names (e.g. if "
-    "the goal is 'send 4 applications' and right_now has only ever been "
-    "research/browsing, the next right_now should be to actually send "
+    "the goal is 'send 4 applications' and 'now' has only ever been "
+    "research/browsing, the next 'now' should be to actually send "
     "one application, even in the smallest real form - not more "
-    "research). Only make right_now smaller the FIRST time it isn't "
+    "research). Only make 'now' smaller the FIRST time it isn't "
     "completed, when the history shows no earlier shrink already "
     "happened.\n"
     "- If they DID complete it, move on to the next logical step.\n\n"
@@ -138,8 +167,8 @@ REPLAN_SYSTEM_PROMPT = (
     "feedback affects; carry the others forward unchanged if the "
     "feedback doesn't touch them.\n\n"
     "Respond with ONLY a JSON object (no other text) with exactly the "
-    "same keys as before: one_year, one_month, this_week, today, "
-    "this_hour, this_minute, right_now - each either a string value or "
+    "same keys as before: year, month, week, today, "
+    "hour, minute, now - each either a string value or "
     "JSON null.\n"
 )
 
@@ -151,16 +180,26 @@ REPLAN_SYSTEM_PROMPT = (
 
 def _now_str() -> str:
     """Grounds the model's "right now" in the real current moment - it has no other sense of time."""
-    return datetime.now().strftime("%A, %Y-%m-%d %H:%M")
+    return now().strftime("%A, %Y-%m-%d %H:%M")
 
 
 def _horizon_scope_instruction(duration: str | None) -> str:
     """
     The "fill these horizons in, leave these as null" line, shared by
     generate_plan() and replan() so both compute the boundary the same
-    way (see frozen_duration.py §3). right_now is always included in
+    way (see frozen_duration.py §3). `now` is always included in
     fill_keys - it's always the last/narrowest PLAN_KEYS entry, never
     the broadest relevant horizon itself.
+
+    PLAN_KEYS[0] ("year") is a level name, not a literal duration - it
+    has no broader horizon above it, so it's the one slot a goal's real
+    length can exceed - a 5-year goal is just as "broadest relevant" as
+    a 10-month one (see _HORIZON_LENGTH_THRESHOLDS), but the two need
+    very different content. When PLAN_KEYS[0] is the broadest, the
+    instruction names the goal's own actual resolved span instead of
+    leaving the model to assume a literal year (SYSTEM_PROMPT's framing
+    example talks about "that goal's own outer horizon" for the same
+    reason).
     """
     broadest = broadest_relevant_horizon(duration)
     start = PLAN_KEYS.index(broadest)
@@ -169,6 +208,12 @@ def _horizon_scope_instruction(duration: str | None) -> str:
     instruction = f"\n\nFill in these horizons: {', '.join(fill_keys)}."
     if null_keys:
         instruction += f" Leave these horizons as JSON null: {', '.join(null_keys)}."
+    if broadest == PLAN_KEYS[0]:
+        instruction += (
+            f" This goal's own actual outer timeframe is {resolve_duration(duration)} - "
+            f"describe the '{PLAN_KEYS[0]}' horizon around that real timeframe, not "
+            "literally one calendar year, whenever it's longer or shorter than that."
+        )
     return instruction
 
 
@@ -196,8 +241,8 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
     is optional free text from the user (e.g. "30 minutes", "this
     week") describing how far ahead this plan should reach - no fixed
     choices, whatever the user types is passed straight through.
-    Returns a dict with keys: clarification, one_year, one_month,
-    this_week, right_now, steps.
+    Returns a dict with keys: clarification, year, month,
+    week, now, steps.
 
     `clarification` (added 2026-08-21) is a single question (string)
     instead of a real plan when the goal as given is too vague to plan
@@ -234,7 +279,7 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
     if duration:
         count = step_count(duration)
         if count is not None:
-            plan["steps"] = generate_steps(goal, plan.get("right_now") or goal, count)
+            plan["steps"] = generate_steps(goal, plan.get("now") or goal, count)
     return plan
 
 
@@ -305,11 +350,11 @@ def create_goal(typed_text: str, new_vision_text: str, vision_id_value: str) -> 
 def replan(goal: str, history: list[dict], feedback: str, duration: str | None = None) -> dict:
     """
     Takes the goal, its full history (oldest first), and feedback on
-    the most recent "right_now" action, and asks the model for an
+    the most recent "now" action, and asks the model for an
     updated plan. Returns the same shape as generate_plan().
 
     Passing the *whole* history, not just the previous plan, is what
-    lets REPLAN_SYSTEM_PROMPT's "don't shrink right_now more than once"
+    lets REPLAN_SYSTEM_PROMPT's "don't shrink 'now' more than once"
     rule work - a model shown only the last step can't notice it has
     already made the same task smaller several times in a row (see
     docs/06-development.md, 2026-08-20, for the drift this fixed).
@@ -322,18 +367,18 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     # the step list.
     history_lines = []
     for record in history:
-        right_now = record["plan"].get("right_now") or "(none)"
+        right_now = record["plan"].get("now") or "(none)"
         if record.get("feedback"):
-            history_lines.append(f'- right_now: "{right_now}" -> feedback: "{record["feedback"]}"')
+            history_lines.append(f'- now: "{right_now}" -> feedback: "{record["feedback"]}"')
         else:
-            history_lines.append(f'- right_now: "{right_now}" (the first plan, no feedback yet)')
+            history_lines.append(f'- now: "{right_now}" (the first plan, no feedback yet)')
     history_text = "\n".join(history_lines)
 
     user_content = (
         f"The current date and time is: {_now_str()}\n\n"
         f"My goal is: {goal}\n\n"
         f"This goal's full history so far, oldest first:\n{history_text}\n\n"
-        f"My feedback on the most recent 'right_now' action: {feedback}"
+        f"My feedback on the most recent 'now' action: {feedback}"
     )
     if duration:
         user_content += f"\n\nThis plan should still span roughly: {resolve_duration(duration)}"
@@ -403,7 +448,7 @@ def apply_feedback(latest: dict, note: str) -> dict:
     if latest["plan"].get("clarification"):
         # No real plan yet - `note` answers the clarifying question, not
         # a status report. Routed through generate_plan() (not replan(),
-        # built around right_now completion; not parse_outcome(), which
+        # built around `now` completion; not parse_outcome(), which
         # would force an answer like "speed and comprehension" through
         # outcome categories that don't apply).
         #
@@ -461,7 +506,7 @@ def apply_feedback(latest: dict, note: str) -> dict:
         # save is the pending_duration_question flag, which is what
         # makes the branch above fire on the NEXT message and is what
         # active_goal/_conversation.html's thread shows as the agent's reply
-        # instead of the real right_now.
+        # instead of the real `now`.
         return save_plan(
             latest["goal"],
             {**latest["plan"], "pending_duration_question": "How long do you want this to run now?"},
@@ -485,7 +530,7 @@ def apply_feedback(latest: dict, note: str) -> dict:
     outcome_value = classified or "action_in_progress"
 
     if outcome_value == "goal_completed":
-        # The whole goal is done, not just this one "right_now" step -
+        # The whole goal is done, not just this one "now" step -
         # nothing left to plan, so no replan() call. Keep the existing
         # plan content, just mark this record as the completed one.
         feedback_text = "Marked the whole goal as complete." + (f" Note: {note}" if note else "")
@@ -518,7 +563,7 @@ def apply_feedback(latest: dict, note: str) -> dict:
 
     # The full chain, not just latest["plan"] - see replan()'s docstring
     # for why: a model only shown the single previous step has no way to
-    # notice it has already shrunk right_now several times in a row.
+    # notice it has already shrunk `now` several times in a row.
     new_plan = replan(latest["goal"], get_history_for_goal(latest["goal_id"]), feedback_text, duration=duration)
     # goal_id carried forward explicitly - without this, save_plan() would
     # mint a fresh one and this replan would silently start a *new*

@@ -23,7 +23,7 @@
         <div class="yaml-line yaml-nested"><span class="yaml-key">{{ key }}:</span> {{ record.plan[key] }}</div>
       {% endif %}
     {% endfor %}
-    <div class="yaml-line yaml-nested"><span class="yaml-key">right_now:</span> {{ record.plan.right_now if record.plan.right_now else "null" }}</div>
+    <div class="yaml-line yaml-nested"><span class="yaml-key">now:</span> {{ record.plan.now if record.plan.now else "null" }}</div>
     {% if record.feedback %}
       <div class="yaml-line"><span class="yaml-key">feedback:</span> {{ record.feedback }} <span class="yaml-comment"># given</span></div>
     {% endif %}
