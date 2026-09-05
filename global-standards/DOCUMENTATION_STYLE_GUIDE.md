@@ -6,6 +6,8 @@ A reusable standard for how AI-generated project documentation should be written
 
 Provide this file as context when an AI assistant creates or updates project documentation (README files, architecture notes, requirement specs, implementation plans, changelogs, etc.). Everyday conversation between the user and the assistant may happen in any language, but the rules below apply specifically to the documentation output itself.
 
+`CODE_STYLE_GUIDE.md` defines how source code is structured and maintained, and `AI_COLLABORATION_GUIDE.md` defines how an AI session establishes and verifies its understanding of a project — two different concerns from the one this guide addresses: how project documentation itself is structured and maintained.
+
 ## Scope
 
 This guide governs **written project documentation** — how an AI assistant writes and structures README files, architecture documents, requirements, implementation plans, technical notes, specifications, changelogs, and similar material.
@@ -83,6 +85,8 @@ Documentation must clearly distinguish between:
 
 Never present an assumption as an established fact. When uncertain which category something belongs to, label it explicitly rather than omitting the label (e.g., "Assumption: ...", "Open question: ...").
 
+This same discipline applies beyond claims about the project's own implementation. Stating what something defines, how it relates to another document or component, or what it is intended to do describes that thing directly and needs no external evidence — though it still needs to accurately describe the thing itself. Stating that something is commonly, typically, usually, or widely done in practice is a different kind of claim — an empirical one about the world beyond the document — and needs the same basis any other confirmed fact would. Don't borrow the language of common practice to express a structural relationship or a design intent that doesn't depend on how something is actually used elsewhere.
+
 ## 6. Consistency
 
 Documentation must remain consistent with the actual project:
@@ -138,6 +142,8 @@ When a document has both structural headings and a separate series of individual
 ### What a Contents section is
 
 A Contents section is a high-level map of what a document contains — not merely a list of Markdown headings. It lets the reader understand a document's structure, and, for longer technical documents, its important classes, functions, methods, or components, before reading the details.
+
+This is a different thing from a source file's own Contents or file-index block — a structural navigation comment placed near the top of a source file, outside its descriptive docstring, so a developer can scan the file's architecture at a glance. The document-oriented Contents section defined here is not that; see `CODE_STYLE_GUIDE.md` §1 for the source-code convention.
 
 ### Using Contents in practice
 

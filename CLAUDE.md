@@ -7,7 +7,7 @@ projects.
 
 @global-standards/DOCUMENTATION_STYLE_GUIDE.md
 @global-standards/CODE_STYLE_GUIDE.md
-@global-standards/CONTENT_HIERARCHY.md
+@global-standards/_CONTENT_HIERARCHY.md
 
 Where a general standard above conflicts with this project's own rules or
 settled decisions, the project-specific files take precedence:

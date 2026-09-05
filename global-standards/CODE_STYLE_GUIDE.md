@@ -6,6 +6,8 @@ A reusable standard for how AI-generated source code should be structured, organ
 
 Provide this file as context when an AI assistant creates or updates source code files. It complements `DOCUMENTATION_STYLE_GUIDE.md` — that guide governs *documentation* (README files, architecture notes, specs); this guide governs *source code files themselves*.
 
+`AI_COLLABORATION_GUIDE.md` complements this guide in a different way: it defines how an AI session establishes and verifies its understanding of a project, not how source code should be structured or maintained.
+
 ## Scope
 
 This guide governs **source code files themselves** — how an AI assistant structures, organizes, and makes larger code files navigable for humans. This includes Contents/file index blocks, logical sections within a file, and the placement of classes and functions.
@@ -30,7 +32,7 @@ Source files whose structure isn't obvious at a glance should include a short Co
 
 This is a different thing from a document's table of contents. A document-oriented Contents section can naturally live inside a module's or file's own descriptive documentation, as part of that prose (see `DOCUMENTATION_STYLE_GUIDE.md` §11). The source-code Contents convention defined here is not that — it is a structural navigation layer placed near the top of the file, outside the module docstring where appropriate, so a developer can understand the file's architecture at a glance and use it for orientation while scanning or scrolling through the source, distinct from the file's own descriptive header text.
 
-Unlike Markdown headings, plain code comments are not auto-outlined by editors or version-control viewers: a `// 1. Setup` comment is just text to the tool, not a navigable heading. This is why a hand-written Contents block earns its place in source files, even where the equivalent is often optional in Markdown documentation (see `DOCUMENTATION_STYLE_GUIDE.md` §10, Contents).
+Unlike Markdown headings, plain code comments are not auto-outlined by editors or version-control viewers: a `// 1. Setup` comment is just text to the tool, not a navigable heading. This is why a hand-written Contents block earns its place in source files, even where the equivalent is often optional in Markdown documentation (see `DOCUMENTATION_STYLE_GUIDE.md` §11, Contents).
 
 - Place it near the top of the file, as a comment — outside the module docstring where appropriate, so it reads as a distinct navigation layer rather than part of the file's descriptive text.
 - Show the file's actual structure, in its actual order — its major logical sections, and, beneath each, its important declarations: classes, functions, methods, event handlers, constants, mappings, or other meaningful module-level elements it contains.
