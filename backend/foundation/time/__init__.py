@@ -20,8 +20,9 @@ DAY_SEGMENTS, PERIOD_PHRASES, etc.) and time_units.py (raw constants -
 SECONDS_PER_MINUTE, MONTH_DAYS, etc.).
 
 now() is the Faculty's own authoritative "current time" - the one
-place backend code reads the system clock (`time_logic/__init__.py`),
-so every caller shares the same notion of "now" and a later extension
+place backend code reads the system clock (`time_logic/current_time.py`,
+re-exported through `time_logic/__init__.py`), so every caller shares
+the same notion of "now" and a later extension
 (timezone, a frozen/mocked clock, etc.) only has to change here. Every
 current-time read inside this package's own logic/ files goes through
 it too, not `datetime.now()` directly.

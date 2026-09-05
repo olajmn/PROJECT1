@@ -1,15 +1,21 @@
 """
 Small, direct checks for now() - the Faculty's own authoritative
-current-time source (see time_logic/__init__.py). Not a test
+current-time source (see time_logic/current_time.py). Not a test
 framework, just asserts run top to bottom.
 
 Run from the project root:
     .venv/bin/python -m backend.foundation.time.test_time
 """
 
+# Contents
+#  1. now() checks
+#      - result
+
 from datetime import datetime, timedelta
 
 from backend.foundation.time import now
+
+# 1. now() checks
 
 result = now()
 assert isinstance(result, datetime), f"now() returned {type(result)}, expected datetime"

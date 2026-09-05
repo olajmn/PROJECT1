@@ -20,7 +20,7 @@ What the project consists of — scannable in a few seconds. See § Visual Overv
    │   ├── Goal         → goal/resolver.py
    │   ├── Plan         → plan/
    │   └── Feedback     → feedback/
-   ├── Foundation       → time/ (the established Faculty)
+   ├── Foundation       → time/, math.py (the two established Faculties)
    ├── Reasoning        → model_client.py (the Ollama boundary)
    ├── Infrastructure   → data_persistence.py
    └── memory/, world/  — empty placeholders
@@ -62,11 +62,13 @@ graph TD
 ### ii. Backend
 
 - Goals — `backend/goals/goal/resolver.py`: goal identity/history reading (`get_latest_for_goal`, `get_latest_for_all_goals`, `get_history_for_goal`).
-- Plans — `backend/goals/plan/`: `planner.py` (goal → plan, `replan()`, and the decision logic behind creating a goal and reacting to feedback), `model_client.py` (Plan-specific JSON-shape validation on top of Reasoning), `step_generator.py` (fills in a plan's step list), `action_reader.py` (reads the current Action from the latest plan).
+- Plans — `backend/goals/plan/`: `planner.py` (goal → plan, `replan()`, and the decision logic behind creating a goal and reacting to feedback; a Plan record's fields are named by `PLAN_KEYS` — `year`, `month`, `week`, `today`, `hour`, `minute`, `now` — planning-level names, not literal/deictic durations), `model_client.py` (Plan-specific JSON-shape validation on top of Reasoning), `step_generator.py` (fills in a plan's step list), `action_reader.py` (reads the current Action, `plan.now`, from the latest plan).
 - Feedback — `backend/goals/feedback/`: `feedback_parser.py` (deterministic outcome/duration-change parsing), `acknowledger.py` (display-only acknowledgment via Reasoning, for feedback `feedback_parser.py` can't classify).
 - Infrastructure — `backend/infrastructure/data_persistence.py`: saves/loads `data/plans.json` and `data/visions.json`.
 - Reasoning — `backend/reasoning/model_client.py`: the one call to the local Ollama model every other component goes through.
-- World / domain areas — `backend/foundation/time/` (the established temporal-understanding Faculty, split into `time_data/`/`time_logic/`), `backend/memory/` (empty), `backend/world/` (empty).
+- World / domain areas — `backend/foundation/time/` (temporal understanding, split into `time_data/`/`time_logic/`) and `backend/foundation/math.py` (basic deterministic arithmetic) — the two established Faculties; `backend/memory/` (empty), `backend/world/` (empty).
+
+Larger or structurally complex source files — most of `backend/foundation/time/`, `backend/foundation/math.py`, `backend/goals/plan/planner.py`, `frontend/app.py` — carry a `Contents` navigation comment near the top, listing major sections and their declarations in the file's actual order; see `global-standards/CODE_STYLE_GUIDE.md` §1 for the convention.
 
 ### iii. Data
 
@@ -86,9 +88,15 @@ Receive an HTTP request, read/validate form input, call one backend function per
 
 Own every Goal/Plan/Vision/Feedback decision and its persistence. This is where the architectural concepts from `03-architecture.md` — Domains, Faculties, Infrastructure — are actually implemented today.
 
-The only established Faculty is **temporal understanding** (`backend/foundation/time/`). Time (the Domain) and temporal understanding (the Faculty) are related but distinct: Time is what the system operates on, temporal understanding is the capability the agent uses to make sense of it. No other Faculty is established yet — speculative empty scaffolds for unproven Faculties (formerly `foundation/language/`, `foundation/meaning(maybe)/`) were removed 2026-08-27 rather than kept as placeholders; a Faculty is added only once real code earns it through demonstrated reuse, not proposed ahead of any.
+Two Faculties are established: **temporal understanding** (`backend/foundation/time/`) and **Math** (`backend/foundation/math.py`). Time (the Domain) and temporal understanding (the Faculty) are related but distinct: Time is what the system operates on, temporal understanding is the capability the agent uses to make sense of it; Math has no paired Domain — nothing yet treats standalone quantities as records the system operates on. A Faculty is earned either through demonstrated reuse or by representing a genuine, independently-existing reasoning domain, not proposed ahead of either (see `05-decisions.md`, "Faculty categorization" and its refinement) — speculative empty scaffolds for unproven Faculties (formerly `foundation/language/`, `foundation/meaning(maybe)/`) were removed 2026-08-27 rather than kept as placeholders.
 
-**Vision** (added 2026-08-26) is a fifth concept, deliberately none of the above — not a Domain, Faculty, or pipeline stage. It's optional, cross-goal context (`data/visions.json`, an optional `vision_id` on a Goal record); see `03-architecture.md` § Vision for what it is and isn't. The conceptual model is **Vision / Goal / Plan / Action / Feedback** — "Action" replaces "Task"/"today's action" as the term used across docs and the UI (the `right_now` field name is unchanged, still embedded in persisted data/the LLM prompts — see `06-development.md`, 2026-08-20, for why).
+Temporal understanding currently covers: recognizing and resolving clock times, calendar periods, weekdays, months, named fractions, and counted lengths through decade/century/millennium; seasons (spring/summer/autumn/winter, "fall" recognized as a synonym for autumn), resolved against an explicit, caller-supplied hemisphere ("northern"/"southern") and reported as recognized-but-unresolved when none is given — no code anywhere supplies one yet, since no location/hemisphere source exists; and `now()` (`time_logic/current_time.py`), backend's one authoritative current-time read, used throughout `foundation/time/`'s own logic and by `planner.py`. `data_persistence.py`'s `created_at` timestamps deliberately still read the system clock directly — Infrastructure bookkeeping, not temporal reasoning, so left outside this.
+
+Math currently covers basic deterministic arithmetic only: `add`, `subtract`, `multiply`, `divide` (`backend/foundation/math.py`, a single flat module) — division by zero raises `ZeroDivisionError` explicitly. No percentages, algebra, statistics, or expression parsing.
+
+**Vision** (added 2026-08-26) is a fifth concept, deliberately none of the above — not a Domain, Faculty, or pipeline stage. It's optional, cross-goal context (`data/visions.json`, an optional `vision_id` on a Goal record); see `03-architecture.md` § Vision for what it is and isn't. The conceptual model is **Vision / Goal / Plan / Action / Feedback** — "Action" replaces "Task"/"today's action" as the term used across docs and the UI.
+
+A Plan record's fields are named by **`PLAN_KEYS`** — `year`, `month`, `week`, `today`, `hour`, `minute`, `now` — planning-level names, not literal or deictic durations (renamed from `one_year`/`one_month`/`this_week`/`this_hour`/`this_minute`/`right_now`; see `05-decisions.md` #19). Existing `data/plans.json` records are remapped to the new names on read, via `data_persistence._LEGACY_HORIZON_KEY_RENAMES` — not rewritten on disk until next saved. `_horizon_scope_instruction()` (`planner.py`) decides which `PLAN_KEYS` fields the model fills in for a given goal, and names the goal's own actual resolved timeframe when its outer, `year`-level field applies, rather than assuming a literal year; the underlying threshold table (`_HORIZON_LENGTH_THRESHOLDS`) and bucketing function (`broadest_relevant_horizon()`) live in `backend/foundation/time/time_logic/frozen_duration.py`, not in `planner.py` itself.
 
 `data_persistence.py` is Infrastructure, not a Faculty: it stores and retrieves data without understanding what it represents.
 
@@ -181,10 +189,11 @@ Concretely:
 |---|---|
 | Goal → plan | `backend/goals/plan/planner.py` (`generate_plan`) |
 | Plan saved | `backend/infrastructure/data_persistence.py` |
-| Action (right now) | `backend/goals/plan/action_reader.py` reads `plan.right_now` |
+| Action (right now) | `backend/goals/plan/action_reader.py` reads `plan.now` |
 | User reports progress | `frontend/app.py` (`/feedback`) |
 | Plan adjusts | `backend/goals/plan/planner.py` (`replan`) |
 | Temporal understanding | `backend/foundation/time/` |
+| Basic arithmetic | `backend/foundation/math.py` (`add`/`subtract`/`multiply`/`divide`) |
 | Vision created / linked to a Goal | `frontend/app.py` (`/vision`, `/goal`) |
 | Local web UI | `frontend/app.py` — vision form, goal form, feedback, per-step done/no, history, completed |
 
@@ -201,6 +210,7 @@ Concretely:
 - **Knowledge / RAG** — sketched, not implemented; `data/knowledge/example_chunks.json` exists as an early sketch artifact, not read by any backend code yet.
 - **Acting** — the agent reasons about what should happen; it doesn't yet perform external actions such as creating files or calling APIs.
 - **Live external data** — `world/` is a deliberate empty placeholder.
+- **Hemisphere/location context** — `foundation/time/` can resolve a season given an explicit hemisphere, but nothing in the system determines or supplies one yet; a season phrase without it is honestly reported as recognized, not resolved (deliberate, see `03-architecture.md` § Temporal understanding).
 - **Goal auto-completion** — finishing every step does not automatically mark a goal complete; the user still confirms explicitly. Deliberate, not an oversight.
 
 ## 8. Current Decisions
@@ -212,6 +222,8 @@ Stable, not casually revisited (see `COLLABORATION.md` rule 4):
 - Feedback outcome (action_completed/action_not_completed/action_in_progress/goal_completed) is parsed deterministically, never left to the LLM to judge.
 - Testing on real use takes priority over adding more features.
 - Vision is optional, lightweight context (an id+text store, an optional foreign-key-style reference on a Goal) — not a relational hierarchy, not duplicated free text per goal.
+- Plan-record field names (`PLAN_KEYS`) are planning-level names (`year`/`month`/`week`/`today`/`hour`/`minute`/`now`), not literal or deictic durations — existing records are migrated on read, not rewritten.
+- A Faculty represents demonstrated cross-system reuse or a fundamental, independently-existing reasoning domain (temporal, quantitative) — not interpretation of ambiguous input specifically, and not a plausible category on its own.
 
 **Security status:** whole-disk encryption via macOS FileVault is on for this machine (covers the "stolen/lost laptop" scenario). No application-level encryption of `data/plans.json` itself yet — deferred until this becomes a multi-user or cloud product, see `05-decisions.md`. No encryption in transit — not relevant while Ollama is local-only.
 
@@ -221,7 +233,7 @@ Full list with reasoning: `05-decisions.md`.
 
 - Flat vs. hierarchical step list — not designed, needs its own pass.
 - Should a goal auto-complete when every step is done? Real tension between one-shot goals and ongoing habit goals, not resolved.
-- Future Faculties should emerge from demonstrated reuse, not be predetermined now — none beyond temporal understanding are settled.
+- Future Faculties beyond Time and Math should still emerge from demonstrated reuse or a genuine, independently-existing reasoning domain, not be predetermined (see `05-decisions.md`, "Faculty categorization").
 - Visual design — wants a holistic pass, not one color fixed at a time.
 - Whether/how a Goal's Vision ever gets summarized into the LLM's context when planning/replanning — deliberately not decided or built yet, see `03-architecture.md` § Vision.
 - Whether editing/deleting an existing Vision is worth building, once there's real usage to learn from.
@@ -230,4 +242,4 @@ Full list with reasoning: `05-decisions.md`.
 
 1. Pick one of Memory / hierarchical steps / Knowledge-RAG / Acting to actually build — not more than one at a time.
 
-(The Action/Task/`right_now`/"today's task" terminology drift an earlier architectural pass flagged as worth resolving before picking one of these is now done, alongside implementing Vision — see `06-development.md`, 2026-08-26.)
+(The Action/Task/`right_now`/"today's task" terminology drift an earlier architectural pass flagged as worth resolving before picking one of these is now done, alongside implementing Vision — see `06-development.md`, 2026-08-26. The `right_now` field name itself was later renamed to `now`, along with the rest of `PLAN_KEYS` — see `05-decisions.md` #19.)
