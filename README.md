@@ -50,7 +50,7 @@ Everything else supports building or verifying the agent:
   though today it also carries some of the feedback→replan routing
   logic described above.
 - `tools/` — standalone dev utilities (`project_check.py`,
-  `docs_lint.py`). No runtime relationship to the agent.
+  `docs_check.py`, `docs_lint.py`). No runtime relationship to the agent.
 - `docs/` — the project's documentation vault (architecture, decisions,
   development history).
 - `data/` — local, git-ignored storage for plans and history.

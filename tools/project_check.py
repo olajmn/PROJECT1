@@ -1,82 +1,68 @@
 """
 Cheap, deterministic repository orientation - meant to run at the start
-of a session (or before a claim about current state matters), so a
-session doesn't have to trust its own memory or docs/04-current-state.md's
-prose at face value. Reports observable facts: what's changed in git,
-which files under the areas docs/04-current-state.md describes are
-newer than that file itself, the actual backend/ and frontend/ trees,
-whether the core modules still import, code-level hygiene (pyflakes,
-stale backend/frontend path mentions in code and in docs/, modules
-with no inbound import), whether architecture_foundation/ (when
-present) still has its expected shape, and the existing docs
-checkers' findings.
+of a session, so it doesn't have to trust its own memory or
+docs/04-current-state.md's prose at face value. Reports observable
+facts: git status, files newer than docs/04-current-state.md, the
+actual backend/ and frontend/ trees, whether the core modules still
+import, code-level hygiene (pyflakes, stale backend/frontend path
+mentions, modules with no inbound import), the architecture_foundation/
+skeleton (when present), and the existing docs checkers' findings.
 
-Interprets nothing about content or correctness. Whether a "newer file"
-actually means docs/04-current-state.md is out of date, whether a tree
-mismatch matters, whether a module with no inbound import is dead code
-or a deliberate entry point, whether an architecture_foundation/
-component's status or content is actually right, what to do about a
-docs_check/docs_lint finding - all of that is a human/Claude judgment
-call, not this script's. See ../COLLABORATION.md for how a session is
-expected to use this output.
-
-Reuses tools/docs_check.py, tools/docs_lint.py, and pyflakes (already
-a project dependency, see requirements.txt) as sub-checks rather than
-duplicating their logic - this script is repository-wide orientation,
-a layer above them, not a third documentation checker or a code
-analyzer in its own right:
-
-    docs_lint.py     -> documentation style
-    docs_check.py    -> documentation structural integrity
-    pyflakes         -> unused imports, undefined names (code)
-    project_check.py -> repository/project orientation (this file) -
-                         also owns the small checks below that nothing
-                         else covers: stale backend/frontend path
-                         mentions in code comments and docs/ prose,
-                         modules with no detected inbound import, and
-                         whether architecture_foundation/'s expected
-                         files (when that directory exists at all) are
-                         still there and non-empty
-    tests            -> actual runtime behavior (not this file's job -
-                         the import check below only confirms a module
-                         doesn't raise on import, nothing more)
+Interprets nothing about content or correctness - every finding is
+left for a human/Claude to judge. See ../COLLABORATION.md for how a
+session is expected to use this output. Wraps docs_check.py,
+docs_lint.py, and pyflakes as sub-checks rather than duplicating their
+logic.
 
 Run from the project root:
     .venv/bin/python3 -m tools.project_check
 
 Exit code 0 if docs_check.py, docs_lint.py, pyflakes, the import smoke
-test, and the architecture_foundation/ skeleton check (see
-architecture_skeleton_check()) all pass; 1 if any of them found
-something. The skeleton check only ever fails on a missing/emptied
-expected file - never on whether a component's status or content is
-right, which stays a human/Claude judgment call same as everything
-else here. Every other section (git status, newer-than-04-current-
-state, the backend/ tree, stale code-path mentions, modules with no
-inbound import) is pure information and never affects the exit code -
-none of them are "wrong" on their own; each one needs a human/Claude
-to decide whether the thing it observed actually means anything.
+test, and the architecture_foundation/ skeleton check all pass; 1 if
+any of them found something. Every other section is pure information
+and never affects the exit code.
 """
+
+# Contents
+#  1. Configuration
+#      - ROOT / CURRENT_STATE / PYTHON
+#      - ARCHITECTURE_SKELETON
+#      - ARCHITECTURE_SKELETON_CORE_DOCS
+#      - RELEVANT_AREAS
+#      - SMOKE_IMPORT_MODULES
+#
+#  2. Checks
+#      - _run()
+#      - git_status()
+#      - files_newer_than_current_state()
+#      - directory_tree()
+#      - import_smoke_test()
+#      - run_tool()
+#      - run_pyflakes()
+#      - CODE_PATH_RE / STALE_PATH_SCAN_AREAS
+#      - stale_code_path_mentions()
+#      - modules_with_no_inbound_import()
+#      - architecture_skeleton_check()
+#
+#  3. Entry Point
+#      - main()
 
 import re
 import subprocess
 import sys
 from pathlib import Path
 
+# 1. Configuration
+
 ROOT = Path(__file__).resolve().parent.parent
 CURRENT_STATE = ROOT / "docs" / "04-current-state.md"
 PYTHON = ROOT / ".venv" / "bin" / "python3"
 
-# Only present on branches that actually carry the architecture skeleton
-# (e.g. architecture-skeleton) - not main. See
-# architecture_skeleton_check()'s docstring for why its absence is a
-# silent skip, never a failure.
+# Not present on every branch (e.g. absent on main) - see
+# architecture_skeleton_check() for why that's a silent skip.
 ARCHITECTURE_SKELETON = ROOT / "architecture_foundation"
 
-# The five docs every architecture_foundation/ is expected to have at
-# its root, regardless of which components currently exist under it -
-# unlike component folders (checked dynamically, see
-# architecture_skeleton_check()), this list is small and stable enough
-# to name directly, same reasoning as SMOKE_IMPORT_MODULES above.
+# Docs every architecture_foundation/ is expected to have at its root.
 ARCHITECTURE_SKELETON_CORE_DOCS = [
     "README.md",
     "ARCHITECTURE.md",
@@ -85,13 +71,11 @@ ARCHITECTURE_SKELETON_CORE_DOCS = [
     "ROADMAP.md",
 ]
 
-# Areas docs/04-current-state.md actually describes - not all of the
-# repo, just the parts relevant to whether it might need a fresh look.
+# Areas docs/04-current-state.md actually describes.
 RELEVANT_AREAS = ["backend", "frontend", "docs"]
 
-# Kept small and explicit rather than dynamically discovered - an
-# orientation smoke test, not a dependency graph. Add a module here
-# only if it's a real entry point worth confirming still imports.
+# Real entry points worth confirming still import - not dynamically
+# discovered.
 SMOKE_IMPORT_MODULES = [
     "backend.goals.plan.planner",
     "backend.goals.goal.resolver",
@@ -100,20 +84,22 @@ SMOKE_IMPORT_MODULES = [
 ]
 
 
+# 2. Checks
+
+
 def _run(cmd: list[str]) -> tuple[int, str]:
-    """Run a subprocess from the project root, return (exit code,
-    combined stdout+stderr) - never raises; a failing sub-check is
-    itself part of the report, not a crash. Only trailing whitespace
-    is trimmed - `git status --porcelain`'s status columns are
-    position-sensitive, so a leading-whitespace-eating `.strip()` on
-    the combined output would corrupt its first line."""
+    """Run a subprocess from the project root; never raises, since a
+    failing sub-check is itself part of the report. Trims only
+    trailing whitespace - `git status --porcelain`'s columns are
+    position-sensitive, so `.strip()` would corrupt a leading status
+    character."""
     result = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True)
     return result.returncode, (result.stdout + result.stderr).rstrip()
 
 
 def git_status() -> list[str]:
-    """Every changed/untracked path from `git status --porcelain`,
-    relative to the repo root - the raw fact, not an interpretation."""
+    """Changed/untracked paths from `git status --porcelain`, relative
+    to the repo root."""
     code, output = _run(["git", "status", "--porcelain"])
     if code != 0 or not output:
         return []
@@ -123,14 +109,13 @@ def git_status() -> list[str]:
 
 
 def files_newer_than_current_state() -> list[str]:
-    """Every file under RELEVANT_AREAS whose mtime is newer than
-    docs/04-current-state.md's own mtime. Purely observable - doesn't
-    claim this means the doc is stale (a file can be touched without
-    its meaning changing, and the reverse); that judgment is left to
-    whoever reads the report. mtime, not `git log`, because this
-    project's docs/ work is routinely uncommitted for a whole session
-    at a time - `git log` sees nothing for a file that was never
-    committed, mtime always does."""
+    """Files under RELEVANT_AREAS newer than docs/04-current-state.md.
+
+    Uses mtime rather than git history because docs/ work is often
+    uncommitted for a whole session - `git log` sees nothing for a
+    file that was never committed, mtime always does. Observable
+    signal only, not proof the doc is stale: touching a file doesn't
+    guarantee its meaning changed, and vice versa."""
     if not CURRENT_STATE.exists():
         return []
     reference = CURRENT_STATE.stat().st_mtime
@@ -150,13 +135,9 @@ def files_newer_than_current_state() -> list[str]:
 
 
 def directory_tree(area: str) -> list[str]:
-    """The actual directory tree for `area` (e.g. "backend", "frontend"),
-    one relative path per line - a plain fact to hold up against
-    whatever docs/04-current-state.md's own "Project Structure" section
-    currently says for that area. This script doesn't parse or diff the
-    doc's prose tree itself - reading the doc and noticing a mismatch
-    is exactly the kind of judgment call left to whoever reads this
-    report, not something to automate here."""
+    """Directory tree for `area` (e.g. "backend", "frontend"), to
+    compare against docs/04-current-state.md's "Project Structure"
+    section for that area."""
     area_path = ROOT / area
     if not area_path.exists():
         return []
@@ -168,11 +149,9 @@ def directory_tree(area: str) -> list[str]:
 
 
 def import_smoke_test() -> list[str]:
-    """Each module in SMOKE_IMPORT_MODULES, imported in its own
-    subprocess (one bad import can't take down the rest) - failures
-    only, since a clean import needs no report. Confirms importability,
-    not behavior - see this file's own docstring for why that's the
-    deliberate boundary."""
+    """Imports each module in SMOKE_IMPORT_MODULES in its own
+    subprocess, so one bad import can't take down the rest. Reports
+    failures only. Confirms importability, not runtime behavior."""
     failures = []
     for module in SMOKE_IMPORT_MODULES:
         code, output = _run([str(PYTHON), "-c", f"import {module}"])
@@ -183,31 +162,22 @@ def import_smoke_test() -> list[str]:
 
 
 def run_tool(module: str) -> tuple[int, str]:
-    """Run an existing tools/ script as a subprocess, reused as-is
-    rather than reimplemented."""
+    """Run an existing tools/ script as a subprocess."""
     return _run([str(PYTHON), "-m", f"tools.{module}"])
 
 
 def run_pyflakes() -> tuple[int, str]:
-    """Run pyflakes (already a project dependency, see
-    requirements.txt) against backend/ and frontend/ - unused imports
-    and undefined names, reused as-is rather than reimplemented."""
+    """Run pyflakes (already a project dependency) against backend/
+    and frontend/."""
     return _run([str(PYTHON), "-m", "pyflakes", "backend", "frontend"])
 
 
 # A backend/... or frontend/...-looking .py path mentioned in a
-# comment, docstring, or docs/ prose - the same shape of pattern
-# tools/docs_check.py already uses for docs/<NN>-<name>.md references,
-# aimed at code paths instead. docs_check.py checks references between
-# docs/ files themselves (wikilinks, docs/<NN>-<name>.md mentions); this
-# checks .py code-path mentions - a different reference kind, checked
-# here regardless of which of these areas the mention appears in.
+# comment, docstring, or docs/ prose.
 CODE_PATH_RE = re.compile(r"\b(?:backend|frontend)/[A-Za-z0-9_/().-]+\.py\b")
 
-# (area, glob pattern) pairs to scan for CODE_PATH_RE mentions - .py
-# files under backend/frontend/tools, and .md files under docs/ (e.g.
-# docs/04-current-state.md naming a file that later gets moved or
-# deleted).
+# Where to scan for CODE_PATH_RE mentions: .py under backend/frontend/
+# tools, .md under docs/.
 STALE_PATH_SCAN_AREAS = [
     ("backend", "*.py"),
     ("frontend", "*.py"),
@@ -221,9 +191,7 @@ def stale_code_path_mentions() -> list[str]:
     anywhere under backend/, frontend/, tools/, or docs/ that doesn't
     resolve to a real file. Doesn't distinguish a genuine leftover
     reference from a docstring or doc deliberately narrating "moved
-    from X" as history - the same distinction every other check in
-    this file leaves to whoever reads the report, per
-    ../COLLABORATION.md."""
+    from X" as history."""
     stale = []
     for area, pattern in STALE_PATH_SCAN_AREAS:
         area_path = ROOT / area
@@ -242,15 +210,11 @@ def stale_code_path_mentions() -> list[str]:
 
 
 def modules_with_no_inbound_import() -> list[str]:
-    """Every backend/ module (excluding __init__.py) that no other
-    .py file under backend/, frontend/, or tools/ appears to mention
-    by dotted path or bare filename. A plain text search, not real
-    import-graph analysis - it only counts whether the name appears
-    anywhere, nothing more. Many entries here are legitimate (a
-    command-line entry point run directly rather than imported - see
-    SMOKE_IMPORT_MODULES above for the ones already confirmed as
-    exactly that); this function doesn't know the difference, it only
-    reports the raw list."""
+    """Backend modules (excluding __init__.py) that no other .py file
+    under backend/, frontend/, or tools/ appears to mention by dotted
+    path or bare filename. A plain text search, not real import-graph
+    analysis - many hits here are legitimate entry points (see
+    SMOKE_IMPORT_MODULES) rather than dead code."""
     py_files = [
         p
         for area in ("backend", "frontend", "tools")
@@ -280,28 +244,21 @@ def modules_with_no_inbound_import() -> list[str]:
 
 def architecture_skeleton_check() -> list[str] | None:
     """
-    Structural sanity check for architecture_foundation/ (see that
-    directory's own README.md) - not every branch has it, and that's
-    not a problem this function reports: returns None if
-    ARCHITECTURE_SKELETON doesn't exist at all, meaning "nothing to
-    check here", distinct from an empty list, meaning "checked, found
-    nothing wrong".
+    Structural check for architecture_foundation/. Returns None if
+    ARCHITECTURE_SKELETON doesn't exist at all ("nothing to check
+    here"), distinct from an empty list ("checked, found nothing
+    wrong").
 
-    Checks only that the skeleton's shape hasn't silently eroded -
-    the five core docs (ARCHITECTURE_SKELETON_CORE_DOCS) exist and are
-    non-empty, and every directory under architecture_foundation/, at
-    any depth, has its own non-empty README.md. Component folders are
-    discovered by walking the tree, not a hardcoded list - same
-    reasoning backend_tree() already follows: the set of components is
-    expected to change as the skeleton evolves, so nothing here should
-    need updating just because a folder was added, renamed, or removed.
+    Checks only that the skeleton's shape hasn't eroded: the five core
+    docs (ARCHITECTURE_SKELETON_CORE_DOCS) exist and are non-empty,
+    and every directory under architecture_foundation/ has its own
+    non-empty README.md. Component folders are discovered by walking
+    the tree, not hardcoded.
 
-    Deliberately does not check: whether a component's status
-    (CURRENT/NEXT/FUTURE/EXPLORATORY) is accurate, whether its content
-    is correct or complete, or whether a component should exist at
-    all - "does the structure exist" is an objective, checkable fact;
-    "is the architecture right" is a human/Claude judgment call, the
-    same boundary every other check in this file already respects.
+    Deliberately does not check whether a component's status
+    (CURRENT/NEXT/FUTURE/EXPLORATORY) is accurate or its content is
+    correct - "does the structure exist" is checkable; "is the
+    architecture right" isn't.
     """
     if not ARCHITECTURE_SKELETON.exists():
         return None
@@ -324,6 +281,9 @@ def architecture_skeleton_check() -> list[str] | None:
             problems.append(f"empty README.md: {readme.relative_to(ROOT)}")
 
     return problems
+
+
+# 3. Entry Point
 
 
 def main() -> int:

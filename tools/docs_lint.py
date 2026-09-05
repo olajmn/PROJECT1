@@ -1,62 +1,53 @@
 """
-Checks docs/*.md and every code comment/docstring under backend/ and
-frontend/ for the personal-narrative language CONVENTIONS.md's
-"Documentation neutrality" rule asks to avoid - the discovery-narrative
-style ("found via a real screenshot", "the user's own framing") this
-project already moved away from once in code comments (see git
-history, "Depersonalize comments: state facts/consequences, not
-discovery narrative") and again in docs/ on 2026-08-24. This script
-exists so that move doesn't quietly slide back the next time someone
-(human or model) writes a new entry.
+Checks docs/*.md and code comments/docstrings under backend/ and
+frontend/ for personal-narrative language (see CONVENTIONS.md's
+"Documentation neutrality" rule).
 
-This script IS specific to this project's own house style rule - it
-doesn't make sense as a reusable external tool, and isn't trying to be
-one.
-
-Two confidence tiers, same "code decides, doesn't guess past what it
-can verify" reasoning as backend/goals/feedback/feedback_parser.py:
-
-- CONFIRMED: unambiguous regardless of context ("raised in
-  conversation", "the user wanted", "found via a real ...").
-- REVIEW: "the user's own <noun>" where <noun> isn't already on the
-  known-narrative list - genuinely ambiguous ("the user's own device"
-  is fine, the product's end-user; "the user's own framing" isn't,
-  personal attribution) - same as an unrecognized feedback phrase
-  falling back to a safe non-guess rather than the script picking a
-  side. Always printed, never counted toward the exit code.
+Two confidence tiers: CONFIRMED patterns are unambiguous regardless of
+context and fail the run; REVIEW patterns are genuinely ambiguous,
+always printed, but never fail on their own.
 
 Run from the project root:
     .venv/bin/python3 tools/docs_lint.py
     .venv/bin/python3 tools/docs_lint.py --strict   # REVIEW also fails
     .venv/bin/python3 tools/docs_lint.py docs/03-architecture.md
 
-Exit code 0 if no CONFIRMED hits (REVIEW hits alone don't fail, unless
---strict); exit code 1 if any CONFIRMED hit is found. Safe to wire into
-a pre-commit hook later if wanted - not done here, this is a manual
-check for now.
+Exit code 0 if no CONFIRMED hits (REVIEW alone doesn't fail unless
+--strict); 1 if any CONFIRMED hit is found.
 """
+
+# Contents
+#  1. Configuration
+#      - ROOT
+#      - DEFAULT_TARGETS
+#      - SCANNED_SUFFIXES
+#      - CONFIRMED_PATTERNS
+#      - REVIEW_PATTERN
+#
+#  2. Helpers
+#      - _iter_files()
+#      - _scan_file()
+#
+#  3. Entry Point
+#      - main()
 
 import argparse
 import re
 import sys
 from pathlib import Path
 
+# 1. Configuration
+
 ROOT = Path(__file__).resolve().parent.parent
 
-# Directories/files this project actually wants checked by default -
-# docs/ (the material most likely to be read by someone outside this
-# project one day) plus every code comment/docstring under the agent
-# and its interface, same scope CONVENTIONS.md's rule names.
+# Default scan targets - same scope CONVENTIONS.md's rule names.
 DEFAULT_TARGETS = ["docs", "backend", "frontend", "CONVENTIONS.md", "SESSION-TODO.md"]
 
-# Only these extensions are scanned inside a directory target - no
-# point walking .venv-style binary/cache noise, and pyc/pycache are
-# already excluded by extension alone.
+# Extensions scanned inside a directory target.
 SCANNED_SUFFIXES = {".md", ".py"}
 
-# Confirmed narrative patterns - flagged as an error regardless of
-# surrounding context. Each entry is (compiled pattern, short label
-# shown in the report).
+# CONFIRMED patterns - flagged regardless of context. Each entry is
+# (pattern, label shown in the report).
 _CONFIRMED_PATTERNS = [
     (r"\braised in conversation\b", "discovery narrative"),
     (r"\bthe user (wanted|explicitly asked|explicitly said|explicitly stated)\b", "personal attribution"),
@@ -72,23 +63,19 @@ _CONFIRMED_PATTERNS = [
 ]
 CONFIRMED_PATTERNS = [(re.compile(p, re.IGNORECASE), label) for p, label in _CONFIRMED_PATTERNS]
 
-# Ambiguous - "the user's own <noun>" where <noun> wasn't already
+# Ambiguous - "the user's own <noun>" where <noun> isn't already
 # matched above. Could be the product's end-user (fine, e.g. "the
 # user's own device") or personal attribution (not fine, e.g. "the
-# user's own framing" - already caught above, so won't double-report).
-# A human decides which; this script only ever points at the sentence.
+# user's own framing"). A human decides which; this only points at
+# the sentence.
 REVIEW_PATTERN = re.compile(r"\bthe user'?s own \w+", re.IGNORECASE)
+
+# 2. Helpers
 
 
 def _iter_files(targets: list[str]) -> list[Path]:
-    """
-    Every file actually worth scanning, from a list of paths relative
-    to the project root - a directory is walked recursively (only
-    SCANNED_SUFFIXES kept), a file is included as-is if its suffix
-    qualifies. Silently skips a target that doesn't exist, so a
-    partial `--paths` list (e.g. only docs/ present in a stripped-down
-    checkout) doesn't crash the whole run.
-    """
+    """Scannable files for `targets`. Directories are walked
+    recursively; a target that doesn't exist is skipped."""
     files = []
     for target in targets:
         path = ROOT / target
@@ -104,14 +91,10 @@ def _iter_files(targets: list[str]) -> list[Path]:
 
 
 def _scan_file(path: Path) -> tuple[list[tuple[int, str, str]], list[tuple[int, str]]]:
-    """
-    (confirmed, review) for one file - confirmed is a list of (line
-    number, matched text, label); review is a list of (line number,
-    matched text). Line-by-line, not whole-file regex, so a report can
-    always point at exactly one line - good enough for prose that
-    rarely spans a match across a line break, and much easier to read
-    in the output than a byte offset would be.
-    """
+    """(confirmed, review) for one file: confirmed is (line, text,
+    label) tuples, review is (line, text) tuples. Matching is
+    line-by-line so a hit can be reported against a single line
+    number."""
     confirmed: list[tuple[int, str, str]] = []
     review: list[tuple[int, str]] = []
     text = path.read_text(encoding="utf-8", errors="replace")
@@ -130,6 +113,8 @@ def _scan_file(path: Path) -> tuple[list[tuple[int, str, str]], list[tuple[int, 
             if match:
                 review.append((line_number, match.group(0)))
     return confirmed, review
+
+# 3. Entry Point
 
 
 def main() -> int:
@@ -151,10 +136,9 @@ def main() -> int:
     total_review = 0
     for path in _iter_files(args.paths):
         confirmed, review = _scan_file(path)
-        # relative_to() raises if `path` isn't actually under ROOT (a
-        # path outside the project passed explicitly, e.g. for a
-        # one-off test) - falls back to the absolute path rather than
-        # crashing the whole run over a display detail.
+        # relative_to() raises if `path` isn't under ROOT (e.g. a path
+        # passed explicitly for a one-off test) - falls back to the
+        # absolute path rather than crashing over a display detail.
         try:
             rel = path.relative_to(ROOT)
         except ValueError:

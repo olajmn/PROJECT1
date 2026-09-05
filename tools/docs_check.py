@@ -1,16 +1,12 @@
 """
 Checks the docs/ vault's structural integrity: the expected 00-06 files
 exist and nothing stray sits alongside them, every [[wikilink]] and
-docs/<NN>-<name>.md-style reference across the project resolves to a file
-that actually exists, and each doc's own "# NN — Title" heading matches
-its filename.
+docs/<NN>-<name>.md-style reference resolves to a file that actually
+exists, and each doc's own "# NN — Title" heading matches its filename.
 
 Deterministic only - no semantic judgment about where content belongs
-(that stays a human/Claude decision, see ../COLLABORATION.md) and no
-automatic rewriting or moving of anything. Companion to
-tools/docs_lint.py (prose style/personal-narrative language) - a
-different concern, structure and references rather than language, so
-kept as its own script rather than folded into that one.
+(see ../COLLABORATION.md), no automatic rewriting. Companion to
+docs_lint.py, which checks prose style rather than structure/references.
 
 Run from the project root:
     .venv/bin/python3 -m tools.docs_check
@@ -18,16 +14,36 @@ Run from the project root:
 Exit code 0 if nothing found, 1 if any problem is reported.
 """
 
+# Contents
+#  1. Configuration
+#      - EXPECTED_DOCS
+#      - REFERENCE_SCAN_TARGETS
+#      - SCANNED_SUFFIXES
+#      - WIKILINK_RE / DOC_PATH_RE / H1_NUMBER_RE / FILENAME_NUMBER_RE
+#
+#  2. Helpers
+#      - _iter_files()
+#      - _rel()
+#
+#  3. Checks
+#      - check_structure()
+#      - check_references()
+#      - check_h1_numbering()
+#
+#  4. Entry Point
+#      - main()
+
 import re
 import sys
 from pathlib import Path
 
+# 1. Configuration
+
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
 
-# The vault's fixed shape, as settled 2026-08-25 - update this list
-# deliberately when a doc is genuinely added/renamed, never just to
-# silence a real finding.
+# The vault's fixed shape - update this list deliberately when a doc
+# is genuinely added/renamed, never just to silence a real finding.
 EXPECTED_DOCS = [
     "00-project-brief.md",
     "01-research.md",
@@ -38,10 +54,8 @@ EXPECTED_DOCS = [
     "06-development.md",
 ]
 
-# Files outside docs/ worth scanning for docs/<NN>-<name>.md-style
-# references - same scope docs_lint.py already uses for its own scan.
-# docs/ itself is scanned too (for cross-references between docs), via
-# the same walk.
+# Files outside docs/ scanned for docs/<NN>-<name>.md-style references
+# (docs/ itself included, for cross-references between docs).
 REFERENCE_SCAN_TARGETS = ["docs", "backend", "frontend", "tools", "CONVENTIONS.md", "SESSION-TODO.md"]
 SCANNED_SUFFIXES = {".md", ".py"}
 
@@ -50,14 +64,12 @@ DOC_PATH_RE = re.compile(r"\bdocs/([A-Za-z0-9_-]+\.md)\b")
 H1_NUMBER_RE = re.compile(r"^#\s+(\d{2})\D")
 FILENAME_NUMBER_RE = re.compile(r"^(\d{2})-")
 
+# 2. Helpers
+
 
 def _iter_files(targets: list[str]) -> list[Path]:
-    """Every file worth scanning, from paths relative to the project
-    root - a directory is walked recursively (only SCANNED_SUFFIXES
-    kept), a file is included as-is if its suffix qualifies. Same
-    shape as docs_lint.py's own helper, kept separate rather than
-    imported - the two scripts check different things and aren't
-    meant to share more than the pattern."""
+    """Scannable files for `targets`. Directories are walked
+    recursively; a bare file is included if its suffix qualifies."""
     files: list[Path] = []
     for target in targets:
         path = ROOT / target
@@ -78,12 +90,13 @@ def _rel(path: Path) -> str:
     except ValueError:
         return str(path)
 
+# 3. Checks
+
 
 def check_structure() -> list[str]:
     """Missing expected docs, and any docs/*.md file not on the
-    expected list - catches both a doc that's gone missing and a
-    stray/resurrected file (an old numbered doc, a stray day-file)
-    sitting next to the real seven."""
+    expected list - catches both a doc that's gone missing and a stray
+    file sitting next to the real seven."""
     problems = []
     actual = {p.name for p in DOCS.glob("*.md")}
     expected = set(EXPECTED_DOCS)
@@ -96,13 +109,12 @@ def check_structure() -> list[str]:
 
 
 def check_references() -> list[str]:
-    """Every [[wikilink]] and docs/<NN>-<name>.md-style reference,
-    anywhere in the project, resolves to a file that actually exists
-    in docs/ today. Doesn't distinguish "renamed" from "deleted" from
-    "typo" - all three look identical from here (a reference to a
-    file that isn't there), and that's the only thing worth reporting
-    deterministically; which of the three it is, and what to do about
-    it, is a human/Claude call."""
+    """Every [[wikilink]] and docs/<NN>-<name>.md-style reference in
+    the project resolves to a file that actually exists in docs/.
+    Doesn't distinguish "renamed" from "deleted" from "typo" - all
+    three look identical here (a reference to a file that isn't
+    there); which one it is, and what to do about it, is a
+    human/Claude call."""
     problems = []
     valid_stems = {p.stem for p in DOCS.glob("*.md")}
     valid_names = {p.name for p in DOCS.glob("*.md")}
@@ -126,9 +138,8 @@ def check_references() -> list[str]:
 
 
 def check_h1_numbering() -> list[str]:
-    """Each doc's own "# NN — Title" heading names the same number as
-    its filename - cheap, mechanical, and catches a real class of
-    mistake (a rename that forgot to update the file's own heading)."""
+    """Each doc's own "# NN — Title" heading matches its filename's
+    number - catches a rename that forgot to update the heading."""
     problems = []
     for path in sorted(DOCS.glob("*.md")):
         filename_match = FILENAME_NUMBER_RE.match(path.name)
@@ -145,6 +156,8 @@ def check_h1_numbering() -> list[str]:
                 f"{_rel(path)}:1: [H1 MISMATCH] filename says {expected_number!r}, heading says {h1_match.group(1)!r}"
             )
     return problems
+
+# 4. Entry Point
 
 
 def main() -> int:
