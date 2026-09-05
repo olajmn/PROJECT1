@@ -35,6 +35,7 @@ docs/06-development.md for the navigation split.
 #      - feedback()
 #      - step()
 #      - goal_vision()
+#      - goal_cancel()
 #
 #  6. History
 #      - history()
@@ -49,7 +50,7 @@ from flask import Flask, redirect, render_template, request, url_for
 
 from backend.foundation.time import describe_duration, duration_progress, step_plan
 from backend.goals.goal.resolver import get_history_for_goal, get_latest_for_goal
-from backend.goals.plan.planner import advance_step, apply_feedback, create_goal, set_goal_vision
+from backend.goals.plan.planner import advance_step, apply_feedback, cancel_goal, create_goal, set_goal_vision
 from backend.infrastructure.data_persistence import load_history, load_visions, save_vision
 from frontend.view_data.goal_overview import build_goal_overview, group_goals_by_vision_id
 from frontend.view_data.plan_horizons import BROADER_HORIZONS
@@ -89,7 +90,12 @@ def conversation():
 
 @app.route("/set-goal")
 def set_goal_page():
-    return render_template("set_goal/page.html", visions=load_visions(), current_page="set_goal")
+    return render_template(
+        "set_goal/page.html",
+        visions=load_visions(),
+        goals=build_goal_overview()["active"],
+        current_page="set_goal",
+    )
 
 
 @app.route("/set-goal", methods=["POST"])
@@ -182,6 +188,19 @@ def goal_vision():
     vision_id_value = request.form.get("vision_id", "").strip()
     set_goal_vision(int(goal_id_value), int(vision_id_value) if vision_id_value else None)
     return redirect(url_for("active_page") + f"#goal-{goal_id_value}")
+
+
+@app.route("/goal-cancel", methods=["POST"])
+def goal_cancel():
+    """planner.cancel_goal() owns the decision logic. No anchor on
+    redirect - a cancelled goal leaves the Active list entirely, so
+    there's no #goal-N element left there to scroll to."""
+    goal_id_value = request.form.get("goal_id", "").strip()
+    if not goal_id_value:
+        return redirect(url_for("active_page"))
+
+    cancel_goal(int(goal_id_value))
+    return redirect(url_for("active_page"))
 
 
 # 6. History

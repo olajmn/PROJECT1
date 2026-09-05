@@ -17,6 +17,9 @@
       <div class="yaml-line"><span class="yaml-key">duration:</span> {{ record.duration }} <span class="yaml-comment"># {{ describe_duration(record.duration) }}</span></div>
     {% endif %}
     <div class="yaml-line"><span class="yaml-key">completed:</span> {{ "true" if record.completed else "false" }}</div>
+    {% if record.cancelled %}
+      <div class="yaml-line"><span class="yaml-key">cancelled:</span> true</div>
+    {% endif %}
     <div class="yaml-line"><span class="yaml-key">plan:</span> <span class="yaml-comment"># generated, unverified</span></div>
     {% for key, label in horizons %}
       {% if record.plan[key] %}

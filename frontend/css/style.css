@@ -1,3 +1,16 @@
+/* Contents
+    1. Base (body)
+    2. Conversation (.conversation-*)
+    3. Layout primitives (.layout, .workspace, .group)
+    4. Page width & headings (main, h1, .board-heading, .vision-list)
+    5. Card / Entity (.card, .entity)
+    6. Data-shaped display (.yaml-*, .id-badge, .helper-text, .empty-state)
+    7. Chat thread / Feedback (.chat-*)
+    8. Active goal card (.model-*, .plan-prose, .horizon-*, .duration-*, .step-*)
+    9. Form elements & buttons (label, input, textarea, button, .btn-goal)
+   10. Links (a) */
+
+/* 1. Base */
 body {
   font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   max-width: 1400px;
@@ -6,6 +19,7 @@ body {
   color: #222;
 }
 
+/* 2. Conversation */
 /* Conversation - the agent's entry point (see
    conversation/_conversation.html). Centered, unboxed - deliberately not
    another .group/.entity, since this isn't a domain with data the way the
@@ -36,6 +50,7 @@ body {
   resize: vertical;
 }
 
+/* 3. Layout primitives */
 /* A row of N equal workspaces - Active's own workspace, or
    completed_goal/completed.html's single Completed workspace. Any
    page can add its own .workspace children under a .layout wrapper
@@ -69,6 +84,7 @@ body {
   .layout { flex-direction: column; }
 }
 
+/* 4. Page width & headings */
 /* Each page's own content (everything inside its <main>) matched to
    the width the navbar LINKS actually span, not the full page width -
    navbar.css's own .navbar bar already stretches edge to edge, but
@@ -99,6 +115,7 @@ h1 {
   color: #4b5563;
 }
 
+/* 5. Card / Entity */
 /* .entity = one concrete entity (a Goal, a Vision, a saved record).
    .card = the same boxed styling reused for a form/input surface
    (Set Goal, Create Vision) that isn't itself an entity - kept as a
@@ -111,6 +128,7 @@ h1 {
   margin-bottom: 20px;
 }
 
+/* 6. Data-shaped display */
 /* Plain, data-shaped display (key: value, no decoration) - used for
    Completed goals and every entry in the log (history/_history_list.html).
    Everything shown comes from one unverified LLM call, so it's
@@ -127,41 +145,33 @@ h1 {
 .yaml-nested { margin-left: 1.5em; }
 .yaml-comment { color: #9ca3af; }
 
+/* Same muted color as .yaml-comment above, deliberately - these play
+   the same "de-emphasized, secondary" visual role but aren't YAML
+   annotations, and are used well outside the .yaml-block context
+   (Set Goal/Vision ID badges, Vision page hint text, Plan's
+   empty-state message) - kept as their own rule rather than folded
+   into .yaml-comment's, so the name matches what each actually is. */
+.id-badge, .helper-text, .empty-state { color: #9ca3af; }
+
+/* 7. Chat thread / Feedback */
 /* An active goal's history as a back-and-forth thread instead of a
-   flat dump - see active_goal/_conversation.html and storage.get_history_for_goal().
+   flat dump - see active_goal/_conversation.html.
 
-   Left/right split (2026-08-23, previously both sides flush left with
-   Agent lightly indented under You) - Agent's block stays flush left
-   (margin-right: auto), You's pushes to the right (margin-left: auto)
-   via max-width capping each block below the thread's full width, the
-   standard block-level "push to one side" technique - matches the
-   familiar messaging-app layout (your own messages opposite the other
-   party's) without needing flexbox to do it.
+   Agent's block stays flush left (margin-right: auto), You's pushes
+   right (margin-left: auto), each capped by max-width below the
+   thread's full width - the standard block-level "push to one side"
+   technique, matching a familiar messaging-app layout without needing
+   flexbox.
 
-   Rounded message-bubble shape (2026-08-23, previously a plain bordered
-   rectangle, and before that not even split left/right - see git
-   history) - explicitly modeled on a real Telegram screenshot, shape
-   only: a light grayscale fill (no hue) instead of Telegram's own
-   blue/dark theme, same reasoning as the no-color-coding decision
-   right below. This is a deliberate departure from this file's older
-   "no rounded bubbles, deliberately unstyled" note (see
-   docs/12-decisions.md, 2026-08-19) - superseded by direct user
-   request, not reverted by accident; if the plain-rectangle look ever
-   needs to come back, that's a decision to make on purpose again, not
-   assume from stale history.
-
-   No color-coding (2026-08-23, previously blue/green border+background
-   per side) - which side a block sits on, plus its own "You"/"Agent"
-   label, already says who's speaking; a color on top of that was
-   identifying the SAME thing twice. One flat neutral gray fill for
-   both sides instead of Telegram's own two-tone (gray/blue) - purely
-   for the bubble to read as a bubble, not to reintroduce identity by
-   shade. */
+   Rounded bubbles, one flat neutral gray fill for both sides, modeled
+   on that same messaging-app look. No color-coding: which side a
+   block sits on, plus its own "You"/"Agent" label, already says who's
+   speaking - a color on top would identify the same thing twice. */
 .chat-thread {
   margin-bottom: 16px;
 }
 .chat-msg {
-  /* fit-content (2026-08-23) so a short message gets a short bubble,
+  /* fit-content so a short message gets a short bubble,
      not a full-width block with the text stranded off to one side -
      a block element otherwise fills its allotted width rather than
      shrinking to content, so e.g. "make user_id" (two words) rendered
@@ -223,16 +233,13 @@ h1 {
   margin-bottom: 0;
 }
 
-/* Section labels (Goal / Plan / Timeperiod / Task / Conversation) from
-   docs/07-features.md "Architecture framing: Program / Rooms /
-   Sitemap" - the interface stays close to 1:1 with that model on
-   purpose, so the model itself is visible on screen, not just in docs.
-   Same navy as the rest of the data-shaped display (see .yaml-key) -
-   switched from purple, 2026-08-23, so the whole page shares one
-   accent color (also .btn-goal/.chat-me) instead of purple being its
-   own separate identity nothing else on the page uses. Plan's children
-   (Timeperiod/Task/Conversation) are indented under it, not restyled
-   as something fancier - still plain key: value, just grouped. */
+/* 8. Active goal card */
+/* Section labels (Goal / Plan / Timeperiod / Task / Conversation)
+   mirror the project's own conceptual model of the interface, so that
+   model stays visible on screen, not just in docs. Same navy as the
+   rest of the data-shaped display (see .yaml-key) - one shared accent
+   color across the page (also .btn-goal/.chat-me), not its own
+   separate identity. */
 .model-row {
   margin-bottom: 10px;
 }
@@ -249,10 +256,9 @@ h1 {
 .model-plan-heading {
   margin-bottom: 4px;
 }
-/* Plan's content as one flowing paragraph (2026-08-23, see
-   active_goal/_plan.html) rather than a list of short labeled lines -
-   readable line-height matters more here than it did for the old
-   one-sentence-per-line layout. */
+/* Plan's content as one flowing paragraph (see active_goal/_plan.html)
+   rather than a list of short labeled lines - readable line-height
+   matters more for a continuous read than for short labeled rows. */
 .plan-prose {
   margin: 0;
   line-height: 1.6;
@@ -287,22 +293,21 @@ h1 {
 .horizon-level-now .horizon-level-label {
   color: #222;
 }
-/* Timeperiod/Task/Conversation used to be indented under Plan as its
-   children - now left-aligned flush with Goal/Plan instead, since each
-   is (or is becoming) its own file (backend/timeperiod.py,
-   backend/plan.py) rather than something nested inside Plan's own
-   code. See docs/07-features.md. */
+/* Timeperiod/Task/Conversation are left-aligned flush with Goal/Plan,
+   not indented under Plan - each is its own template file
+   (active_goal/_timeperiod.html, _task.html, _conversation.html), not
+   markup nested inside Plan's own. */
 .model-nested {
   margin-left: 0;
 }
 
-/* Start/now/end bar for Timeperiod - see backend/timeperiod.py's
+/* Start/now/end bar for Timeperiod - see
+   backend/foundation/time/time_logic/frozen_duration.py's
    duration_progress(). A plain line with a "now" marker at whatever
    percent `now` sits between start and end, not a filled "loading bar"
-   - matches this page's deliberately unstyled, data-honest look
-   (docs/12-decisions.md, 2026-08-19): the marker's position is the
-   whole signal, not a colored fill implying more polish than a
-   monospace key:value page otherwise has. Only rendered when
+   - matches this page's deliberately unstyled, data-honest look: the
+   marker's position is the whole signal, not a colored fill implying
+   more polish than a monospace key:value page otherwise has. Only rendered when
    duration_progress() actually returned something - not every
    recognized duration grounds a start AND end (a deadline has no real
    end time), so there's nothing honest to draw for those.
@@ -364,10 +369,12 @@ h1 {
   padding: 0;
 }
 
-/* Vertical step list - see backend/timeperiod.py's step_plan() and
-   active_goal/_steps.html. Plain numbered list, same restrained look as the
-   rest of this page. current_step (see backend/storage.py's
-   save_plan()) marks which one "Task (right now)" actually points at -
+/* Vertical step list - see
+   backend/foundation/time/time_logic/frozen_duration.py's step_plan()
+   and active_goal/_steps.html. Plain numbered list, same restrained
+   look as the rest of this page. current_step (see
+   backend/infrastructure/data_persistence.py's save_plan()) marks
+   which one "Task (right now)" actually points at -
    .step-done (already confirmed via the Done? form, /step route) and
    .step-current (what Done? is currently asking about) are the only
    two states styled; everything after stays plain/upcoming. */
@@ -395,6 +402,7 @@ h1 {
   font-size: 0.8rem;
 }
 
+/* 9. Form elements & buttons */
 label {
   display: block;
   margin-bottom: 6px;
@@ -426,4 +434,5 @@ button {
 
 .btn-goal { color: #1e3a8a; }
 
+/* 10. Links */
 a { color: #3b82f6; }

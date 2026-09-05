@@ -35,16 +35,6 @@
        time-shaped is found at all (a clarifying question, not a
        silent guess). #}
     <input type="text" name="goal" placeholder="e.g. Learn backend development, this evening">
-    {# Optional link to a Vision (2026-08-26, see app.py's new_goal()
-       route docstring) - neither field is required; most goals leave both
-       blank. `new_vision` wins over `vision_id` if both are filled,
-       so typing a new one here doesn't require also remembering to
-       reset the select back to "— none —". #}
-    <select name="vision_id">
-      <option value="">Vision: none</option>
-      {% for v in visions %}<option value="{{ v.id }}">Vision: {{ v.text }}</option>{% endfor %}
-    </select>
-    <input type="text" name="new_vision" placeholder="...or a new vision for this goal">
     <button class="btn-goal" type="submit" id="generate-btn">Set goal</button>
   </form>
 </div>

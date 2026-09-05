@@ -52,7 +52,10 @@ Run from the PROJECT ROOT: .venv/bin/python -m backend.goals.plan.planner
 #  8. Vision management
 #      - set_goal_vision()
 #
-#  9. CLI entry point
+#  9. Cancellation
+#      - cancel_goal()
+#
+#  10. CLI entry point
 #      (module execution block; no named function)
 
 from backend.foundation.time import (
@@ -442,7 +445,14 @@ def apply_feedback(latest: dict, note: str) -> dict:
     overall". With more than one active goal shown at once, that
     distinction is the difference between feedback landing on the goal
     you actually meant versus a different one entirely.
+
+    A cancelled goal (see cancel_goal()) is a no-op here - returns
+    `latest` unchanged rather than risking a save_plan() call that
+    doesn't carry `cancelled` forward, which would silently revive it.
     """
+    if latest.get("cancelled"):
+        return latest
+
     duration = latest.get("duration")
 
     if latest["plan"].get("clarification"):
@@ -587,7 +597,14 @@ def advance_step(latest: dict, done: bool) -> dict:
     index) to mean "every step is done" - not an automatic goal
     completion, just what active_goal/_task.html uses to prompt marking
     the whole goal complete via the free-text box instead.
+
+    A cancelled goal (see cancel_goal()) is a no-op here too, same
+    reasoning as apply_feedback() - never a save_plan() call that could
+    silently revive it.
     """
+    if latest.get("cancelled"):
+        return latest
+
     steps = latest["plan"].get("steps")
     if not steps:
         # Nothing to advance - no step list on this goal at all (see
@@ -653,7 +670,10 @@ def set_goal_vision(goal_id: int, vision_id: int | None) -> dict | None:
 
     Requesting the Vision the goal is already linked to (or already
     has none, for `vision_id=None`) is a genuine no-op - returns
-    `latest` unchanged rather than appending an identical record.
+    `latest` unchanged rather than appending an identical record. A
+    cancelled goal (see cancel_goal()) is also a no-op here, same
+    reasoning as apply_feedback()/advance_step() - never a save_plan()
+    call that could silently revive it.
 
     Preserves `plan`, `duration`, `frozen_duration`, `current_step`,
     and `completed` from the latest record exactly as they were -
@@ -666,6 +686,8 @@ def set_goal_vision(goal_id: int, vision_id: int | None) -> dict | None:
         return None
     if latest["plan"].get("clarification"):
         return None
+    if latest.get("cancelled"):
+        return latest
 
     previous_vision_id = latest.get("vision_id")
     if vision_id == previous_vision_id:
@@ -689,7 +711,58 @@ def set_goal_vision(goal_id: int, vision_id: int | None) -> dict | None:
 
 
 # ============================================================
-# 9. CLI entry point
+# 9. Cancellation
+# ============================================================
+
+
+def cancel_goal(goal_id: int) -> dict | None:
+    """
+    Mark a goal as cancelled (abandoned) - a distinct terminal status
+    from `completed`, not a UI-level relabeling of it and not a third
+    planning decision. Preserves `plan`, `duration`, `frozen_duration`,
+    `current_step`, and `vision_id` from the latest record exactly as
+    they were, so the goal's own data/history is never lost, only
+    marked as no longer being pursued (still visible in full on
+    /history, same as any other goal).
+
+    Unlike set_goal_vision(), an unanswered `clarification` does NOT
+    block this. set_goal_vision() refuses specifically because the
+    NEXT record saved for this goal_id is expected to answer that
+    clarification (see its docstring) - cancelling doesn't create that
+    expectation, since nothing further will ever be asked about a
+    cancelled goal. Abandoning a goal that never got past its first
+    question is exactly the ordinary case for Cancel, not a hazard to
+    guard against.
+
+    Returns the newly saved record, or None if the change is
+    rejected - never partially applied:
+    - `goal_id` doesn't resolve to any goal.
+    - the goal is already completed - a finished goal doesn't also
+      become abandoned; one terminal status wins, and completion,
+      already decided, isn't overwritten by a later Cancel click.
+
+    Requesting cancellation on an already-cancelled goal is a genuine
+    no-op - returns `latest` unchanged rather than appending an
+    identical record (same idiom as set_goal_vision()).
+    """
+    latest = get_latest_for_goal(goal_id)
+    if latest is None:
+        return None
+    if latest.get("completed"):
+        return None
+    if latest.get("cancelled"):
+        return latest
+
+    return save_plan(
+        latest["goal"], latest["plan"], feedback="Cancelled",
+        duration=latest.get("duration"), goal_id=latest["goal_id"],
+        frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
+        vision_id=latest.get("vision_id"), cancelled=True,
+    )
+
+
+# ============================================================
+# 10. CLI entry point
 # ============================================================
 
 if __name__ == "__main__":

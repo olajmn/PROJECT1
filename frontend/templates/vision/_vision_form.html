@@ -16,7 +16,7 @@
    yet. Editing the link happens on the Active page
    (active_goal/_goal.html's Vision select), not here. #}
 <div class="card">
-  <p class="yaml-comment">Optional, spans multiple goals.</p>
+  <p class="helper-text">Optional, spans multiple goals.</p>
   <form method="post" action="/vision">
     <input type="text" name="text" placeholder="e.g. Improve physical health and quality of life">
     <button class="btn-goal" type="submit">Create vision</button>
@@ -25,10 +25,10 @@
 
 {% for v in visions %}
   <div class="entity">
-    {{ v.text }}
+    {{ v.text }} <span class="id-badge">#{{ v.id }}</span>
     <div class="group">
       {% for g in goals_by_vision.get(v.id, []) %}
-        <div class="entity">{{ g.goal }}</div>
+        <div class="entity">{{ g.goal }} <span class="id-badge">#{{ g.goal_id }}</span></div>
       {% endfor %}
     </div>
   </div>

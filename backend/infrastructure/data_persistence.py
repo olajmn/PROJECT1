@@ -175,6 +175,7 @@ def save_plan(
     feedback: str | None = None,
     duration: str | None = None,
     completed: bool = False,
+    cancelled: bool = False,
     goal_id: int | None = None,
     frozen_duration: dict | None = None,
     current_step: int = 0,
@@ -196,6 +197,14 @@ def save_plan(
     `completed` marks the whole goal (not just one "now" step) as
     done - the user said so explicitly, rather than the agent guessing
     it from a missing next action.
+
+    `cancelled` marks the whole goal as abandoned - a distinct terminal
+    status from `completed`, not a lesser/failed version of it. This
+    function doesn't enforce the two being mutually exclusive; that's
+    `planner.cancel_goal()`'s job (it refuses to cancel an already-
+    completed goal), same division of responsibility as everywhere
+    else in this file - persistence stores what it's given, decisions
+    live in planner.py.
 
     `goal_id` is the goal's real identity, separate from its display
     text. Pass the existing goal_id to continue a goal already in
@@ -246,6 +255,7 @@ def save_plan(
         "frozen_duration": frozen_duration,
         "current_step": current_step,
         "completed": completed,
+        "cancelled": cancelled,
         # Local time, naive (no tzinfo) - matches every other timestamp
         # in this project. Older records stored this in UTC; see
         # resolver.created_at_key() for sorting mixed-era history.

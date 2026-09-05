@@ -21,8 +21,8 @@
   {% if horizon_texts %}
     <p class="plan-prose">{{ join_plan_prose(horizon_texts) }}</p>
   {% elif record.plan.get('clarification') %}
-    <div class="yaml-comment">(nothing to plan yet - the agent needs an answer first, see below)</div>
+    <div class="empty-state">(nothing to plan yet - the agent needs an answer first, see below)</div>
   {% else %}
-    <div class="yaml-comment">(no broader plan for this goal - short enough that "right now" below is the whole plan)</div>
+    <div class="empty-state">(no broader plan for this goal - short enough that "right now" below is the whole plan)</div>
   {% endif %}
 </div>

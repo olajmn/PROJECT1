@@ -1,7 +1,10 @@
-{# One active Goal (Entity) - the shell for its six sections: Goal /
-   Plan / Timeperiod / Action / Steps / Conversation, each its own
-   file in active_goal/. Computes the values more than one section
-   needs, then includes each section in order.
+{# One active Goal (Entity) - the shell for its six content sections:
+   Goal / Plan / Timeperiod / Action / Steps / Conversation, each its
+   own file in active_goal/, plus Cancel (_cancel.html) - an action on
+   the goal itself, not part of the planning hierarchy, so it's
+   included as a separate sibling after them rather than nested among
+   them. Computes the values more than one section needs, then
+   includes each section in order.
 
    Expects `record` (the goal's latest state) and `horizons` in
    context. Only used for active goals - completed goals render via
@@ -45,4 +48,6 @@
     {% include "active_goal/_steps.html" %}
     {% include "active_goal/_conversation.html" %}
   </div>
+
+  {% include "active_goal/_cancel.html" %}
 </div>

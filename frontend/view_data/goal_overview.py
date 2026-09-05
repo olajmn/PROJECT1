@@ -30,11 +30,18 @@ def build_goal_overview() -> dict:
     Split the latest record for every goal into {"active": [...],
     "completed": [...]}. Active is newest-first; completed keeps its
     existing oldest-first order.
+
+    A cancelled goal (see planner.cancel_goal()) is excluded from both
+    - cancelled is its own status, not a kind of completed, so it
+    doesn't belong in the Completed list. It isn't dropped from
+    history: /history reads every record directly via
+    data_persistence.load_history(), independent of this split, so a
+    cancelled goal stays fully visible there.
     """
     latest = get_latest_for_all_goals()
-    # .get(), not [] - records saved before the "completed" field
-    # existed don't have the key at all.
-    active = [r for r in latest if not r.get("completed")]
+    # .get(), not [] - records saved before the "completed"/"cancelled"
+    # fields existed don't have the keys at all.
+    active = [r for r in latest if not r.get("completed") and not r.get("cancelled")]
     completed = [r for r in latest if r.get("completed")]
     active.sort(key=created_at_key, reverse=True)
     return {"active": active, "completed": completed}
