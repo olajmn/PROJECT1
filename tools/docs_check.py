@@ -52,6 +52,11 @@ EXPECTED_DOCS = [
     "04-current-state.md",
     "05-decisions.md",
     "06-development.md",
+    # Deliberately unnumbered - a working conceptual model for one
+    # subsystem (planning semantics), not one of the seven fixed vault
+    # roles above; exempt from check_h1_numbering() for the same
+    # reason (its filename carries no NN prefix to check against).
+    "planning-model.md",
 ]
 
 # Files outside docs/ scanned for docs/<NN>-<name>.md-style references

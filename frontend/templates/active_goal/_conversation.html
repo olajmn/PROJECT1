@@ -40,6 +40,18 @@
            that same docstring), so this can't accidentally hide a
            real answer. #}
         {% for line in msg.plan.clarification | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
+      {% elif msg.plan.get('suggested_duration') %}
+        {# No timeframe was given, so generate_plan() proposed a
+           default instead of asking a blank question (see
+           backend/goals/plan/planner.py's `suggested_duration`) - the
+           agent composes the actual sentence here, the model only
+           produced the short phrase. Answered through the same
+           free-text box as any other pending question (see
+           apply_feedback()'s matching branch); there is no separate
+           confirm/adjust control yet - see docs/planning-model.md §
+           Minimum planability for why that's an accepted v1
+           simplification, not an oversight. #}
+        <p class="chat-line">No timeframe was given for this - would {{ msg.plan.suggested_duration }} work?</p>
       {% elif msg.plan.get('pending_duration_question') %}
         {# A "change timeframe" request (see
            feedback_parser.requests_duration_change()) was just made -

@@ -37,6 +37,7 @@ Run from the PROJECT ROOT: .venv/bin/python -m backend.goals.plan.planner
 #
 #  4. Plan generation
 #      - generate_plan()
+#      - _planability()
 #
 #  5. Goal creation
 #      - create_goal()
@@ -112,6 +113,18 @@ SYSTEM_PROMPT = (
     "specific enough to plan, and set every one of "
     "year/month/week/today/hour/minute/now "
     "to JSON null.\n\n"
+    "Separately: if no timeframe was given for this goal at all, "
+    "decide whether a reasonable default span can be proposed. If the "
+    "goal is open-ended or ongoing (e.g. starting a habit) or a "
+    "bounded project with no stated deadline, and a sensible default "
+    "exists, set suggested_duration to a short phrase describing it "
+    "(e.g. '8 weeks', '2 weeks') and leave clarification and every one "
+    "of year/month/week/today/hour/minute/now as JSON null - nothing "
+    "else is decided until the user confirms or adjusts it. If no "
+    "reasonable default can be guessed, leave suggested_duration as "
+    "JSON null instead. Never set both clarification and "
+    "suggested_duration. If a timeframe WAS already given, always "
+    "leave suggested_duration as JSON null.\n\n"
     "Otherwise, set clarification to JSON null. The plan has seven "
     "horizons, from broadest to narrowest: year, month, "
     "week, today, hour, minute, now - but not "
@@ -133,8 +146,8 @@ SYSTEM_PROMPT = (
     "small enough to start in the next 5 minutes. Always filled in, "
     "never one of the ones left null.\n\n"
     "Respond with ONLY a JSON object (no other text) with exactly these "
-    "eight keys - clarification, year, month, week, today, "
-    "hour, minute, now - each either a string value or "
+    "nine keys - clarification, suggested_duration, year, month, week, "
+    "today, hour, minute, now - each either a string value or "
     "JSON null as described above.\n"
 )
 
@@ -224,13 +237,16 @@ def _horizon_scope_instruction(duration: str | None) -> str:
 def frozen_duration_for(plan: dict, duration: str | None) -> dict | None:
     """
     The frozen_duration to save alongside `plan` - None while `plan` is
-    a clarification (nothing has actually started yet, so there's no
-    honest countdown to freeze), otherwise freeze_duration(duration).
-    Shared by generate_plan()'s and replan()'s callers (frontend/app.py)
-    so this rule is expressed once instead of repeated at every call
-    site that saves a plan.
+    a clarification or a proposed-but-unconfirmed suggested_duration
+    (nothing has actually started yet, so there's no honest countdown
+    to freeze), otherwise freeze_duration(duration). Shared by
+    generate_plan()'s and replan()'s callers (frontend/app.py) so this
+    rule is expressed once instead of repeated at every call site that
+    saves a plan.
     """
-    return None if plan.get("clarification") else freeze_duration(duration)
+    if plan.get("clarification") or plan.get("suggested_duration"):
+        return None
+    return freeze_duration(duration)
 
 
 # ============================================================
@@ -245,8 +261,8 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
     is optional free text from the user (e.g. "30 minutes", "this
     week") describing how far ahead this plan should reach - no fixed
     choices, whatever the user types is passed straight through.
-    Returns a dict with keys: clarification, year, month,
-    week, now, steps.
+    Returns a dict with keys: clarification, suggested_duration, year,
+    month, week, now, steps.
 
     `clarification` (added 2026-08-21) is a single question (string)
     instead of a real plan when the goal as given is too vague to plan
@@ -256,14 +272,29 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
     treat this as "ask the user again", not as a plan to save - there's
     nothing real in the rest of the dict to act on yet.
 
+    `suggested_duration` (added 2026-09-06) is the model's proposed
+    default timeframe (a short phrase, e.g. "8 weeks") when `duration`
+    is None and the goal looks open-ended or project-shaped enough for
+    a reasonable default to exist (see SYSTEM_PROMPT) - the agent
+    proposing a timeframe rather than only ever asking a blank
+    question or silently assuming one (see docs/planning-model.md §
+    Minimum planability). Mutually exclusive with `clarification` by
+    construction; discarded back to None if `duration` was already
+    known (code's own extract_duration_phrase() result always wins
+    over the model second-guessing it) or if the model returns
+    anything other than a string/null for it - "trust the shape or
+    fail safely", same idiom as step_generator.py's isinstance check.
+    Like `clarification`, a truthy value here means nothing else in
+    the dict is real yet.
+
     `steps` (added 2026-08-21) is a list of short step descriptions
     only when `duration` actually resolves to a real span (see
     frozen_duration.py §4 - Step planning) - None otherwise (no
-    duration given, or free text that isn't grounded in a real span, or
-    a clarification question came back instead of a plan). There's
-    nothing honest to break into steps without a real timeframe to
-    divide - same reasoning DEADLINE_RE's ungrounded deadlines already
-    follow elsewhere in this project.
+    duration given, free text that isn't grounded in a real span, a
+    clarification question, or a suggested_duration came back instead
+    of a plan). There's nothing honest to break into steps without a
+    real timeframe to divide - same reasoning DEADLINE_RE's ungrounded
+    deadlines already follow elsewhere in this project.
 
     Does NOT take a `vision_id`/Vision text yet - it's stored
     (data_persistence.save_plan()'s `vision_id`) but not supplied to
@@ -274,17 +305,53 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
     user_content = f"The current date and time is: {_now_str()}\n\nMy goal is: {goal}"
     if duration:
         user_content += f"\n\nI want this plan to span roughly: {resolve_duration(duration)}"
+    else:
+        user_content += "\n\nNo timeframe was given for this goal."
     user_content += _horizon_scope_instruction(duration)
+    # suggested_duration is deliberately NOT in required_keys below -
+    # ask_model() raises if a required key is missing at all, which
+    # would turn a model that simply omits this new field into a hard
+    # failure for every generate_plan() call, including ones where it's
+    # irrelevant (duration already known). Treated as absent (None) via
+    # .get() instead - the same safe fallback as a malformed value.
     plan = ask_model(SYSTEM_PROMPT, user_content, PLAN_KEYS + ("clarification",))
 
     plan["steps"] = None
+    if duration or not isinstance(plan.get("suggested_duration"), (str, type(None))):
+        # A duration was already known, or the model returned something
+        # other than a string/null (or omitted it entirely) for the new
+        # field - either way, discard rather than trust the value (see
+        # docstring above).
+        plan["suggested_duration"] = None
     if plan.get("clarification"):
+        plan["suggested_duration"] = None  # mutually exclusive, see docstring
+        return plan
+    if plan.get("suggested_duration"):
         return plan
     if duration:
         count = step_count(duration)
         if count is not None:
             plan["steps"] = generate_steps(goal, plan.get("now") or goal, count)
     return plan
+
+
+def _planability(plan: dict) -> str:
+    """
+    Named, inspectable verdict on a generate_plan()-shaped dict:
+    "ask" if the goal's content needs clarifying, "suggest" if a
+    default timeframe was proposed instead, "planable" otherwise. This
+    is the explicit reasoning step between a Goal and treating its
+    plan as real (see docs/planning-model.md § Minimum planability) -
+    a named decision on the model's response, not a fourth call.
+    `clarification` wins if both were somehow set (generate_plan()
+    already enforces mutual exclusion; this is a second, cheap check,
+    not the primary one).
+    """
+    if plan.get("clarification"):
+        return "ask"
+    if plan.get("suggested_duration"):
+        return "suggest"
+    return "planable"
 
 
 # ============================================================
@@ -305,16 +372,25 @@ def create_goal(typed_text: str, new_vision_text: str, vision_id_value: str) -> 
     given" DETERMINISTICALLY, before calling the model - same
     "code decides, model is just told" reasoning as
     _horizon_scope_instruction() (see docs/05-decisions.md, 2026-08-23).
+    A missing timeframe no longer means "always ask" by itself, though:
+    generate_plan()'s own model call also decides whether a default can
+    be proposed instead (`suggested_duration`), or, for a goal that's
+    already complete without a broader duration, simply returns a plan
+    scoped to `now` alone. `_planability()` reads that one response and
+    gives the result an explicit, inspectable name
+    ("ask"/"suggest"/"planable") - the reasoning step between a Goal
+    and treating its plan as real, not a second model call (see
+    docs/planning-model.md § Minimum planability).
 
     Only ever starts a NEW goal (mints its own goal_id via save_plan());
     extending an EXISTING goal's timeframe goes through
     apply_feedback()'s requests_duration_change() branch instead.
 
-    `frozen_duration` is left None when generate_plan() comes back with
-    `clarification` set (goal too vague in CONTENT to plan at all) -
-    nothing has actually started yet, so there's no honest countdown to
-    draw until apply_feedback() resolves the clarification into a real
-    plan. Frozen for real only once that happens.
+    `frozen_duration` is left None when the plan comes back with
+    `clarification` or `suggested_duration` set (nothing has actually
+    started yet) - there's no honest countdown to draw until
+    apply_feedback() resolves either into a real plan. Frozen for real
+    only once that happens.
 
     `new_vision_text` is checked before `vision_id_value` - typing a
     new Vision always wins over whatever the select had chosen.
@@ -330,15 +406,12 @@ def create_goal(typed_text: str, new_vision_text: str, vision_id_value: str) -> 
         vision_id = None
 
     duration = extract_duration_phrase(typed_text)
-    if duration is None:
-        # Ask, deterministically, without a model call. Every other
-        # horizon stays null, matching a content-vagueness
-        # clarification's shape (see generate_plan()'s docstring).
-        clarification_plan = {key: None for key in PLAN_KEYS}
-        clarification_plan["clarification"] = "When do you want to do this, or how long should it take?"
-        clarification_plan["steps"] = None
-        return save_plan(typed_text, clarification_plan, duration=None, frozen_duration=None, vision_id=vision_id)
     plan = generate_plan(typed_text, duration)
+    if _planability(plan) != "planable":
+        # ask or suggest - nothing else in `plan` is real yet; duration
+        # stays unrecorded until the next round resolves it (see
+        # apply_feedback()'s clarification/suggested_duration branches).
+        return save_plan(typed_text, plan, duration=None, frozen_duration=None, vision_id=vision_id)
     return save_plan(
         typed_text, plan, duration=duration,
         frozen_duration=frozen_duration_for(plan, duration),
@@ -423,10 +496,13 @@ def apply_feedback(latest: dict, note: str) -> dict:
     only signal - no separate "outcome" field (see docs/05-decisions.md,
     2026-08-20, for why, and why this never lets an LLM decide true/false).
 
-    Before that, two earlier checks can take over the note entirely
+    Before that, three earlier checks can take over the note entirely
     instead of treating it as a progress report:
     - `plan.clarification` set -> the note ANSWERS a pending question
       about the goal itself (see that branch below).
+    - `plan.suggested_duration` set -> the note confirms or overrides
+      the agent's proposed default timeframe (see generate_plan()'s
+      `suggested_duration` and apply_new_duration()).
     - `plan.pending_duration_question` set -> the note answers "how
       long do you want this to run now?" (see apply_new_duration()).
     - otherwise, `requests_duration_change(note)` -> the note is a NEW
@@ -498,6 +574,16 @@ def apply_feedback(latest: dict, note: str) -> dict:
         # back to the existing duration if nothing recognized - never
         # silently wipes a working timeframe.
         new_duration = extract_duration_phrase(note) or duration
+        return apply_new_duration(latest, new_duration, feedback=note)
+
+    if latest["plan"].get("suggested_duration"):
+        # The PREVIOUS record proposed a default timeframe (see
+        # generate_plan()'s `suggested_duration`) - this note either
+        # confirms it as given (no recognizable duration phrase in the
+        # reply falls back to the suggestion itself) or overrides it
+        # with a different one. Reuses apply_new_duration() exactly as
+        # a manual duration change would - no separate confirm path.
+        new_duration = extract_duration_phrase(note) or latest["plan"]["suggested_duration"]
         return apply_new_duration(latest, new_duration, feedback=note)
 
     if requests_duration_change(note):
@@ -576,12 +662,20 @@ def apply_feedback(latest: dict, note: str) -> dict:
     # for why: a model only shown the single previous step has no way to
     # notice it has already shrunk `now` several times in a row.
     new_plan = replan(latest["goal"], get_history_for_goal(latest["goal_id"]), feedback_text, duration=duration)
+    # replan() only ever returns PLAN_KEYS - REPLAN_SYSTEM_PROMPT never
+    # mentions steps, so `new_plan` has no "steps" key at all. Carry the
+    # existing step list and pointer forward unchanged rather than
+    # silently losing them on every real replan; this is a data-loss
+    # fix, not a re-evaluation of whether the steps still make sense
+    # (see docs/planning-model.md, "Feedback and Replanning").
+    new_plan["steps"] = latest["plan"].get("steps")
     # goal_id carried forward explicitly - without this, save_plan() would
     # mint a fresh one and this replan would silently start a *new*
     # goal entry instead of continuing the existing goal's chain.
     return save_plan(
         latest["goal"], new_plan, feedback=feedback_text, duration=duration,
-        goal_id=latest["goal_id"], frozen_duration=frozen, vision_id=latest.get("vision_id"),
+        goal_id=latest["goal_id"], frozen_duration=frozen, current_step=latest.get("current_step", 0),
+        vision_id=latest.get("vision_id"),
     )
 
 
