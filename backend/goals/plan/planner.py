@@ -104,6 +104,14 @@ SYSTEM_PROMPT = (
     "week', '3 months'). Ground everything in the real date/time you "
     "were given - never invent specifics (names, numbers, progress) the "
     "user didn't tell you.\n\n"
+    "You may also be given a broader direction this goal is part of, "
+    "labeled 'This goal is part of a broader direction:' - treat it as "
+    "background context only. The goal itself is still the concrete "
+    "thing being planned; let the direction inform tone or emphasis at "
+    "the broadest horizons where genuinely relevant, but never let it "
+    "override, replace, or expand what the goal itself actually asks "
+    "for, and never invent specifics about the user's life from it "
+    "beyond what it literally says.\n\n"
     "First, decide whether the goal as given is specific enough to plan "
     "at all. A bare noun or verb with no object or context (e.g. "
     "'read', 'run', 'work', with nothing else said) isn't - answering it "
@@ -158,7 +166,14 @@ REPLAN_SYSTEM_PROMPT = (
     "immediate action ('now'). You will also see this goal's "
     "full history: every 'now' action tried so far, oldest first, "
     "each with the feedback that followed it - not just the single "
-    "most recent step. Adjust the plan based on the latest feedback:\n"
+    "most recent step. You may also be given a broader direction this "
+    "goal is part of, labeled 'This goal is part of a broader "
+    "direction:' - treat it as background context only, the same way "
+    "as when the plan was first made: it may inform tone or emphasis "
+    "where genuinely relevant, but never overrides, replaces, or "
+    "expands what the goal itself asks for, and never licenses "
+    "inventing specifics about the user's life beyond what it "
+    "literally says. Adjust the plan based on the latest feedback:\n"
     "- If they did NOT complete it, look at the history first. If "
     "'now' has already been made smaller one or more times without "
     "being completed, do NOT shrink it again - repeatedly shrinking the "
@@ -254,7 +269,7 @@ def frozen_duration_for(plan: dict, duration: str | None) -> dict | None:
 # ============================================================
 
 
-def generate_plan(goal: str, duration: str | None = None) -> dict:
+def generate_plan(goal: str, duration: str | None = None, vision_id: int | None = None) -> dict:
     """
     Takes a goal (a text string) and asks the local model to produce a
     structured plan, grounded in the real current date/time. `duration`
@@ -296,13 +311,20 @@ def generate_plan(goal: str, duration: str | None = None) -> dict:
     real timeframe to divide - same reasoning DEADLINE_RE's ungrounded
     deadlines already follow elsewhere in this project.
 
-    Does NOT take a `vision_id`/Vision text yet - it's stored
-    (data_persistence.save_plan()'s `vision_id`) but not supplied to
-    the model here. If/when it is, a caller would resolve it to text
-    and add one line to `user_content` below, same as `duration` (see
-    docs/03-architecture.md § Vision).
+    `vision_id` (added 2026-09-06) optionally supplies the Goal's
+    linked Vision (see docs/03-architecture.md § Vision) as its own,
+    separate section of `user_content` - never folded into `goal`
+    itself, so the model's own content-vagueness check above keeps
+    inspecting only the actual goal text, not Vision prose. A stale or
+    missing vision_id (get_vision() returns None) is silently treated
+    as no context at all, same as set_goal_vision()'s existing
+    handling of that case.
     """
     user_content = f"The current date and time is: {_now_str()}\n\nMy goal is: {goal}"
+    if vision_id is not None:
+        vision = get_vision(vision_id)
+        if vision is not None:
+            user_content += f"\n\nThis goal is part of a broader direction: {vision['text']}"
     if duration:
         user_content += f"\n\nI want this plan to span roughly: {resolve_duration(duration)}"
     else:
@@ -406,7 +428,7 @@ def create_goal(typed_text: str, new_vision_text: str, vision_id_value: str) -> 
         vision_id = None
 
     duration = extract_duration_phrase(typed_text)
-    plan = generate_plan(typed_text, duration)
+    plan = generate_plan(typed_text, duration, vision_id=vision_id)
     if _planability(plan) != "planable":
         # ask or suggest - nothing else in `plan` is real yet; duration
         # stays unrecorded until the next round resolves it (see
@@ -424,7 +446,7 @@ def create_goal(typed_text: str, new_vision_text: str, vision_id_value: str) -> 
 # ============================================================
 
 
-def replan(goal: str, history: list[dict], feedback: str, duration: str | None = None) -> dict:
+def replan(goal: str, history: list[dict], feedback: str, duration: str | None = None, vision_id: int | None = None) -> dict:
     """
     Takes the goal, its full history (oldest first), and feedback on
     the most recent "now" action, and asks the model for an
@@ -436,7 +458,11 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     already made the same task smaller several times in a row (see
     docs/06-development.md, 2026-08-20, for the drift this fixed).
 
-    Same Vision note as generate_plan() above: not supplied here either yet.
+    `vision_id` - same optional, separately-sectioned background
+    context as generate_plan()'s (added 2026-09-06): a Goal's linked
+    Vision is meant to follow it for the goal's whole lifetime, not
+    just its first plan, so every replan gets the same context the
+    initial plan did (see docs/03-architecture.md § Vision).
     """
     # Named history_lines, not "steps" - unrelated to this file's
     # `steps` plan field/step_generator.generate_steps() (added later
@@ -457,6 +483,10 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
         f"This goal's full history so far, oldest first:\n{history_text}\n\n"
         f"My feedback on the most recent 'now' action: {feedback}"
     )
+    if vision_id is not None:
+        vision = get_vision(vision_id)
+        if vision is not None:
+            user_content += f"\n\nThis goal is part of a broader direction: {vision['text']}"
     if duration:
         user_content += f"\n\nThis plan should still span roughly: {resolve_duration(duration)}"
     user_content += _horizon_scope_instruction(duration)
@@ -476,7 +506,7 @@ def apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
     carried forward unchanged, same as `goal_id` - a changed duration
     doesn't change which Vision the goal belongs to.
     """
-    plan = generate_plan(existing["goal"], duration)
+    plan = generate_plan(existing["goal"], duration, vision_id=existing.get("vision_id"))
     return save_plan(
         existing["goal"], plan, feedback=feedback, duration=duration, goal_id=existing["goal_id"],
         frozen_duration=frozen_duration_for(plan, duration),
@@ -556,7 +586,7 @@ def apply_feedback(latest: dict, note: str) -> dict:
         # different question, not a timeframe to (mis)parse.
         if duration is None:
             duration = extract_duration_phrase(note)
-        plan = generate_plan(combined_goal, duration)
+        plan = generate_plan(combined_goal, duration, vision_id=latest.get("vision_id"))
         # frozen_duration stays None for as long as clarification keeps
         # coming back (same reasoning as create_goal() above: nothing
         # has actually started yet) - only frozen for real, for the
@@ -661,7 +691,10 @@ def apply_feedback(latest: dict, note: str) -> dict:
     # The full chain, not just latest["plan"] - see replan()'s docstring
     # for why: a model only shown the single previous step has no way to
     # notice it has already shrunk `now` several times in a row.
-    new_plan = replan(latest["goal"], get_history_for_goal(latest["goal_id"]), feedback_text, duration=duration)
+    new_plan = replan(
+        latest["goal"], get_history_for_goal(latest["goal_id"]), feedback_text,
+        duration=duration, vision_id=latest.get("vision_id"),
+    )
     # replan() only ever returns PLAN_KEYS - REPLAN_SYSTEM_PROMPT never
     # mentions steps, so `new_plan` has no "steps" key at all. Carry the
     # existing step list and pointer forward unchanged rather than
