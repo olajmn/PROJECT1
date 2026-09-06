@@ -40,9 +40,10 @@ its own `templates/` subfolder:
 | Completed | `GET /completed` | `completed()` | `completed_goal/completed.html` | `completed_goal/_completed.html` |
 | History | `GET /history` | `history()` | `history/history.html` | `history/_history_list.html` |
 
-Two more POST-only routes act on an existing goal rather than showing
-a page of their own - `POST /feedback` and `POST /step` - both
-redirect back to Active afterward.
+Five more POST-only routes act on an existing Goal or Vision rather
+than showing a page of their own - `POST /feedback`, `POST /step`,
+`POST /goal-vision`, and `POST /goal-cancel` redirect back to Active
+afterward; `POST /vision-archive` redirects back to Vision.
 
 Conversation is the agent's entry point (see
 `templates/conversation/_conversation.html`) - a static placeholder

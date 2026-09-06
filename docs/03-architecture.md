@@ -477,6 +477,46 @@ world knowledge + user knowledge + representation + semantics/context
 
 **Left open, deliberately.** Whether RAG is a Faculty, whether "Knowledge" is a Faculty, whether RAG is Infrastructure, whether world knowledge and retrieval should be separate layers, whether a future Semantics Faculty should exist, whether "relational reasoning" is a Faculty, whether a knowledge graph is necessary, and whether areas like psychology or history need to be their own Faculties are all explicitly undecided here — as is any form of self-awareness beyond representing an own temporal position. No file, class, database, embedding, or API is proposed or built. What this subsection identifies is only that access to world knowledge, personal knowledge, representation, semantics, signals, and relational reasoning appear to be closely connected — that world knowledge may be valuable not merely as stored information but as raw material combinable with Time, Math, user knowledge, context, and relationships to support reasoning, and that temporal distance, biological constraints, human generations, cultural transmission, and the agent's own temporal position are concrete examples of things that could potentially be derived rather than hardcoded. Per the same Faculty bar already applied above (see [[05-decisions]], "Faculty categorization"), none of these is elevated to one merely for having a plausible name.
 
+### Agent state as composable faculties (exploratory)
+
+> Hypothesis under exploration as of 2026-09-06, not a design commitment. Nothing described in this subsection exists in the codebase; see [[04-current-state]] for what's actually built. A general frame around the two hypotheses above — this subsection asks how knowledge, time, relationships, causality, and goals could eventually operate together as one system, rather than examining any one of them in isolation.
+
+**Agent state as a set of faculties.** One way to frame the destination these hypotheses point toward: the agent's state at a given moment, `A_t`, could be thought of as a tuple of separate structures rather than one flat store — for example `A_t = (K, T, R, C, G, ...)`, where `K` is a knowledge universe, `T` a time structure, `R` a relational structure, `C` a causal structure, and `G` goals. This isn't a proposed data model or a claim that exactly these five exist — it names the idea that different kinds of structure (what is known, when, how things relate, what causes what, what is wanted) could each need their own representation and be reasoned over together, rather than folded into one undifferentiated blob. `G` already has a concrete anchor in the existing Goals Domain; `K` and world/user knowledge are the subject of § World knowledge, retrieval, and reasoning above; `R` overlaps what § Adaptive user representation and relational continuity above calls relational continuity. `C` (causal structure), and a richer `T` than what's built today (see below), have no existing counterpart elsewhere in this document.
+
+**Time as more than a single instant.** § Time above describes what's built: recognizing an expression, resolving a duration, reading `now()`. A richer `T` could go further — representing intervals, durations, before/after ordering, simultaneity, historical periods, and change over time as first-class structure, not only a single "what time is it" value; more advanced models of time (e.g. relativistic) are a conceivable extreme end of this, not a concrete goal. Where the current Faculty answers "what does this phrase mean," this hypothesis is about the agent later being able to ask things like: what happened before this? How long did it last? What happened at the same time? Which period does this belong to? How did this change over time? How do two events relate temporally? None of this is a new Faculty or a temporal database — it's a description of what `T` could eventually need to represent if the agent's reasoning grows to need it.
+
+**Faculties as composable, not isolated stores.** `K`, `T`, `R`, `C`, and `G` are not necessarily separate structures with no relationship to each other. `K + T` could mean knowledge structured by when it applies; `K + R` could mean knowledge structured by what it relates to; `K + T + R` could combine what something is, when it happened, and what it connects to; `K + T + R + C + G` could, in principle, give planning and decision-making a much richer basis than any one of them alone. The point isn't that these combinations exist or are being built — it's that the long-term direction is toward structures that can operate together, not independent silos.
+
+**Hierarchical structure within a single faculty.** A faculty like `K` also doesn't have to be one flat structure — it could have its own substructure, e.g. `K_0`, `K_1`, `K_2`, ... (a specific split — history, psychology, science, or anything else — is illustrative only, not a proposed taxonomy). The same applies to `T`, `R`, `C`, or `G`: each could, in principle, decompose into its own meaningful sub-structures. This is a general pattern being kept in mind, not a category system proposed for any faculty.
+
+**A possible role for the LLM.** A related idea is that the LLM might not need to be the entirety of the agent's reasoning. One possible hybrid shape, illustrative only:
+
+```text
+K / T / R / C / G
+        ↓
+structured representations
+        ↓
+symbolic / computational operations
+        ↓
+structured state
+        ↓
+LLM
+        ↓
+interpretation / ambiguity / hypothesis / language
+        ↓
+new retrieval / investigation
+        ↓
+updated structures
+```
+
+This continues the "code decides, the model is told" split already established for Time and Math (see § Time and § Math above), generalized to more of the agent's reasoning rather than only arithmetic and temporal expressions. Candidate primitive operations discussed at this level — `retrieve()`, `locate()`, `compare()`, `infer()`, `predict()`, `evaluate()`, `plan()`, `act()`, `update()`, `replan()` — illustrate the kind of vocabulary such a system might need, not a proposed API; `plan()`/`act()`/`replan()` already loosely name what today's Planning Domain does concretely, at a much narrower scope than this list implies.
+
+**Retrieval across more than one dimension.** § World knowledge, retrieval, and reasoning above already makes the case that retrieval isn't only semantic search — "what happened before X," "what is X connected to," and "what caused X" are different questions from "what is X about." The faculties above generalize that same point: retrieval could eventually navigate `K`, `T`, `R`, or `C` specifically (semantic, temporal, relational, causal, or hierarchical retrieval), not only one shared text index. This is not a plan to build a knowledge graph, a temporal engine, or a causal-reasoning engine now — see § World knowledge, retrieval, and reasoning above for the fuller treatment, and § Architectural placement below for the explicit boundary.
+
+**Connection to today's Goal → Plan → Action → Feedback → Replan model.** This isn't disconnected from what's built. § Planning above already describes a small, working system whose state changes over time: a goal persists, a plan has state, an action happens in the world, feedback comes back, and the plan may be revised — in effect an `S_{t+1} = F(S_t, I_t)` step already, for the plan's own state `S` and an observation/feedback input `I`. The long-term idea explored in this subsection is that `S_t` could eventually become far richer than today's Goal/Plan state — approaching something closer to the `A_t = (K, T, R, C, G, ...)` framing above — not that today's model is wrong or needs to change to get there.
+
+**Architectural placement.** None of this is a Domain, Faculty, class, storage format, or algorithm. No knowledge graph, temporal database, causal-reasoning engine, or symbolic-reasoning engine is proposed or built. `K`, `T`, `R`, `C`, and `G` are not new Domain or Faculty names being introduced — `G` and, partially, `K`/`T` already have concrete counterparts elsewhere in this document (Goals, Knowledge, Time), while `R` and `C` remain purely conceptual. The existing Goal → Plan → Action → Feedback → Replan model is unchanged by this subsection and continues to be developed pragmatically toward the prototype goal (see [[02-product]]), independent of whether any of this longer-term direction is ever built.
+
 ---
 
 ## See also

@@ -15,8 +15,8 @@
    once a goal has steps - step 1 always equals plan.now exactly
    (see backend/goals/plan/step_generator.py's generate_steps() docstring), and "right now"
    is just steps[current_step]: a pointer into the list, not separate
-   text (see docs/13-ideas-parking-lot.md's "Plan as an ordered step
-   list" entry). current_step advances via the Done? Yes/No form below,
+   text (see docs/06-development.md § Parking Lot's "Plan as an ordered
+   step list" entry). current_step advances via the Done? Yes/No form below,
    posting to /step - pure index arithmetic, no model call, since the
    whole list was already decided upfront.
 

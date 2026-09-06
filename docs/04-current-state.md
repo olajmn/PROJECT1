@@ -12,6 +12,8 @@ What the project consists of — scannable in a few seconds. See § Visual Overv
 1. FRONTEND
    ├── Application      → frontend/app.py
    ├── Templates        → frontend/templates/
+   │   (conversation/, set_goal/, vision/, active/, active_goal/,
+   │    completed_goal/, history/, navigation/)
    ├── CSS              → frontend/css/
    └── view_data/       → goal_overview.py / text_formatting.py / plan_horizons.py
 
@@ -54,15 +56,15 @@ graph TD
 
 ### i. Frontend
 
-- Application entry point — `frontend/app.py`: Flask setup, Jinja global/filter registration, seven routes (`/`, `/vision`, `/goal`, `/feedback`, `/step`, `/history`, `/completed`), and the CLI entry point (`-m frontend.app`).
-- Templates — `frontend/templates/`, 14 Jinja templates organized by page: `index.html`, `set_goal/`, `active_goal/`, `completed_goal/`, `goal_log/`.
+- Application entry point — `frontend/app.py`: Flask setup, Jinja global/filter registration, eleven routes across six work areas (`/`, `/set-goal` GET+POST, `/vision` GET+POST, `/vision-archive` POST, `/active`, `/feedback` POST, `/step` POST, `/goal-vision` POST, `/goal-cancel` POST, `/history`, `/completed`), and the CLI entry point (`-m frontend.app`).
+- Templates — `frontend/templates/`, 23 Jinja templates organized by page: `index.html`, `conversation/`, `set_goal/`, `vision/`, `active/`, `active_goal/`, `completed_goal/`, `history/`, `navigation/`.
 - CSS — `frontend/css/style.css`.
 - View-data modules — `frontend/view_data/goal_overview.py` (groups/composes goals for the overview page), `frontend/view_data/text_formatting.py` (pure text formatting for display), `frontend/view_data/plan_horizons.py` (Plan-horizon labels for the UI). Prepare already-decided backend information for `templates/` to render — not the views themselves.
 
 ### ii. Backend
 
 - Goals — `backend/goals/goal/resolver.py`: goal identity/history reading (`get_latest_for_goal`, `get_latest_for_all_goals`, `get_history_for_goal`).
-- Plans — `backend/goals/plan/`: `planner.py` (goal → plan, `replan()`, and the decision logic behind creating a goal and reacting to feedback; a Plan record's fields are named by `PLAN_KEYS` — `year`, `month`, `week`, `today`, `hour`, `minute`, `now` — planning-level names, not literal/deictic durations), `model_client.py` (Plan-specific JSON-shape validation on top of Reasoning), `step_generator.py` (fills in a plan's step list), `action_reader.py` (reads the current Action, `plan.now`, from the latest plan).
+- Plans — `backend/goals/plan/`: `planner.py` (goal → plan, `replan()`, the decision logic behind creating a goal and reacting to feedback, Goal cancellation (`cancel_goal()`), and Vision management (`set_goal_vision()`, `archive_vision()` — archiving a Vision detaches it from every currently-active Goal that references it, leaving completed/cancelled Goals' `vision_id` untouched); a Plan record's fields are named by `PLAN_KEYS` — `year`, `month`, `week`, `today`, `hour`, `minute`, `now` — planning-level names, not literal/deictic durations), `model_client.py` (Plan-specific JSON-shape validation on top of Reasoning), `step_generator.py` (fills in a plan's step list), `action_reader.py` (reads the current Action, `plan.now`, from the latest plan).
 - Feedback — `backend/goals/feedback/`: `feedback_parser.py` (deterministic outcome/duration-change parsing), `acknowledger.py` (display-only acknowledgment via Reasoning, for feedback `feedback_parser.py` can't classify).
 - Infrastructure — `backend/infrastructure/data_persistence.py`: saves/loads `data/plans.json` and `data/visions.json`.
 - Reasoning — `backend/reasoning/model_client.py`: the one call to the local Ollama model every other component goes through.
@@ -94,7 +96,7 @@ Temporal understanding currently covers: recognizing and resolving clock times, 
 
 Math currently covers basic deterministic arithmetic only: `add`, `subtract`, `multiply`, `divide` (`backend/foundation/math.py`, a single flat module) — division by zero raises `ZeroDivisionError` explicitly. No percentages, algebra, statistics, or expression parsing.
 
-**Vision** (added 2026-08-26) is a fifth concept, deliberately none of the above — not a Domain, Faculty, or pipeline stage. It's optional, cross-goal context (`data/visions.json`, an optional `vision_id` on a Goal record); see `03-architecture.md` § Vision for what it is and isn't. The conceptual model is **Vision / Goal / Plan / Action / Feedback** — "Action" replaces "Task"/"today's action" as the term used across docs and the UI.
+**Vision** (added 2026-08-26) is a fifth concept, deliberately none of the above — not a Domain, Faculty, or pipeline stage. It's optional, cross-goal context (`data/visions.json`, an optional `vision_id` on a Goal record); see `03-architecture.md` § Vision for what it is and isn't. The conceptual model is **Vision / Goal / Plan / Action / Feedback** — "Action" replaces "Task"/"today's action" as the term used across docs and the UI. Vision has its own lifecycle, `ACTIVE`/`ARCHIVED` (added 2026-09-06) — not `COMPLETED`, since a Vision is a direction, not something finished; `archive_vision()` also detaches every currently-active Goal that references the archived Vision (`vision_id` set to `None`), leaving completed/cancelled Goals' `vision_id` as historical context. The Vision page (`/vision`) shows Active and Archived Visions as two separate sections; Active's own Vision-picker offers only active Visions.
 
 A Plan record's fields are named by **`PLAN_KEYS`** — `year`, `month`, `week`, `today`, `hour`, `minute`, `now` — planning-level names, not literal or deictic durations (renamed from `one_year`/`one_month`/`this_week`/`this_hour`/`this_minute`/`right_now`; see `05-decisions.md` #19). Existing `data/plans.json` records are remapped to the new names on read, via `data_persistence._LEGACY_HORIZON_KEY_RENAMES` — not rewritten on disk until next saved. `_horizon_scope_instruction()` (`planner.py`) decides which `PLAN_KEYS` fields the model fills in for a given goal, and names the goal's own actual resolved timeframe when its outer, `year`-level field applies, rather than assuming a literal year; the underlying threshold table (`_HORIZON_LENGTH_THRESHOLDS`) and bucketing function (`broadest_relevant_horizon()`) live in `backend/foundation/time/time_logic/frozen_duration.py`, not in `planner.py` itself.
 
@@ -123,7 +125,7 @@ Plain HTTP request/response — form submissions and page renders, no other prot
 ```text
 from backend.foundation.time import describe_duration, duration_progress, step_plan
 from backend.goals.goal.resolver import get_history_for_goal, get_latest_for_goal
-from backend.goals.plan.planner import advance_step, apply_feedback, create_goal
+from backend.goals.plan.planner import advance_step, apply_feedback, archive_vision, cancel_goal, create_goal, set_goal_vision
 from backend.infrastructure.data_persistence import load_history, load_visions, save_vision
 ```
 
@@ -133,7 +135,7 @@ The last import is a direct Frontend → Infrastructure edge for these three spe
 
 `backend/infrastructure/data_persistence.py` is the only module that touches the filesystem under `data/`. Every other backend module that persists something goes through it:
 
-- `backend/goals/plan/planner.py` — `save_plan`, `save_vision`
+- `backend/goals/plan/planner.py` — `save_plan`, `save_vision`, `get_vision`, `archive_vision`
 - `backend/goals/goal/resolver.py` — `load_history`
 - `backend/goals/plan/action_reader.py` — `get_latest_plan`
 
@@ -194,14 +196,15 @@ Concretely:
 | Plan adjusts | `backend/goals/plan/planner.py` (`replan`) |
 | Temporal understanding | `backend/foundation/time/` |
 | Basic arithmetic | `backend/foundation/math.py` (`add`/`subtract`/`multiply`/`divide`) |
-| Vision created / linked to a Goal | `frontend/app.py` (`/vision`, `/goal`) |
-| Local web UI | `frontend/app.py` — vision form, goal form, feedback, per-step done/no, history, completed |
+| Vision created / linked to a Goal | `frontend/app.py` (`/vision`, `/set-goal`, `/goal-vision`) |
+| Vision archived, active Goals detached | `frontend/app.py` (`/vision-archive`) → `planner.archive_vision()` |
+| Local web UI | `frontend/app.py` — six work areas (Conversation, Set Goal, Vision, Active, Completed, History): vision form, goal form, feedback, per-step done/no, goal cancel, history, completed |
 
 "Works" means the mechanism runs correctly — the code calls the LLM, saves, and displays a result. It does not mean the LLM's answers are always accurate; it has already been caught hallucinating a specific, unfounded detail (see `06-development.md`).
 
 ## 6. What's Half-Built
 
-- **Vision** — create and link-to-a-goal are built; editing/deleting an existing Vision is not. A Goal's Vision is never actually supplied to the LLM yet (`generate_plan()`/`replan()` both ignore `vision_id`) — deliberate for now, see `03-architecture.md` § Vision.
+- **Vision** — create, link-to-a-goal, and archive (with active-Goal detachment) are built; editing/deleting an existing Vision, and restoring an archived one, are not. A Goal's Vision is never actually supplied to the LLM yet (`generate_plan()`/`replan()` both ignore `vision_id`) — deliberate for now, see `03-architecture.md` § Vision.
 
 ## 7. What's Not Built
 

@@ -45,10 +45,10 @@ proposed ahead of any code.
 | `goals/goal/resolver.py` | Goal identity/grouping - `get_latest_for_all_goals()`, `get_latest_for_goal()`, `get_history_for_goal()` | (imported by others, not run directly) |
 | `goals/feedback/feedback_parser.py` | Deterministic (no LLM) parsing of free-text feedback: outcome parsing (action_completed/action_not_completed/action_in_progress/goal_completed) and duration-change requests, including the recognized phrases themselves (`GOAL_COMPLETED_PHRASES`, etc.) | (imported by others, not run directly) |
 | `goals/feedback/acknowledger.py` | Display-only acknowledgment for feedback `parse_outcome()` couldn't classify (`acknowledge()`) - via Reasoning, falls back to a fixed string on any failure | (imported by others, not run directly) |
-| `goals/plan/planner.py` | Goal → structured plan, and `replan()` (plan + feedback → updated plan). Orchestration + Plan shape/prompts | `.venv/bin/python -m backend.goals.plan.planner` |
+| `goals/plan/planner.py` | Goal → structured plan, `replan()` (plan + feedback → updated plan), and the Vision/cancellation decisions (`set_goal_vision()`, `archive_vision()`, `cancel_goal()`). Orchestration + Plan shape/prompts | `.venv/bin/python -m backend.goals.plan.planner` |
 | `goals/plan/model_client.py` | Plan-specific JSON-shape validation (`ask_model()`) on top of the shared Reasoning call | (imported by others, not run directly) |
 | `goals/plan/step_generator.py` | The narrower model call that fills in a plan's step list (`generate_steps()`) | (imported by others, not run directly) |
-| `goals/plan/action_reader.py` | Show just the current Action (`right_now`) from the latest plan | `.venv/bin/python -m backend.goals.plan.action_reader` |
+| `goals/plan/action_reader.py` | Show just the current Action (`now`) from the latest plan | `.venv/bin/python -m backend.goals.plan.action_reader` |
 
 `goals/plan/` holds four files, not a data/logic pair the way
 `foundation/time/` does, since planner.py's `PLAN_KEYS` and prompts
@@ -66,7 +66,7 @@ narrower mechanisms it calls into.
 
 | File | Responsibility | Run with |
 |---|---|---|
-| `infrastructure/data_persistence.py` | Save/load plans (and feedback) to/from `../data/plans.json` - **Infrastructure**, not a Domain or Faculty: reused by everything, understands none of it | (imported by others, not run directly) |
+| `infrastructure/data_persistence.py` | Save/load Goals/plans to/from `../data/plans.json` and Visions to/from `../data/visions.json` - **Infrastructure**, not a Domain or Faculty: reused by everything, understands none of it | (imported by others, not run directly) |
 | `memory/` | Empty - see its own `__init__.py` for why it exists at all | — |
 | `world/` | Empty - see its own `__init__.py` for why it exists at all | — |
 

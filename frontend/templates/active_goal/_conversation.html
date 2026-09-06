@@ -53,7 +53,7 @@
       {% elif msg.plan.now %}
         {% for line in msg.plan.now | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
       {% else %}
-        {# See docs/11-experiments.md, 2026-08-19: the model sometimes
+        {# See docs/06-development.md, 2026-08-19: the model sometimes
            gives no next action without marking the goal complete - say
            so plainly rather than leaving the bubble empty. #}
         <p class="chat-line">(no next action came back - give feedback again, or mark complete)</p>
@@ -71,7 +71,7 @@
      - see backend/goals/feedback/feedback_parser.py) into
      action_completed/action_not_completed/action_in_progress/goal_completed. Anything not confidently
      recognized checks in without changing the plan - never a silent
-     guess toward a riskier outcome. See docs/12-decisions.md,
+     guess toward a riskier outcome. See docs/05-decisions.md,
      2026-08-20/2026-08-21. #}
   <form method="post" action="/feedback" class="chat-msg chat-me chat-input-row">
     <input type="hidden" name="goal_id" value="{{ record.goal_id }}">

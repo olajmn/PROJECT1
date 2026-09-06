@@ -29,6 +29,7 @@ docs/06-development.md for the navigation split.
 #  4. Vision
 #      - vision_page()
 #      - new_vision()
+#      - vision_archive()
 #
 #  5. Active
 #      - active_page()
@@ -50,7 +51,7 @@ from flask import Flask, redirect, render_template, request, url_for
 
 from backend.foundation.time import describe_duration, duration_progress, step_plan
 from backend.goals.goal.resolver import get_history_for_goal, get_latest_for_goal
-from backend.goals.plan.planner import advance_step, apply_feedback, cancel_goal, create_goal, set_goal_vision
+from backend.goals.plan.planner import advance_step, apply_feedback, archive_vision, cancel_goal, create_goal, set_goal_vision
 from backend.infrastructure.data_persistence import load_history, load_visions, save_vision
 from frontend.view_data.goal_overview import build_goal_overview, group_goals_by_vision_id
 from frontend.view_data.plan_horizons import BROADER_HORIZONS
@@ -119,9 +120,14 @@ def new_goal():
 
 @app.route("/vision")
 def vision_page():
+    """Active and archived Visions as two sections - see archive_vision().
+    Both read the same Vision records and the same Goal relation; only
+    the archived flag decides which section a Vision renders in."""
+    all_visions = load_visions()
     return render_template(
         "vision/page.html",
-        visions=load_visions(),
+        active_visions=[v for v in all_visions if not v.get("archived")],
+        archived_visions=[v for v in all_visions if v.get("archived")],
         goals_by_vision=group_goals_by_vision_id(build_goal_overview()["active"]),
         current_page="vision",
     )
@@ -136,13 +142,24 @@ def new_vision():
     return redirect(url_for("vision_page"))
 
 
+@app.route("/vision-archive", methods=["POST"])
+def vision_archive():
+    """planner.archive_vision() owns the decision logic - archives the
+    Vision and detaches it from any currently-active Goal (vision_id
+    set to None); completed/cancelled Goals keep their vision_id."""
+    vision_id_value = request.form.get("vision_id", "").strip()
+    if vision_id_value:
+        archive_vision(int(vision_id_value))
+    return redirect(url_for("vision_page"))
+
+
 # 5. Active
 
 
 @app.route("/active")
 def active_page():
     goal_overview = build_goal_overview()
-    visions = load_visions()
+    visions = [v for v in load_visions() if not v.get("archived")]
     return render_template(
         "active/page.html",
         horizons=BROADER_HORIZONS,

@@ -51,6 +51,7 @@ Run from the PROJECT ROOT: .venv/bin/python -m backend.goals.plan.planner
 #
 #  8. Vision management
 #      - set_goal_vision()
+#      - archive_vision()
 #
 #  9. Cancellation
 #      - cancel_goal()
@@ -68,8 +69,8 @@ from backend.foundation.time import (
 )
 from backend.goals.feedback.acknowledger import acknowledge
 from backend.goals.feedback.feedback_parser import parse_outcome, requests_duration_change
-from backend.goals.goal.resolver import get_history_for_goal, get_latest_for_goal
-from backend.infrastructure.data_persistence import get_vision, save_plan, save_vision
+from backend.goals.goal.resolver import get_history_for_goal, get_latest_for_all_goals, get_latest_for_goal
+from backend.infrastructure.data_persistence import archive_vision as archive_vision_record, get_vision, save_plan, save_vision
 from backend.goals.plan.model_client import ask_model
 from backend.goals.plan.step_generator import generate_steps
 
@@ -708,6 +709,46 @@ def set_goal_vision(goal_id: int, vision_id: int | None) -> dict | None:
         frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
         completed=latest.get("completed", False), vision_id=vision_id,
     )
+
+
+def archive_vision(vision_id: int) -> dict | None:
+    """
+    Archive a Vision (data_persistence.archive_vision()) and detach it
+    from every currently-active Goal that references it - an archived
+    Vision is no longer an active direction, so an active Goal
+    shouldn't keep showing a current tie to it. Vision and Goal have
+    independent lifecycles: this never changes a Goal's plan, duration,
+    current_step, or completed/cancelled status - only which Vision (if
+    any) it currently points to.
+
+    Completed/cancelled Goals keep their vision_id unchanged - already
+    a closed, historical record, not a claim that the Vision is still
+    active, so there's nothing to detach.
+
+    Detaching reuses set_goal_vision(goal_id, None) per Goal rather
+    than writing a second way to change a Goal's Vision link, so it
+    inherits that function's exact safety checks - in particular, a
+    Goal with an unanswered `clarification` is left untouched (never
+    revived or corrupted, see set_goal_vision()'s docstring) rather
+    than forced; it simply keeps its stale vision_id until it's next
+    touched. Like set_goal_vision(), this appends a new record per
+    affected Goal (goal_id carried forward) - no existing record is
+    ever mutated or removed.
+
+    Returns the archived Vision record (or the already-archived one,
+    unchanged, on a repeat call), or None if vision_id doesn't exist.
+    """
+    vision = archive_vision_record(vision_id)
+    if vision is None:
+        return None
+
+    for latest in get_latest_for_all_goals():
+        if (latest.get("vision_id") == vision_id
+                and not latest.get("completed")
+                and not latest.get("cancelled")):
+            set_goal_vision(latest["goal_id"], None)
+
+    return vision
 
 
 # ============================================================

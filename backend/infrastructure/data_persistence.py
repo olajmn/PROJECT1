@@ -22,9 +22,21 @@ identity - a plain list of {id, text, created_at} records, no history,
 no normalization, no backfill (nothing predates it). A Goal record MAY
 carry an optional `vision_id` into this list; most won't, and that's
 normal, not a gap. Not its own module the way resolver.py is - there's
-no grouping/derivation logic here, just create/list/get, so a separate
-file would be structure without a use for it yet (see
+no grouping/derivation logic here, just create/list/get/archive, so a
+separate file would be structure without a use for it yet (see
 docs/05-decisions.md for the fuller reasoning).
+
+A Vision can be archived (`archived: True` on its record) once it no
+longer represents an active direction - a lifecycle distinct from a
+Goal's completed/cancelled, since a Vision isn't something that gets
+"finished" (see docs/03-architecture.md § Vision). Archiving mutates
+the one existing record in place - the only case where a Vision record
+changes after creation - rather than appending, matching the "single
+mutable fact, not a chain" reasoning above. This function itself never
+touches Goal records - detaching an active Goal from an archived
+Vision (planner.archive_vision(), which calls this) is a separate,
+higher-level decision, not something this plain persistence function
+does on its own.
 
 Every record also carries a `user_id`, always DEFAULT_USER_ID for now -
 there is exactly one person using this app (real multi-user support is
@@ -346,5 +358,31 @@ def get_vision(vision_id: int) -> dict | None:
     """Return the Vision with this id, or None if it doesn't exist (e.g. a stale reference)."""
     for vision in _load_all_visions():
         if vision["id"] == vision_id:
+            return vision
+    return None
+
+
+def archive_vision(vision_id: int) -> dict | None:
+    """
+    Mark a Vision as archived - no longer an active direction, but kept
+    in full (see module docstring). Mutates the existing record in
+    place, unlike save_vision()'s append-only create.
+
+    Returns the (possibly already-archived) record, or None if
+    `vision_id` doesn't resolve to any Vision. Archiving an
+    already-archived Vision is a genuine no-op - returns it unchanged
+    rather than rewriting the file, same idiom as
+    planner.cancel_goal().
+
+    Never touches `data/plans.json` - a Goal's `vision_id` reference is
+    left exactly as it was.
+    """
+    visions = _load_all_visions()
+    for vision in visions:
+        if vision["id"] == vision_id:
+            if vision.get("archived"):
+                return vision
+            vision["archived"] = True
+            _save_all_visions(visions)
             return vision
     return None
