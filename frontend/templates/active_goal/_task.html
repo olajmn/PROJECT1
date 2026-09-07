@@ -47,10 +47,18 @@
 {% if steps and current_index < steps | length %}
   <div class="model-row">
     <span class="model-label">Done?</span>
+    {# Three buttons, not two - Action completion and Step completion
+       are separate questions (see docs/planning-model.md): doing the
+       action never, by itself, means the step it was attempted for is
+       resolved. `current_step` only advances on "yes_resolved" - see
+       app.py's /step route and planner.advance_step(). This is a
+       structured signal, deliberately not inferred from the free-text
+       box below. #}
     <form method="post" action="/step" class="step-done-form">
       <input type="hidden" name="goal_id" value="{{ record.goal_id }}">
-      <button class="btn-goal" type="submit" name="done" value="yes">Yes</button>
-      <button class="btn-goal" type="submit" name="done" value="no">No</button>
+      <button class="btn-goal" type="submit" name="done" value="yes_resolved">Gjort, og løst</button>
+      <button class="btn-goal" type="submit" name="done" value="yes_open">Gjort, men ikke løst</button>
+      <button class="btn-goal" type="submit" name="done" value="no">Ikke gjort</button>
     </form>
   </div>
 {% endif %}

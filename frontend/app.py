@@ -185,13 +185,17 @@ def feedback():
 
 @app.route("/step", methods=["POST"])
 def step():
-    """planner.advance_step() owns the decision logic."""
+    """planner.advance_step() owns the decision logic. `done` is one of
+    "no" / "yes_open" / "yes_resolved" - active_goal/_task.html's three
+    Done? buttons - never inferred from free text (see
+    docs/planning-model.md's Step/Action distinction)."""
     goal_id_value = request.form.get("goal_id", "").strip()
     latest = get_latest_for_goal(int(goal_id_value)) if goal_id_value else None
     if latest is None:
         return redirect(url_for("active_page"))
 
-    advance_step(latest, request.form.get("done") == "yes")
+    done_value = request.form.get("done")
+    advance_step(latest, done=done_value in ("yes_open", "yes_resolved"), resolved=done_value == "yes_resolved")
     return redirect(url_for("active_page") + f"#goal-{latest['goal_id']}")
 
 

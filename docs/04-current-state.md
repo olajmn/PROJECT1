@@ -191,30 +191,42 @@ Concretely:
 |---|---|
 | Goal → plan | `backend/goals/plan/planner.py` (`generate_plan`) |
 | Plan saved | `backend/infrastructure/data_persistence.py` |
-| Action (right now) | `backend/goals/plan/action_reader.py` reads `plan.now` |
-| User reports progress | `frontend/app.py` (`/feedback`) |
-| Plan adjusts | `backend/goals/plan/planner.py` (`replan`) |
+| Action (right now) | rendered in the web UI as `steps[current_step]` or `record.plan.now` (`_active_goal.html`/`active_goal/_task.html`) — `backend/goals/plan/action_reader.py` reads `plan.now` too, but is a standalone CLI entry point with no inbound import from `frontend/app.py`; not part of the running web app (confirmed via `tools/project_check.py`'s inbound-import check) |
+| User reports progress | `frontend/app.py` (`/feedback`, free text) and `/step` (structured Done? control) |
+| Plan adjusts | `backend/goals/plan/planner.py` (`replan`) — temporal horizons only, see § 6 |
+| Step completion, separate from Action completion | `backend/goals/plan/planner.py` (`advance_step`) — `step_status` (`open`/`resolved`) per step, only set by the structured `/step` signal, never inferred from free text; `current_step` only advances when a step is actually resolved |
 | Temporal understanding | `backend/foundation/time/` |
 | Basic arithmetic | `backend/foundation/math.py` (`add`/`subtract`/`multiply`/`divide`) |
 | Vision created / linked to a Goal | `frontend/app.py` (`/vision`, `/set-goal`, `/goal-vision`) |
 | Vision archived, active Goals detached | `frontend/app.py` (`/vision-archive`) → `planner.archive_vision()` |
-| Local web UI | `frontend/app.py` — six work areas (Conversation, Set Goal, Vision, Active, Completed, History): vision form, goal form, feedback, per-step done/no, goal cancel, history, completed |
+| Vision supplied as context to planning/replanning | `backend/goals/plan/planner.py` (`generate_plan()`/`replan()`) — a linked Vision's text is added as a separate, clearly-labeled background-context section of the model's prompt, never folded into the goal text itself |
+| Local web UI | `frontend/app.py` — six work areas (Conversation, Set Goal, Vision, Active, Completed, History): vision form, goal form, feedback, a three-way structured Done? control, goal cancel, history, completed |
 
 "Works" means the mechanism runs correctly — the code calls the LLM, saves, and displays a result. It does not mean the LLM's answers are always accurate; it has already been caught hallucinating a specific, unfounded detail (see `06-development.md`).
 
 ## 6. What's Half-Built
 
-- **Vision** — create, link-to-a-goal, and archive (with active-Goal detachment) are built; editing/deleting an existing Vision, and restoring an archived one, are not. A Goal's Vision is never actually supplied to the LLM yet (`generate_plan()`/`replan()` both ignore `vision_id`) — deliberate for now, see `03-architecture.md` § Vision.
+- **Vision** — create, link-to-a-goal, and archive (with active-Goal detachment) are built and, as of `58a8d34` ("Wire Vision context into planning and replanning"), actually supplied as background context to `generate_plan()`/`replan()`'s model calls; editing/deleting an existing Vision, and restoring an archived one, are still not built. `03-architecture.md` § Vision has not yet been corrected to match this — see that document's own note.
+- **Step completion (Design A)** — a step's `open`/`resolved` status, separate from `current_step`, is implemented and verified (see § 5), but narrowly: it doesn't represent a compound/multi-part condition (e.g. "acquire all the components"), doesn't cover habit- or process-shaped steps, and hasn't yet been exercised through real day-to-day use, only through isolated test scripts. See `docs/planning-model.md` § Completion.
+- **Replanning** — the mechanism itself is reliable (§ 5), but only ever regenerates the temporal horizons; a goal's step list never changes as a result of feedback, however informative that feedback is. See `docs/planning-model.md` § Feedback and Replanning.
+- **Conversation** — the per-Goal feedback thread works mechanically, but has been observed (2026-09-07) to fail the transition from "user doesn't know what to do" to proposing something, instead re-asking the same question. See `docs/planning-model.md` § Conversation. The dedicated `/` Conversation page itself remains a disabled placeholder (see § 7).
 
 ## 7. What's Not Built
 
 - **Memory** — the agent doesn't yet use its own history; `memory/` is an empty placeholder (a Domain, not nested under `foundation/`).
-- **Hierarchical step list** — a goal's plan is currently one flat step list, not nested phases with their own sub-steps.
+- **Hierarchical step list** — a goal's plan is currently one flat step list, not nested phases with their own sub-steps; concretely, a multi-month goal produces steps that are really coarse phases (e.g. one step spanning 16 days), not the granular actions they're meant to be.
+- **Decomposition / zoom** — no mechanism exists to increase the resolution of one step on demand; see `docs/planning-model.md` § Decomposition / zoom.
 - **Knowledge / RAG** — sketched, not implemented; `data/knowledge/example_chunks.json` exists as an early sketch artifact, not read by any backend code yet.
 - **Acting** — the agent reasons about what should happen; it doesn't yet perform external actions such as creating files or calling APIs.
+- **Reality/Verification beyond human self-report** — no evidence storage, confidence, or tool/system observation channel; see `docs/planning-model.md` § Reality, Observation, and Verification.
+- **Continuity / proactivity** — no scheduler or background behavior anywhere; the whole loop only runs in response to an HTTP request.
+- **Multi-goal reasoning** — active goals are shown/grouped together, but nothing reasons across them (e.g. competing for the same time).
 - **Live external data** — `world/` is a deliberate empty placeholder.
 - **Hemisphere/location context** — `foundation/time/` can resolve a season given an explicit hemisphere, but nothing in the system determines or supplies one yet; a season phrase without it is honestly reported as recognized, not resolved (deliberate, see `03-architecture.md` § Temporal understanding).
 - **Goal auto-completion** — finishing every step does not automatically mark a goal complete; the user still confirms explicitly. Deliberate, not an oversight.
+- **The `/` Conversation page** — a disabled placeholder textarea; no intent parsing or routing.
+
+For the fuller conceptual picture behind the newer entries above (Step/Action/Reality/Verification/Conversation), see `docs/planning-model.md`; for a maturity map of the whole Active Goal loop and what's currently being worked through, see `SESSION-TODO.md` - not duplicated here to avoid the same status drifting independently in three places.
 
 ## 8. Current Decisions
 
@@ -227,6 +239,7 @@ Stable, not casually revisited (see `COLLABORATION.md` rule 4):
 - Vision is optional, lightweight context (an id+text store, an optional foreign-key-style reference on a Goal) — not a relational hierarchy, not duplicated free text per goal.
 - Plan-record field names (`PLAN_KEYS`) are planning-level names (`year`/`month`/`week`/`today`/`hour`/`minute`/`now`), not literal or deictic durations — existing records are migrated on read, not rewritten.
 - A Faculty represents demonstrated cross-system reuse or a fundamental, independently-existing reasoning domain (temporal, quantitative) — not interpretation of ambiguous input specifically, and not a plausible category on its own.
+- Step completion is a judgment separate from Action completion, set only through an explicit, structured signal — never inferred from free text, same reasoning as feedback outcome parsing above (see `docs/planning-model.md` § Completion).
 
 **Security status:** whole-disk encryption via macOS FileVault is on for this machine (covers the "stolen/lost laptop" scenario). No application-level encryption of `data/plans.json` itself yet — deferred until this becomes a multi-user or cloud product, see `05-decisions.md`. No encryption in transit — not relevant while Ollama is local-only.
 
@@ -235,14 +248,15 @@ Full list with reasoning: `05-decisions.md`.
 ## 9. Open Questions
 
 - Flat vs. hierarchical step list — not designed, needs its own pass.
-- Should a goal auto-complete when every step is done? Real tension between one-shot goals and ongoing habit goals, not resolved.
+- Should a goal auto-complete when every step is resolved? Real tension between one-shot goals and ongoing habit goals, not resolved by Design A.
 - Future Faculties beyond Time and Math should still emerge from demonstrated reuse or a genuine, independently-existing reasoning domain, not be predetermined (see `05-decisions.md`, "Faculty categorization").
 - Visual design — wants a holistic pass, not one color fixed at a time.
-- Whether/how a Goal's Vision ever gets summarized into the LLM's context when planning/replanning — deliberately not decided or built yet, see `03-architecture.md` § Vision.
 - Whether editing/deleting an existing Vision is worth building, once there's real usage to learn from.
+
+For the fuller, more recent set of open conceptual questions (Decomposition/zoom's data shape, Verification as an explicit phase, habit/process completion, Stage/Milestone naming, etc.), see `docs/planning-model.md` § Open questions — not duplicated here.
 
 ## 10. Next Step
 
-1. Pick one of Memory / hierarchical steps / Knowledge-RAG / Acting to actually build — not more than one at a time.
+No single fixed "pick one of these" list is maintained here anymore — see `SESSION-TODO.md`'s Active Goal loop maturity map for the current, living picture of what's established, partially established, or not yet built, and its "Suggested next milestone" section for the current (non-binding) candidate. That file is deliberately the one place this gets updated, rather than kept in sync across two documents.
 
-(The Action/Task/`right_now`/"today's task" terminology drift an earlier architectural pass flagged as worth resolving before picking one of these is now done, alongside implementing Vision — see `06-development.md`, 2026-08-26. The `right_now` field name itself was later renamed to `now`, along with the rest of `PLAN_KEYS` — see `05-decisions.md` #19.)
+(Historical: this section used to name Memory / hierarchical steps / Knowledge-RAG / Acting as the four remaining options from a 2026-08-24 review; none of those were picked next. Instead, a deeper conceptual pass on Goal/Plan/Step/Action/Reality/Verification led to Step/Action Design A being built on 2026-09-07 - see `docs/planning-model.md` and `SESSION-TODO.md`. The Action/Task/`right_now`/"today's task" terminology drift an earlier architectural pass flagged is resolved; the `right_now` field name itself was later renamed to `now`, along with the rest of `PLAN_KEYS` — see `05-decisions.md` #19.)

@@ -192,6 +192,7 @@ def save_plan(
     frozen_duration: dict | None = None,
     current_step: int = 0,
     vision_id: int | None = None,
+    step_status: list[str] | None = None,
 ) -> dict:
     """
     Append a new goal+plan record to history and persist it to disk.
@@ -244,6 +245,18 @@ def save_plan(
     value. 0 by default, matching `plan.steps[0]` always equaling
     `plan.now`.
 
+    `step_status` (added 2026-09-07) is a per-step "open"/"resolved"
+    list, parallel-indexed to `plan.steps` - separate from
+    `current_step` so that an Action being reported done never, by
+    itself, means the Step it was attempted for is realized (see
+    docs/planning-model.md). None for goals with no steps, or steps
+    saved before this field existed; planner.advance_step() treats a
+    missing/mismatched-length list as "every step still open" rather
+    than requiring a migration. Callers that carry `current_step`
+    forward unchanged across a replan/Vision-change/cancellation must
+    carry this forward the same way, or a Step's resolved status would
+    be silently lost.
+
     `vision_id` optionally links this goal to a Vision - broader,
     cross-goal context, not part of the operational goal -> plan ->
     action -> feedback loop (see docs/03-architecture.md § Vision).
@@ -266,6 +279,7 @@ def save_plan(
         "duration": duration,
         "frozen_duration": frozen_duration,
         "current_step": current_step,
+        "step_status": step_status,
         "completed": completed,
         "cancelled": cancelled,
         # Local time, naive (no tzinfo) - matches every other timestamp

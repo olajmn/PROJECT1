@@ -2,7 +2,7 @@
     1. Base (body)
     2. Conversation (.conversation-*)
     3. Layout primitives (.layout, .workspace, .group)
-    4. Page width & headings (main, h1, .board-heading, .vision-list)
+    4. Page width & headings (main, h1, .board-heading)
     5. Card / Entity (.card, .entity)
     6. Data-shaped display (.yaml-*, .id-badge, .helper-text, .empty-state)
     7. Chat thread / Feedback (.chat-*)
@@ -106,13 +106,6 @@ h1 {
   font-size: 1.1rem;
   margin-top: 32px;
   margin-bottom: 16px;
-}
-
-.vision-list {
-  margin: 4px 0 10px;
-  padding-left: 1.2em;
-  font-size: 0.85rem;
-  color: #4b5563;
 }
 
 /* 5. Card / Entity */

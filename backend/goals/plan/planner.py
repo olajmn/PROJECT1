@@ -639,7 +639,7 @@ def apply_feedback(latest: dict, note: str) -> dict:
             {**latest["plan"], "pending_duration_question": "How long do you want this to run now?"},
             feedback=note, duration=duration, goal_id=latest["goal_id"],
             frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
-            vision_id=latest.get("vision_id"),
+            vision_id=latest.get("vision_id"), step_status=latest.get("step_status"),
         )
 
     # Inherited unchanged, never recomputed - a check-in isn't a new
@@ -665,6 +665,7 @@ def apply_feedback(latest: dict, note: str) -> dict:
             latest["goal"], latest["plan"], feedback=feedback_text,
             duration=duration, completed=True, goal_id=latest["goal_id"],
             frozen_duration=frozen, vision_id=latest.get("vision_id"),
+            current_step=latest.get("current_step", 0), step_status=latest.get("step_status"),
         )
 
     if outcome_value == "action_in_progress":
@@ -683,6 +684,7 @@ def apply_feedback(latest: dict, note: str) -> dict:
             latest["goal"], latest["plan"], feedback=feedback_text,
             duration=duration, goal_id=latest["goal_id"], frozen_duration=frozen,
             vision_id=latest.get("vision_id"),
+            current_step=latest.get("current_step", 0), step_status=latest.get("step_status"),
         )
 
     outcome = "Completed the action" if outcome_value == "action_completed" else "Did not complete the action"
@@ -708,22 +710,43 @@ def apply_feedback(latest: dict, note: str) -> dict:
     return save_plan(
         latest["goal"], new_plan, feedback=feedback_text, duration=duration,
         goal_id=latest["goal_id"], frozen_duration=frozen, current_step=latest.get("current_step", 0),
-        vision_id=latest.get("vision_id"),
+        vision_id=latest.get("vision_id"), step_status=latest.get("step_status"),
     )
 
 
-def advance_step(latest: dict, done: bool) -> dict:
+def advance_step(latest: dict, done: bool, resolved: bool = False) -> dict:
     """
-    Advances `current_step` by one - pure index arithmetic into the
-    goal's already-generated `plan.steps` list, no model call (the step
-    list was fully decided upfront by step_generator.generate_steps()).
+    Records the outcome of the current step's Action, and moves
+    `current_step` only when the Step it was attempted for is actually
+    resolved - not merely because an Action was reported done. See
+    docs/planning-model.md: an Action being completed never, by
+    itself, means its Step is realized.
 
-    `done=False` doesn't move the pointer - logged the same safe,
-    no-replan way as apply_feedback()'s "in_progress".
+    `done`/`resolved` come from active_goal/_task.html's three-way
+    Done? control (never inferred from free text - see
+    docs/05-decisions.md):
+    - done=False: the Action wasn't done. Same safe, no-replan
+      treatment as apply_feedback()'s "in_progress"; the pointer and
+      the step's status both stay exactly as they were.
+    - done=True, resolved=False: the Action was done, but the user says
+      the Step itself isn't resolved yet (e.g. searched for a gym, but
+      hasn't found/picked one) - logged, but `current_step` still
+      doesn't move, since there's nothing left to advance PAST yet.
+    - done=True, resolved=True: the Step is now resolved - only this
+      case advances `current_step`, exactly once.
 
-    `current_step` can reach `len(steps)` (one past the last valid
-    index) to mean "every step is done" - not an automatic goal
-    completion, just what active_goal/_task.html uses to prompt marking
+    `step_status` is a per-step "open"/"resolved" list, parallel-
+    indexed to `steps`, carried on the record next to `current_step`
+    (see data_persistence.save_plan()) - defaults to every step "open"
+    when missing or the wrong length (no step_status yet on this
+    record, or a goal saved before this field existed), the same safe-
+    fallback idiom as `current_step`'s own `.get(..., 0)` default. Only
+    the step actually being resolved is ever written to "resolved" -
+    this function never marks any other index, past or future.
+
+    `current_step` can still reach `len(steps)` (one past the last
+    valid index) to mean "every step is resolved" - unchanged from
+    before, still what active_goal/_task.html uses to prompt marking
     the whole goal complete via the free-text box instead.
 
     A cancelled goal (see cancel_goal()) is a no-op here too, same
@@ -744,7 +767,16 @@ def advance_step(latest: dict, done: bool) -> dict:
         # Already at "all steps done" - nothing left to confirm.
         return latest
 
-    if done:
+    existing_status = latest.get("step_status")
+    if not existing_status or len(existing_status) != len(steps):
+        existing_status = ["open"] * len(steps)
+    status = list(existing_status)
+
+    if not done:
+        next_index = current
+        feedback_text = f"Not done yet: step {current + 1}: {steps[current]}"
+    elif resolved:
+        status[current] = "resolved"
         next_index = current + 1
         if next_index >= len(steps):
             feedback_text = f"Completed step {current + 1} (the last one): {steps[current]}. All steps done."
@@ -752,13 +784,13 @@ def advance_step(latest: dict, done: bool) -> dict:
             feedback_text = f"Completed step {current + 1}: {steps[current]}"
     else:
         next_index = current
-        feedback_text = f"Not done yet: step {current + 1}: {steps[current]}"
+        feedback_text = f"Worked on step {current + 1} (not yet resolved): {steps[current]}"
 
     return save_plan(
         latest["goal"], latest["plan"], feedback=feedback_text,
         duration=latest.get("duration"), goal_id=latest["goal_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=next_index,
-        vision_id=latest.get("vision_id"),
+        vision_id=latest.get("vision_id"), step_status=status,
     )
 
 
@@ -835,6 +867,7 @@ def set_goal_vision(goal_id: int, vision_id: int | None) -> dict | None:
         duration=latest.get("duration"), goal_id=latest["goal_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
         completed=latest.get("completed", False), vision_id=vision_id,
+        step_status=latest.get("step_status"),
     )
 
 
@@ -926,6 +959,7 @@ def cancel_goal(goal_id: int) -> dict | None:
         duration=latest.get("duration"), goal_id=latest["goal_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
         vision_id=latest.get("vision_id"), cancelled=True,
+        step_status=latest.get("step_status"),
     )
 
 
