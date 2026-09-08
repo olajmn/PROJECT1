@@ -60,8 +60,9 @@ trust this indefinitely once real work changes any of it.
 | Replanning mechanism | Established | The model call runs and saves reliably - this is the machinery only, not conceptual completeness (see "Feedback → updated understanding → Replanning" below). |
 | Step model | Partially established | Flat generation works for short/medium goals; known to produce too-coarse steps for long-duration ones (see "Vertical/hierarchical step list" below). |
 | Step resolution / Verification (self-report only) | Partially established | Design A (`open`/`resolved`) is real and verified, but script-tested only so far, not yet exercised through live browser use, and doesn't cover compound conditions (the PC-building case) or habit-shaped steps. |
-| Minimum Planability | Partially established | Content-vagueness and time-sufficiency covered; the state/capacity dimension of the gate is undeveloped. |
-| Conversation (per-Goal thread) | Partially established | Mechanically works; empirically fails the ASK→SUGGEST transition when the user says they don't know what to do (see `docs/planning-model.md` § Conversation). |
+| Minimum Planability | Partially established | Content-vagueness (ASK), content-level SUGGEST (`suggested_action`), and time-sufficiency (`suggested_duration`) are all explicit now; the state/capacity dimension of the gate is still undeveloped, and how several simultaneous unknowns compose is still only described by example (see `docs/planning-model.md` § Minimum planability, Open questions). |
+| Conversation (per-Goal thread) | Partially established | Mechanically works, and now has an explicit SUGGEST-and-confirm path for the specific "user doesn't know what to do" case (see `docs/planning-model.md` § Interpreting a response to ASK/SUGGEST) — but live testing (2026-09-08) found the model's use of that mechanism unstable across otherwise-identical runs (see "Known functional gaps" below). |
+| SUGGEST → confirmation → Action | Partially established | Wiring verified deterministically (accept / explicit alternative / Current-State correction all route correctly; `current_step`/`step_status`/Vision/history preserved). Live model behavior on the reply-interpretation step is unstable — see "Known functional gaps." |
 | Plan adaptation | Partially established | The temporal axis adapts via `replan()`; the structural axis (steps) never does. |
 | Action in the execution loop | Partially established | Formulation and a real completion signal exist; situational zoom and agent-side execution don't. |
 | Feedback → updated understanding → Replanning | Partially established | Genuinely updates the temporal axis; never reaches the structural axis. |
@@ -133,6 +134,27 @@ the narrower fix option gets lost.
   Vision-context fact, a new Current Decisions line for structured
   Step-resolution); removed one confirmed-dead CSS rule (`.vision-list`
   in `frontend/css/style.css`, unreferenced by any template).
+- **Content-SUGGEST confirmation (2026-09-08)** - `generate_plan()`
+  gained an explicit `suggested_action` mode (content-level SUGGEST,
+  parallel to `suggested_duration`); `apply_feedback()` gained a
+  matching branch that treats acceptance as the proposal becoming
+  `plan.now` directly (no `replan()`, no Action marked completed), and
+  treats anything else as new information re-evaluated through
+  `generate_plan()` again. Verified deterministically
+  (`backend/goals/plan/test_planner.py`, 9 scenarios: accept / explicit
+  alternative / Current-State correction / full accept→Done chain /
+  ordinary Action's "Yes" unaffected / existing `suggested_duration`
+  and `clarification` flows unaffected / state preservation across
+  confirmation).
+- **ASK/SUGGEST as interaction, not just decision (2026-09-08)** -
+  `docs/planning-model.md` now documents that a user's reply to a
+  pending ASK/SUGGEST must be interpreted relative to the agent's own
+  prior contribution (`X`), not read as free-standing Goal text; three
+  semantic relations named (Observation/Evidence, Directly supplied
+  KNOWN, No new information); kept as a distinct, pre-commitment
+  sibling to the existing post-execution Feedback/Replanning loop, not
+  merged with it. See `docs/planning-model.md` § Interpreting a
+  response to ASK/SUGGEST.
 
 ## Known functional gaps
 
@@ -148,10 +170,41 @@ the narrower fix option gets lost.
   resources...") without that reasoning surfacing constructively in
   the conversation itself. Root cause not diagnosed - see the
   Conversation entry in `docs/planning-model.md`.
-- **The SUGGEST/ASK flow does not yet work robustly when the user
-  themselves doesn't know what should be done** - a specific instance
-  of the above, worth naming separately since it's the exact case
-  Minimum Planability's "propose a default" move exists for.
+- **The SUGGEST/ASK flow, now mechanically built for the "user doesn't
+  know what should be done" case, does not yet produce stable model
+  behavior** - `suggested_action` + confirmation is wired and verified
+  deterministically (see "Completed / stabilized"), and a follow-up
+  experiment (2026-09-08) confirmed the model does receive its own
+  prior suggestion and the user's reply as explicit, correctly-labeled
+  context (verified by capturing the exact prompt text, not assumed) -
+  but live behavior swung from using that context in roughly 10/11
+  calls in one batch to roughly 1/11 in an otherwise-identical batch.
+  Now understood as a model-stability question, not a missing-context
+  or missing-mechanism question - see "Next reasoning experiment"
+  below.
+- **Multi-round information doesn't reliably accumulate into a
+  visibly updated understanding** - the Learning goal case
+  (2026-09-08: user progressively said "not sure" → "want to become
+  more physically active" → "something that makes my body more
+  active" → "condition") kept receiving very similar re-phrased
+  questions despite each reply adding real information. Distinct from
+  the `clarification`+`now` leak below - this is about whether
+  accumulated replies actually change what the agent asks or suggests
+  next, not about what gets displayed.
+- **A pre-existing `clarification`+`now` leak, confirmed empirically
+  (2026-09-08)** - when the model sets `clarification` it does not
+  reliably leave `now` null despite being told to (observed live in
+  the Learning goal case: a stray, unrelated Action shown alongside an
+  ASK question). `generate_plan()` defensively nulls `now` when the
+  newer `suggested_action` is set, but the older `clarification`
+  branch was deliberately left as-is when that defensive check was
+  added - a known, narrow, still-unfixed gap, not a new one.
+- **SUGGEST can smuggle in an unstated personal assumption** - the
+  move-city case ("research cities and their job markets") privileged
+  career as the reason for moving, when family/cost/climate/lifestyle
+  are equally plausible. `docs/planning-model.md` § ASK vs. SUGGEST now
+  names a test for this (would the suggestion remain reasonable across
+  plausible alternative motivations) - nothing enforces it yet.
 - **Feedback is limited to human self-report** - there is no other
   Observation/Evidence channel yet (see `docs/planning-model.md` §
   Reality, Observation, and Verification) - deliberate for now, not a
@@ -196,27 +249,48 @@ cross-referenced list - this is a shorter pointer, not a duplicate.)
   reopened by today's Design A work.
 - Memory, Knowledge/RAG, and Acting (the agent performing external
   actions) remain entirely unstarted - not touched by today's session.
+- Whether the agent's need to track its own prior ASK/SUGGEST
+  contribution generalizes into something like a self-model / agent
+  continuity - flagged as an open architectural hypothesis, not
+  decided or built (see `docs/03-architecture.md` § Long-Term
+  Architecture, "the self-model," and `docs/planning-model.md` § Open
+  questions).
 
 ## Suggested next milestone
 
-**Hypothesis, not a decision.** Conversation/agentic interaction is a
-reasonable candidate for the next major milestone - it's the intended
-single entry point to the whole `Understand → Minimum Planability →
-Plan → Action → Feedback → Replan` loop, and today's empirical test
-found a concrete, reproducible failure exactly there.
+**Hypothesis, not a decision.** The narrow diagnosis this section
+previously called for is now done (2026-09-08, across several passes:
+a forensic trace of the actual `apply_feedback()`/`generate_plan()`
+code path, a conceptual precision of what ASK/SUGGEST-as-interaction
+actually means - now `docs/planning-model.md` § Interpreting a
+response to ASK/SUGGEST - and a live experiment). The finding: this is
+not a missing-context problem (verified: the model does receive its
+own prior contribution and the user's reply, explicitly labeled) and
+not a missing-mechanism problem (the `suggested_action` + confirmation
+path is built and deterministically tested) - it is model-behavior
+instability: an otherwise-identical prompt produced very different
+reply-interpretation rates (~10/11 vs. ~1/11) across two live batches.
 
-Caution before committing to it as a large new line of work, though:
-Conversation wasn't among the five options this project's own last
-"pick ONE of these five" review named (Memory / Better step hierarchy
-/ Knowledge-RAG / Acting), and the observed failure hasn't been
-diagnosed yet - it could be a narrow content/prompt issue in the
-existing ASK/SUGGEST model call, not evidence that Conversation needs
-to become its own domain (`architecture_foundation/ROADMAP.md` already
-lists "Conversation as its own domain" under "Later," not "Next," for
-a different reason). The more disciplined next step is probably a
-**narrow diagnosis** of why the ASK→SUGGEST transition failed in the
-observed case, before deciding whether that calls for Conversation
-work at all, or a smaller, contained fix elsewhere.
+**Next reasoning experiment (not yet run).** The experiment already
+run included a basic instruction telling the model to read the reply
+in light of what it just suggested - that alone did not stabilize the
+behavior. The next pass should test whether a *sharper* or
+differently-framed version of that instruction (not merely the
+presence of one, which is already partially tested) measurably reduces
+the variance observed:
+
+```text
+Previous contribution X
++
+User response Y
++
+a sharper, more explicit instruction to interpret Y relative to X
+→ more stable updated understanding?
+```
+
+Still an experiment, not a decided fix - if a sharper instruction
+doesn't stabilize it either, that would be further evidence toward a
+genuine `llama3.1:8b` limitation rather than a prompt-framing gap.
 
 ## Other, parked
 

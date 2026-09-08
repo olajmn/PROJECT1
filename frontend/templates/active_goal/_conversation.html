@@ -40,6 +40,18 @@
            that same docstring), so this can't accidentally hide a
            real answer. #}
         {% for line in msg.plan.clarification | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
+      {% elif msg.plan.get('suggested_action') %}
+        {# The goal's content wasn't specific enough to plan directly,
+           but a safe, generic first step was proposed instead of a
+           blank clarifying question (see
+           backend/goals/plan/planner.py's `suggested_action`) -
+           answered through the same free-text box as any other
+           pending question; a plain "yes"/"okay" accepts it
+           (apply_feedback()'s matching branch), anything else is
+           treated as new information about the goal. `now` is None
+           while this is pending (see that same docstring), so this
+           can't accidentally hide a real Action. #}
+        {% for line in msg.plan.suggested_action | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
       {% elif msg.plan.get('suggested_duration') %}
         {# No timeframe was given, so generate_plan() proposed a
            default instead of asking a blank question (see
