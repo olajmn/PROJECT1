@@ -57,6 +57,10 @@ EXPECTED_DOCS = [
     # roles above; exempt from check_h1_numbering() for the same
     # reason (its filename carries no NN prefix to check against).
     "planning-model.md",
+    # Deliberately unnumbered, same reasoning as planning-model.md -
+    # a pre-implementation architecture map for the LLM1/LLM2/LLM3/
+    # Capability direction, not one of the seven fixed vault roles.
+    "architecture-v4.md",
 ]
 
 # Files outside docs/ scanned for docs/<NN>-<name>.md-style references
