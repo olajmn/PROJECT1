@@ -11,7 +11,9 @@ model_client.py/step_generator.py).
 
 Runs 100% locally - no API key, no internet, no cost. Requires Ollama
 running in the background (start with: brew services start ollama)
-and the model pulled (ollama pull llama3.1:8b).
+and the model pulled (ollama pull qwen3.5:9b) - see
+backend/reasoning/model_client.py for the one place the concrete
+model is actually named.
 
 PLAN_KEYS stays in this module rather than with the helpers that split
 out into their own files - it's genuine Plan shape, passed INTO

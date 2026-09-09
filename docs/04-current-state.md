@@ -233,7 +233,7 @@ For the fuller conceptual picture behind the newer entries above (Step/Action/Re
 
 Stable, not casually revisited (see `COLLABORATION.md` rule 4):
 
-- LLM backend: Ollama (local, `llama3.1:8b`), not a paid API — no cost, no internet dependency.
+- LLM backend: Ollama (local, `qwen3.5:9b`), not a paid API — no cost, no internet dependency. The concrete model is a replaceable implementation detail behind `backend/reasoning/model_client.py`'s `send_message()` (see `05-decisions.md` #21) — not itself an architecture commitment.
 - Storage: local plaintext JSON, append history, never overwrite. Not moving to SQL.
 - Feedback outcome (action_completed/action_not_completed/action_in_progress/goal_completed) is parsed deterministically, never left to the LLM to judge.
 - Testing on real use takes priority over adding more features.

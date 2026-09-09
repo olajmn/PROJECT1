@@ -61,7 +61,7 @@ Requires Python 3 and [Ollama](https://ollama.com) running locally.
 
 ```bash
 # 1. Install and start Ollama, then pull the model the agent calls:
-ollama pull llama3.1:8b
+ollama pull qwen3.5:9b
 brew services start ollama   # or otherwise ensure the Ollama service is running
 
 # 2. Set up the Python environment (from the project root):
