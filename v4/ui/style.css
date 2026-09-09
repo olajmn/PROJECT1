@@ -1,0 +1,104 @@
+/* Minimal, new stylesheet for the v4 prototype - not a copy of
+   current/'s CSS. Just enough to make the conversation and an
+   optional plan readable. */
+
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #f7f7f5;
+  color: #1a1a1a;
+}
+
+main {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+h1 {
+  font-size: 1.1rem;
+  margin: 0 0 1rem;
+}
+
+#transcript {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 1rem;
+}
+
+.message {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.message .who {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #888;
+  min-width: 3.5rem;
+}
+
+.message-agent .text {
+  color: #1a1a1a;
+}
+
+.plan {
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+}
+
+.plan ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.plan > ul {
+  padding-left: 0;
+}
+
+.node {
+  padding: 0.15rem 0;
+}
+
+.node-done { color: #6b6b6b; text-decoration: line-through; }
+.node-current { font-weight: 600; }
+.node-open { color: #1a1a1a; }
+
+form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+textarea {
+  flex: 1;
+  resize: none;
+  font: inherit;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 0.375rem;
+}
+
+button {
+  font: inherit;
+  padding: 0 1rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: #1a1a1a;
+  color: #fff;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+}

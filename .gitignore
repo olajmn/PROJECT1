@@ -2,6 +2,11 @@
 __pycache__/
 *.pyc
 .DS_Store
+node_modules/
+
+# Compiled from v4/ui/src/*.ts - regenerate with `npm install && npx tsc`
+# in v4/ui/, not committed as source.
+v4/ui/dist/
 
 # Personal data - goals, plans, history. Never commit this, even once
 # the code itself is public. See docs/05-decisions.md.
