@@ -54,13 +54,9 @@ history: docs/06-development.md, 2026-08-25. See docs/03-architecture.md
 
 from backend.foundation.time.time_logic import now
 from backend.foundation.time.time_logic.frozen_duration import (
-    MAX_STEPS,
-    MIN_STEPS,
-    TARGET_STEP_MINUTES,
     broadest_relevant_horizon,
     duration_progress,
     freeze_duration,
-    step_count,
     step_plan,
 )
 from backend.foundation.time.time_logic.phrase_matching import extract_duration_phrase
@@ -77,9 +73,5 @@ __all__ = [
     "relative_length",
     "resolve_duration",
     "resolve_span",
-    "step_count",
     "step_plan",
-    "MAX_STEPS",
-    "MIN_STEPS",
-    "TARGET_STEP_MINUTES",
 ]

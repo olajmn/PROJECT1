@@ -7,7 +7,7 @@ across seven time horizons and revises it based on feedback, and owns
 the decisions around creating a goal and reacting to feedback on one -
 persisted via infrastructure/data_persistence.py's save_plan(), not
 reimplemented here. Never talks to the model directly (see
-model_client.py/step_generator.py).
+model_client.py/plan_structure.py).
 
 Runs 100% locally - no API key, no internet, no cost. Requires Ollama
 running in the background (start with: brew services start ollama)
@@ -28,39 +28,35 @@ Run from the PROJECT ROOT: .venv/bin/python -m backend.goals.plan.planner
 #  1. Plan schema
 #      - PLAN_KEYS
 #
-#  2. Model prompts
-#      - SYSTEM_PROMPT
-#      - REPLAN_SYSTEM_PROMPT
-#
-#  3. Time helpers
+#  2. Time helpers
 #      - _now_str()
 #      - _horizon_scope_instruction()
 #      - frozen_duration_for()
 #
-#  4. Plan generation
+#  3. Plan generation
 #      - generate_plan()
 #      - _planability()
 #
-#  5. Goal creation
+#  4. Goal creation
 #      - create_goal()
 #
-#  6. Replanning
+#  5. Replanning
 #      - replan()
 #      - apply_new_duration()
 #
-#  7. Feedback & step handling
+#  6. Feedback & step handling
 #      - _accepts_suggestion()
 #      - apply_feedback()
 #      - advance_step()
 #
-#  8. Vision management
+#  7. Vision management
 #      - set_goal_vision()
 #      - archive_vision()
 #
-#  9. Cancellation
+#  8. Cancellation
 #      - cancel_goal()
 #
-#  10. CLI entry point
+#  9. CLI entry point
 #      (module execution block; no named function)
 
 import re
@@ -71,14 +67,14 @@ from backend.foundation.time import (
     freeze_duration,
     now,
     resolve_duration,
-    step_count,
 )
 from backend.planning.feedback.acknowledger import acknowledge
 from backend.planning.feedback.feedback_parser import parse_outcome, requests_duration_change
 from backend.planning.goal.resolver import get_history_for_goal, get_latest_for_all_goals, get_latest_for_goal
 from backend.infrastructure.data_persistence import archive_vision as archive_vision_record, get_vision, save_plan, save_vision
 from backend.planning.plan.model_client import ask_model
-from backend.planning.plan.step_generator import generate_steps
+from backend.planning.plan.plan_prompts import REPLAN_SYSTEM_PROMPT, SYSTEM_PROMPT
+from backend.planning.plan.plan_structure import generate_structure
 
 # ============================================================
 # 1. Plan schema
@@ -89,145 +85,17 @@ from backend.planning.plan.step_generator import generate_steps
 # templates (via frontend/app.py) iterate this same list to render
 # every horizon in order.
 PLAN_KEYS = (
-    "year", 
-    "month", 
-    "week", 
-    "today", 
-    "hour", 
-    "minute", 
+    "year",
+    "month",
+    "week",
+    "today",
+    "hour",
+    "minute",
     "now"
 )
 
 # ============================================================
-# 2. Model prompts
-# ============================================================
-
-SYSTEM_PROMPT = (
-    "You are a personal execution agent. You will be told the current "
-    "date and time, and the user's goal. They may also tell you roughly "
-    "how long they want this plan to span (e.g. '30 minutes', 'this "
-    "week', '3 months'). Ground everything in the real date/time you "
-    "were given - never invent specifics (names, numbers, progress) the "
-    "user didn't tell you.\n\n"
-    "You may also be given a broader direction this goal is part of, "
-    "labeled 'This goal is part of a broader direction:' - treat it as "
-    "background context only. The goal itself is still the concrete "
-    "thing being planned; let the direction inform tone or emphasis at "
-    "the broadest horizons where genuinely relevant, but never let it "
-    "override, replace, or expand what the goal itself actually asks "
-    "for, and never invent specifics about the user's life from it "
-    "beyond what it literally says.\n\n"
-    "First, decide whether the goal as given is specific enough to plan "
-    "at all. A bare noun or verb with no object or context (e.g. "
-    "'read', 'run', 'work', with nothing else said) isn't - answering it "
-    "would mean inventing what book, what distance, what task, none of "
-    "which the user actually told you. If so, do NOT invent an answer: "
-    "set clarification to ONE short question that would make the goal "
-    "specific enough to plan, and set every one of "
-    "year/month/week/today/hour/minute/now "
-    "to JSON null.\n\n"
-    "If the goal's content is specific enough that a blank clarifying "
-    "question isn't warranted, but you still don't have enough personal "
-    "information about this user to plan the whole thing with "
-    "confidence - especially when they've said they don't know what to "
-    "do and want help - decide whether a safe, generic first step can "
-    "be proposed instead. Such a step must not invent anything personal "
-    "(their resources, preferences, constraints, or what they've "
-    "already done) and must be a reasonable starting move regardless of "
-    "those unknowns (e.g. taking stock of where things currently "
-    "stand). If so, set suggested_action to that ONE short, concrete "
-    "step, and leave clarification and every one of "
-    "year/month/week/today/hour/minute/now as JSON null - nothing else "
-    "is decided until the user confirms or adjusts it. Never set both "
-    "clarification and suggested_action. If the goal is already "
-    "specific enough to plan directly, leave suggested_action as JSON "
-    "null instead.\n\n"
-    "Separately: if no timeframe was given for this goal at all, "
-    "decide whether a reasonable default span can be proposed. If the "
-    "goal is open-ended or ongoing (e.g. starting a habit) or a "
-    "bounded project with no stated deadline, and a sensible default "
-    "exists, set suggested_duration to a short phrase describing it "
-    "(e.g. '8 weeks', '2 weeks') and leave clarification and every one "
-    "of year/month/week/today/hour/minute/now as JSON null - nothing "
-    "else is decided until the user confirms or adjusts it. If no "
-    "reasonable default can be guessed, leave suggested_duration as "
-    "JSON null instead. Never set both clarification and "
-    "suggested_duration. If a timeframe WAS already given, always "
-    "leave suggested_duration as JSON null.\n\n"
-    "Otherwise, set clarification to JSON null. The plan has seven "
-    "horizons, from broadest to narrowest: year, month, "
-    "week, today, hour, minute, now - but not "
-    "every goal's real timeframe reaches all the way up to year. "
-    "You will be told exactly which of these horizons to FILL IN and "
-    "which to leave as JSON null, based on the goal's actual given "
-    "timeframe - respect that list exactly. Do NOT invent a value for "
-    "any horizon you were told to leave null, even a plausible-sounding "
-    "one - a goal given '3 months' has no honest year-horizon answer, "
-    "inventing one anyway is fabrication, not planning. For every "
-    "horizon you WERE told to fill in, give a concrete, realistic "
-    "value, framed as how this goal connects to or fits within that "
-    "time window (e.g. a habit it's part of, a pattern it continues, "
-    "what stays true at that goal's own outer horizon, what's realistic "
-    "to finish today, within this one hour, within this one minute).\n"
-    "- 'now' is different from the horizons above it: not a time "
-    "window description, but the actual trigger - the single most "
-    "immediate, concrete action the user can take this very moment, "
-    "small enough to start in the next 5 minutes. Always filled in, "
-    "never one of the ones left null.\n\n"
-    "Respond with ONLY a JSON object (no other text) with exactly these "
-    "ten keys - clarification, suggested_action, suggested_duration, "
-    "year, month, week, today, hour, minute, now - each either a string "
-    "value or JSON null as described above.\n"
-)
-
-REPLAN_SYSTEM_PROMPT = (
-    "You are a personal execution agent. You will be told the current "
-    "date and time. The user already has a plan for their goal and is "
-    "now giving you feedback on whether they completed the most "
-    "immediate action ('now'). You will also see this goal's "
-    "full history: every 'now' action tried so far, oldest first, "
-    "each with the feedback that followed it - not just the single "
-    "most recent step. You may also be given a broader direction this "
-    "goal is part of, labeled 'This goal is part of a broader "
-    "direction:' - treat it as background context only, the same way "
-    "as when the plan was first made: it may inform tone or emphasis "
-    "where genuinely relevant, but never overrides, replaces, or "
-    "expands what the goal itself asks for, and never licenses "
-    "inventing specifics about the user's life beyond what it "
-    "literally says. Adjust the plan based on the latest feedback:\n"
-    "- If they did NOT complete it, look at the history first. If "
-    "'now' has already been made smaller one or more times without "
-    "being completed, do NOT shrink it again - repeatedly shrinking the "
-    "same preparatory step is not real progress, and there is no value "
-    "in an action smaller than a few minutes. Instead, either directly "
-    "address a concrete obstacle they named, or move the action toward "
-    "actually attempting the core thing the goal itself names (e.g. if "
-    "the goal is 'send 4 applications' and 'now' has only ever been "
-    "research/browsing, the next 'now' should be to actually send "
-    "one application, even in the smallest real form - not more "
-    "research). Only make 'now' smaller the FIRST time it isn't "
-    "completed, when the history shows no earlier shrink already "
-    "happened.\n"
-    "- If they DID complete it, move on to the next logical step.\n\n"
-    "Ground everything in the real date/time you were given - never "
-    "invent specifics (names, numbers, progress) the user didn't tell "
-    "you.\n\n"
-    "You will be told exactly which horizons should have a concrete "
-    "value and which should be JSON null, same as the previous plan - "
-    "this doesn't change on a replan just because the goal's scope "
-    "grew in conversation. Never invent a value for a horizon named as "
-    "null. Update whichever of the horizons you ARE filling in the "
-    "feedback affects; carry the others forward unchanged if the "
-    "feedback doesn't touch them.\n\n"
-    "Respond with ONLY a JSON object (no other text) with exactly the "
-    "same keys as before: year, month, week, today, "
-    "hour, minute, now - each either a string value or "
-    "JSON null.\n"
-)
-
-
-# ============================================================
-# 3. Time helpers
+# 2. Time helpers
 # ============================================================
 
 
@@ -286,7 +154,7 @@ def frozen_duration_for(plan: dict, duration: str | None) -> dict | None:
 
 
 # ============================================================
-# 4. Plan generation
+# 3. Plan generation
 # ============================================================
 
 
@@ -322,7 +190,7 @@ def generate_plan(
     known (code's own extract_duration_phrase() result always wins
     over the model second-guessing it) or if the model returns
     anything other than a string/null for it - "trust the shape or
-    fail safely", same idiom as step_generator.py's isinstance check.
+    fail safely", same idiom as plan_structure.py's isinstance check.
     Like `clarification`, a truthy value here means nothing else in
     the dict is real yet.
 
@@ -424,9 +292,15 @@ def generate_plan(
     if plan.get("suggested_duration"):
         return plan
     if duration:
-        count = step_count(duration)
-        if count is not None:
-            plan["steps"] = generate_steps(goal, plan.get("now") or goal, count)
+        # One combined call decides step count and content (each step
+        # optionally carrying its own microsteps) - see
+        # plan_structure.py's own docstring for why this replaced two
+        # separate calls (a measured local-model stability issue, not
+        # just a style preference). None if `duration` doesn't resolve
+        # to a real span - nothing honest to plan steps against.
+        result = generate_structure(goal, duration, plan.get("now") or goal)
+        if result is not None:
+            plan["steps"] = result["steps"]
     return plan
 
 
@@ -453,7 +327,7 @@ def _planability(plan: dict) -> str:
 
 
 # ============================================================
-# 5. Goal creation
+# 4. Goal creation
 # ============================================================
 
 
@@ -518,7 +392,7 @@ def create_goal(typed_text: str, new_vision_text: str, vision_id_value: str) -> 
 
 
 # ============================================================
-# 6. Replanning
+# 5. Replanning
 # ============================================================
 
 
@@ -542,9 +416,9 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     Vision).
     """
     # Named history_lines, not "steps" - unrelated to this file's
-    # `steps` plan field/step_generator.generate_steps() (added later
-    # the same day); this is prose lines for the replan prompt, not
-    # the step list.
+    # `steps` plan field/plan_structure.generate_structure() (added
+    # later the same day); this is prose lines for the replan prompt,
+    # not the step list.
     history_lines = []
     for record in history:
         right_now = record["plan"].get("now") or "(none)"
@@ -592,7 +466,7 @@ def apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
 
 
 # ============================================================
-# 7. Feedback & step handling
+# 6. Feedback & step handling
 # ============================================================
 
 # Deliberately separate from feedback_parser.ACTION_COMPLETED_PHRASES,
@@ -972,7 +846,7 @@ def advance_step(latest: dict, done: bool, resolved: bool = False) -> dict:
 
 
 # ============================================================
-# 8. Vision management
+# 7. Vision management
 # ============================================================
 
 
@@ -1090,7 +964,7 @@ def archive_vision(vision_id: int) -> dict | None:
 
 
 # ============================================================
-# 9. Cancellation
+# 8. Cancellation
 # ============================================================
 
 
@@ -1142,7 +1016,7 @@ def cancel_goal(goal_id: int) -> dict | None:
 
 
 # ============================================================
-# 10. CLI entry point
+# 9. CLI entry point
 # ============================================================
 
 if __name__ == "__main__":

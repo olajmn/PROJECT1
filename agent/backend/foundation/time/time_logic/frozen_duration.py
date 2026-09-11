@@ -15,14 +15,10 @@ describe_duration() - nothing here re-implements phrase matching.
 #      - duration_progress()
 #
 #  3. Horizon scoping
-#      - TARGET_STEP_MINUTES
-#      - MIN_STEPS
-#      - MAX_STEPS
 #      - _HORIZON_LENGTH_THRESHOLDS
 #      - broadest_relevant_horizon()
 #
 #  4. Step planning
-#      - step_count()
 #      - step_plan()
 
 from datetime import datetime, timedelta
@@ -117,14 +113,6 @@ def duration_progress(frozen: dict | None) -> dict | None:
 
 # 3. Horizon scoping
 
-# Goal spans are broken into ~15-minute steps; MIN/MAX_STEPS bound
-# that so a multi-day goal doesn't produce hundreds of steps and a
-# 20-minute goal doesn't produce just one.
-TARGET_STEP_MINUTES = 15
-MIN_STEPS = 3
-MAX_STEPS = 6
-
-
 # Broadest PLAN_KEYS horizon worth filling, given a goal's resolved
 # length, checked broadest to narrowest - first threshold cleared
 # wins. Deliberately coarse buckets (a "month" ~= 30 days); code
@@ -160,26 +148,14 @@ def broadest_relevant_horizon(duration: str | None) -> str:
 # 4. Step planning
 
 
-def step_count(duration: str | None) -> int | None:
-    """
-    How many steps `duration`'s span should be broken into -
-    deterministic (see TARGET_STEP_MINUTES above), never the model's
-    guess. None if `duration` doesn't resolve to a real span.
-    """
-    span = resolve_span(duration)
-    if span is None:
-        return None
-    start, end = span
-    total_minutes = (end - start).total_seconds() / 60
-    raw_count = round(total_minutes / TARGET_STEP_MINUTES)
-    return max(MIN_STEPS, min(MAX_STEPS, raw_count))
-
-
 def step_plan(frozen: dict | None, steps: list[str] | None) -> list[dict] | None:
     """
-    Zips stored step descriptions (the model's job - see
-    step_generator.generate_steps()) with a deterministic time slice of
-    the goal's frozen span, ready for the UI:
+    Zips stored step descriptions (how many, and their content, are
+    both decided together in backend/planning/plan/plan_structure.py -
+    a Planning-domain decision, not a temporal one; this module only
+    ever slices an already-known count's worth of time, never decides
+    the count itself) with a deterministic time slice of the goal's
+    frozen span, ready for the UI:
     [{"text", "start_label", "end_label"}, ...]. None if there are no
     steps or nothing frozen to slice.
     """

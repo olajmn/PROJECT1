@@ -22,7 +22,11 @@ LLM, or persistence:
   caller gets None and falls back to surface_text() alone. This is NOT
   a domain model and NOT the final shape of "Point"/"Path" from
   earlier conceptual work - it is only as much structure as today's
-  actual `plan.steps`/`step_status`/`current_step` already carry.
+  actual `plan.steps`/`step_status`/`current_step` already carry. Each
+  top-level step's own microsteps (see plan_structure.py) become its
+  `children`, one level deep only - `current_step`/`step_status` still
+  track completion at the top-level-step granularity only, not per
+  microstep; a microstep node's own `status` is always "open".
 """
 
 from backend.foundation.time import step_plan as _step_plan
@@ -66,22 +70,36 @@ def to_planning_node(record: dict) -> dict | None:
     if not status_list or len(status_list) != len(steps):
         status_list = ["open"] * len(steps)
 
-    timed = _step_plan(record.get("frozen_duration"), steps)  # may be None
+    # step_plan() only slices time and reads each entry as a plain
+    # label to embed as "text" - it has no reason to know about
+    # microsteps, so it gets just the labels, not the full step dicts.
+    timed = _step_plan(record.get("frozen_duration"), [s["label"] for s in steps])  # may be None
 
     children = []
-    for i, text in enumerate(steps):
+    for i, step in enumerate(steps):
         if status_list[i] == "resolved":
             status = "done"
         elif i == current_index:
             status = "current"
         else:
             status = "open"
-        label = f"{timed[i]['start_label']}–{timed[i]['end_label']}: {text}" if timed else text
+        label = f"{timed[i]['start_label']}–{timed[i]['end_label']}: {step['label']}" if timed else step["label"]
         children.append({
             "id": f"{record['goal_id']}-step-{i}",
             "label": label,
             "status": status,
-            "children": [],
+            # One level deep only - see module docstring. A microstep
+            # is always "open": there is no per-microstep completion
+            # signal today, only the per-step one (step_status above).
+            "children": [
+                {
+                    "id": f"{record['goal_id']}-step-{i}-micro-{j}",
+                    "label": microstep,
+                    "status": "open",
+                    "children": [],
+                }
+                for j, microstep in enumerate(step["microsteps"])
+            ],
         })
 
     return {
