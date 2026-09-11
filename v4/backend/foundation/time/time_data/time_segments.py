@@ -167,8 +167,8 @@ WEEKDAY_PREFIXES = {
 # preferred; time_logic requires an explicit hemisphere to resolve a
 # season at all, and is honest (recognized, not resolved) when it
 # isn't given one - see time_logic._matched_season_name()/
-# _season_range() and docs/03-architecture.md § Temporal
-# understanding. This project has no concept of the agent's or user's
+# _season_range() and docs/03-architecture.md § Time. This project
+# has no concept of the agent's or user's
 # location/hemisphere yet - not assumed here, deliberately.
 NORTHERN_SEASON_MONTHS = {
     "spring": (3, 5),

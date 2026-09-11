@@ -352,7 +352,8 @@ def generate_plan(
     deadlines already follow elsewhere in this project.
 
     `vision_id` (added 2026-09-06) optionally supplies the Goal's
-    linked Vision (see docs/03-architecture.md § Vision) as its own,
+    linked Vision (see docs/planning-model.md, the authority on
+    Vision) as its own,
     separate section of `user_content` - never folded into `goal`
     itself, so the model's own content-vagueness check above keeps
     inspecting only the actual goal text, not Vision prose. A stale or
@@ -537,7 +538,8 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     context as generate_plan()'s (added 2026-09-06): a Goal's linked
     Vision is meant to follow it for the goal's whole lifetime, not
     just its first plan, so every replan gets the same context the
-    initial plan did (see docs/03-architecture.md § Vision).
+    initial plan did (see docs/planning-model.md, the authority on
+    Vision).
     """
     # Named history_lines, not "steps" - unrelated to this file's
     # `steps` plan field/step_generator.generate_steps() (added later
@@ -978,7 +980,8 @@ def set_goal_vision(goal_id: int, vision_id: int | None) -> dict | None:
     """
     Add, move, or remove a goal's Vision link - the manual counterpart
     to `create_goal()`'s one-time choice, letting it be changed later
-    (see docs/03-architecture.md § Vision). `vision_id=None` removes
+    (see docs/planning-model.md, the authority on Vision).
+    `vision_id=None` removes
     the goal from whichever Vision it currently has.
 
     Unlike advance_step()/apply_feedback() (which take an

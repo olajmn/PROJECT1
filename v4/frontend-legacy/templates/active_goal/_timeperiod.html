@@ -1,0 +1,110 @@
+{# Timeperiod - the goal's own duration/countdown (if any), plus the
+   horizon-scale breakdown (each level's own text, "1 month" down to
+   "NOW") - both live under this one label since both are fundamentally
+   about TIME, not content (see active_goal/_plan.html for the content-only
+   view). Split out of _active_goal.html (2026-08-23).
+
+   Expects `record`, `frozen`, `filled_horizon_labels`, `horizon_texts`
+   in context - all built once in the parent shell
+   (_active_goal.html), not here: `frozen` is needed again by
+   active_goal/_task.html (for step_plan()), and a {% set %} made INSIDE one
+   included template never leaks out to a sibling include, only a
+   {% set %} in the shared parent does. #}
+{% if record.duration or filled_horizon_labels %}
+  <div class="model-row">
+    <span class="model-label">Timeperiod</span>
+    {% if record.duration %}
+      {# The frozen description text if there is one (see
+         backend/foundation/time/time_logic/frozen_duration.py's freeze_duration()) - computed once,
+         at creation/replan time, so it always agrees with the bar
+         below (both read the same frozen numbers). Falls back to a
+         live describe_duration() call only for a record saved before
+         frozen_duration existed, or a duration that never resolved to
+         a real span in the first place (e.g. "before bed") -
+         describe_duration() is still the right thing to show for
+         those, same as always. #}
+      <span>{{ record.duration }} <span class="yaml-comment">&mdash; {{ frozen.text if frozen else describe_duration(record.duration) }}</span></span>
+      {# Start/now/end bar - only when duration_progress() actually
+         has a frozen start AND end to read (see its own docstring); a
+         deadline or fully open duration has nothing honest to draw
+         here, same as describe_duration() falling back to plain text
+         for those. #}
+      {% set progress = duration_progress(frozen) %}
+      {% if progress %}
+        <div class="duration-bar">
+          <div class="duration-bar-track"></div>
+          <div class="duration-bar-marker status-{{ progress.status }}" style="left: {{ progress.percent }}%">
+            <span class="duration-bar-marker-tick">&#9650;</span>
+            <span class="duration-bar-marker-label">now</span>
+          </div>
+        </div>
+        <div class="duration-bar-labels">
+          <span>{{ progress.start_label }}</span>
+          {# Live countdown to `end` - ticks down client-side (see
+             index.html's script), no server round-trip. The
+             server-rendered text here is just the pre-JS fallback
+             (e.g. if JS is disabled), computed once at page load.
+
+             Unit selector (2026-08-23) - a long goal (months/years)
+             rendered as raw H:MM:SS is unreadable (e.g. "4422:11:09"
+             for 6 months). The script
+             picks a sensible starting unit itself based on how far off
+             `end` actually is (see pickDefaultUnit()) - this <select>
+             is only for OVERRIDING that choice by hand afterward, not
+             something you have to set every time. #}
+          {# Grouped in one span, not two loose flex children -
+             .duration-bar-labels spaces its children with
+             justify-content: space-between, so countdown+select need
+             to count as ONE item to keep the original 3-column
+             (start / countdown / end) layout instead of becoming 4
+             unevenly-spaced ones. #}
+          <span class="duration-countdown-group">
+            <span class="duration-countdown" data-end="{{ progress.end_iso }}"></span>
+            <select class="duration-unit-select" aria-label="Countdown unit">
+              <option value="hours">hours</option>
+              <option value="days">days</option>
+              <option value="months">months</option>
+              <option value="years">years</option>
+            </select>
+          </span>
+          <span>{{ progress.end_label }}</span>
+        </div>
+      {% endif %}
+    {% endif %}
+    {% if filled_horizon_labels or record.plan.now %}
+      {# The horizon SCALE - which levels this plan actually reaches
+         (broadest to narrowest).
+
+         Label + its own content per level, vertically (2026-08-23,
+         replaced a first attempt at width-scaled bars showing only
+         labels) - the user's own reasoning: Plan is the one
+         overarching whole-goal plan, but this is a level-by-level
+         breakdown, closer to milestones - "aha, so it's ~2 months to
+         make the song, and 1 month to polish and publish" - which
+         needs each level's own TEXT next to it, not just its name, to
+         actually convey that. Reuses `horizon_texts` by index rather
+         than Plan's join_plan_prose() - Plan wants everything woven
+         into one continuous read, this wants each level kept distinct
+         and labeled. NOW/`now` added at the end, same text Action
+         shows as the ORIGINAL first action (see backend/goals/plan/step_generator.py's
+         generate_steps() docstring: step 1 always equals `now`,
+         unchanged) - not step-aware like Action's own current_step
+         pointer, since this is an overview of the plan's original
+         shape, not a live progress tracker. #}
+      <div class="horizon-scale">
+        {% for label in filled_horizon_labels %}
+          <div class="horizon-level">
+            <span class="horizon-level-label">{{ label }}:</span>
+            <span class="horizon-level-text">{{ horizon_texts[loop.index0] }}</span>
+          </div>
+        {% endfor %}
+        {% if record.plan.now %}
+          <div class="horizon-level horizon-level-now">
+            <span class="horizon-level-label">NOW:</span>
+            <span class="horizon-level-text">{{ record.plan.now }}</span>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+{% endif %}

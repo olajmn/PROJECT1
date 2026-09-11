@@ -1,0 +1,76 @@
+{# Vision Page - create a Vision (independent of any goal, see
+   app.py's /vision route), then two sections: Active Visions and
+   Archived Visions. Expects `active_visions`, `archived_visions`, and
+   `goals_by_vision` in context (from vision_page()). Archived is a
+   status on the same Vision entity, not a different kind of thing or
+   a new group - the vision_entity() macro below is the one place a
+   Vision's markup is defined, so both sections render identically
+   except for the "Archived" badge and the missing Archive button;
+   Active and Archived can't drift apart into two hand-maintained
+   copies. Active Visions always renders (same "always show the
+   heading, even at 0" convention as active/_active_view.html's "Active
+   (N)"); Archived Visions only renders at all when at least one
+   archived Vision exists - no empty section for a state that doesn't
+   exist, same principle already applied to a Vision's own empty Goals
+   group below.
+
+   Each Vision renders as its own .entity, reading as its own "room"
+   rather than a line item. The form above stays .card, not .entity -
+   it's the input surface that creates a Vision, not a Vision itself
+   (see style.css's .card, .entity rule).
+
+   Each Vision's Goals render as a .group nested inside it, one
+   .entity per goal (built by goal_overview.py's
+   group_goals_by_vision_id()): Vision (Entity) > Goals (Group) > Goal
+   (Entity). An empty Vision still renders its .group, with an
+   .empty-state message rather than a blank box, so it actually reads
+   as "no Goals yet" instead of looking unrendered (same .empty-state
+   convention as active_goal/_plan.html's empty states). Only ACTIVE
+   goals - Completed isn't wired in yet. This relation is unaffected by
+   archiving - group_goals_by_vision_id() groups by a Goal's own
+   vision_id regardless of whether that Vision is archived. Editing the
+   link happens on the Active page (active_goal/_goal.html's Vision
+   select), not here. #}
+<div class="card">
+  <p class="helper-text">Optional, spans multiple goals.</p>
+  <form method="post" action="/vision">
+    <input type="text" name="text" placeholder="e.g. Improve physical health and quality of life">
+    <button class="btn-goal" type="submit">Create vision</button>
+  </form>
+</div>
+
+{% macro vision_entity(v, goals, archived) %}
+  <div class="entity">
+    {{ v.text }} <span class="id-badge">#{{ v.id }}</span>{% if archived %} <span class="id-badge">Archived</span>{% endif %}
+    <div class="group">
+      {% for g in goals %}
+        <div class="entity">{{ g.goal }} <span class="id-badge">#{{ g.goal_id }}</span></div>
+      {% else %}
+        <div class="empty-state">(no Goals yet)</div>
+      {% endfor %}
+    </div>
+    {% if not archived %}
+    {# Same minimal .btn-goal action as active_goal/_cancel.html's
+       Cancel goal - no confirmation step, no distinct styling. Only
+       removes this Vision from the active list above (see
+       archive_vision()); linked Goals and their vision_id are
+       untouched, and there is no restore/unarchive. #}
+    <form method="post" action="/vision-archive">
+      <input type="hidden" name="vision_id" value="{{ v.id }}">
+      <button class="btn-goal" type="submit">Archive vision</button>
+    </form>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+<h2 class="board-heading">Active Visions</h2>
+{% for v in active_visions %}
+  {{ vision_entity(v, goals_by_vision.get(v.id, []), false) }}
+{% endfor %}
+
+{% if archived_visions %}
+<h2 class="board-heading">Archived Visions</h2>
+{% for v in archived_visions %}
+  {{ vision_entity(v, goals_by_vision.get(v.id, []), true) }}
+{% endfor %}
+{% endif %}

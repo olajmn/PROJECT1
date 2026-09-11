@@ -65,7 +65,7 @@ def resolve_duration(duration: str | None, hemisphere: str | None = None) -> str
     current caller passes - this project has no location/hemisphere
     concept yet) means a season is reported as recognized but not
     resolved, never guessed (see _matched_season_name()/_season_range()
-    and docs/03-architecture.md § Temporal understanding).
+    and docs/03-architecture.md § Time).
     """
     if not duration:
         return duration

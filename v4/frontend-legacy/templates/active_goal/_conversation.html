@@ -1,0 +1,106 @@
+{# Feedback - the goal's full history rendered as a back-and-forth
+   thread (You / Agent), not a flat data dump - the goal's full history,
+   oldest first: the original goal, then each feedback -> replan round.
+   Labeled "Feedback" here (was "Conversation" until 2026-08-26 - see
+   docs/06-development.md) to match the conceptual model
+   (Vision/Goal/Plan/Action/Feedback, see docs/03-architecture.md) -
+   still the full two-way thread underneath (your feedback AND the
+   agent's resulting Action each round), not only the raw feedback
+   text alone; that's a deliberate, unchanged scope, not an oversight.
+   See storage.get_history_for_goal() for why this chain already *is*
+   a conversation. Split out of _active_goal.html (2026-08-23).
+
+   Expects `record` in context. #}
+<div class="model-row">
+  <span class="model-label">Feedback</span>
+</div>
+<div class="chat-thread">
+  {% for msg in get_history_for_goal(record.goal_id) %}
+    <div class="chat-msg chat-me">
+      <span class="chat-label">You</span>
+      {# Split into one <p> per sentence-like part (see app.py's
+         split_message_lines()) - a message built from more than one
+         thought (e.g. "Checked in (...). Note: {note}") otherwise
+         reads as one dense run-on block instead of the separate
+         statements it actually is. A single-sentence message just
+         produces one <p>, unchanged from before. #}
+      {% if loop.first %}
+        {% for line in msg.goal | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
+      {% else %}
+        {% for line in msg.feedback | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
+      {% endif %}
+    </div>
+    <div class="chat-msg chat-agent">
+      <span class="chat-label">Agent</span>
+      {% if msg.plan.get('clarification') %}
+        {# The goal as typed (or as last answered) was too vague to
+           plan - see backend/goals/plan/planner.py's generate_plan() docstring.
+           Shown ahead of `now`: a pending question means `now`
+           is None anyway (both null together, never both set - see
+           that same docstring), so this can't accidentally hide a
+           real answer. #}
+        {% for line in msg.plan.clarification | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
+      {% elif msg.plan.get('suggested_action') %}
+        {# The goal's content wasn't specific enough to plan directly,
+           but a safe, generic first step was proposed instead of a
+           blank clarifying question (see
+           backend/goals/plan/planner.py's `suggested_action`) -
+           answered through the same free-text box as any other
+           pending question; a plain "yes"/"okay" accepts it
+           (apply_feedback()'s matching branch), anything else is
+           treated as new information about the goal. `now` is None
+           while this is pending (see that same docstring), so this
+           can't accidentally hide a real Action. #}
+        {% for line in msg.plan.suggested_action | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
+      {% elif msg.plan.get('suggested_duration') %}
+        {# No timeframe was given, so generate_plan() proposed a
+           default instead of asking a blank question (see
+           backend/goals/plan/planner.py's `suggested_duration`) - the
+           agent composes the actual sentence here, the model only
+           produced the short phrase. Answered through the same
+           free-text box as any other pending question (see
+           apply_feedback()'s matching branch); there is no separate
+           confirm/adjust control yet - see docs/planning-model.md §
+           Minimum planability for why that's an accepted v1
+           simplification, not an oversight. #}
+        <p class="chat-line">No timeframe was given for this - would {{ msg.plan.suggested_duration }} work?</p>
+      {% elif msg.plan.get('pending_duration_question') %}
+        {# A "change timeframe" request (see
+           feedback_parser.requests_duration_change()) was just made -
+           this is a DIFFERENT kind of pending question from
+           clarification above: the goal's actual plan/`now` is
+           still fully intact underneath (deliberately not touched
+           yet), only this reply is standing in for it until the next
+           message answers with a new duration - see app.py's
+           /feedback route. #}
+        {% for line in msg.plan.pending_duration_question | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
+      {% elif msg.plan.now %}
+        {% for line in msg.plan.now | split_message_lines %}<p class="chat-line">{{ line }}</p>{% endfor %}
+      {% else %}
+        {# See docs/06-development.md, 2026-08-19: the model sometimes
+           gives no next action without marking the goal complete - say
+           so plainly rather than leaving the bubble empty. #}
+        <p class="chat-line">(no next action came back - give feedback again, or mark complete)</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  {# The input for your next message, not a separate "Are you done with
+     this?" question below Conversation - what you type here literally
+     becomes the next "You" bubble above once submitted (see app.py's
+     /feedback route), so it's styled as a continuation of the thread,
+     not a form asking something with one correct answer. No more
+     Yes/Still working on it/No/Goal complete buttons either: what you
+     write is classified deterministically (recognized phrases, no LLM
+     - see backend/goals/feedback/feedback_parser.py) into
+     action_completed/action_not_completed/action_in_progress/goal_completed. Anything not confidently
+     recognized checks in without changing the plan - never a silent
+     guess toward a riskier outcome. See docs/05-decisions.md,
+     2026-08-20/2026-08-21. #}
+  <form method="post" action="/feedback" class="chat-msg chat-me chat-input-row">
+    <input type="hidden" name="goal_id" value="{{ record.goal_id }}">
+    <span class="chat-label">You</span>
+    <textarea id="note-{{ record.goal_id }}" name="note" rows="2" required placeholder="{{ "your answer…" if record.plan.get('clarification') else "what's going on with this?" }}"></textarea>
+    <button class="btn-goal" type="submit">Update</button>
+  </form>
+</div>

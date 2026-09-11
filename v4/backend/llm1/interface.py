@@ -1,10 +1,10 @@
 """
-LLM1 - Human Interface (docs/architecture-v4.md).
+LLM1 - Human Interface (docs/v4-migration-decision.md).
 
 The only role that talks to the user directly. It is handed either the
 user's own message with nothing yet to report, or a single, already
 plain-text surface string a capability produced - never a capability's
-own internal field names or data shape (see docs/architecture-v4.md,
+own internal field names or data shape (see docs/v4-migration-decision.md,
 "LLM1 must not need to know... PLAN_KEYS, step_status,
 suggested_action, current_step"). Producing that plain-text string from
 a capability's raw result is the calling harness's job, not LLM1's or

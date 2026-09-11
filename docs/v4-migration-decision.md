@@ -1,4 +1,4 @@
-# Architecture v4
+# V4 Migration — Decision Record
 
 > The target architecture the project is now migrating toward: a human-facing interface, a conversation parser, a capability selector, one or more capabilities (Planning first), and a deterministic program underneath them. This document is the pre-implementation map for that direction — it describes responsibility, boundary, relationship, and data flow, not classes, file paths, or schemas. Written before any code for this architecture exists, so that implementation follows an explicit boundary instead of one discovered by accident while writing code.
 

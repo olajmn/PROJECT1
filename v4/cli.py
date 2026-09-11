@@ -1,10 +1,10 @@
 """
-Smallest possible vertical-slice experiment for architecture-v4:
+Smallest possible vertical-slice experiment for docs/v4-migration-decision.md:
 
     USER -> LLM1 -> LLM2 -> LLM3 -> Planning (unmodified) -> LLM1 -> USER
 
 Not a product, not a UI, not Flask - a terminal loop whose only job is
-to test whether the boundary in docs/architecture-v4.md actually holds
+to test whether the boundary in docs/v4-migration-decision.md actually holds
 up once real text flows through it. Planning itself
 (backend/planning/) is called exactly as it already was verified to
 work in the previous checkpoint - nothing in it is touched here.

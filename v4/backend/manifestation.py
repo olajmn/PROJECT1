@@ -1,9 +1,9 @@
 """
-UI Manifestation (docs/architecture-v4.md) - turning a Planning result
+UI Manifestation (docs/v4-migration-decision.md) - turning a Planning result
 into what a UI can show, without Planning knowing anything about UI
 concerns and without the UI knowing Planning's own field names
 (PLAN_KEYS, step_status, current_step, ...). This is the first
-concrete home for the "UI manifestation" layer architecture-v4.md
+concrete home for the "UI manifestation" layer docs/v4-migration-decision.md
 names but leaves unspecified - filled in only as far as Planning's
 actual result shape requires, not as a general framework.
 

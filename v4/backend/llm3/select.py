@@ -1,15 +1,15 @@
 """
-LLM3 - Capability Selection (docs/architecture-v4.md).
+LLM3 - Capability Selection (docs/v4-migration-decision.md).
 
 Decides only WHETHER a capability is needed and WHICH one - never how
 that capability should handle the situation (that is the capability's
 own job, not LLM3's). Exactly one capability exists today: "planning".
 This is a deliberately thin stub, not real multi-capability reasoning
-- see docs/architecture-v4.md, "Planning is the first capability."
+- see docs/v4-migration-decision.md, "Planning is the first capability."
 
 Receives only LLM2's capability-agnostic understanding, never the raw
 user message again - LLM3 works from what LLM2 already produced,
-consistent with the data-flow direction in docs/architecture-v4.md.
+consistent with the data-flow direction in docs/v4-migration-decision.md.
 """
 
 import json

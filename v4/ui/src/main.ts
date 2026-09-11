@@ -1,7 +1,7 @@
 // DOM wiring for the v4 conversation prototype. Deliberately one
 // small file: appending chat messages and rendering an optional
 // PlanningNode tree are the whole job here - no framework, no state
-// library, no routing (see docs/architecture-v4.md, UI Manifestation).
+// library, no routing (see docs/v4-migration-decision.md, UI Manifestation).
 
 import { sendMessage } from "./api.js";
 import type { PlanningNode } from "./types.js";

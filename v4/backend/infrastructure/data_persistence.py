@@ -29,7 +29,8 @@ docs/05-decisions.md for the fuller reasoning).
 A Vision can be archived (`archived: True` on its record) once it no
 longer represents an active direction - a lifecycle distinct from a
 Goal's completed/cancelled, since a Vision isn't something that gets
-"finished" (see docs/03-architecture.md § Vision). Archiving mutates
+"finished" (see docs/planning-model.md, the authority on Vision).
+Archiving mutates
 the one existing record in place - the only case where a Vision record
 changes after creation - rather than appending, matching the "single
 mutable fact, not a chain" reasoning above. This function itself never
@@ -259,8 +260,8 @@ def save_plan(
 
     `vision_id` optionally links this goal to a Vision - broader,
     cross-goal context, not part of the operational goal -> plan ->
-    action -> feedback loop (see docs/03-architecture.md § Vision).
-    None is the normal case. Like `goal_id`, never invented by a caller
+    action -> feedback loop (see docs/planning-model.md, the authority
+    on Vision). None is the normal case. Like `goal_id`, never invented by a caller
     - pass an id from save_vision()/load_visions(), or carry the
     existing record's own `vision_id` forward unchanged across a
     replan (same reasoning as `frozen_duration`).
@@ -340,7 +341,7 @@ def save_vision(text: str) -> dict:
     """
     Create a new Vision and persist it - broader, cross-goal context a
     Goal can optionally reference (see save_plan()'s `vision_id`
-    parameter and docs/03-architecture.md § Vision).
+    parameter and docs/planning-model.md, the authority on Vision).
 
     No history, no revisions: unlike a goal/plan record, a vision is a
     single mutable fact ("this is what the text currently says"), not

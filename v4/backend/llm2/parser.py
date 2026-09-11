@@ -1,5 +1,5 @@
 """
-LLM2 - Parser / Compiler (docs/architecture-v4.md).
+LLM2 - Parser / Compiler (docs/v4-migration-decision.md).
 
 Transforms the human conversation into a structured, capability-
 agnostic understanding of what is being talked about. Deliberately
@@ -7,7 +7,7 @@ produces NO judgment about whether action is needed and NO capability
 name - that decision belongs to LLM3, not here. An "actionable" flag
 here would already be a hidden capability-adjacent judgment dressed up
 as a neutral description, not a genuinely capability-agnostic one (see
-docs/architecture-v4.md, "LLM2 must not produce capability-specific
+docs/v4-migration-decision.md, "LLM2 must not produce capability-specific
 concepts").
 """
 

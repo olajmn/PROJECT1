@@ -1,0 +1,216 @@
+"""
+Checks the docs/ vault's structural integrity: the expected files
+exist and nothing stray sits alongside them, every [[wikilink]] and
+docs/<name>.md-style reference resolves to a file that actually
+exists, and each numbered doc's own "# NN — Title" heading matches its
+filename.
+
+Deterministic only - no semantic judgment about where content belongs
+(see COLLABORATION.md), no automatic rewriting. Companion to
+docs_lint.py, which checks prose style rather than structure/references.
+
+Lives at the project root, not under current/ or v4/, because docs/
+itself is now a shared resource spanning both projects (see README.md)
+- one checker, one docs/ vault to be true against, rather than a
+separate copy per project drifting out of sync with the other.
+
+Run from the project root (stdlib only, no venv required):
+    python3 -m tools.docs_check
+
+Exit code 0 if nothing found, 1 if any problem is reported.
+"""
+
+# Contents
+#  1. Configuration
+#      - EXPECTED_DOCS
+#      - REFERENCE_SCAN_TARGETS
+#      - SCANNED_SUFFIXES
+#      - WIKILINK_RE / DOC_PATH_RE / H1_NUMBER_RE / FILENAME_NUMBER_RE
+#
+#  2. Helpers
+#      - _iter_files()
+#      - _rel()
+#
+#  3. Checks
+#      - check_structure()
+#      - check_references()
+#      - check_h1_numbering()
+#
+#  4. Entry Point
+#      - main()
+
+import re
+import sys
+from pathlib import Path
+
+# 1. Configuration
+
+ROOT = Path(__file__).resolve().parent.parent
+DOCS = ROOT / "docs"
+
+# The vault's fixed shape - update this list deliberately when a doc
+# is genuinely added/renamed, never just to silence a real finding.
+EXPECTED_DOCS = [
+    "00-project-brief.md",
+    "01-research.md",
+    "02-product.md",
+    "03-architecture.md",
+    "04-current-state.md",
+    "05-decisions.md",
+    "06-development.md",
+    # Deliberately unnumbered - a working conceptual model for one
+    # subsystem (planning semantics), not one of the seven numbered
+    # vault roles above; exempt from check_h1_numbering() for the same
+    # reason (its filename carries no NN prefix to check against).
+    "planning-model.md",
+    # Deliberately unnumbered, same reasoning as planning-model.md -
+    # the original v1->v4 migration decision record, kept as a frozen
+    # historical document several v4 code docstrings still cite by
+    # name (see docs/03-architecture.md § Related documentation).
+    "v4-migration-decision.md",
+    # Deliberately unnumbered, same reasoning - a standalone, ever-
+    # growing conceptual/speculative document, not one of the seven
+    # numbered vault roles (see COLLABORATION.md's doc-role table).
+    "concepts.md",
+]
+
+# Files/directories outside docs/ scanned for docs/<name>.md-style
+# references (docs/ itself included, for cross-references between
+# docs). A curated list of real source areas, not a wildcard project-
+# root walk - current/ and v4/ each carry their own .venv/ and (v4/ui)
+# node_modules/, which would otherwise flood this with irrelevant .py
+# hits from third-party packages.
+REFERENCE_SCAN_TARGETS = [
+    "docs",
+    "tools",
+    "CONVENTIONS.md",
+    "COLLABORATION.md",
+    "README.md",
+    "current/backend",
+    "current/frontend",
+    "current/tools",
+    "current/COLLABORATION.md",
+    "current/SESSION-TODO.md",
+    "current/README.md",
+    "v4/backend",
+    "v4/cli.py",
+    "v4/server.py",
+    "v4/ui/src",
+    "v4/README.md",
+]
+SCANNED_SUFFIXES = {".md", ".py"}
+
+WIKILINK_RE = re.compile(r"\[\[([A-Za-z0-9_-]+)\]\]")
+DOC_PATH_RE = re.compile(r"\bdocs/([A-Za-z0-9_-]+\.md)\b")
+H1_NUMBER_RE = re.compile(r"^#\s+(\d{2})\D")
+FILENAME_NUMBER_RE = re.compile(r"^(\d{2})-")
+
+# 2. Helpers
+
+
+def _iter_files(targets: list[str]) -> list[Path]:
+    """Scannable files for `targets`. Directories are walked
+    recursively; a bare file is included if its suffix qualifies."""
+    files: list[Path] = []
+    for target in targets:
+        path = ROOT / target
+        if not path.exists():
+            continue
+        if path.is_file():
+            if path.suffix in SCANNED_SUFFIXES:
+                files.append(path)
+            continue
+        for suffix in SCANNED_SUFFIXES:
+            files.extend(sorted(path.rglob(f"*{suffix}")))
+    return sorted(set(files))
+
+
+def _rel(path: Path) -> str:
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return str(path)
+
+# 3. Checks
+
+
+def check_structure() -> list[str]:
+    """Missing expected docs, and any docs/*.md file not on the
+    expected list - catches both a doc that's gone missing and a stray
+    file sitting next to the real ten."""
+    problems = []
+    actual = {p.name for p in DOCS.glob("*.md")}
+    expected = set(EXPECTED_DOCS)
+    for name in EXPECTED_DOCS:
+        if name not in actual:
+            problems.append(f"docs/: [MISSING] expected doc not found: docs/{name}")
+    for name in sorted(actual - expected):
+        problems.append(f"docs/{name}: [UNEXPECTED] not one of the expected docs (see EXPECTED_DOCS in tools/docs_check.py)")
+    return problems
+
+
+def check_references() -> list[str]:
+    """Every [[wikilink]] and docs/<name>.md-style reference in the
+    project resolves to a file that actually exists in docs/. Doesn't
+    distinguish "renamed" from "deleted" from "typo" - all three look
+    identical here (a reference to a file that isn't there); which one
+    it is, and what to do about it, is a human/Claude call."""
+    problems = []
+    valid_stems = {p.stem for p in DOCS.glob("*.md")}
+    valid_names = {p.name for p in DOCS.glob("*.md")}
+
+    for path in _iter_files(["docs"]):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            for match in WIKILINK_RE.finditer(line):
+                target = match.group(1)
+                if target not in valid_stems:
+                    problems.append(f"{_rel(path)}:{line_number}: [BROKEN WIKILINK] [[{target}]]")
+
+    for path in _iter_files(REFERENCE_SCAN_TARGETS):
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for line_number, line in enumerate(text.splitlines(), start=1):
+            for match in DOC_PATH_RE.finditer(line):
+                target = match.group(1)
+                if target not in valid_names:
+                    problems.append(f"{_rel(path)}:{line_number}: [BROKEN REFERENCE] docs/{target}")
+    return problems
+
+
+def check_h1_numbering() -> list[str]:
+    """Each numbered doc's own "# NN — Title" heading matches its
+    filename's number - catches a rename that forgot to update the
+    heading. Unnumbered docs (planning-model.md, v4-migration-
+    decision.md, concepts.md) have nothing to check against and are
+    silently skipped by the filename match below."""
+    problems = []
+    for path in sorted(DOCS.glob("*.md")):
+        filename_match = FILENAME_NUMBER_RE.match(path.name)
+        if not filename_match:
+            continue
+        expected_number = filename_match.group(1)
+        text = path.read_text(encoding="utf-8", errors="replace")
+        first_line = text.splitlines()[0] if text.splitlines() else ""
+        h1_match = H1_NUMBER_RE.match(first_line)
+        if not h1_match:
+            problems.append(f"{_rel(path)}:1: [H1 MISMATCH] heading doesn't start with '# NN' at all: {first_line!r}")
+        elif h1_match.group(1) != expected_number:
+            problems.append(
+                f"{_rel(path)}:1: [H1 MISMATCH] filename says {expected_number!r}, heading says {h1_match.group(1)!r}"
+            )
+    return problems
+
+# 4. Entry Point
+
+
+def main() -> int:
+    all_problems = check_structure() + check_references() + check_h1_numbering()
+    for problem in all_problems:
+        print(problem)
+    print()
+    print(f"{len(all_problems)} problem(s) found.")
+    return 1 if all_problems else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

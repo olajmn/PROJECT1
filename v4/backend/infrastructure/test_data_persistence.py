@@ -1,7 +1,7 @@
 """
 Small, direct checks for the Vision persistence added 2026-08-26 -
 not a test framework, just asserts run top to bottom (same style as
-backend/goals/feedback/test_feedback_parser.py).
+backend/planning/feedback/test_feedback_parser.py).
 
 Runs entirely against a temporary directory, never the real data/ -
 this module patches DATA_DIR/PLANS_FILE/VISIONS_FILE for the duration

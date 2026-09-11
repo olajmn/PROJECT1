@@ -9,8 +9,8 @@ docs/03-architecture.md.
 A season ("this summer", "next winter") is recognized the same way,
 but is a relative, context-dependent concept, not a universal date
 range - which months it names depends on hemisphere, which this
-project has no concept of yet (see docs/03-architecture.md § Temporal
-understanding). resolve_duration()/resolve_span()/describe_duration()
+project has no concept of yet (see docs/03-architecture.md § Time).
+resolve_duration()/resolve_span()/describe_duration()
 all take an optional `hemisphere` ("northern"/"southern") for exactly
 this; a season is reported as recognized but not resolved, never
 guessed, when it isn't given one.
