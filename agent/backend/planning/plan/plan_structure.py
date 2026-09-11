@@ -38,7 +38,7 @@ step shape, used uniformly, removes the ambiguity.
 
 import json
 
-from backend.reasoning.model_client import send_message
+from backend.reasoning.model_client import call_with_retry, send_message
 from backend.foundation.time import resolve_span
 
 # A safety ceiling only - guards against a malformed/degenerate
@@ -83,9 +83,11 @@ def generate_structure(goal: str, duration: str, right_now: str) -> dict | None:
     "the first action" from the model. None if `duration` doesn't
     resolve to a real span at all (nothing to plan steps against).
 
-    Raises ValueError if the model's response doesn't have the
-    expected shape - same "trust the shape or fail loudly" approach as
-    model_client.ask_model()/the retired step_generator.py.
+    Raises ValueError if the model's response still doesn't have the
+    expected shape after a few retries (see
+    reasoning.model_client.call_with_retry's own docstring for why a
+    bounded retry is worth it) - same "trust the shape or fail loudly"
+    approach as model_client.ask_model()/the retired step_generator.py.
     """
     if resolve_span(duration) is None:
         return None
@@ -95,21 +97,26 @@ def generate_structure(goal: str, duration: str, right_now: str) -> dict | None:
         f"The first step, already decided, is: {right_now}\n\n"
         f"The plan spans: {duration}"
     )
-    raw = send_message(STEPS_SYSTEM_PROMPT, user_content, json_mode=True)
-    data = json.loads(raw)
 
-    steps = data.get("steps")
-    if not isinstance(steps, list) or not steps or len(steps) > MAX_SANE_STEPS:
-        raise ValueError(f"Model did not return a sane step list: {data}")
-    for step in steps:
-        if (
-            not isinstance(step, dict)
-            or not isinstance(step.get("label"), str)
-            or not isinstance(step.get("microsteps"), list)
-            or len(step["microsteps"]) > MAX_SANE_MICROSTEPS
-            or not all(isinstance(m, str) for m in step["microsteps"])
-        ):
-            raise ValueError(f"Model did not return a sane step shape: {data}")
+    def attempt() -> list[dict]:
+        raw = send_message(STEPS_SYSTEM_PROMPT, user_content, json_mode=True)
+        data = json.loads(raw)
+
+        steps = data.get("steps")
+        if not isinstance(steps, list) or not steps or len(steps) > MAX_SANE_STEPS:
+            raise ValueError(f"Model did not return a sane step list: {data}")
+        for step in steps:
+            if (
+                not isinstance(step, dict)
+                or not isinstance(step.get("label"), str)
+                or not isinstance(step.get("microsteps"), list)
+                or len(step["microsteps"]) > MAX_SANE_MICROSTEPS
+                or not all(isinstance(m, str) for m in step["microsteps"])
+            ):
+                raise ValueError(f"Model did not return a sane step shape: {data}")
+        return steps
+
+    steps = call_with_retry(attempt)
 
     first = {"label": right_now, "microsteps": []}
     return {"steps": [first] + steps}

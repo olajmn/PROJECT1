@@ -71,9 +71,17 @@ class Handler(BaseHTTPRequestHandler):
         try:
             result = process_turn(session, user_text)
         except Exception as e:  # transport must not crash on one bad turn
+            # Same reasoning as cli.py's own fallback: a friendly,
+            # deterministic line, not the raw exception text, standing
+            # in as "the agent's reply" - reasoning.model_client.
+            # call_with_retry already absorbs the model-shape hiccups
+            # this is most likely to be. Printed server-side (not to
+            # the client) for whoever is actually debugging this run.
+            print(f"(debug: {e})")
             result = {
                 "understanding": None, "capability": None, "surface": None,
-                "node": None, "goal_id": None, "reply": f"(error: {e})",
+                "node": None, "goal_id": None,
+                "reply": "That took longer than expected - try again in a moment.",
             }
 
         body = json.dumps(result).encode("utf-8")

@@ -179,8 +179,16 @@ def run_pyflakes() -> tuple[int, str]:
 
 
 # A backend/...-looking .py path mentioned in a comment, docstring, or
-# docs/ prose. No "frontend/" branch yet - see PY_SCAN_AREAS above.
-CODE_PATH_RE = re.compile(r"\bbackend/[A-Za-z0-9_/().-]+\.py\b")
+# docs/ prose - either the current "backend/..." prefix, or "goals/...",
+# a former backend/ subpackage name (pre-2026-09-11 rename to
+# backend/planning/) still mentioned bare, without "backend/", in some
+# historical text - found via a real miss: reasoning/model_client.py's
+# own docstring said "goals/plan/model_client.py", which the original,
+# backend/-only pattern couldn't see at all, not even in principle -
+# rerunning this same check would never have caught it, only widening
+# the pattern does. No "frontend/" branch yet - see PY_SCAN_AREAS
+# above.
+CODE_PATH_RE = re.compile(r"\b(?:backend/|goals/)[A-Za-z0-9_/().-]+\.py\b")
 
 # Where to scan for CODE_PATH_RE mentions: .py under agent/backend/ and
 # its top-level entry points, .md under the shared docs/.
@@ -193,10 +201,11 @@ STALE_PATH_SCAN_TARGETS: list[tuple[Path, str]] = [
 
 
 def stale_code_path_mentions() -> list[str]:
-    """Every backend/...-looking .py path mentioned anywhere under
-    agent/backend/, agent/cli.py, agent/server.py, or the shared docs/
-    that doesn't resolve to a real file under agent/ (a docs/ mention
-    of `backend/...` means agent/backend/... specifically -
+    """Every backend/...-looking (or bare goals/...-looking - see
+    CODE_PATH_RE) .py path mentioned anywhere under agent/backend/,
+    agent/cli.py, agent/server.py, or the shared docs/ that doesn't
+    resolve to a real file under agent/backend/ (a docs/ mention of
+    `backend/...` or `goals/...` means agent/backend/... specifically -
     current/backend/ uses the same relative shape but a different tree
     entirely). Doesn't distinguish a genuine leftover reference from a
     docstring or doc deliberately narrating "moved from X" as
@@ -213,7 +222,13 @@ def stale_code_path_mentions() -> list[str]:
             for line_number, line in enumerate(text.splitlines(), start=1):
                 for match in CODE_PATH_RE.finditer(line):
                     referenced = match.group(0)
-                    if not (AGENT_ROOT / referenced).exists():
+                    # Both recognized prefixes always resolve under
+                    # agent/backend/ - "backend/" is already rooted
+                    # there once stripped, and a bare "goals/..." match
+                    # always lived directly under backend/goals/, never
+                    # at the project root.
+                    normalized = referenced.removeprefix("backend/")
+                    if not (AGENT_ROOT / "backend" / normalized).exists():
                         stale.append(f"{path.relative_to(PROJECT_ROOT)}:{line_number}: {referenced}")
     return stale
 

@@ -5,9 +5,9 @@ Reasoning
 The one boundary every call to the local model (Ollama) passes
 through - send a system+user message, get the raw text response back.
 Never decides anything and never interprets what the text means; that
-is each caller's own job (see goals/plan/model_client.py's
+is each caller's own job (see planning/plan/model_client.py's
 ask_model() for the Plan-specific JSON interpretation built on top of
-this, and goals/feedback/acknowledger.py for a plain-text one).
+this, and planning/feedback/acknowledger.py for a plain-text one).
 
 Runs 100% locally - no API key, no internet, no cost. Requires Ollama
 running in the background (start with: brew services start ollama)
@@ -54,3 +54,33 @@ def send_message(system_prompt: str, user_content: str, json_mode: bool = False)
         ],
     )
     return response["message"]["content"]
+
+
+def call_with_retry(attempt, attempts: int = 3):
+    """
+    Calls the zero-argument `attempt()` up to `attempts` times,
+    returning the first result that doesn't raise. `attempt` is
+    expected to be a caller's own "send_message() + parse + validate
+    shape" sequence, raising ValueError (json.JSONDecodeError is a
+    ValueError subclass, so a malformed JSON body is covered too) on a
+    bad shape - see planning/plan/model_client.py's ask_model() and
+    planning/plan/plan_structure.py's generate_structure() for the two
+    current callers.
+
+    Exists because this project has repeatedly observed the local
+    model occasionally not follow the requested JSON shape exactly (a
+    missing key, a string field returned as a nested object) and then
+    produce a correctly-shaped response on a bare retry with no code
+    change - see docs/04-current-state.md § 4. A bounded retry is
+    cheap insurance against that observed pattern, not a fix for a
+    deeper problem, and not a guarantee - the last attempt's exception
+    is re-raised unchanged if every attempt fails, so a genuine,
+    persistent failure still surfaces as one, just a rarer one.
+    """
+    last_error: ValueError | None = None
+    for _ in range(attempts):
+        try:
+            return attempt()
+        except ValueError as e:
+            last_error = e
+    raise last_error

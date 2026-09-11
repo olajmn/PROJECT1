@@ -90,7 +90,17 @@ def main() -> None:
         try:
             result = process_turn(session, user_text)
         except Exception as e:  # an experiment script must not die on one bad turn
-            print(f"Agent: (error this turn: {e})\n")
+            # A friendly, deterministic fallback, not the raw exception
+            # text - reasoning.model_client.call_with_retry already
+            # absorbs the model-shape hiccups this is most likely to
+            # be; what reaches here is either a genuinely persistent
+            # failure or something unrelated to the model entirely,
+            # and a raw Python exception string has no place standing
+            # in as "the agent's reply" either way. Printed to the
+            # terminal alongside the friendly line, for whoever is
+            # actually debugging this run.
+            print(f"  (debug: {e})")
+            print("Agent: That took longer than expected - try again in a moment.\n")
             continue
         print(f"Agent: {result['reply']}\n")
 
