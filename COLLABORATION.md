@@ -1,7 +1,5 @@
 # Collaboration
 
-> **Migration note (2026-09-11):** copied here from `current/COLLABORATION.md` as the first step of migrating this project's docs/tools out of `current/` (see the parent conversation for the full plan). The `docs/00-06`, `tools/`, and `backend/`/`frontend/` references below still describe `current/`'s structure, not yet `agent/`'s (named `v4/` at the time this note was written - see `docs/v4-migration-decision.md`) — this note will be removed once each piece they reference has actually been migrated and the references updated to match.
-
 How an AI coding session should work with this project — not what the project is (see `docs/00-project-brief.md`) or how code should look (see `CONVENTIONS.md`).
 
 This is the project-specific instance of `global-standards/AI_COLLABORATION_GUIDE.md`'s general model: that guide describes how an AI session should establish and verify understanding of any software project; this file says concretely which documents and tools do that job here.
@@ -27,11 +25,11 @@ Different questions about this project are answered by different documents, with
 | What is true now? | `docs/04-current-state.md` | Orientation only — verify against relevant code, structure, or runtime behavior when it matters |
 | Why was it done this way? | `docs/05-decisions.md` | Settled, unless explicitly flagged |
 | What happened, and when? | `docs/06-development.md` | Accurate for its date — not for today |
-| What might happen? | `docs/06-development.md` § Parking Lot | Not decided, not built |
+| What might happen? | `docs/concepts.md` | Not decided, not built (moved here from `docs/06-development.md` § Parking Lot 2026-09-11 — see that document's own note) |
 
 When judging the reliability of a specific piece of project information, keep fact, hypothesis, decision, and open question separate — see `global-standards/AI_COLLABORATION_GUIDE.md` §5 for the general model.
 
-A well-argued idea in `docs/06-development.md` § Parking Lot, or anything marked open there, is not a decision — only `docs/05-decisions.md` holds settled ones, no matter how thorough the parked version reads.
+A well-argued idea in `docs/concepts.md`, or anything marked open there, is not a decision — only `docs/05-decisions.md` holds settled ones, no matter how thorough the speculative version reads.
 
 If a decision in `docs/05-decisions.md` seems wrong, say why and flag it explicitly, rather than quietly working around it.
 
@@ -41,11 +39,11 @@ Three scripts keep the mapping above honest — against itself and against the a
 
 - **`tools/docs_check.py`** — structural integrity of `docs/`: expected files present, `[[wikilinks]]` and `docs/<name>.md` references resolve, each doc's own heading number matches its filename.
 - **`tools/docs_lint.py`** — this project's documentation-neutrality style rule (`CONVENTIONS.md`), on `docs/` and code comments/docstrings.
-- **`tools/project_check.py`** — broader repository orientation: wraps both of the above as sub-checks, plus git status, whether `docs/04-current-state.md` is older than the areas it describes, the actual `backend/`/`frontend/` trees, an import smoke test, pyflakes, and a few repo-hygiene checks nothing else covers.
+- **`tools/project_check.py`** — broader repository orientation: wraps both of the above as sub-checks, plus git status, whether `docs/04-current-state.md` is older than the areas it describes, `agent/`'s actual `backend/` tree, an import smoke test, pyflakes, and a few repo-hygiene checks nothing else covers.
 
-At the start of a session, run:
+At the start of a session, run (from the project root, against `agent/`'s own venv - the only project this script's code checks target):
 
-    .venv/bin/python3 -m tools.project_check
+    agent/.venv/bin/python3 -m tools.project_check
 
 then read `docs/04-current-state.md`. The output is what's mechanically observable right now, not proof the project is verified — each script only reports what it actually checks (see `global-standards/AI_COLLABORATION_GUIDE.md` §1).
 

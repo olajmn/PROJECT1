@@ -4,17 +4,13 @@ __pycache__/
 .DS_Store
 node_modules/
 
-# Compiled from v4/ui/src/*.ts - regenerate with `npm install && npx tsc`
-# in v4/ui/, not committed as source.
-v4/ui/dist/
+# Compiled from agent/ui/src/*.ts - regenerate with `npm install && npx tsc`
+# in agent/ui/, not committed as source.
+agent/ui/dist/
 
 # Personal data - goals, plans, history. Never commit this, even once
 # the code itself is public. See docs/05-decisions.md.
 data/
-
-# Generated output from tools/architecture_mapper - a build artifact,
-# regenerate anytime with generate_diagram.py rather than committing it.
-tools/architecture_mapper/output/
 
 # Obsidian's own workspace state (window layout, app settings) for the
 # docs/ vault - personal/machine-specific, not project content. The
