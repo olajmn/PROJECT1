@@ -1,7 +1,5 @@
 # 01 — Research
 
-> **Migration note (2026-09-11):** copied here from `current/docs/01-research.md` as part of migrating this project's docs out of `current/`, one document at a time. The `[[wikilinks]]` below (to `00-project-brief`, `02-product`, `05-decisions`, `06-development`) resolve within this vault now that `00-project-brief` has also been migrated; the others don't resolve yet. This note will be removed once they have.
-
 > What we know about the problem, users, existing solutions, and the
 > world outside the project. Findings belong here; assumptions and
 > decisions should be clearly distinguished from them.

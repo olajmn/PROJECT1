@@ -1,7 +1,5 @@
 # 02 — Product
 
-> **Migration note (2026-09-11):** copied here from `current/docs/02-product.md` as part of migrating this project's docs out of `current/`, one document at a time. `[[00-project-brief]]` and `[[01-research]]` now resolve in this vault; `[[05-decisions]]` and `[[06-development]]` don't yet. `[[03-architecture]]` and `[[04-current-state]]` will end up pointing at newly-written v4 documents, not migrated copies of `current/`'s versions, once those two are done (see the parent conversation for why). This note will be removed once all of these are in place.
-
 > What the product actually is, concretely: what it does, what it's made of, what the MVP is, what's explicitly out of scope. Not how the system is built (see [[03-architecture]]) or what's actually implemented right now (see [[04-current-state]]) — trimmed 2026-08-25 to stop mixing product definition with architecture notes and implementation status.
 
 ## 1. Product Definition

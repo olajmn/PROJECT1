@@ -1,7 +1,5 @@
 # 05 — Decisions
 
-> **Migration note (2026-09-11):** copied here from `current/docs/05-decisions.md` as part of migrating this project's docs out of `current/`, one document at a time. `[[00-project-brief]]`, `[[01-research]]`, and `[[02-product]]` now resolve in this vault; `[[06-development]]` doesn't yet. `[[03-architecture]]` will end up pointing at a newly-written v4 document, not a migrated copy of `current/`'s version. This note will be removed once all of these are in place. The entries below already describe old, `current/`-specific code paths as history by design (see the paragraph below) — that's unchanged and expected, not something this note needs to caveat further.
-
 > Decision log — why we chose what we chose, so we don't re-litigate it in three months. Renamed 2026-08-25 from the original `12-decisions.md` (content unchanged; only cross-references to other renamed docs updated — dated entries otherwise describe the project as it was on that date, including old code paths, same convention this log already followed for itself).
 
 ## Template

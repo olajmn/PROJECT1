@@ -1,6 +1,6 @@
 # 06 — Development
 
-> **Migration note (2026-09-11):** copied here from `current/docs/06-development.md` as part of migrating this project's docs out of `current/`, one document at a time — the last of the six. `[[00-project-brief]]`, `[[01-research]]`, `[[02-product]]`, and `[[05-decisions]]` now resolve in this vault. `[[03-architecture]]` and `[[04-current-state]]` will end up pointing at newly-written v4 documents, not migrated copies of `current/`'s versions. `../COLLABORATION.md` resolves (also migrated); `../SESSION-TODO.md` does not. This note will be removed once 03/04 are in place. As with `05-decisions.md`, this log already describes old, `current/`-specific code paths as history by design (see its own intro paragraph) — that's unchanged and expected. **Update (2026-09-11):** § 5 Parking Lot has since been moved out to [[concepts]] — see that document's own note for why.
+> As with `05-decisions.md`, this log already describes old, `current/`-specific code paths as history by design (see its own intro paragraph) — that's unchanged and expected. § 5 Parking Lot was moved out to [[concepts]] 2026-09-11 — see that document's own note for why.
 
 > The original methodology, and what we've learned by building.
 >

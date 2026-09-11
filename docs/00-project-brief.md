@@ -1,7 +1,5 @@
 # 00 — Project Brief
 
-> **Migration note (2026-09-11):** copied here from `current/docs/00-project-brief.md` as part of migrating this project's docs out of `current/`, one document at a time. The `[[wikilinks]]` below (to `01-research`, `02-product`, `04-current-state`, `06-development`) don't resolve yet in this `docs/` vault — those files haven't been migrated here yet. This note will be removed once they have.
-
 > What this project is trying to be — its identity, vision, and central
 > question. This document describes what the project is trying to become,
 > not how it was built or what is true right now.
