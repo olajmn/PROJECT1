@@ -1,6 +1,6 @@
 # 03 — Architecture
 
-> How the agent is meant to be structured for v4: what it's made of, how the pieces relate, and what principles guide how it grows. **Intent, not proof of what's built** (see `../COLLABORATION.md`'s doc-role table) — see [[04-current-state]] for what's actually implemented right now, [[05-decisions]] for the reasoning behind specific choices, and `v4-migration-decision.md` for the original decision record this document draws from and supersedes as the living reference (that file stays as the historical record of the v1→v4 decision itself — several code docstrings still cite it by name, so it isn't deleted — this document is where the target architecture is now actively maintained).
+> How the agent is meant to be structured: what it's made of, how the pieces relate, and what principles guide how it grows. **Intent, not proof of what's built** (see `../COLLABORATION.md`'s doc-role table) — see [[04-current-state]] for what's actually implemented right now, [[05-decisions]] for the reasoning behind specific choices, and `v4-migration-decision.md` for the original decision record this document draws from and supersedes as the living reference (that file stays as the historical record of the v1→v4 decision itself — several code docstrings still cite it by name, so it isn't deleted — this document is where the target architecture is now actively maintained).
 
 ## Contents
 

@@ -1,6 +1,6 @@
 # Collaboration
 
-> **Migration note (2026-09-11):** copied here from `current/COLLABORATION.md` as the first step of migrating this project's docs/tools out of `current/` (see the parent conversation for the full plan). The `docs/00-06`, `tools/`, and `backend/`/`frontend/` references below still describe `current/`'s structure, not yet `v4/`'s — this note will be removed once each piece they reference has actually been migrated and the references updated to match.
+> **Migration note (2026-09-11):** copied here from `current/COLLABORATION.md` as the first step of migrating this project's docs/tools out of `current/` (see the parent conversation for the full plan). The `docs/00-06`, `tools/`, and `backend/`/`frontend/` references below still describe `current/`'s structure, not yet `agent/`'s (named `v4/` at the time this note was written - see `docs/v4-migration-decision.md`) — this note will be removed once each piece they reference has actually been migrated and the references updated to match.
 
 How an AI coding session should work with this project — not what the project is (see `docs/00-project-brief.md`) or how code should look (see `CONVENTIONS.md`).
 

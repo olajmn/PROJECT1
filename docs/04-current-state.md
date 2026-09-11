@@ -1,10 +1,10 @@
 # 04 — Current State
 
-What is true about the v4 project right now. Read this before anything else in `docs/` — see `COLLABORATION.md` for why, and for how to treat what's written here (fact vs. hypothesis vs. decision vs. open question).
+What is true about `agent/` right now. Read this before anything else in `docs/` — see `COLLABORATION.md` for why, and for how to treat what's written here (fact vs. hypothesis vs. decision vs. open question).
 
 This file is a snapshot, not a log — it describes the present, not how it got there. It goes stale the moment something changes; whoever changes it updates this file before finishing (see `COLLABORATION.md`, "Before finishing").
 
-> Migration note: this is a fresh v4 document, not a migration of `current/docs/04-current-state.md` — that file describes prototype 0.1 (`current/`), a different, frozen codebase. See § 6 below for exactly what v4 carried over from it and what it left behind.
+> Migration note: this is a fresh document written for `agent/`, not a migration of `current/docs/04-current-state.md` — that file describes prototype 0.1 (`current/`), a different, frozen codebase. See § 6 below for exactly what `agent/` carried over from it and what it left behind.
 
 ## Quick Structure
 
@@ -28,7 +28,7 @@ What the project consists of — scannable in a few seconds. See § Visual Overv
    └── Infrastructure      → backend/infrastructure/data_persistence.py
 
 3. DATA
-   └── plans.json           (only file actually written to by anything v4 runs)
+   └── plans.json           (only file actually written to by anything here)
 ```
 
 ## Visual Overview
@@ -74,11 +74,11 @@ graph TD
 - Module Library — `backend/module_library/`: five reusable, LLM-backed Modules (`interpret`, `hypothesize`, `critique`, `reason`, `synthesize` in `interpretation.py`/`hypothesis.py`/`critique.py`/`reasoning.py`/`synthesis.py`, re-exported by `modules.py`), each `(text: str, purpose: str, context: str | None = None) -> dict`. Compiles cleanly, has no test file of its own, and — confirmed by search — is not imported anywhere outside itself. **Not wired into any Node.** See [[03-architecture]] Part 2 § 2.ii and [[06-development]] for the reverted Node-restructuring experiment this survived from.
 - Foundation — `backend/foundation/time/` and `backend/foundation/math.py`: the two established Faculties, unchanged from `current/`. `time/`'s own tests and `math.py`'s own tests both pass (`python -m backend.foundation.time.test_time`, `python -m backend.foundation.test_math`).
 - Reasoning — `backend/reasoning/model_client.py` (`send_message()`): the one boundary every model call — every Node's own LLM call, every Planning LLM call, and, if ever wired in, every Module call — passes through. `MODEL = "qwen3.5:9b"`, unchanged from `current/`.
-- Infrastructure — `backend/infrastructure/data_persistence.py`: byte-for-byte unchanged from `current/`. Still has full Vision persistence (`save_vision`, `get_vision`, `archive_vision`, `load_visions`) — none of it is currently called by anything v4's entry points run (see § 6).
+- Infrastructure — `backend/infrastructure/data_persistence.py`: byte-for-byte unchanged from `current/`. Still has full Vision persistence (`save_vision`, `get_vision`, `archive_vision`, `load_visions`) — none of it is currently called by any of `agent/`'s entry points (see § 6).
 
 ### iii. Data
 
-`data/plans.json` only — the sole file anything in v4 currently reads or writes. No `data/visions.json`: Vision's persistence code exists (§ 1.ii above, Infrastructure) but nothing in `cli.py`/`server.py` ever calls `save_vision()` or passes a non-empty vision to `create_goal()`.
+`data/plans.json` only — the sole file anything in `agent/` currently reads or writes. No `data/visions.json`: Vision's persistence code exists (§ 1.ii above, Infrastructure) but nothing in `cli.py`/`server.py` ever calls `save_vision()` or passes a non-empty vision to `create_goal()`.
 
 ## 2. Responsibilities
 
@@ -156,33 +156,34 @@ Concretely:
 | Basic arithmetic | `backend/foundation/math.py` — unchanged, own test suite passes |
 | Local web UI | `server.py` + `ui/` — one chat page, no other route |
 
-"Works" means the mechanism runs correctly — the code calls the model, decides, saves, and displays a result. It does not mean the model's answers are always reliable: `backend/planning/plan/test_planner.py`'s live-model assertions failed on one run during this verification pass (a step-generation call returned fewer step strings than requested) and passed cleanly on a re-run — the same live-model instability already documented for `current/` in its own `04-current-state.md` § 6, not a new v4 regression.
+"Works" means the mechanism runs correctly — the code calls the model, decides, saves, and displays a result. It does not mean the model's answers are always reliable: `backend/planning/plan/test_planner.py`'s live-model assertions failed on one run during this verification pass (a step-generation call returned fewer step strings than requested) and passed cleanly on a re-run — the same live-model instability already documented for `current/` in its own `04-current-state.md` § 6, not a new regression here.
 
 ## 5. What's Half-Built or Not Reachable
 
-Distinct from "not built" (§ 6) — this is code that exists and works in isolation, but nothing in v4's entry points currently exercises it:
+Distinct from "not built" (§ 6) — this is code that exists and works in isolation, but nothing in `agent/`'s entry points currently exercises it:
 
 - **Vision** — `create_goal()`, `set_goal_vision()`, `archive_vision()`, and `data_persistence.py`'s Vision persistence all still work exactly as in `current/`. But `cli.py`'s `process_turn()` always calls `create_goal(user_text, "", "")` — empty Vision text, empty Vision id, every time. There is no path in `cli.py`/`server.py`/`ui/` for a user to create, link, or archive a Vision. `data/visions.json` does not exist.
-- **Multi-goal conversations** — `Session` holds exactly one `current_goal_id`. Once a goal exists for a session, every subsequent "planning" turn is routed to `apply_feedback()` against that same goal — there is no way to start a second goal, switch goals, or list existing goals without restarting the process. `current/`'s `get_latest_for_all_goals()` (multi-goal listing) is imported by `planner.py` but nothing in v4's entry points calls it.
-- **Structured step-completion signal** — `advance_step()` (the `open`/`resolved`-per-step mechanism `current/`'s `/step` route drove) still exists in `planner.py`, but v4 has no equivalent route or UI control — `ui/`'s only input is free text, so a step's status can currently only change via whatever `apply_feedback()`'s free-text outcome parsing infers.
+- **Multi-goal conversations** — `Session` holds exactly one `current_goal_id`. Once a goal exists for a session, every subsequent "planning" turn is routed to `apply_feedback()` against that same goal — there is no way to start a second goal, switch goals, or list existing goals without restarting the process. `current/`'s `get_latest_for_all_goals()` (multi-goal listing) is imported by `planner.py` but nothing in `agent/`'s entry points calls it.
+- **Structured step-completion signal** — `advance_step()` (the `open`/`resolved`-per-step mechanism `current/`'s `/step` route drove) still exists in `planner.py`, but `agent/` has no equivalent route or UI control — `ui/`'s only input is free text, so a step's status can currently only change via whatever `apply_feedback()`'s free-text outcome parsing infers.
 - **Module Library** — five Modules, individually working (compiles, matches its contract), built and proven as reusable functions, but reachable from nothing (§ 1.ii above).
 
 ## 6. What Was Left Behind, Migrating From `current/`
 
-`current/backend/goals/` was copied to `v4/backend/planning/` with import paths updated (`backend.goals` → `backend.planning`) and nothing else — confirmed by diff, `planner.py`'s own logic is unchanged. What did not come across:
+`current/backend/goals/` was copied to `agent/backend/planning/` with import paths updated (`backend.goals` → `backend.planning`) and nothing else — confirmed by diff, `planner.py`'s own logic is unchanged. What did not come across:
 
-- **`frontend/` (the Flask app)** — `current/`'s six work areas (Conversation, Set Goal, Vision, Active, Completed, History), 23 templates, and `frontend/view_data/` are not part of v4 as a running app. A verbatim, frozen copy lives at `v4/frontend-legacy/` (added 2026-09-11) as reference for v4's own, still-unbuilt `frontend/` — not wired to anything, not runnable as-is, not maintained going forward (see its own README's frozen-reference note). `ui/` is a from-scratch, single-page TypeScript prototype, not a port of `frontend/` or `frontend-legacy/`.
-- **`backend/goals/plan/action_reader.py`** — not copied; its only job (`plan.now` as a standalone CLI read) has no v4 equivalent yet.
-- **`memory/`, `world/`** — the empty placeholder packages `current/backend/` still carries are not present in `v4/backend/` at all.
-- **`tools/`** — `project_check.py`, `docs_check.py`, `docs_lint.py` have no v4 counterpart; no automated consistency check currently runs against this codebase.
-- **`data/visions.json`, `data/knowledge/`** — neither exists under `v4/data/`.
+- **`frontend/` (the Flask app)** — `current/`'s six work areas (Conversation, Set Goal, Vision, Active, Completed, History), 23 templates, and `frontend/view_data/` are not part of `agent/` as a running app. A verbatim, frozen copy lives at `agent/frontend-legacy/` (added 2026-09-11) as reference for `agent/`'s own, still-unbuilt `frontend/` — not wired to anything, not runnable as-is, not maintained going forward (see its own README's frozen-reference note). `ui/` is a from-scratch, single-page TypeScript prototype, not a port of `frontend/` or `frontend-legacy/`.
+- **`backend/goals/plan/action_reader.py`** — not copied; its only job (`plan.now` as a standalone CLI read) has no `agent/` equivalent yet.
+- **`memory/`, `world/`** — the empty placeholder packages `current/backend/` still carries are not present in `agent/backend/` at all.
+- **`data/visions.json`, `data/knowledge/`** — neither exists under `agent/data/`.
+
+(`tools/`'s `project_check.py`/`docs_check.py`/`docs_lint.py` *did* come across, since added 2026-09-11 — see the project-root `tools/`, not duplicated under `agent/`, per that tool's own docstring.)
 
 ## 7. What's Not Built
 
-Same as `current/` — v4 has not extended Planning's own domain scope, only restructured what sits around it:
+Same as `current/` — `agent/` has not extended Planning's own domain scope, only restructured what sits around it:
 
-- **Memory** — no equivalent package exists in `v4/backend/` at all (§ 6).
-- **Knowledge / RAG** — not built, no artifact of any kind under `v4/data/`.
+- **Memory** — no equivalent package exists in `agent/backend/` at all (§ 6).
+- **Knowledge / RAG** — not built, no artifact of any kind under `agent/data/`.
 - **Hierarchical step list** — unchanged from `current/`: one flat step list, not nested phases.
 - **Decomposition / zoom** — no mechanism to increase a step's resolution on demand.
 - **Acting** — the agent reasons about what should happen; it performs no external action.
@@ -207,9 +208,9 @@ Full list with reasoning: [[05-decisions]].
 
 - Whether Node 1 re-voices a capability's already-conversational output verbatim or in its own words — see [[03-architecture]] Part 3 § 8.
 - How much conversational context Node 2 actually needs — untested; `cli.py` currently passes it none beyond the single message.
-- Whether Vision, multi-goal support, or a structured completion signal should be rebuilt for v4's entry points, and in what form — not decided; § 5 only records that the underlying Planning code already supports the first and last of these.
+- Whether Vision, multi-goal support, or a structured completion signal should be rebuilt for `agent/`'s entry points, and in what form — not decided; § 5 only records that the underlying Planning code already supports the first and last of these.
 - Everything already open in [[planning-model.md|planning-model]] and [[03-architecture]] Part 3 § 8 — not duplicated here.
 
 ## 10. Next Step
 
-Not tracked in this file — no `SESSION-TODO.md`-equivalent exists yet for v4. The nearest concrete candidates, in no particular order, based on what §§ 5–7 above show as built-but-unreachable or missing: give Node 3 a second real capability to select between, or decide and build one of Vision/multi-goal/structured-completion back into v4's entry points.
+Not tracked in this file — no `SESSION-TODO.md`-equivalent exists yet for `agent/`. The nearest concrete candidates, in no particular order, based on what §§ 5–7 above show as built-but-unreachable or missing: give Node 3 a second real capability to select between, or decide and build one of Vision/multi-goal/structured-completion back into `agent/`'s entry points.
