@@ -28,6 +28,7 @@ Run from agent/ (this directory), with agent/'s own venv:
     .venv/bin/python cli.py
 """
 
+from backend.infrastructure.data_persistence import start_session
 from backend.llm1.interface import respond
 from backend.llm2.parser import understand
 from backend.llm3.select import select_capability
@@ -39,10 +40,23 @@ from backend.planning.plan.planner import apply_feedback, create_goal
 class Session:
     """The crude, harness-only state described in the module
     docstring - not a designed concept, just enough to run more than
-    one kind of turn in one experiment session."""
+    one kind of turn in one experiment session.
+
+    Also persists a Session record (data_persistence.start_session(),
+    added 2026-09-12) once per construction - one per real run of
+    main() or server.py's module-level `session`, not per turn. `id`/
+    `started_at` mirror that record so a caller (server.py's
+    _session_view()) can expose them without re-reading the file;
+    server.py's own GET /api/sessions derives "what happened" from
+    load_history()/load_visions() filtered by this window, rather than
+    this class logging anything itself - see
+    docs/04-current-state.md § 8."""
 
     def __init__(self):
         self.current_goal_id: int | None = None
+        record = start_session()
+        self.id: int = record["id"]
+        self.started_at: str = record["started_at"]
 
 
 def process_turn(session: Session, user_text: str) -> dict:

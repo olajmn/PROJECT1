@@ -1,12 +1,13 @@
 """
-Small, direct checks for the Vision persistence added 2026-08-26 -
-not a test framework, just asserts run top to bottom (same style as
+Small, direct checks for the Vision persistence added 2026-08-26 and
+the Session persistence added 2026-09-12 - not a test framework, just
+asserts run top to bottom (same style as
 backend/planning/feedback/test_feedback_parser.py).
 
 Runs entirely against a temporary directory, never the real data/ -
-this module patches DATA_DIR/PLANS_FILE/VISIONS_FILE for the duration
-of the run and restores them afterward, so it's safe to run against a
-machine with real personal history in data/plans.json.
+this module patches DATA_DIR/PLANS_FILE/VISIONS_FILE/SESSIONS_FILE for
+the duration of the run and restores them afterward, so it's safe to
+run against a machine with real personal history in data/plans.json.
 
 Run from the project root:
     .venv/bin/python -m backend.infrastructure.test_data_persistence
@@ -21,11 +22,13 @@ from backend.infrastructure import data_persistence as dp
 _original_data_dir = dp.DATA_DIR
 _original_plans_file = dp.PLANS_FILE
 _original_visions_file = dp.VISIONS_FILE
+_original_sessions_file = dp.SESSIONS_FILE
 
 _tmp_dir = Path(tempfile.mkdtemp(prefix="data_persistence_test_"))
 dp.DATA_DIR = _tmp_dir
 dp.PLANS_FILE = _tmp_dir / "plans.json"
 dp.VISIONS_FILE = _tmp_dir / "visions.json"
+dp.SESSIONS_FILE = _tmp_dir / "sessions.json"
 
 try:
     # A goal saved with no vision_id at all - the normal case - must
@@ -53,8 +56,23 @@ try:
     assert abs_goal["goal_id"] != cardio_goal["goal_id"]  # still fully independent goals
 
     print("OK - vision persistence behaves as expected")
+
+    # A new Session mints an id and starts with no end time.
+    first_session = dp.start_session()
+    assert first_session["id"] == 1
+    assert first_session["ended_at"] is None
+    assert first_session["started_at"]
+
+    # A second Session gets the next id, not a collision - same
+    # minting idiom as goal_id/vision_id above.
+    second_session = dp.start_session()
+    assert second_session["id"] == first_session["id"] + 1
+    assert [s["id"] for s in dp.load_sessions()] == [first_session["id"], second_session["id"]]
+
+    print("OK - session persistence behaves as expected")
 finally:
     dp.DATA_DIR = _original_data_dir
     dp.PLANS_FILE = _original_plans_file
     dp.VISIONS_FILE = _original_visions_file
+    dp.SESSIONS_FILE = _original_sessions_file
     shutil.rmtree(_tmp_dir, ignore_errors=True)

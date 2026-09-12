@@ -2,7 +2,7 @@
 // here decides anything - it sends text, returns whatever the server
 // already decided.
 
-import type { AgentResponse, GoalView, HistoryEntry, SessionView, VisionView } from "./types.js";
+import type { AgentResponse, GoalView, HistoryEntry, SessionLogView, SessionView, VisionView } from "./types.js";
 
 export async function sendMessage(text: string): Promise<AgentResponse> {
   const res = await fetch("/api/message", {
@@ -130,4 +130,12 @@ export async function setSession(goalId: number | null): Promise<SessionView> {
     throw new Error(`request failed: ${res.status}`);
   }
   return (await res.json()) as SessionView;
+}
+
+export async function fetchSessions(): Promise<SessionLogView[]> {
+  const res = await fetch("/api/sessions");
+  if (!res.ok) {
+    throw new Error(`request failed: ${res.status}`);
+  }
+  return (await res.json()) as SessionLogView[];
 }

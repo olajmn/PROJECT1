@@ -2,16 +2,18 @@
 Data Persistence
 ================
 
-Local storage for goals, plans, and Visions. Everything is stored as a
-simple JSON file: a list of records, oldest first - no server, no
-schema migrations, just dictionaries written to disk. Data lives in
-data/plans.json and data/visions.json, both git-ignored (see
-.gitignore) - this is personal information, never committed.
+Local storage for goals, plans, Visions, and Sessions. Everything is
+stored as a simple JSON file: a list of records, oldest first - no
+server, no schema migrations, just dictionaries written to disk. Data
+lives in data/plans.json, data/visions.json, and data/sessions.json,
+all git-ignored (see .gitignore) - this is personal information, never
+committed.
 
 Contents
 1. Setup & legacy normalization
 2. Goal/Plan persistence
 3. Vision
+4. Session
 
 Goal identity/grouping lives in goal/resolver.py, not here - see
 that module's docstring for why goal_id minting/backfill stays in this
@@ -55,6 +57,7 @@ from pathlib import Path
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 PLANS_FILE = DATA_DIR / "plans.json"
 VISIONS_FILE = DATA_DIR / "visions.json"
+SESSIONS_FILE = DATA_DIR / "sessions.json"
 
 # The only user_id that exists today - see module docstring.
 DEFAULT_USER_ID = 1
@@ -391,6 +394,13 @@ def archive_vision(vision_id: int) -> dict | None:
 
     Never touches `data/plans.json` - a Goal's `vision_id` reference is
     left exactly as it was.
+
+    Note: this does not stamp when the archiving itself happened -
+    only `created_at` (when the Vision was made) is recorded, so a
+    Session's derived log (see § 4 below) can currently only ever show
+    an archived Vision under the session that *created* it, not the
+    one that archived it. Flagged, not fixed - see
+    docs/04-current-state.md § 5.
     """
     visions = _load_all_visions()
     for vision in visions:
@@ -401,3 +411,78 @@ def archive_vision(vision_id: int) -> dict | None:
             _save_all_visions(visions)
             return vision
     return None
+
+
+# Session
+
+
+def _load_all_sessions() -> list[dict]:
+    """Read every saved Session from disk. Empty list if the file doesn't exist yet."""
+    if not SESSIONS_FILE.exists():
+        return []
+    try:
+        with open(SESSIONS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(
+            f"{SESSIONS_FILE} is corrupted and can't be read as JSON ({e}). "
+            "It may have been interrupted mid-write. Restore it from a "
+            "backup or fix it by hand before continuing."
+        ) from e
+
+
+def _save_all_sessions(sessions: list[dict]) -> None:
+    """Write the full list of Sessions back to disk - same atomic-rename approach as _save_all()."""
+    ensure_data_dir()
+    tmp_file = SESSIONS_FILE.with_suffix(".json.tmp")
+    with open(tmp_file, "w", encoding="utf-8") as f:
+        json.dump(sessions, f, indent=2, ensure_ascii=False)
+    tmp_file.replace(SESSIONS_FILE)
+
+
+def _next_session_id(sessions: list[dict]) -> int:
+    """One higher than the largest Session id in history, or 1 if there are none yet."""
+    existing = [s["id"] for s in sessions]
+    return max(existing, default=0) + 1
+
+
+def start_session() -> dict:
+    """
+    Create a new Session record and persist it - called once per
+    process (see cli.py's Session.__init__, constructed once by
+    cli.py's main() and once by server.py's module-level `session`),
+    not once per request/turn.
+
+    A Session here is deliberately minimal: just an id and when it
+    started. It does not itself log what happened during it - that's
+    derived at read time (server.py's _session_log_view()) from
+    load_history()/load_visions(), both already timestamped, by
+    filtering to whatever falls inside this Session's own
+    [started_at, ended_at or now) window. See docs/04-current-state.md
+    § 8 for why a session log is a read-time derivation, not a new
+    write-path threaded through every mutating function.
+
+    `ended_at` is always None here - nothing currently sets it (no
+    graceful-shutdown hook exists yet), so a Session that is no longer
+    actually running still shows as open indefinitely. A known,
+    documented limitation (docs/04-current-state.md § 5), not an
+    oversight - "closing" a session that was simply killed rather than
+    exited cleanly isn't something this function can detect on its own.
+
+    Returns the record that was saved.
+    """
+    sessions = _load_all_sessions()
+    record = {
+        "id": _next_session_id(sessions),
+        "user_id": DEFAULT_USER_ID,
+        "started_at": datetime.now().isoformat(),
+        "ended_at": None,
+    }
+    sessions.append(record)
+    _save_all_sessions(sessions)
+    return record
+
+
+def load_sessions() -> list[dict]:
+    """Return every saved Session, oldest first."""
+    return _load_all_sessions()

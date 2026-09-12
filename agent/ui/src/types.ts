@@ -76,3 +76,41 @@ export interface SessionView {
   goal_id: number | null;
   goal: string | null;
 }
+
+/** One goal/plan event in a Session's derived log, as returned inside
+ * GET /api/sessions - matches server.py's _session_goal_event().
+ * `feedback` is null for the event that created the goal, otherwise
+ * the feedback text that produced this particular replan. */
+export interface SessionGoalEvent {
+  goal_id: number;
+  goal: string;
+  feedback: string | null;
+  created_at: string;
+}
+
+/** One Vision-creation event in a Session's derived log - matches
+ * server.py's _session_vision_event(). Archiving isn't represented
+ * here yet (see data_persistence.archive_vision()'s own docstring) -
+ * only ever a creation event. */
+export interface SessionVisionEvent {
+  vision_id: number;
+  text: string;
+  created_at: string;
+}
+
+/** One persisted Session record plus everything that happened during
+ * it, as returned by GET /api/sessions - matches server.py's
+ * _session_log_view(). `ended_at` is a best-available boundary, not
+ * necessarily a moment a real shutdown was ever observed: no
+ * graceful-shutdown hook exists yet (see docs/04-current-state.md § 5),
+ * so server.py's own route instead uses the next Session's
+ * `started_at` as a stand-in end for every Session except the single
+ * most recent one, which has no successor and is genuinely still
+ * open (null). */
+export interface SessionLogView {
+  id: number;
+  started_at: string;
+  ended_at: string | null;
+  goal_events: SessionGoalEvent[];
+  vision_events: SessionVisionEvent[];
+}

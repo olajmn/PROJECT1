@@ -16,8 +16,9 @@ What the project consists of — scannable in a few seconds. See § Visual Overv
    ├── HTTP server      → server.py (stdlib http.server - free conversation via
    │                       cli.py's process_turn(), plus direct, Node-1/2/3-free
    │                       routes onto Planning - see § 3.ii)
-   └── Web UI           → ui/ (TypeScript, compiled to ui/dist/, six pages:
-                            Conversation, Active, Set Goal, Vision, Completed, History)
+   └── Web UI           → ui/ (TypeScript, compiled to ui/dist/, seven pages:
+                            Conversation, Vision, Set Goal, Active, Completed,
+                            History, Sessions)
 
 2. BACKEND
    ├── Node 1 — Interface  → backend/llm1/interface.py
@@ -31,7 +32,11 @@ What the project consists of — scannable in a few seconds. See § Visual Overv
    └── Infrastructure      → backend/infrastructure/data_persistence.py
 
 3. DATA
-   └── plans.json           (only file actually written to by anything here)
+   ├── plans.json           (goal/plan history)
+   ├── visions.json         (Vision records)
+   └── sessions.json        (Session metadata - added 2026-09-12; "what
+                              happened" is derived at read time, not
+                              separately logged - see § 3.iii)
 ```
 
 ## Visual Overview
@@ -44,36 +49,39 @@ graph TD
     Terminal -->|stdin/stdout| CLI["cli.py"]
     Server -->|POST /api/message| CLI
     Server -->|"/api/goals, /api/visions, /api/history"| Planning["backend/planning"]
+    Server -->|"/api/session[s]"| Infrastructure["backend/infrastructure"]
     CLI --> N1["backend/llm1"]
     CLI --> N2["backend/llm2"]
     CLI --> N3["backend/llm3"]
     CLI --> Planning
+    CLI --> Infrastructure
     CLI --> Manifestation["backend/manifestation.py"]
     Server --> Manifestation
     N1 --> Reasoning["backend/reasoning"]
     N2 --> Reasoning
     N3 --> Reasoning
     Planning --> Reasoning
-    Planning --> Infrastructure["backend/infrastructure"]
+    Planning --> Infrastructure
     Reasoning --> Ollama[("Ollama, local model")]
-    Infrastructure --> Data[("data/plans.json, data/visions.json")]
+    Infrastructure --> Data[("data/plans.json, data/visions.json, data/sessions.json")]
 ```
 
-`cli.py`'s `process_turn()` wires Node 1 → Node 2 → Node 3 → Planning → Node 1 together for free conversation - see § 3.i. `server.py` doesn't duplicate that wiring for `/api/message`; it imports `Session`/`process_turn()` from `cli.py` directly. Its other routes (`/api/goals`, `/api/visions`, `/api/history`) call Planning directly instead, skipping Node 1/2/3 entirely - see § 3.ii for why.
+`cli.py`'s `process_turn()` wires Node 1 → Node 2 → Node 3 → Planning → Node 1 together for free conversation - see § 3.i. `server.py` doesn't duplicate that wiring for `/api/message`; it imports `Session`/`process_turn()` from `cli.py` directly. Its other routes (`/api/goals`, `/api/visions`, `/api/history`) call Planning directly instead, skipping Node 1/2/3 entirely - see § 3.ii for why. `/api/session[s]` (added 2026-09-12) goes straight to Infrastructure, bypassing Planning entirely - it reads/writes Session metadata and derives "what happened" from Planning's own already-saved records, but never calls into `backend/planning` itself. `cli.py`'s own `Session.__init__` also calls Infrastructure directly (`data_persistence.start_session()`), independent of `process_turn()`.
 
 ## 1. Project Structure
 
 ### i. Entry points
 
 - `cli.py` — a terminal loop (`main()`) around `process_turn()`, the function that runs one turn through Node 1 → Node 2 → Node 3 → Planning → Node 1. Holds one `Session` (just `current_goal_id`) for the life of the process. If a turn still raises after `reasoning.model_client.call_with_retry()`'s own retries are exhausted (§ 3.v), `main()` prints the real exception to the terminal and replies with a fixed, friendly line instead of the raw exception text (added 2026-09-11 — a raw Python exception had been standing in as "the agent's reply" until then).
-- `server.py` — stdlib `http.server`, no framework, no new dependency. Serves `ui/`'s static files over `GET`. Two distinct kinds of route (added 2026-09-11/12, see § 3 for the full list and why they're shaped differently): `POST /api/message` calls `process_turn()` from `cli.py`, same one process-wide `Session` limitation `cli.py` already has; `GET/POST /api/goals[...]`, `GET/POST /api/visions[...]`, `GET /api/history` call Planning directly, keyed by an explicit id in the URL rather than session state. Same friendly-fallback-on-exhausted-retries behavior as `cli.py` for every route that calls the model, the exception printed server-side only. `GET/POST /api/session` (added 2026-09-12) is the manual bridge between the two: reads or overwrites the free-conversation `session`'s own `current_goal_id`, otherwise invisible and unsettable from any page - see § 3.iii.
-- `ui/` — a TypeScript UI (`src/*.ts`, compiled by `tsc` into `ui/dist/`, served by `server.py`), six pages, no framework, no client-side router - each is its own static HTML file with its own small entry script:
+- `server.py` — stdlib `http.server`, no framework, no new dependency. Serves `ui/`'s static files over `GET`. Two distinct kinds of route (added 2026-09-11/12, see § 3 for the full list and why they're shaped differently): `POST /api/message` calls `process_turn()` from `cli.py`, same one process-wide `Session` limitation `cli.py` already has; `GET/POST /api/goals[...]`, `GET/POST /api/visions[...]`, `GET /api/history` call Planning directly, keyed by an explicit id in the URL rather than session state. Same friendly-fallback-on-exhausted-retries behavior as `cli.py` for every route that calls the model, the exception printed server-side only. `GET/POST /api/session` (added 2026-09-12) is the manual bridge between the two: reads or overwrites the free-conversation `session`'s own `current_goal_id`, otherwise invisible and unsettable from any page. `GET /api/sessions` (also added 2026-09-12) is a third kind of thing again - it reads Infrastructure's own Session records, not Planning - see § 3.iii for all of these.
+- `ui/` — a TypeScript UI (`src/*.ts`, compiled by `tsc` into `ui/dist/`, served by `server.py`), seven pages, no framework, no client-side router - each is its own static HTML file with its own small entry script:
   - `index.html`/`main.ts` — free conversation (`POST /api/message`). One transcript, one textarea; renders an optional plan tree beneath a reply. A session-info bar (added 2026-09-12, `GET /api/session`) shows which goal, if any, `cli.py`'s own `Session.current_goal_id` currently has - otherwise invisible state that decides whether the next planning message starts a new goal or is read as feedback on whatever the session already has - with a button to clear it (`POST /api/session` with `goal_id: null`). Refreshed after every turn, not just on page load.
   - `active.html`/`active.ts` — every non-completed, non-cancelled goal (`GET /api/goals`) as its own card, each with its own feedback box (`POST /api/goals/<id>/feedback`), a Vision-link dropdown (`POST /api/goals/<id>/vision` → `planner.set_goal_vision()` - every active, non-archived Vision plus "Vision: none", pre-selected to the goal's current `vision_id`, matching `frontend-legacy/templates/active_goal/_goal.html`'s same dropdown), and, added 2026-09-12, a "Cancel goal" button (`POST /api/goals/<id>/cancel` → `planner.cancel_goal()`) and a "Continue in chat" button (`POST /api/session` with this goal's id, then redirects to Conversation - the other half of `main.ts`'s session-info bar, § 1.i) at the bottom of the card, "Cancel goal" matching `frontend-legacy/templates/active_goal/_cancel.html`'s same placement and no-confirmation-step precedent - see § 3.ii for why this shape is immune to § 5's topic-continuity defect.
   - `set-goal.html`/`set-goal.ts` — one textarea, posts to `POST /api/goals` (`create_goal(text, "", "")` - a new goal still always starts with no Vision link; use Active's dropdown to add one afterward, see below), redirects to Active. Below the form, a plain `GET /api/goals` listing (goal text + `#<goal_id>`, one line per goal, no plan tree or feedback box) - an overview to orient among existing goals without opening Active's full cards, added 2026-09-12 matching `frontend-legacy/templates/set_goal/_goal_list.html`'s same, previously-dropped precedent.
   - `vision.html`/`vision.ts` — create (`POST /api/visions`), list active and archived separately (`GET /api/visions`), archive (`POST /api/visions/<id>/archive`, via `planner.archive_vision()` so goal-detachment still happens). Each Vision card also lists its currently-linked active goals (added 2026-09-12, client-side grouping of `GET /api/goals` by `vision_id` - no new backend route needed, matching `frontend-legacy/templates/vision/_vision_form.html`'s same `group_goals_by_vision_id()` display, "(no Goals yet)" included; only active goals, same as that precedent - completed isn't wired into this relation). Read-only here - linking or changing a Vision still only happens from Active's own dropdown.
   - `completed.html`/`completed.ts` — every completed goal (`GET /api/goals/completed`), read-only (no feedback box - a completed goal takes no further feedback).
   - `history.html`/`history.ts` — the full, unfiltered log (`GET /api/history`, every record ever saved, not just the latest per goal), plain key:value lines.
+  - `sessions.html`/`sessions.ts` — added 2026-09-12, next to History. Every persisted Session (`GET /api/sessions`) as its own card: `started_at`, `ended_at` (or "(ongoing)" when `null`), and a merged, oldest-first timeline of that Session's own goal/Vision events - "goal created" vs. a feedback event is distinguished by whether `SessionGoalEvent.feedback` is `null`, matching `data_persistence.save_plan()`'s own convention. See § 3.iii for how "what happened" is derived rather than logged, and § 4/§ 8 for the window-bounding fix a live bug in this same round required.
   - `src/tree.ts` — the plan-tree renderer shared by `main.ts`/`active.ts`/`completed.ts`, numbered `1./2./3.` for steps and `i./ii./iii.` for microsteps (same convention as `global-standards/_CONTENT_HIERARCHY.md`, computed from list position, never stored in the data).
   - `src/nav.ts` — added 2026-09-12, called once by every page's own entry script: puts a live `(N)` count next to the Vision/Active/Completed nav links (`GET /api/visions`/`/api/goals`/`/api/goals/completed`, independent of whatever the current page itself already loaded) - the three that name a concrete, countable set; Conversation, Set Goal, and History don't. Vision's count is active (non-archived) visions only, same "live, not terminal" scope Active already applies by excluding completed/cancelled goals.
 
@@ -87,11 +95,11 @@ graph TD
 - Module Library — `backend/module_library/`: five reusable, LLM-backed Modules (`interpret`, `hypothesize`, `critique`, `reason`, `synthesize` in `interpretation.py`/`hypothesis.py`/`critique.py`/`reasoning.py`/`synthesis.py`, re-exported by `modules.py`), each `(text: str, purpose: str, context: str | None = None) -> dict`. Compiles cleanly, has no test file of its own, and — confirmed by search — is not imported anywhere outside itself. **Not wired into any Node.** See [[03-architecture]] Part 2 § 2.ii and [[06-development]] for the reverted Node-restructuring experiment this survived from.
 - Foundation — `backend/foundation/time/` and `backend/foundation/math.py`: the two established Faculties. `math.py` unchanged from `current/`. `time/` had one thing removed 2026-09-11: `step_count()`/`MIN_STEPS`/`MAX_STEPS`/`TARGET_STEP_MINUTES` (a step-count-by-duration formula) — deleted once it was shown to collapse to a flat constant (exactly 6 steps) for any goal longer than ~2 hours, and because it was Planning-domain policy living inside the Time Faculty (confirmed by search: used only by Planning, never elsewhere in `time/`), not temporal understanding itself. That responsibility now lives in `backend/planning/plan/plan_structure.py` instead, as a reasoned model decision rather than a formula. `time/`'s own tests and `math.py`'s own tests both still pass (`python -m backend.foundation.time.test_time`, `python -m backend.foundation.test_math`).
 - Reasoning — `backend/reasoning/model_client.py` (`send_message()`): the one boundary every model call — every Node's own LLM call, every Planning LLM call, and, if ever wired in, every Module call — passes through. `MODEL = "qwen3.5:9b"`, unchanged from `current/`. Also holds `call_with_retry()` (added 2026-09-11): retries a caller's own "call + parse + validate" sequence up to 3 times on `ValueError` before re-raising the last one, absorbing the live-model shape instability § 4 documents. Two current callers, both in Planning (§ 3.v) — Node 1/2/3's own calls don't use it, each already has its own fallback behavior on a bad shape (Node 2 falls back to the raw message; Node 3 treats anything but exactly `"planning"` as no capability).
-- Infrastructure — `backend/infrastructure/data_persistence.py`: byte-for-byte unchanged from `current/`. Still has full Vision persistence (`save_vision`, `get_vision`, `archive_vision`, `load_visions`) — none of it is currently called by any of `agent/`'s entry points (see § 6).
+- Infrastructure — `backend/infrastructure/data_persistence.py`: Goal/Plan persistence unchanged from `current/`. Vision persistence (`save_vision`, `get_vision`, `archive_vision`, `load_visions`) is no longer unused — `server.py`'s Vision routes and `planner.py`'s `set_goal_vision()`/`archive_vision()` call it directly (§ 1.i, § 4). A fourth section, Session (added 2026-09-12): `start_session()` mints a `{id, user_id, started_at, ended_at}` record and appends it to `data/sessions.json` - called once per real run of `cli.py`'s `Session.__init__`, not per turn. Deliberately minimal: it does not itself log what happened during a Session - `load_sessions()` just returns these bare records; server.py's `_session_log_view()` derives "what happened" at read time from `load_history()`/`load_visions()` instead (§ 3.iii, § 8). `ended_at` is always `None` here - no graceful-shutdown hook sets it yet (§ 5).
 
 ### iii. Data
 
-`data/plans.json` and, since `vision.html` shipped 2026-09-12, `data/visions.json` — `server.py`'s `POST /api/visions` calls `data_persistence.save_vision()` directly. `create_goal()` (via `set-goal.html`) still always passes an empty vision id, so nothing yet links a Goal record to a `data/visions.json` entry (§ 5).
+`data/plans.json`, `data/visions.json`, and, since 2026-09-12, `data/sessions.json` (`data_persistence.start_session()`, one record per real run of `cli.py`'s `Session.__init__`). `server.py`'s Vision routes call `save_vision()`/`archive_vision()` directly; `set-goal.html` still always creates a goal with no Vision link (linking happens afterward, via Active's dropdown - see § 5).
 
 ## 2. Responsibilities
 
@@ -163,6 +171,14 @@ POST /api/session → overwrites it ({"goal_id": <int|null>})
 
 This is the manual bridge between the two paths: `active.ts`'s "Continue in chat" button calls it to point the free-conversation session at a specific goal before handing off to Conversation; `main.ts`'s session-info bar calls it to clear that state back to `None`. It does not fix § 5's topic-continuity defect (nothing here detects a *mid-conversation* topic switch) - it only makes the session's otherwise-invisible current state visible and gives an explicit, manual way to set or clear it, instead of only ever being set implicitly by whatever `create_goal()` last ran in the chat itself.
 
+A third, also added 2026-09-12, doesn't touch the live `session` object at all - it reads Infrastructure's own persisted Session records instead:
+
+```text
+GET /api/sessions → every data_persistence.load_sessions() record, each merged with its own derived "what happened"
+```
+
+`ui/sessions.html`/`sessions.ts` is the only caller. Each record's `ended_at` in the response is NOT simply the stored field (always `None` - no graceful-shutdown hook exists): `do_GET` sorts every Session by `started_at`, then bounds each one's event window at the *next* Session's `started_at`, falling back to `None` (genuinely still open) only for the single most recent one. Without this, a live bug found and fixed within this same round would have matched every subsequent event against every not-yet-"ended" Session, not just the current one - see `_session_log_view()`'s own docstring and § 8.
+
 ### iv. Backend → Data
 
 `backend/infrastructure/data_persistence.py` is the only module that touches the filesystem under `data/`. Planning's `save_plan()`/`get_vision()`/`archive_vision()` calls go through it, same as `current/`; `server.py`'s Vision routes (§ 3.iii) also go through it directly, not via `cli.py`.
@@ -202,6 +218,7 @@ Concretely:
 | Full unfiltered history log | `server.py`'s `GET /api/history` + `ui/history.html`/`history.ts` |
 | Create, list, archive a Vision, and see its currently-linked active goals | `server.py`'s `GET/POST /api/visions`, `POST /api/visions/<id>/archive` + `ui/vision.html`/`vision.ts` (goals grouped client-side from `GET /api/goals`) |
 | See and manually set/clear the free-conversation session's current goal, and point it at a specific goal from Active | `server.py`'s `GET/POST /api/session` + `ui/index.html`/`main.ts`'s session-info bar, `ui/active.html`/`active.ts`'s "Continue in chat" button |
+| See every persisted Session and a derived, oldest-first timeline of what happened during it | `server.py`'s `GET /api/sessions` (`_session_log_view()`, window-bounded per Session - § 3.iii) + `ui/sessions.html`/`sessions.ts` |
 
 "Works" means the mechanism runs correctly — the code calls the model, decides, saves, and displays a result. It does not mean the model's answers are always reliable: across this session's verification, `backend/planning/plan/test_planner.py`'s live-model assertions and `generate_structure()`'s own shape validation each failed on an occasional run (a returned step list missing an expected field, a `PLAN_KEYS` value returned as an object instead of a string) and passed cleanly on a re-run with no code change — repeatedly enough to call it an established pattern, not a one-off. Same live-model instability already documented for `current/` in its own `04-current-state.md` § 6, not a new regression here. `reasoning.model_client.call_with_retry()` (§ 1.ii, § 3.v) now absorbs most of this automatically — up to 3 attempts before a caller ever sees a failure.
 
@@ -214,6 +231,8 @@ Distinct from "not built" (§ 6) — this is code that exists and works in isola
 - **Multi-goal conversations** — resolved for the known-capability-context path: `active.html`/`ui/api.ts`'s `fetchActiveGoals()` calls `GET /api/goals`, which does use `get_latest_for_all_goals()` (§ 3.iii), and each goal gets its own feedback box keyed by its own id, so a user can hold several goals at once from that page. Still unresolved for free conversation: `cli.py`'s `Session` holds exactly one `current_goal_id`, so once a goal exists for a CLI/`/api/message` session, every subsequent "planning" turn there is routed to `apply_feedback()` against that same goal, with no way to start a second goal or switch from that surface alone.
 - **Structured step-completion signal** — `advance_step()` (the `open`/`resolved`-per-step mechanism `current/`'s `/step` route drove) still exists in `planner.py`, but `agent/` has no equivalent route or UI control — `ui/`'s only input is free text, so a step's status can currently only change via whatever `apply_feedback()`'s free-text outcome parsing infers.
 - **Module Library** — five Modules, individually working (compiles, matches its contract), built and proven as reusable functions, but reachable from nothing (§ 1.ii above).
+- **Session end detection** — `data_persistence.start_session()` never gets an `ended_at`: no graceful-shutdown hook exists to set one when `cli.py`/`server.py` actually stops running. `GET /api/sessions` (§ 1.i, § 3.iii) works around this by treating the *next* Session's `started_at` as a stand-in boundary for every earlier one, so the derived log is still accurate today - but a Session killed mid-run (rather than superseded by a new one) currently has no way to be told apart from one still genuinely active, beyond "is this the most recent row."
+- **Vision-archive timing in the Session log** — `data_persistence.archive_vision()` only ever stamps `created_at` (when the Vision was made), never when it was archived, so `_session_vision_event()` (§ 3.iii) can only show a Vision's creation, never surface an archive event under the Session it actually happened in.
 
 ## 6. What Was Left Behind, Migrating From `current/`
 
@@ -254,6 +273,8 @@ Stable, not casually revisited (see `COLLABORATION.md`):
 - A request scoped to a known capability and a known id (a goal or vision id already in the URL, from `ui/`'s explicit-navigation pages) skips Node 1/2/3 entirely and calls Planning directly (§ 3.iii), rather than reconstructing that same context by re-running the free-conversation understand → route pipeline on a message that already carries it. Node 1/2/3 exist to figure out what an ambiguous, free-text message is about; once the caller already knows, re-deriving it is redundant work, and, in `cli.py`'s single-`Session` design, actively wrong (§ 5's topic-continuity defect can only happen on the free-conversation path, never on this one).
 - The plan-tree numbering convention (`1./2./3.` for steps, `i./ii./iii.` for microsteps, `global-standards/_CONTENT_HIERARCHY.md`'s scheme) is computed at render time from a node's position among its siblings (`ui/src/tree.ts`'s `treeLabel()`), never stored in `data/plans.json` or produced by the model — the model decides step/microstep membership and content, not their eventual display numbers, so there is nothing to keep in sync if a step is ever reordered or removed.
 - `GET/POST /api/session` (§ 3.iii, § 4) is a deliberately manual bridge, not an attempt at the automatic topic-switch detection § 5/§ 9 still describe as unbuilt — it only ever changes `current_goal_id` when a person clicks "Continue in chat" or "Clear", never inferred from message content. Two genuinely different problems (name a specific existing goal explicitly vs. detect an implicit topic switch in free text), addressed separately rather than folding the smaller, cheaper one into the larger, undecided one.
+- A Session's "what happened" log (`GET /api/sessions`, § 3.iii, § 4) is derived at read time from `load_history()`/`load_visions()`'s own existing timestamps, not a new write-path logged by every mutating route — both were already timestamped for other reasons, so reconstructing "what happened when" needed a read-side query, not new instrumentation threaded through `create_goal()`/`apply_feedback()`/`cancel_goal()`/`set_goal_vision()`/`save_vision()`/`archive_vision()`.
+- A Session's derived event window is bounded by the *next* Session's `started_at`, not left open until a real `ended_at` exists — found and fixed within this same 2026-09-12 session: the first version left every Session open indefinitely (since nothing sets `ended_at` yet), so any event after the second Session started matched every earlier Session's window too, not just the current one. Only the single most recent Session (no successor) is treated as genuinely still open.
 
 Full list with reasoning: [[05-decisions]].
 
@@ -269,9 +290,10 @@ Full list with reasoning: [[05-decisions]].
 
 Not tracked in this file — no `SESSION-TODO.md`-equivalent exists yet for `agent/`. Concrete candidates on the table as of 2026-09-12, in no particular order:
 
-- **Session log (agreed as the deliberate next round after the session bridge, 2026-09-12)** — a real, persisted Session entity (its own id, a start/end time range) logging every action taken during it — goals created, feedback given, visions archived, and so on — across *all* pages, not just the free-conversation path. A genuinely new capability, not a wiring job: `active.html`/`vision.html`/`set-goal.html`'s actions have no session concept today at all (each click is fully independent, per § 3.ii/§ 3.iii), so this means introducing "session" as a first-class, cross-page concept where none currently exists, not connecting two things that already both have one. Related to, but distinct from, the still entirely unbuilt Memory Domain (§ 7): Memory would let the *model* understand conversational context; this would be an audit/activity trail for a *person* to review, independent of whether the model needs it.
 - Fix § 5's topic-continuity defect for the free-conversation path itself: persist `current_goal_id` (see § 1.i's `Session`) across restarts, and give something in the pipeline — likely an extension of Node 3's existing routing job, since it already decides "does this need a capability" and deciding "is this still the same capability-context as before" is a natural extension of that same responsibility, not a new component — the means to detect a topic switch. Discussed as roughly comparable in size to this session's `plan_structure.py` work, not a small fix. Lower urgency now than before this session's frontend build: `active.html` already offers a way to manage multiple goals that sidesteps the defect entirely, and `GET/POST /api/session` (§ 3.iii, § 8) now gives a manual way to see and reset the session's current goal — but detecting a topic switch automatically, mid-conversation, is still unbuilt. Whether the eventual fix should even be framed as "detect a switch" (i.e., guessing) at all, versus some other design, is itself explicitly still open — not yet decided in either direction.
+- A real graceful-shutdown hook to set a Session's `ended_at` (§ 5) — smaller than it first looked: the read-side window-bounding fix (§ 3.iii, § 8) already makes the derived log accurate without it, so this would only replace a heuristic boundary with a real one, not fix a correctness bug.
+- Timestamp `archive_vision()`'s own moment, not just a Vision's `created_at` (§ 5), so the Session log can show an archive event under the Session it actually happened in.
 - Offer a Vision choice at goal-creation time (§ 5): `set-goal.html` would need a dropdown like Active's own (`GET /api/visions`' active list) passed through to `create_goal()`, instead of a goal always starting unlinked and getting a Vision attached via Active afterward.
 - Give Node 3 a second real capability to select between — still nothing demonstrates the "which one" half of its job (§ 9, [[03-architecture]]).
 
-A structured completion signal (§ 5) remains a live candidate too, just not among the four most recently discussed.
+A structured completion signal (§ 5) remains a live candidate too, just not among the five most recently discussed.

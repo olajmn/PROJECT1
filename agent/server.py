@@ -30,6 +30,11 @@ Two distinct paths into Planning, deliberately different shapes:
   of only ever guessing - still doesn't address § 5's mid-conversation
   topic-switch defect itself, only gives an explicit, visible starting
   point.
+- GET /api/sessions - every persisted Session record (one per real run
+  of cli.py's main() or this file), each with its "what happened"
+  derived at read time from load_history()/load_visions() filtered to
+  that Session's own time window, rather than a new write-path logged
+  by every mutating route above.
 
 Stdlib only (http.server) - no new dependency, matching agent/'s
 requirements.txt ("ollama" only, nothing added for this).
@@ -61,6 +66,9 @@ Then open http://localhost:8000/ in a browser.
 #      - _HISTORY_PLAN_FIELDS
 #      - _history_view()
 #      - _session_view()
+#      - _session_goal_event()
+#      - _session_vision_event()
+#      - _session_log_view()
 #      - _vision_view()
 #
 #  3. HTTP handler
@@ -88,7 +96,7 @@ from pathlib import Path
 
 from cli import Session, process_turn
 from backend.manifestation import surface_text, to_planning_node
-from backend.infrastructure.data_persistence import load_history, load_visions, save_vision
+from backend.infrastructure.data_persistence import load_history, load_sessions, load_visions, save_vision
 from backend.planning.goal.resolver import created_at_key, get_latest_for_all_goals, get_latest_for_goal
 from backend.planning.plan.planner import apply_feedback, archive_vision, cancel_goal, create_goal, set_goal_vision
 
@@ -200,12 +208,89 @@ def _session_view() -> dict:
     current_goal_id (None if the free-conversation path hasn't touched
     a goal yet this process); goal is that record's own text, looked
     up fresh each call rather than cached, same reasoning as every
-    other _*_view() here."""
+    other _*_view() here. Deliberately just this process's live
+    pointer, not the persisted Session record itself - see
+    _session_log_view() below for that."""
     goal_id = session.current_goal_id
     if goal_id is None:
         return {"goal_id": None, "goal": None}
     latest = get_latest_for_goal(goal_id)
     return {"goal_id": goal_id, "goal": latest["goal"] if latest else None}
+
+
+def _session_goal_event(record: dict) -> dict:
+    """One line in a Session's derived log for a goal/plan record -
+    lighter than _history_view()'s full shape, just enough to render a
+    timeline entry. `feedback` is None for the record that created the
+    goal (see data_persistence.save_plan()'s own docstring), otherwise
+    the feedback that produced this particular replan - the UI reads
+    that distinction to label the event "created" vs. the feedback
+    text itself."""
+    return {
+        "goal_id": record["goal_id"],
+        "goal": record["goal"],
+        "feedback": record.get("feedback"),
+        "created_at": record["created_at"],
+    }
+
+
+def _session_vision_event(vision: dict) -> dict:
+    """One line in a Session's derived log for a Vision - only ever a
+    creation event, since archiving isn't timestamped yet (see
+    data_persistence.archive_vision()'s own docstring)."""
+    return {
+        "vision_id": vision["id"],
+        "text": vision["text"],
+        "created_at": vision["created_at"],
+    }
+
+
+def _session_log_view(record: dict, window_end: str | None) -> dict:
+    """A persisted Session record plus everything that happened during
+    it - derived at read time, not logged by any mutating route: every
+    load_history()/load_visions() entry whose `created_at` falls
+    inside [started_at, window_end or now) belongs to this Session,
+    because nothing else currently could have created it.
+
+    `window_end` is NOT simply `record["ended_at"]` (always None today
+    - see data_persistence.start_session()) - it's computed by the
+    do_GET route below as the next Session's own `started_at`, since a
+    later Session starting is the only signal available yet that an
+    earlier one stopped being "the current one". Without this, every
+    Session before the most recent would look open forever and match
+    every event that happened after it, not just its own - reproduced
+    and fixed within this same 2026-09-12 session. Reported back as
+    this view's own `ended_at`: a best-available boundary, not
+    necessarily a moment a real shutdown was ever observed. Only the
+    single most recent Session (no successor) gets `window_end=None`,
+    genuinely still open.
+
+    Both event lists are sorted oldest-first, independent of
+    load_history()'s own newest-first order, so the Session page reads
+    as a timeline."""
+    start = record["started_at"]
+    end = window_end
+    goal_events = sorted(
+        (
+            _session_goal_event(r) for r in load_history()
+            if start <= r["created_at"] and (end is None or r["created_at"] < end)
+        ),
+        key=lambda e: e["created_at"],
+    )
+    vision_events = sorted(
+        (
+            _session_vision_event(v) for v in load_visions()
+            if start <= v["created_at"] and (end is None or v["created_at"] < end)
+        ),
+        key=lambda e: e["created_at"],
+    )
+    return {
+        "id": record["id"],
+        "started_at": start,
+        "ended_at": end,
+        "goal_events": goal_events,
+        "vision_events": vision_events,
+    }
 
 
 def _vision_view(vision: dict) -> dict:
@@ -241,6 +326,22 @@ class Handler(BaseHTTPRequestHandler):
             return
         if self.path == "/api/session":
             self._send_json(_session_view())
+            return
+        if self.path == "/api/sessions":
+            # Oldest-first while computing each one's window_end (the
+            # next Session's started_at, see _session_log_view()'s own
+            # docstring for why), reversed only for the final response
+            # so the page itself still reads newest-first, same
+            # convention as /api/history.
+            by_start = sorted(load_sessions(), key=lambda s: s["started_at"])
+            views = [
+                _session_log_view(
+                    record,
+                    record.get("ended_at") or (by_start[i + 1]["started_at"] if i + 1 < len(by_start) else None),
+                )
+                for i, record in enumerate(by_start)
+            ]
+            self._send_json(list(reversed(views)))
             return
         requested = "index.html" if self.path == "/" else self.path.lstrip("/")
         file_path = (UI_DIR / requested).resolve()
