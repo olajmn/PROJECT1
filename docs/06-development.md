@@ -353,7 +353,23 @@ Real usage by the project owner, logged as it happens — see § Experiments bel
 
 ### Log
 
-#### 1. 2026-08-21 — Naive substring matching in the free-text outcome classifier gives false positives
+#### 1. 2026-09-08 — Multi-round information doesn't reliably accumulate into a visibly updated understanding
+
+**Hypothesis tested:** N/A — observed during real usage, not a designed test.
+**Setup:** Real usage against `current/` (llama3.1:8b), a "Learning" goal, progressively clarified across several rounds: "not sure" → "want to become more physically active" → "something that makes my body more active" → "condition".
+**Result:** Despite each reply adding real information, the agent kept receiving/producing very similar, re-phrased questions each round rather than converging.
+**Learning:** Distinct from the `clarification`+`now` leak (a display-layer bug, still present in `agent/`'s current code - see [[04-current-state]] § 5) - this is about whether accumulated replies actually change what the agent asks or suggests next, not about what gets shown alongside a question. Consistent with entry 2 below (2026-09-08's SUGGEST-confirmation instability): both point at the same underlying local-model reasoning weakness from different angles.
+**Consequence:** Logged as a known functional gap in `current/`'s Conversation behavior, not fixed. `current/` no longer exists (deleted 2026-09-11, see § Development Log) - whether this reproduces against `agent/`'s current model (`qwen3.5:9b`) is unconfirmed, not retested since the swap.
+
+#### 2. 2026-09-08 — SUGGEST-confirmation interpretation swings sharply across otherwise-identical batches
+
+**Hypothesis tested:** Does telling the model to interpret the user's reply (`Y`) relative to its own prior `suggested_action` (`X`) produce stable acceptance-recognition behavior?
+**Setup:** Two live batches against `current/` (llama3.1:8b) with the prior suggestion and the user's reply passed as explicit, separately-labeled context (verified by capturing the exact prompt text, not assumed) - otherwise identical prompts/inputs across both batches.
+**Result:** The model correctly used that context in roughly 10/11 calls in the first batch, and roughly 1/11 in an otherwise-identical second batch.
+**Learning:** Ruled out both of the more common explanations first: not a missing-context problem (the model does receive its own prior contribution and the reply, explicitly labeled) and not a missing-mechanism problem (the `suggested_action` + confirmation path was built and deterministically tested, see `backend/goals/plan/test_planner.py` at the time). What's left is model-behavior instability - the same prompt shape produced very different reply-interpretation rates run to run.
+**Consequence:** Next step proposed but not run: test whether a sharper or differently-framed version of the instruction (not merely the presence of one) measurably reduces the variance; if it doesn't, that would point toward a genuine `llama3.1:8b` limitation rather than a prompt-framing gap. Never followed up before `current/` was deleted (2026-09-11) - not retested against `agent/`'s `qwen3.5:9b`.
+
+#### 3. 2026-08-21 — Naive substring matching in the free-text outcome classifier gives false positives
 
 **Hypothesis tested:** N/A — found while building `backend/outcome_classifier.py`, before it shipped, not from a designed test.
 **Setup:** Tried the initial (plain substring) phrase matcher directly against realistic edge-case free text before wiring it into the UI — e.g. "I don't know yet", "not right now".
@@ -361,7 +377,7 @@ Real usage by the project owner, logged as it happens — see § Experiments bel
 **Learning:** The exact same shape of risk as two later findings the same day: "I may go" nearly resolving to next May (`_matched_month_name()`), and the reason `DEADLINE_RE` needed a tolerant regex instead of an exact phrase list. Any short recognized word that's also a substring of a common longer word breaks under plain text containment — a systematic risk in this project's whole "recognize known phrases" approach, not a one-off bug.
 **Consequence:** Fixed before shipping, via word-boundary regex matching (`_contains_phrase()`, `\b`-wrapped so a phrase only matches as a whole word) — see [[05-decisions]]. Same fix shape reused later the same day for month-name matching (requiring "in" before the month name). General principle going forward: never trust substring containment alone for a short recognized word.
 
-#### 2. 2026-08-20 (latest) — Long replan chains drift toward trivial actions, confirmed under real (non-stress-test) usage
+#### 4. 2026-08-20 (latest) — Long replan chains drift toward trivial actions, confirmed under real (non-stress-test) usage
 
 **Hypothesis tested:** Does the 2026-08-19 stress-test finding below (drift under 8 rapid clicks in under a minute) also show up under genuinely paced real usage — actual attempts and feedback spread over hours, not a deliberate rapid-fire test?
 **Setup:** Real usage, goal "send 4 work applications" (`goal_id` 11), spanning 2026-08-19 19:49 to 2026-08-20 19:00 — 15 total replan rounds over roughly a full day of ordinary (not deliberately adversarial) interaction.
@@ -369,7 +385,7 @@ Real usage by the project owner, logged as it happens — see § Experiments bel
 **Learning:** Confirms the 2026-08-19 stress-test finding wasn't an artifact of rapid-fire clicking — the identical degradation happens under genuinely paced real usage too, just slower. `replan()` only ever saw the immediately-previous plan, so each individual shrink looked locally reasonable to the model in isolation, but nothing stopped the chain from compounding indefinitely further away from the goal itself.
 **Consequence:** Fixed 2026-08-21 (see [[05-decisions]]): `replan()` now receives the goal's FULL history (every right_now + feedback pair, oldest first) instead of just the previous plan, and `REPLAN_SYSTEM_PROMPT` now explicitly says to only shrink `right_now` the first time it isn't completed, then move toward the goal's actual core action instead of shrinking again. Verified against a simulated reproduction of this exact 13-replan chain after the fix — `right_now` advanced toward sending an application instead of continuing to shrink.
 
-#### 3. 2026-08-20 — Hallucinated a specific person ("a friend") never mentioned
+#### 5. 2026-08-20 — Hallucinated a specific person ("a friend") never mentioned
 
 **Hypothesis tested:** N/A — noticed during real usage, not a designed test.
 **Setup:** Real usage, goal "start going to the gym" (`goal_id` 12), no duration given. First plan's `right_now`: "Research and shortlist 3 gyms in the area and make a list of their membership options and pricing." User feedback: "did not complete the action" plus a note about timing — no other person mentioned anywhere.
@@ -377,7 +393,7 @@ Real usage by the project owner, logged as it happens — see § Experiments bel
 **Learning:** Same category as the earlier "chapter 11" (2026-08-18) and "German vocabulary" (2026-08-19) hallucinations — a small, plausible-sounding, entirely fabricated specific, not an obviously-wrong answer, which is exactly what makes this kind of failure risky: it reads as reasonable advice unless you notice you never actually said that.
 **Consequence:** No fix applied (same as the other hallucination findings — see [[02-product]] § MVP, Important distinction). Logged as further evidence of an already-known limitation, not a new one. Reinforces this project's core distinction between "the mechanism working" (plan → save → display → replan all functioned correctly here) and "the output being reliable" (the specific content wasn't grounded in anything the user actually said).
 
-#### 4. 2026-08-19 — Long replan chains drift away from the original goal
+#### 6. 2026-08-19 — Long replan chains drift away from the original goal
 
 **Hypothesis tested:** Does the replan loop stay anchored to the original goal over many consecutive "not done" cycles, or does it drift?
 **Setup:** Real usage by the project owner via `backend/devtools/app.py`. Goal: "take a shower" (duration "1 hour"). Pressed "No" 8 times in a row, in rapid succession (well under a minute total — a stress test, not paced real-world usage), then "Yes" twice with a corrective note.
@@ -385,7 +401,7 @@ Real usage by the project owner, logged as it happens — see § Experiments bel
 **Learning:** Not an isolated hallucination (like the earlier "chapter 11" or "German vocabulary" findings) — systematic drift over repeated replan() calls. Confirms a known, previously-flagged architecture gap: `replan()` only receives the immediately-previous plan, not the full history or a reinforced original goal, so small deviations compound over iterations. **Important caveat, discussed with the assistant afterward:** 8 rapid "No" clicks with no real attempt in between is a stress test, not representative of normal use (try the action for real, then give feedback, likely once a day) — severity under normal pacing is untested. The "Goal complete" button (built earlier the same day) is an available escape hatch once a chain drifts.
 **Consequence:** Logged as a known limitation of long replan chains specifically, not of the core loop itself (which held up fine over 1-3 rounds throughout the rest of tonight's testing). Consider, before further building: reinforcing the original goal text more strongly on every replan() call, not just the previous plan. Revisit after testing under normal (non-stress-test) pacing over several real days.
 
-#### 5. 2026-08-19 — Goal identity is exact-text matching, not semantic
+#### 7. 2026-08-19 — Goal identity is exact-text matching, not semantic
 
 **Hypothesis tested:** N/A — incidental finding while building the board feature (§ Development Log above).
 **Setup:** Real usage: goal typed as "take shower" in one session, "take a shower" (one extra word) in a later session, same real intent.
@@ -393,7 +409,7 @@ Real usage by the project owner, logged as it happens — see § Experiments bel
 **Learning:** There is currently no concept of "this is the same goal" beyond byte-for-byte text equality. A minor wording change (which happens naturally in real use) fragments what should be one continuous thread.
 **Consequence:** Not fixed yet — noted as a real limitation. Fixing it well (fuzzy/semantic matching, or an explicit goal ID the user confirms) is more than a one-line change; revisit if it causes real confusion during multi-day testing, rather than fixing preemptively.
 
-#### 6. 2026-08-19 — Norwegian goal text causes severe, reproducible hallucination
+#### 8. 2026-08-19 — Norwegian goal text causes severe, reproducible hallucination
 
 **Hypothesis tested:** Does `llama3.1:8b` handle a goal written in Norwegian as reliably as one written in English?
 **Setup:** `generate_plan()` called directly (bypassing the UI) with the same goal in both languages: `"lage mat"` (Norwegian for "make food") + duration `"i løpet av kvelden"` ("during the evening") vs. the English originals directly: `"make food"` + duration `"during the evening"`. Repeated 3 times for the Norwegian phrasing to check reproducibility.
@@ -401,7 +417,7 @@ Real usage by the project owner, logged as it happens — see § Experiments bel
 **Learning:** This is a more severe reliability failure than the "chapter 11" hallucination (2026-08-18 below) — there, one detail was invented; here, the *entire* response was disconnected from the actual goal, consistently, only when the input was Norwegian. `llama3.1:8b`'s multilingual handling appears to be a real, reproducible weak point, not an occasional fluke.
 **Consequence:** User decision: write goals in English going forward (see [[05-decisions]]) rather than switch LLM backend yet — keeps testing free/local while sidestepping the specific failure mode found. Revisit the Ollama-vs-Claude decision if English-only turns out to be too much friction, or if similar failures show up in English too.
 
-#### 7. 2026-08-18 — First live use: hallucinated detail
+#### 9. 2026-08-18 — First live use: hallucinated detail
 
 **Hypothesis tested:** Does `llama3.1:8b` (local Ollama) give reliable, grounded replanning answers, not just structurally valid JSON?
 **Setup:** Real usage by the project owner via `backend/devtools/app.py`. Goal: "Read one book this month." After 2 feedback rounds (not done → smaller step; done → next step), the agent's "right_now" action referred to "chapter 11" of a specific book.
