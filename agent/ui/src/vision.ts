@@ -10,6 +10,14 @@
 // goals (completed isn't wired into this relation), unaffected by the
 // Vision itself being archived.
 
+// Contents
+//  1. Rendering
+//      - renderVisionCard()
+//  2. Data loading
+//      - loadVisions()
+//  3. Event listeners
+//  4. Initialization
+
 import { archiveVision, createVision, fetchActiveGoals, fetchVisions } from "./api.js";
 import { initNavCounts } from "./nav.js";
 import type { GoalView, VisionView } from "./types.js";

@@ -20,6 +20,15 @@
 // arrive here already pointed at a specific goal (see active.ts's
 // "Continue in chat" button).
 
+// Contents
+//  1. Chat focus
+//      - renderChatFocus()
+//      - loadChatFocus()
+//  2. Transcript
+//      - appendMessage()
+//  3. Event listeners
+//  4. Initialization
+
 import { fetchChatFocus, sendMessage, setChatFocus } from "./api.js";
 import { initNavCounts } from "./nav.js";
 import { planElement } from "./tree.js";

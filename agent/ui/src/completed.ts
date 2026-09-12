@@ -4,6 +4,13 @@
 // shows what was already decided, same GoalView shape and
 // planElement() Active uses, minus the feedback form.
 
+// Contents
+//  1. Rendering
+//      - renderGoalCard()
+//  2. Data loading
+//      - loadGoals()
+//  3. Initialization
+
 import { fetchCompletedGoals } from "./api.js";
 import { initNavCounts } from "./nav.js";
 import { planElement } from "./tree.js";

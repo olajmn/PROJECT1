@@ -7,6 +7,13 @@
 // never /api/message - this page has no free-conversation box of its
 // own; that's what the Conversation page (index.html/main.ts) is for.
 
+// Contents
+//  1. Rendering
+//      - renderGoalCard()
+//  2. Data loading
+//      - loadGoals()
+//  3. Initialization
+
 import { cancelGoal, fetchActiveGoals, fetchVisions, sendGoalFeedback, setChatFocus, setGoalVision } from "./api.js";
 import { initNavCounts } from "./nav.js";
 import { planElement } from "./tree.js";

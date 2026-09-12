@@ -5,6 +5,16 @@
 // same spirit as frontend-legacy/templates/_plan_entry.html's
 // key:value dump.
 
+// Contents
+//  1. Field labels
+//      - PLAN_FIELD_LABELS
+//  2. Rendering
+//      - addLine()
+//      - renderEntry()
+//  3. Data loading
+//      - loadHistory()
+//  4. Initialization
+
 import { fetchHistory } from "./api.js";
 import { initNavCounts } from "./nav.js";
 import type { HistoryEntry } from "./types.js";

@@ -11,6 +11,14 @@
 // GET /api/goals (active.ts's own data source), just rendered as
 // single lines instead of cards.
 
+// Contents
+//  1. Rendering
+//      - renderGoalLine()
+//  2. Data loading
+//      - loadGoals()
+//  3. Event listeners
+//  4. Initialization
+
 import { createGoal, fetchActiveGoals } from "./api.js";
 import { initNavCounts } from "./nav.js";
 import type { GoalView } from "./types.js";

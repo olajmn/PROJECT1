@@ -4,6 +4,23 @@
 // layer (backend/manifestation.py) already reduced a Planning result
 // to, and nothing more. See that module's docstring for why.
 
+// Contents
+//  1. Plan tree
+//      - PlanningNode
+//  2. Free conversation
+//      - AgentResponse
+//  3. Goals
+//      - GoalView
+//      - HistoryEntry
+//  4. Vision
+//      - VisionView
+//  5. Chat focus
+//      - ChatFocusView
+//  6. Session log
+//      - SessionGoalEvent
+//      - SessionVisionEvent
+//      - SessionLogView
+
 /** A generic, capability-agnostic node - not a final domain model.
  * Present only when a Planning result actually had a step list to
  * show; most results won't, and that's expected (see PlanningResult). */

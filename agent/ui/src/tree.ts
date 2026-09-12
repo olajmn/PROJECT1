@@ -11,6 +11,14 @@
 // baking "1." into a label would duplicate the list's own order and
 // drift the moment steps are added or removed).
 
+// Contents
+//  1. Numbering
+//      - ROMAN_NUMERALS
+//      - treeLabel()
+//  2. Rendering
+//      - renderNode()
+//      - planElement()
+
 import type { PlanningNode } from "./types.js";
 
 const ROMAN_NUMERALS = [

@@ -2,6 +2,28 @@
 // here decides anything - it sends text, returns whatever the server
 // already decided.
 
+// Contents
+//  1. Free conversation
+//      - sendMessage()
+//  2. Goals
+//      - fetchActiveGoals()
+//      - createGoal()
+//      - sendGoalFeedback()
+//      - cancelGoal()
+//      - setGoalVision()
+//      - fetchCompletedGoals()
+//  3. History
+//      - fetchHistory()
+//  4. Vision
+//      - fetchVisions()
+//      - createVision()
+//      - archiveVision()
+//  5. Chat focus
+//      - fetchChatFocus()
+//      - setChatFocus()
+//  6. Sessions
+//      - fetchSessions()
+
 import type { AgentResponse, ChatFocusView, GoalView, HistoryEntry, SessionLogView, VisionView } from "./types.js";
 
 export async function sendMessage(text: string): Promise<AgentResponse> {

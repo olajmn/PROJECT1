@@ -16,6 +16,9 @@
 // different page scripts for one shared line, and a failure here
 // (caught, silently) must never block the page's own real content.
 
+// Contents
+//  1. initNavCounts()
+
 import { fetchActiveGoals, fetchCompletedGoals, fetchVisions } from "./api.js";
 
 export async function initNavCounts(): Promise<void> {

@@ -10,6 +10,18 @@
 // process - renders as still open; a known limitation, not a bug (see
 // docs/04-current-state.md § 5).
 
+// Contents
+//  1. Rendering
+//      - addLine()
+//  2. Timeline
+//      - TimelineEntry
+//      - goalTimelineEntry()
+//      - visionTimelineEntry()
+//      - renderSession()
+//  3. Data loading
+//      - loadSessions()
+//  4. Initialization
+
 import { fetchSessions } from "./api.js";
 import { initNavCounts } from "./nav.js";
 import type { SessionGoalEvent, SessionLogView, SessionVisionEvent } from "./types.js";
