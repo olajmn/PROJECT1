@@ -37,32 +37,53 @@ from backend.planning.goal.resolver import get_latest_for_goal
 from backend.planning.plan.planner import apply_feedback, create_goal
 
 
-class Session:
-    """The crude, harness-only state described in the module
+class ChatFocus:
+    """Which goal, if any, the free-conversation path is currently
+    focused on - the crude, harness-only state described in the module
     docstring - not a designed concept, just enough to run more than
-    one kind of turn in one experiment session.
-
-    Also persists a Session record (data_persistence.start_session(),
-    added 2026-09-12) once per construction - one per real run of
-    main() or server.py's module-level `session`, not per turn. `id`/
-    `started_at` mirror that record so a caller (server.py's
-    _session_view()) can expose them without re-reading the file;
-    server.py's own GET /api/sessions derives "what happened" from
-    load_history()/load_visions() filtered by this window, rather than
-    this class logging anything itself - see
-    docs/04-current-state.md § 8."""
+    one kind of turn in one experiment session. Not itself persisted;
+    lives only as long as the process does. Scoped inside a Session
+    (below), not a sibling fact bolted onto it - split out 2026-09-12
+    once the two had ended up sharing one Python object and confusing
+    the (already renamed) "chat focus" vs. "Session" naming split at
+    the API/UI layer - see docs/04-current-state.md § 8."""
 
     def __init__(self):
-        self.current_goal_id: int | None = None
+        self.goal_id: int | None = None
+
+
+class Session:
+    """A real run of this process (main() below, or server.py's
+    module-level `session`) - persists a Session record
+    (data_persistence.start_session(), added 2026-09-12) once per
+    construction, not per turn, and owns this run's ChatFocus.
+
+    `id`/`started_at` mirror the persisted record so a caller
+    (server.py's GET /api/sessions) can expose them without re-reading
+    the file; that same route derives "what happened" from
+    load_history()/load_visions() filtered by this window, rather than
+    this class logging anything itself - see docs/04-current-state.md
+    § 8. `chat_focus` is everything that happens to the free-
+    conversation path's current goal *during* this Session - a Session
+    is the overarching thing; chat focus is one aspect of it, not a
+    separate, equally-important fact living alongside it."""
+
+    def __init__(self):
         record = start_session()
         self.id: int = record["id"]
         self.started_at: str = record["started_at"]
+        self.chat_focus = ChatFocus()
 
 
-def process_turn(session: Session, user_text: str) -> dict:
+def process_turn(chat_focus: ChatFocus, user_text: str) -> dict:
     """Runs one turn through the full chain and returns a small trace
     - not just the reply - so a caller (the CLI loop, or an experiment
-    script) can inspect what each stage actually produced."""
+    script) can inspect what each stage actually produced.
+
+    Takes a ChatFocus, not a whole Session - this function only ever
+    needs to know which goal the chat is pointed at, never a Session's
+    own id/started_at, so it doesn't need to know Session exists at
+    all (see main()'s own `session.chat_focus` call site)."""
     understanding = understand(user_text)
     capability = select_capability(understanding)
 
@@ -73,11 +94,11 @@ def process_turn(session: Session, user_text: str) -> dict:
             "surface": None, "node": None, "reply": reply, "goal_id": None,
         }
 
-    if session.current_goal_id is None:
+    if chat_focus.goal_id is None:
         record = create_goal(user_text, "", "")
-        session.current_goal_id = record["goal_id"]
+        chat_focus.goal_id = record["goal_id"]
     else:
-        latest = get_latest_for_goal(session.current_goal_id)
+        latest = get_latest_for_goal(chat_focus.goal_id)
         record = apply_feedback(latest, user_text)
 
     surface = surface_text(record)
@@ -86,7 +107,7 @@ def process_turn(session: Session, user_text: str) -> dict:
     return {
         "understanding": understanding, "capability": capability,
         "surface": surface, "node": node, "reply": reply,
-        "goal_id": session.current_goal_id,
+        "goal_id": chat_focus.goal_id,
     }
 
 
@@ -102,7 +123,7 @@ def main() -> None:
         if not user_text:
             continue
         try:
-            result = process_turn(session, user_text)
+            result = process_turn(session.chat_focus, user_text)
         except Exception as e:  # an experiment script must not die on one bad turn
             # A friendly, deterministic fallback, not the raw exception
             # text - reasoning.model_client.call_with_retry already

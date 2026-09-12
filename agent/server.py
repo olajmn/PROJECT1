@@ -25,15 +25,16 @@ Two distinct paths into Planning, deliberately different shapes:
   already what ui/active.html shows directly.
 - GET/POST /api/chat-focus - the manual bridge between the two paths
   above: reads or overwrites the free-conversation `session`'s own
-  `current_goal_id` - which goal, if any, the chat is currently
+  `chat_focus.goal_id` - which goal, if any, the chat is currently
   "focused" on - otherwise invisible and unsettable from any page.
   Lets e.g. Active point the chat at a specific existing goal instead
   of only ever guessing - still doesn't address § 5's mid-conversation
   topic-switch defect itself, only gives an explicit, visible starting
   point. Named "chat focus", not "session", to keep it distinct from
-  the persisted Session below - `cli.py`'s `Session` object happens to
-  hold both, but they're different concepts (see _chat_focus_view()'s
-  own docstring).
+  the persisted Session below - `cli.py`'s `Session` object owns a
+  `ChatFocus` (its `chat_focus` attribute) rather than flattening
+  `goal_id` onto itself, so the two stay structurally separate too,
+  not just separately named (see _chat_focus_view()'s own docstring).
 - GET /api/sessions - every persisted Session record (one per real run
   of cli.py's main() or this file), each with its "what happened"
   derived at read time from load_history()/load_visions() filtered to
@@ -210,20 +211,20 @@ def _history_view(record: dict) -> dict:
 def _chat_focus_view() -> dict:
     """{goal_id, goal} - which goal, if any, the free-conversation path
     is currently "focused" on: goal_id mirrors cli.py's Session.
-    current_goal_id (None if the chat hasn't touched a goal yet this
-    process); goal is that record's own text, looked up fresh each
-    call rather than cached, same reasoning as every other _*_view()
-    here.
+    chat_focus.goal_id (None if the chat hasn't touched a goal yet
+    this process); goal is that record's own text, looked up fresh
+    each call rather than cached, same reasoning as every other
+    _*_view() here.
 
     Named "chat focus" rather than "session" - added 2026-09-12,
     renamed from _session_view() the same day - specifically to keep
     it distinct from the persisted Session record (_session_log_view()
-    below): `cli.py`'s `Session` object happens to hold both
-    `current_goal_id` (this) and `id`/`started_at` (that), but they're
-    two different concepts sharing one Python object, not one concept.
-    This function is deliberately just the live pointer, never the
-    persisted Session record itself."""
-    goal_id = session.current_goal_id
+    below): `cli.py`'s `Session` object owns a `ChatFocus` (this) and
+    separately mirrors a persisted Session record (`id`/`started_at`,
+    that) as two structurally separate things, not one flattened onto
+    the other. This function is deliberately just the live pointer,
+    never the persisted Session record itself."""
+    goal_id = session.chat_focus.goal_id
     if goal_id is None:
         return {"goal_id": None, "goal": None}
     latest = get_latest_for_goal(goal_id)
@@ -419,7 +420,7 @@ class Handler(BaseHTTPRequestHandler):
         if user_text is None:
             return
         try:
-            result = process_turn(session, user_text)
+            result = process_turn(session.chat_focus, user_text)
         except Exception as e:  # transport must not crash on one bad turn
             # Same reasoning as cli.py's own fallback: a friendly,
             # deterministic line, not the raw exception text, standing
@@ -498,7 +499,7 @@ class Handler(BaseHTTPRequestHandler):
         # not {"text": ...} like every other POST route here, so this
         # doesn't go through _read_text_body(). No model call, same
         # reasoning as _handle_cancel_goal() - a pure state write onto
-        # the module-level `session` object's own current_goal_id,
+        # the module-level `session` object's own chat_focus.goal_id,
         # nothing saved to disk.
         length = int(self.headers.get("Content-Length", 0))
         try:
@@ -508,14 +509,14 @@ class Handler(BaseHTTPRequestHandler):
             return
         raw_goal_id = payload_in.get("goal_id")
         if raw_goal_id is None:
-            session.current_goal_id = None
+            session.chat_focus.goal_id = None
             self._send_json(_chat_focus_view())
             return
         goal_id = int(raw_goal_id)
         if get_latest_for_goal(goal_id) is None:
             self.send_error(404, "no such goal")
             return
-        session.current_goal_id = goal_id
+        session.chat_focus.goal_id = goal_id
         self._send_json(_chat_focus_view())
 
     def _handle_create_vision(self) -> None:
