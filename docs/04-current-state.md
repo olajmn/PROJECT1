@@ -69,7 +69,7 @@ graph TD
 - `server.py` — stdlib `http.server`, no framework, no new dependency. Serves `ui/`'s static files over `GET`. Two distinct kinds of route (added 2026-09-11/12, see § 3 for the full list and why they're shaped differently): `POST /api/message` calls `process_turn()` from `cli.py`, same one process-wide `Session` limitation `cli.py` already has; `GET/POST /api/goals[...]`, `GET/POST /api/visions[...]`, `GET /api/history` call Planning directly, keyed by an explicit id in the URL rather than session state. Same friendly-fallback-on-exhausted-retries behavior as `cli.py` for every route that calls the model, the exception printed server-side only.
 - `ui/` — a TypeScript UI (`src/*.ts`, compiled by `tsc` into `ui/dist/`, served by `server.py`), six pages, no framework, no client-side router - each is its own static HTML file with its own small entry script:
   - `index.html`/`main.ts` — free conversation (`POST /api/message`). One transcript, one textarea; renders an optional plan tree beneath a reply.
-  - `active.html`/`active.ts` — every non-completed, non-cancelled goal (`GET /api/goals`) as its own card, each with its own feedback box (`POST /api/goals/<id>/feedback`) - see § 3.ii for why this shape is immune to § 5's topic-continuity defect.
+  - `active.html`/`active.ts` — every non-completed, non-cancelled goal (`GET /api/goals`) as its own card, each with its own feedback box (`POST /api/goals/<id>/feedback`) and, added 2026-09-12, a "Cancel goal" button (`POST /api/goals/<id>/cancel` → `planner.cancel_goal()`) at the bottom of the card, matching `frontend-legacy/templates/active_goal/_cancel.html`'s same placement and no-confirmation-step precedent - see § 3.ii for why this shape is immune to § 5's topic-continuity defect.
   - `set-goal.html`/`set-goal.ts` — one textarea, posts to `POST /api/goals` (`create_goal(text, "", "")` - Vision still always empty, see § 5), redirects to Active. Below the form, a plain `GET /api/goals` listing (goal text + `#<goal_id>`, one line per goal, no plan tree or feedback box) - an overview to orient among existing goals without opening Active's full cards, added 2026-09-12 matching `frontend-legacy/templates/set_goal/_goal_list.html`'s same, previously-dropped precedent.
   - `vision.html`/`vision.ts` — create (`POST /api/visions`), list active and archived separately (`GET /api/visions`), archive (`POST /api/visions/<id>/archive`, via `planner.archive_vision()` so goal-detachment still happens). Not yet linkable to a Goal from here - see § 5.
   - `completed.html`/`completed.ts` — every completed goal (`GET /api/goals/completed`), read-only (no feedback box - a completed goal takes no further feedback).
@@ -142,6 +142,7 @@ Added 2026-09-11/12, alongside `ui/`'s five new pages. Each of these routes call
 GET  /api/goals              → planning.goal.resolver.get_latest_for_all_goals(), filtered to active
 POST /api/goals               → planner.create_goal(text, "", "")
 POST /api/goals/<id>/feedback → planner.apply_feedback(id, text)
+POST /api/goals/<id>/cancel   → planner.cancel_goal(id)
 GET  /api/goals/completed     → get_latest_for_all_goals(), filtered to completed
 GET  /api/history             → infrastructure.data_persistence.load_history()
 GET  /api/visions             → infrastructure.data_persistence.load_visions()
@@ -185,7 +186,7 @@ Concretely:
 | Temporal understanding | `backend/foundation/time/` — unchanged, own test suite passes |
 | Basic arithmetic | `backend/foundation/math.py` — unchanged, own test suite passes |
 | Free-conversation web UI | `server.py` (`POST /api/message`) + `ui/index.html`/`main.ts` |
-| List/create active goals, give feedback, without free text guessing which goal | `server.py`'s `GET/POST /api/goals`, `POST /api/goals/<id>/feedback` (§ 3.iii) + `ui/active.html`/`active.ts`, `ui/set-goal.html`/`set-goal.ts` |
+| List/create active goals, give feedback, cancel a goal, without free text guessing which goal | `server.py`'s `GET/POST /api/goals`, `POST /api/goals/<id>/feedback`, `POST /api/goals/<id>/cancel` (§ 3.iii) + `ui/active.html`/`active.ts`, `ui/set-goal.html`/`set-goal.ts` |
 | List completed goals, read-only | `server.py`'s `GET /api/goals/completed` + `ui/completed.html`/`completed.ts` |
 | Full unfiltered history log | `server.py`'s `GET /api/history` + `ui/history.html`/`history.ts` |
 | Create, list, archive a Vision (not yet linkable to a Goal — § 5) | `server.py`'s `GET/POST /api/visions`, `POST /api/visions/<id>/archive` + `ui/vision.html`/`vision.ts` |

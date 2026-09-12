@@ -7,7 +7,7 @@
 // never /api/message - this page has no free-conversation box of its
 // own; that's what the Conversation page (index.html/main.ts) is for.
 
-import { fetchActiveGoals, sendGoalFeedback } from "./api.js";
+import { cancelGoal, fetchActiveGoals, sendGoalFeedback } from "./api.js";
 import { planElement } from "./tree.js";
 import type { GoalView } from "./types.js";
 
@@ -70,6 +70,31 @@ function renderGoalCard(goal: GoalView): HTMLElement {
   });
 
   card.appendChild(form);
+
+  // An action on the goal itself, not part of the plan/feedback flow
+  // above - kept as its own element after the feedback form, same
+  // placement frontend-legacy/templates/active_goal/_cancel.html used.
+  // No confirmation step, matching that same precedent.
+  const cancelButton = document.createElement("button");
+  cancelButton.type = "button";
+  cancelButton.textContent = "Cancel goal";
+  cancelButton.className = "cancel-button";
+  cancelButton.addEventListener("click", async () => {
+    cancelButton.disabled = true;
+    try {
+      await cancelGoal(goal.goal_id);
+      card.remove();
+      empty.hidden = list.childElementCount > 0;
+    } catch (err) {
+      cancelButton.disabled = false;
+      const error = document.createElement("p");
+      error.className = "error";
+      error.textContent = `(error: ${(err as Error).message})`;
+      card.appendChild(error);
+    }
+  });
+  card.appendChild(cancelButton);
+
   return card;
 }
 

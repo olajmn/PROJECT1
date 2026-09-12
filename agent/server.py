@@ -10,7 +10,7 @@ Two distinct paths into Planning, deliberately different shapes:
   Node 1 -> Node 2 -> Node 3 -> Planning -> Node 1), for when which
   goal (or whether Planning applies at all) isn't already known. Uses
   the single, process-wide `session` below.
-- GET/POST /api/goals[/<id>/feedback], GET /api/goals/completed,
+- GET/POST /api/goals[/<id>/feedback, /<id>/cancel], GET /api/goals/completed,
   GET /api/history, GET/POST /api/visions[/<id>/archive] - known
   capability context (see
   docs/03-architecture.md Part 3 § 3): the goal_id (where one applies)
@@ -46,7 +46,7 @@ from cli import Session, process_turn
 from backend.manifestation import surface_text, to_planning_node
 from backend.infrastructure.data_persistence import load_history, load_visions, save_vision
 from backend.planning.goal.resolver import created_at_key, get_latest_for_all_goals, get_latest_for_goal
-from backend.planning.plan.planner import apply_feedback, archive_vision, create_goal
+from backend.planning.plan.planner import apply_feedback, archive_vision, cancel_goal, create_goal
 
 UI_DIR = (Path(__file__).parent / "ui").resolve()
 PORT = 8000
@@ -58,6 +58,7 @@ _CONTENT_TYPES = {
 }
 
 _FEEDBACK_PATH_RE = re.compile(r"^/api/goals/(\d+)/feedback$")
+_CANCEL_PATH_RE = re.compile(r"^/api/goals/(\d+)/cancel$")
 _VISION_ARCHIVE_PATH_RE = re.compile(r"^/api/visions/(\d+)/archive$")
 
 session = Session()  # process-wide - see module docstring, /api/message only
@@ -198,6 +199,10 @@ class Handler(BaseHTTPRequestHandler):
         if feedback_match:
             self._handle_goal_feedback(int(feedback_match.group(1)))
             return
+        cancel_match = _CANCEL_PATH_RE.match(self.path)
+        if cancel_match:
+            self._handle_cancel_goal(int(cancel_match.group(1)))
+            return
         archive_match = _VISION_ARCHIVE_PATH_RE.match(self.path)
         if archive_match:
             self._handle_archive_vision(int(archive_match.group(1)))
@@ -266,6 +271,17 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:  # same reasoning as _handle_message()
             print(f"(debug: {e})")
             self.send_error(503, "that took longer than expected - try again in a moment")
+            return
+        self._send_json(_goal_view(record))
+
+    def _handle_cancel_goal(self, goal_id: int) -> None:
+        # No request body - same reasoning as _handle_archive_vision():
+        # the goal is already named by id in the path. planner.
+        # cancel_goal() is a pure state transition (no model call), so
+        # there's nothing to retry here, unlike _handle_goal_feedback().
+        record = cancel_goal(goal_id)
+        if record is None:
+            self.send_error(404, "no such goal, or already completed")
             return
         self._send_json(_goal_view(record))
 

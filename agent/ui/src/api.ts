@@ -48,6 +48,14 @@ export async function sendGoalFeedback(goalId: number, text: string): Promise<Go
   return (await res.json()) as GoalView;
 }
 
+export async function cancelGoal(goalId: number): Promise<GoalView> {
+  const res = await fetch(`/api/goals/${goalId}/cancel`, { method: "POST" });
+  if (!res.ok) {
+    throw new Error(`request failed: ${res.status}`);
+  }
+  return (await res.json()) as GoalView;
+}
+
 export async function fetchCompletedGoals(): Promise<GoalView[]> {
   const res = await fetch("/api/goals/completed");
   if (!res.ok) {

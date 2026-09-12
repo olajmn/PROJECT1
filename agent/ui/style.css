@@ -195,6 +195,15 @@ nav a[aria-current="page"] {
   flex-shrink: 0;
 }
 
+.cancel-button {
+  background: transparent;
+  color: #888;
+  border: 1px solid #ccc;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.75rem;
+  align-self: flex-start;
+}
+
 .history-entry {
   border: 1px solid #ddd;
   border-radius: 0.5rem;
