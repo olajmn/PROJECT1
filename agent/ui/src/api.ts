@@ -2,7 +2,7 @@
 // here decides anything - it sends text, returns whatever the server
 // already decided.
 
-import type { AgentResponse, GoalView, HistoryEntry, VisionView } from "./types.js";
+import type { AgentResponse, GoalView, HistoryEntry, SessionView, VisionView } from "./types.js";
 
 export async function sendMessage(text: string): Promise<AgentResponse> {
   const res = await fetch("/api/message", {
@@ -110,4 +110,24 @@ export async function archiveVision(visionId: number): Promise<VisionView> {
     throw new Error(`request failed: ${res.status}`);
   }
   return (await res.json()) as VisionView;
+}
+
+export async function fetchSession(): Promise<SessionView> {
+  const res = await fetch("/api/session");
+  if (!res.ok) {
+    throw new Error(`request failed: ${res.status}`);
+  }
+  return (await res.json()) as SessionView;
+}
+
+export async function setSession(goalId: number | null): Promise<SessionView> {
+  const res = await fetch("/api/session", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ goal_id: goalId }),
+  });
+  if (!res.ok) {
+    throw new Error(`request failed: ${res.status}`);
+  }
+  return (await res.json()) as SessionView;
 }

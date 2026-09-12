@@ -67,3 +67,12 @@ export interface VisionView {
   archived: boolean;
   created_at: string;
 }
+
+/** The free-conversation path's own session state, as returned by
+ * GET/POST /api/session - matches server.py's _session_view(). Mirrors
+ * cli.py's Session.current_goal_id: null until the chat has touched a
+ * goal this process, otherwise that goal's id and text. */
+export interface SessionView {
+  goal_id: number | null;
+  goal: string | null;
+}

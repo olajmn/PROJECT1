@@ -23,6 +23,13 @@ Two distinct paths into Planning, deliberately different shapes:
   voicing (Node 1) on these responses either - see manifestation.py's
   own surface_text()/to_planning_node(), already deterministic and
   already what ui/active.html shows directly.
+- GET/POST /api/session - the manual bridge between the two paths
+  above: reads or overwrites the free-conversation `session`'s own
+  `current_goal_id`, otherwise invisible and unsettable from any page.
+  Lets e.g. Active point the chat at a specific existing goal instead
+  of only ever guessing - still doesn't address § 5's mid-conversation
+  topic-switch defect itself, only gives an explicit, visible starting
+  point.
 
 Stdlib only (http.server) - no new dependency, matching agent/'s
 requirements.txt ("ollama" only, nothing added for this).
@@ -148,6 +155,19 @@ def _history_view(record: dict) -> dict:
     }
 
 
+def _session_view() -> dict:
+    """{goal_id, goal} - goal_id mirrors cli.py's Session.
+    current_goal_id (None if the free-conversation path hasn't touched
+    a goal yet this process); goal is that record's own text, looked
+    up fresh each call rather than cached, same reasoning as every
+    other _*_view() here."""
+    goal_id = session.current_goal_id
+    if goal_id is None:
+        return {"goal_id": None, "goal": None}
+    latest = get_latest_for_goal(goal_id)
+    return {"goal_id": goal_id, "goal": latest["goal"] if latest else None}
+
+
 def _vision_view(vision: dict) -> dict:
     """{id, text, archived, created_at} - load_visions()'s own record
     shape already has exactly these fields, `archived` just isn't
@@ -176,6 +196,9 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/visions":
             self._send_json([_vision_view(v) for v in load_visions()])
             return
+        if self.path == "/api/session":
+            self._send_json(_session_view())
+            return
         requested = "index.html" if self.path == "/" else self.path.lstrip("/")
         file_path = (UI_DIR / requested).resolve()
         if UI_DIR not in file_path.parents or not file_path.is_file():
@@ -197,6 +220,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if self.path == "/api/visions":
             self._handle_create_vision()
+            return
+        if self.path == "/api/session":
+            self._handle_set_session()
             return
         feedback_match = _FEEDBACK_PATH_RE.match(self.path)
         if feedback_match:
@@ -310,6 +336,30 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(404, "no such goal or vision, or an unanswered clarification blocks this")
             return
         self._send_json(_goal_view(record))
+
+    def _handle_set_session(self) -> None:
+        # Body is {"goal_id": <int>} or {"goal_id": null} to clear it -
+        # not {"text": ...} like every other POST route here, so this
+        # doesn't go through _read_text_body(). No model call, same
+        # reasoning as _handle_cancel_goal() - a pure state write onto
+        # the module-level `session` object, nothing saved to disk.
+        length = int(self.headers.get("Content-Length", 0))
+        try:
+            payload_in = json.loads(self.rfile.read(length) or b"{}")
+        except json.JSONDecodeError:
+            self.send_error(400, "invalid JSON")
+            return
+        raw_goal_id = payload_in.get("goal_id")
+        if raw_goal_id is None:
+            session.current_goal_id = None
+            self._send_json(_session_view())
+            return
+        goal_id = int(raw_goal_id)
+        if get_latest_for_goal(goal_id) is None:
+            self.send_error(404, "no such goal")
+            return
+        session.current_goal_id = goal_id
+        self._send_json(_session_view())
 
     def _handle_create_vision(self) -> None:
         text = self._read_text_body()

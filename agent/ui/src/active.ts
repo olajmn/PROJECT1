@@ -7,7 +7,7 @@
 // never /api/message - this page has no free-conversation box of its
 // own; that's what the Conversation page (index.html/main.ts) is for.
 
-import { cancelGoal, fetchActiveGoals, fetchVisions, sendGoalFeedback, setGoalVision } from "./api.js";
+import { cancelGoal, fetchActiveGoals, fetchVisions, sendGoalFeedback, setGoalVision, setSession } from "./api.js";
 import { initNavCounts } from "./nav.js";
 import { planElement } from "./tree.js";
 import type { GoalView, VisionView } from "./types.js";
@@ -118,10 +118,14 @@ function renderGoalCard(goal: GoalView, visions: VisionView[]): HTMLElement {
 
   card.appendChild(form);
 
-  // An action on the goal itself, not part of the plan/feedback flow
-  // above - kept as its own element after the feedback form, same
-  // placement frontend-legacy/templates/active_goal/_cancel.html used.
-  // No confirmation step, matching that same precedent.
+  // Two actions on the goal itself, not part of the plan/feedback flow
+  // above - kept as their own element after the feedback form, same
+  // placement frontend-legacy/templates/active_goal/_cancel.html used
+  // for Cancel. No confirmation step on either, matching that
+  // precedent.
+  const actions = document.createElement("div");
+  actions.className = "card-actions";
+
   const cancelButton = document.createElement("button");
   cancelButton.type = "button";
   cancelButton.textContent = "Cancel goal (cancel_goal)";
@@ -141,7 +145,32 @@ function renderGoalCard(goal: GoalView, visions: VisionView[]): HTMLElement {
       card.appendChild(error);
     }
   });
-  card.appendChild(cancelButton);
+  actions.appendChild(cancelButton);
+
+  // The manual bridge to the free-conversation path: points cli.py's
+  // own Session.current_goal_id (otherwise invisible, only ever
+  // guessed at) at this goal, then sends the browser to Conversation
+  // to continue there - see main.ts's own session-info bar.
+  const continueButton = document.createElement("button");
+  continueButton.type = "button";
+  continueButton.textContent = "Continue in chat (set_session)";
+  continueButton.className = "continue-chat-button";
+  continueButton.addEventListener("click", async () => {
+    continueButton.disabled = true;
+    try {
+      await setSession(goal.goal_id);
+      window.location.href = "index.html";
+    } catch (err) {
+      continueButton.disabled = false;
+      const error = document.createElement("p");
+      error.className = "error";
+      error.textContent = `(error: ${(err as Error).message})`;
+      card.appendChild(error);
+    }
+  });
+  actions.appendChild(continueButton);
+
+  card.appendChild(actions);
 
   return card;
 }
