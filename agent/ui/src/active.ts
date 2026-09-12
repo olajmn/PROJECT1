@@ -7,14 +7,14 @@
 // never /api/message - this page has no free-conversation box of its
 // own; that's what the Conversation page (index.html/main.ts) is for.
 
-import { cancelGoal, fetchActiveGoals, sendGoalFeedback } from "./api.js";
+import { cancelGoal, fetchActiveGoals, fetchVisions, sendGoalFeedback, setGoalVision } from "./api.js";
 import { planElement } from "./tree.js";
-import type { GoalView } from "./types.js";
+import type { GoalView, VisionView } from "./types.js";
 
 const list = document.getElementById("goal-list") as HTMLDivElement;
 const empty = document.getElementById("empty") as HTMLParagraphElement;
 
-function renderGoalCard(goal: GoalView): HTMLElement {
+function renderGoalCard(goal: GoalView, visions: VisionView[]): HTMLElement {
   const card = document.createElement("article");
   card.className = "goal-card";
 
@@ -27,6 +27,49 @@ function renderGoalCard(goal: GoalView): HTMLElement {
   id.textContent = `#${goal.goal_id}`;
   header.append(title, id);
   card.appendChild(header);
+
+  // Vision link - matches frontend-legacy/templates/active_goal/
+  // _goal.html's dropdown: every active (non-archived) Vision, plus
+  // "Vision: none" to remove the link, pre-selected to whichever this
+  // goal already has.
+  const visionForm = document.createElement("form");
+  visionForm.className = "vision-link-form";
+  const select = document.createElement("select");
+  const noneOption = document.createElement("option");
+  noneOption.value = "";
+  noneOption.textContent = "Vision: none";
+  select.appendChild(noneOption);
+  for (const vision of visions) {
+    const option = document.createElement("option");
+    option.value = String(vision.id);
+    option.textContent = `Vision: ${vision.text}`;
+    if (goal.vision_id === vision.id) option.selected = true;
+    select.appendChild(option);
+  }
+  const visionButton = document.createElement("button");
+  visionButton.type = "submit";
+  visionButton.textContent = "Update vision";
+  visionForm.append(select, visionButton);
+
+  visionForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const raw = select.value;
+    select.disabled = true;
+    visionButton.disabled = true;
+    try {
+      const updated = await setGoalVision(goal.goal_id, raw ? Number(raw) : null);
+      card.replaceWith(renderGoalCard(updated, visions));
+    } catch (err) {
+      select.disabled = false;
+      visionButton.disabled = false;
+      const error = document.createElement("p");
+      error.className = "error";
+      error.textContent = `(error: ${(err as Error).message})`;
+      visionForm.appendChild(error);
+    }
+  });
+
+  card.appendChild(visionForm);
 
   if (goal.surface) {
     const surface = document.createElement("p");
@@ -58,7 +101,7 @@ function renderGoalCard(goal: GoalView): HTMLElement {
     button.disabled = true;
     try {
       const updated = await sendGoalFeedback(goal.goal_id, text);
-      card.replaceWith(renderGoalCard(updated));
+      card.replaceWith(renderGoalCard(updated, visions));
     } catch (err) {
       textarea.disabled = false;
       button.disabled = false;
@@ -99,11 +142,12 @@ function renderGoalCard(goal: GoalView): HTMLElement {
 }
 
 async function loadGoals(): Promise<void> {
-  const goals = await fetchActiveGoals();
+  const [goals, allVisions] = await Promise.all([fetchActiveGoals(), fetchVisions()]);
+  const visions = allVisions.filter((v) => !v.archived);
   list.innerHTML = "";
   empty.hidden = goals.length > 0;
   for (const goal of goals) {
-    list.appendChild(renderGoalCard(goal));
+    list.appendChild(renderGoalCard(goal, visions));
   }
 }
 

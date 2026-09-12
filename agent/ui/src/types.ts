@@ -33,6 +33,7 @@ export interface GoalView {
   goal: string;
   completed: boolean;
   cancelled: boolean;
+  vision_id: number | null;
   surface: string | null;
   node: PlanningNode | null;
 }
@@ -57,9 +58,9 @@ export interface HistoryEntry {
 
 /** One Vision, as returned by GET /api/visions, POST /api/visions,
  * and POST /api/visions/<id>/archive - matches server.py's
- * _vision_view(). Not yet linkable to a Goal from this UI (that's a
- * separate, later round - see docs/04-current-state.md § 5); this
- * page only creates, lists, and archives them. */
+ * _vision_view(). vision.ts itself only creates, lists, and archives
+ * these; linking one to a Goal happens from active.ts's own card
+ * (GoalView.vision_id, POST /api/goals/<id>/vision) instead. */
 export interface VisionView {
   id: number;
   text: string;

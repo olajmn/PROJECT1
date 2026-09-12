@@ -56,6 +56,18 @@ export async function cancelGoal(goalId: number): Promise<GoalView> {
   return (await res.json()) as GoalView;
 }
 
+export async function setGoalVision(goalId: number, visionId: number | null): Promise<GoalView> {
+  const res = await fetch(`/api/goals/${goalId}/vision`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ vision_id: visionId }),
+  });
+  if (!res.ok) {
+    throw new Error(`request failed: ${res.status}`);
+  }
+  return (await res.json()) as GoalView;
+}
+
 export async function fetchCompletedGoals(): Promise<GoalView[]> {
   const res = await fetch("/api/goals/completed");
   if (!res.ok) {

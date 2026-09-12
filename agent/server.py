@@ -10,8 +10,9 @@ Two distinct paths into Planning, deliberately different shapes:
   Node 1 -> Node 2 -> Node 3 -> Planning -> Node 1), for when which
   goal (or whether Planning applies at all) isn't already known. Uses
   the single, process-wide `session` below.
-- GET/POST /api/goals[/<id>/feedback, /<id>/cancel], GET /api/goals/completed,
-  GET /api/history, GET/POST /api/visions[/<id>/archive] - known
+- GET/POST /api/goals[/<id>/feedback, /<id>/cancel, /<id>/vision],
+  GET /api/goals/completed, GET /api/history,
+  GET/POST /api/visions[/<id>/archive] - known
   capability context (see
   docs/03-architecture.md Part 3 § 3): the goal_id (where one applies)
   is already given explicitly, by the caller, not inferred from
@@ -46,7 +47,7 @@ from cli import Session, process_turn
 from backend.manifestation import surface_text, to_planning_node
 from backend.infrastructure.data_persistence import load_history, load_visions, save_vision
 from backend.planning.goal.resolver import created_at_key, get_latest_for_all_goals, get_latest_for_goal
-from backend.planning.plan.planner import apply_feedback, archive_vision, cancel_goal, create_goal
+from backend.planning.plan.planner import apply_feedback, archive_vision, cancel_goal, create_goal, set_goal_vision
 
 UI_DIR = (Path(__file__).parent / "ui").resolve()
 PORT = 8000
@@ -59,6 +60,7 @@ _CONTENT_TYPES = {
 
 _FEEDBACK_PATH_RE = re.compile(r"^/api/goals/(\d+)/feedback$")
 _CANCEL_PATH_RE = re.compile(r"^/api/goals/(\d+)/cancel$")
+_GOAL_VISION_PATH_RE = re.compile(r"^/api/goals/(\d+)/vision$")
 _VISION_ARCHIVE_PATH_RE = re.compile(r"^/api/visions/(\d+)/archive$")
 
 session = Session()  # process-wide - see module docstring, /api/message only
@@ -85,6 +87,7 @@ def _goal_view(record: dict) -> dict:
         "goal": record["goal"],
         "completed": bool(record.get("completed")),
         "cancelled": bool(record.get("cancelled")),
+        "vision_id": record.get("vision_id"),
         "surface": surface_text(record),
         "node": node,
     }
@@ -203,6 +206,10 @@ class Handler(BaseHTTPRequestHandler):
         if cancel_match:
             self._handle_cancel_goal(int(cancel_match.group(1)))
             return
+        goal_vision_match = _GOAL_VISION_PATH_RE.match(self.path)
+        if goal_vision_match:
+            self._handle_set_goal_vision(int(goal_vision_match.group(1)))
+            return
         archive_match = _VISION_ARCHIVE_PATH_RE.match(self.path)
         if archive_match:
             self._handle_archive_vision(int(archive_match.group(1)))
@@ -282,6 +289,25 @@ class Handler(BaseHTTPRequestHandler):
         record = cancel_goal(goal_id)
         if record is None:
             self.send_error(404, "no such goal, or already completed")
+            return
+        self._send_json(_goal_view(record))
+
+    def _handle_set_goal_vision(self, goal_id: int) -> None:
+        # Body is {"vision_id": <int>} or {"vision_id": null} to remove
+        # the link - not {"text": ...} like every other POST route
+        # here, so this doesn't go through _read_text_body(). No model
+        # call, same as _handle_cancel_goal() - a pure state transition.
+        length = int(self.headers.get("Content-Length", 0))
+        try:
+            payload_in = json.loads(self.rfile.read(length) or b"{}")
+        except json.JSONDecodeError:
+            self.send_error(400, "invalid JSON")
+            return
+        raw_vision_id = payload_in.get("vision_id")
+        vision_id = int(raw_vision_id) if raw_vision_id is not None else None
+        record = set_goal_vision(goal_id, vision_id)
+        if record is None:
+            self.send_error(404, "no such goal or vision, or an unanswered clarification blocks this")
             return
         self._send_json(_goal_view(record))
 
