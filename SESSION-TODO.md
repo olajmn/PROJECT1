@@ -1,5 +1,7 @@
 # Session TODO
 
+> **Scope note (added 2026-09-12):** everything below describes `current/`'s active development phase as it stood on 2026-09-07 - file paths like `backend/goals/plan/planner.py` and the `llama3.1:8b` model name are `current/`'s, not `agent/`'s (`agent/`'s equivalent is `backend/planning/plan/planner.py`, running `qwen3.5:9b`). Frozen since; not maintained for `agent/`, the actively developed application now. For `agent/`'s actual current state, see `docs/04-current-state.md` - `agent/` has no equivalent tracking file of its own yet (see that file's own § 10, Next Step).
+
 The working scope and maturity map for the **active development
 phase** - right now, that phase is the Active Goal loop (`Vision →
 Goal → Plan → Step → Action → Reality → Feedback → Replan`). Not part
