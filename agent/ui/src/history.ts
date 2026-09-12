@@ -6,6 +6,7 @@
 // key:value dump.
 
 import { fetchHistory } from "./api.js";
+import { initNavCounts } from "./nav.js";
 import type { HistoryEntry } from "./types.js";
 
 const list = document.getElementById("history-list") as HTMLDivElement;
@@ -68,3 +69,4 @@ loadHistory().catch((err) => {
   empty.hidden = false;
   empty.textContent = `(error loading history: ${(err as Error).message})`;
 });
+initNavCounts();

@@ -12,6 +12,7 @@
 // single lines instead of cards.
 
 import { createGoal, fetchActiveGoals } from "./api.js";
+import { initNavCounts } from "./nav.js";
 import type { GoalView } from "./types.js";
 
 const form = document.getElementById("form") as HTMLFormElement;
@@ -67,3 +68,4 @@ loadGoals().catch((err) => {
   empty.hidden = false;
   empty.textContent = `(error loading goals: ${(err as Error).message})`;
 });
+initNavCounts();

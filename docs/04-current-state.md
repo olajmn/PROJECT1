@@ -75,6 +75,7 @@ graph TD
   - `completed.html`/`completed.ts` — every completed goal (`GET /api/goals/completed`), read-only (no feedback box - a completed goal takes no further feedback).
   - `history.html`/`history.ts` — the full, unfiltered log (`GET /api/history`, every record ever saved, not just the latest per goal), plain key:value lines.
   - `src/tree.ts` — the plan-tree renderer shared by `main.ts`/`active.ts`/`completed.ts`, numbered `1./2./3.` for steps and `i./ii./iii.` for microsteps (same convention as `global-standards/_CONTENT_HIERARCHY.md`, computed from list position, never stored in the data).
+  - `src/nav.ts` — added 2026-09-12, called once by every page's own entry script: puts a live `(N)` count next to the Vision/Active/Completed nav links (`GET /api/visions`/`/api/goals`/`/api/goals/completed`, independent of whatever the current page itself already loaded) - the three that name a concrete, countable set; Conversation, Set Goal, and History don't. Vision's count is active (non-archived) visions only, same "live, not terminal" scope Active already applies by excluding completed/cancelled goals.
 
 ### ii. Backend
 

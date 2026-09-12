@@ -8,6 +8,7 @@
 // own; that's what the Conversation page (index.html/main.ts) is for.
 
 import { cancelGoal, fetchActiveGoals, fetchVisions, sendGoalFeedback, setGoalVision } from "./api.js";
+import { initNavCounts } from "./nav.js";
 import { planElement } from "./tree.js";
 import type { GoalView, VisionView } from "./types.js";
 
@@ -102,6 +103,9 @@ function renderGoalCard(goal: GoalView, visions: VisionView[]): HTMLElement {
     try {
       const updated = await sendGoalFeedback(goal.goal_id, text);
       card.replaceWith(renderGoalCard(updated, visions));
+      // Feedback can mark a goal completed, moving it off this list -
+      // the nav badges need to reflect that too.
+      initNavCounts();
     } catch (err) {
       textarea.disabled = false;
       button.disabled = false;
@@ -128,6 +132,7 @@ function renderGoalCard(goal: GoalView, visions: VisionView[]): HTMLElement {
       await cancelGoal(goal.goal_id);
       card.remove();
       empty.hidden = list.childElementCount > 0;
+      initNavCounts();
     } catch (err) {
       cancelButton.disabled = false;
       const error = document.createElement("p");
@@ -155,3 +160,4 @@ loadGoals().catch((err) => {
   empty.hidden = false;
   empty.textContent = `(error loading goals: ${(err as Error).message})`;
 });
+initNavCounts();

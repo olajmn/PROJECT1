@@ -5,6 +5,7 @@
 // planElement() Active uses, minus the feedback form.
 
 import { fetchCompletedGoals } from "./api.js";
+import { initNavCounts } from "./nav.js";
 import { planElement } from "./tree.js";
 import type { GoalView } from "./types.js";
 
@@ -52,3 +53,4 @@ loadGoals().catch((err) => {
   empty.hidden = false;
   empty.textContent = `(error loading goals: ${(err as Error).message})`;
 });
+initNavCounts();

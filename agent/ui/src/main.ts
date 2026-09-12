@@ -6,6 +6,7 @@
 // library, no routing beyond the plain <a> links in index.html's nav.
 
 import { sendMessage } from "./api.js";
+import { initNavCounts } from "./nav.js";
 import { planElement } from "./tree.js";
 
 const transcript = document.getElementById("transcript") as HTMLDivElement;
@@ -51,3 +52,4 @@ form.addEventListener("submit", async (event) => {
 });
 
 input.focus();
+initNavCounts();

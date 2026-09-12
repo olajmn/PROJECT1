@@ -11,6 +11,7 @@
 // Vision itself being archived.
 
 import { archiveVision, createVision, fetchActiveGoals, fetchVisions } from "./api.js";
+import { initNavCounts } from "./nav.js";
 import type { GoalView, VisionView } from "./types.js";
 
 const activeList = document.getElementById("active-visions") as HTMLDivElement;
@@ -47,6 +48,7 @@ function renderVisionCard(vision: VisionView, goals: GoalView[]): HTMLElement {
       try {
         await archiveVision(vision.id);
         await loadVisions();
+        initNavCounts();
       } catch (err) {
         button.disabled = false;
         const error = document.createElement("p");
@@ -120,6 +122,7 @@ form.addEventListener("submit", async (event) => {
     await createVision(text);
     input.value = "";
     await loadVisions();
+    initNavCounts();
   } catch (err) {
     const error = document.createElement("p");
     error.className = "error";
@@ -135,3 +138,4 @@ loadVisions().catch((err) => {
   emptyActive.hidden = false;
   emptyActive.textContent = `(error loading visions: ${(err as Error).message})`;
 });
+initNavCounts();
