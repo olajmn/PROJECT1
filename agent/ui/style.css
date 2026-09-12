@@ -105,6 +105,30 @@ nav a[aria-current="page"] {
   align-self: flex-end;
 }
 
+#goal-overview {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 1rem;
+}
+
+#goal-overview h2 {
+  font-size: 0.85rem;
+  color: #888;
+  margin: 1.5rem 0 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.goal-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
+}
+
 #history-list {
   flex: 1;
   overflow-y: auto;

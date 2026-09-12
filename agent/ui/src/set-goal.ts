@@ -3,13 +3,44 @@
 // server.py's own docstring - skips Node 1/2/3, same as Active's
 // feedback path), then sends the browser to Active to see the result
 // as a card, rather than showing it inline here.
+//
+// Below the form, a plain list of every active goal's text and id -
+// same purpose and shape as frontend-legacy/templates/set_goal/
+// _goal_list.html: an overview to orient among existing goals without
+// opening Active's full cards (plan tree, feedback form). Reuses
+// GET /api/goals (active.ts's own data source), just rendered as
+// single lines instead of cards.
 
-import { createGoal } from "./api.js";
+import { createGoal, fetchActiveGoals } from "./api.js";
+import type { GoalView } from "./types.js";
 
 const form = document.getElementById("form") as HTMLFormElement;
 const input = document.getElementById("input") as HTMLTextAreaElement;
 const button = form.querySelector("button") as HTMLButtonElement;
 const error = document.getElementById("error") as HTMLParagraphElement;
+const list = document.getElementById("goal-list") as HTMLDivElement;
+const empty = document.getElementById("empty") as HTMLParagraphElement;
+
+function renderGoalLine(goal: GoalView): HTMLElement {
+  const line = document.createElement("div");
+  line.className = "goal-line";
+  const text = document.createElement("span");
+  text.textContent = goal.goal;
+  const id = document.createElement("span");
+  id.className = "entity-id";
+  id.textContent = `#${goal.goal_id}`;
+  line.append(text, id);
+  return line;
+}
+
+async function loadGoals(): Promise<void> {
+  const goals = await fetchActiveGoals();
+  list.innerHTML = "";
+  empty.hidden = goals.length > 0;
+  for (const goal of goals) {
+    list.appendChild(renderGoalLine(goal));
+  }
+}
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -32,3 +63,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 input.focus();
+loadGoals().catch((err) => {
+  empty.hidden = false;
+  empty.textContent = `(error loading goals: ${(err as Error).message})`;
+});
