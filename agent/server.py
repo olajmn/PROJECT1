@@ -45,6 +45,42 @@ Run from agent/ (this directory), with agent/'s own venv:
 Then open http://localhost:8000/ in a browser.
 """
 
+# Contents
+#
+#  1. Configuration
+#      - UI_DIR, PORT
+#      - _CONTENT_TYPES
+#      - _FEEDBACK_PATH_RE, _CANCEL_PATH_RE, _GOAL_VISION_PATH_RE,
+#        _VISION_ARCHIVE_PATH_RE
+#      - session (process-wide, /api/message only)
+#
+#  2. View builders
+#      - _goal_view()
+#      - _active_goals()
+#      - _completed_goals()
+#      - _HISTORY_PLAN_FIELDS
+#      - _history_view()
+#      - _session_view()
+#      - _vision_view()
+#
+#  3. HTTP handler
+#      - Handler
+#          - do_GET()
+#          - do_POST()
+#          - _read_text_body()
+#          - _handle_message()
+#          - _handle_create_goal()
+#          - _handle_goal_feedback()
+#          - _handle_cancel_goal()
+#          - _handle_set_goal_vision()
+#          - _handle_set_session()
+#          - _handle_create_vision()
+#          - _handle_archive_vision()
+#          - _send_json()
+#          - log_message()
+#
+#  4. Entry point
+
 import json
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -55,6 +91,8 @@ from backend.manifestation import surface_text, to_planning_node
 from backend.infrastructure.data_persistence import load_history, load_visions, save_vision
 from backend.planning.goal.resolver import created_at_key, get_latest_for_all_goals, get_latest_for_goal
 from backend.planning.plan.planner import apply_feedback, archive_vision, cancel_goal, create_goal, set_goal_vision
+
+# 1. Configuration
 
 UI_DIR = (Path(__file__).parent / "ui").resolve()
 PORT = 8000
@@ -71,6 +109,8 @@ _GOAL_VISION_PATH_RE = re.compile(r"^/api/goals/(\d+)/vision$")
 _VISION_ARCHIVE_PATH_RE = re.compile(r"^/api/visions/(\d+)/archive$")
 
 session = Session()  # process-wide - see module docstring, /api/message only
+
+# 2. View builders
 
 
 def _goal_view(record: dict) -> dict:
@@ -180,6 +220,9 @@ def _vision_view(vision: dict) -> dict:
         "archived": bool(vision.get("archived")),
         "created_at": vision["created_at"],
     }
+
+
+# 3. HTTP handler
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -388,6 +431,8 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, format: str, *args) -> None:
         pass  # keep the terminal for the conversation, not HTTP access logs
 
+
+# 4. Entry point
 
 if __name__ == "__main__":
     print(f"web prototype - http://localhost:{PORT}/")
