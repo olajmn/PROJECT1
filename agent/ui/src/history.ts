@@ -40,6 +40,7 @@ function renderEntry(entry: HistoryEntry): HTMLElement {
   const card = document.createElement("article");
   card.className = "history-entry";
 
+  addLine(card, "goal_id", String(entry.goal_id));
   addLine(card, "goal", entry.goal);
   addLine(card, "created_at", entry.created_at);
   if (entry.duration) addLine(card, "duration", entry.duration);

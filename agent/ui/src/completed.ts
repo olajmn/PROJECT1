@@ -15,9 +15,15 @@ function renderGoalCard(goal: GoalView): HTMLElement {
   const card = document.createElement("article");
   card.className = "goal-card";
 
+  const header = document.createElement("div");
+  header.className = "card-header";
   const title = document.createElement("h2");
   title.textContent = goal.goal;
-  card.appendChild(title);
+  const id = document.createElement("span");
+  id.className = "entity-id";
+  id.textContent = `#${goal.goal_id}`;
+  header.append(title, id);
+  card.appendChild(header);
 
   if (goal.surface) {
     const surface = document.createElement("p");

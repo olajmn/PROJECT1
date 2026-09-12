@@ -22,9 +22,15 @@ function renderVisionCard(vision: VisionView): HTMLElement {
   const card = document.createElement("article");
   card.className = "vision-card";
 
+  const header = document.createElement("div");
+  header.className = "card-header";
   const text = document.createElement("p");
   text.textContent = vision.text;
-  card.appendChild(text);
+  const id = document.createElement("span");
+  id.className = "entity-id";
+  id.textContent = `#${vision.id}`;
+  header.append(text, id);
+  card.appendChild(header);
 
   if (!vision.archived) {
     const button = document.createElement("button");

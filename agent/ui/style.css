@@ -67,6 +67,18 @@ nav a[aria-current="page"] {
   margin: 0;
 }
 
+.card-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.entity-id {
+  color: #999;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .surface {
   margin: 0;
   color: #444;
@@ -140,6 +152,14 @@ nav a[aria-current="page"] {
 .vision-card p {
   margin: 0;
   font-size: 0.9rem;
+}
+
+.vision-card .card-header {
+  min-width: 0;
+}
+
+.vision-card .card-header p {
+  overflow-wrap: anywhere;
 }
 
 .archive-button {
