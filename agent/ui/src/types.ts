@@ -23,3 +23,46 @@ export interface AgentResponse {
   node: PlanningNode | null;
   goal_id: number | null;
 }
+
+/** One goal, as returned by GET /api/goals, POST /api/goals, and
+ * POST /api/goals/<id>/feedback - matches server.py's _goal_view().
+ * No natural-language `reply` here (unlike AgentResponse) - these
+ * routes skip Node 1 entirely, see server.py's own docstring for why. */
+export interface GoalView {
+  goal_id: number;
+  goal: string;
+  completed: boolean;
+  cancelled: boolean;
+  surface: string | null;
+  node: PlanningNode | null;
+}
+
+/** One raw saved record, as returned by GET /api/history - matches
+ * server.py's _history_view(). Every record ever saved, not just the
+ * latest per goal (unlike GoalView) - a log entry, not a live status,
+ * so no `node` tree here; `plan` is only the non-empty PLAN_KEYS/
+ * clarification/suggested_* fields, in a fixed order. */
+export interface HistoryEntry {
+  id: number;
+  goal_id: number;
+  goal: string;
+  duration: string | null;
+  completed: boolean;
+  cancelled: boolean;
+  feedback: string | null;
+  created_at: string;
+  plan: Record<string, string>;
+  step_count: number;
+}
+
+/** One Vision, as returned by GET /api/visions, POST /api/visions,
+ * and POST /api/visions/<id>/archive - matches server.py's
+ * _vision_view(). Not yet linkable to a Goal from this UI (that's a
+ * separate, later round - see docs/04-current-state.md § 5); this
+ * page only creates, lists, and archives them. */
+export interface VisionView {
+  id: number;
+  text: string;
+  archived: boolean;
+  created_at: string;
+}

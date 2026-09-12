@@ -1,20 +1,36 @@
 """
 Minimal HTTP transport for agent/ - the smallest boundary that lets a
-browser reach the already-established USER -> LLM1 -> LLM2 -> LLM3 ->
-Planning flow (cli.py's process_turn()) over HTTP instead of a
-terminal. Pure transport: serves ui/'s static files, parses one JSON
-request, calls process_turn(), serializes the result. No planning
-logic, no LLM logic, no session/state decisions of its own beyond what
-process_turn()/Session already own.
+browser reach Planning over HTTP instead of a terminal. Pure
+transport: serves ui/'s static files, parses JSON requests,
+serializes results. No planning logic, no LLM logic of its own.
+
+Two distinct paths into Planning, deliberately different shapes:
+
+- POST /api/message - free conversation (cli.py's process_turn():
+  Node 1 -> Node 2 -> Node 3 -> Planning -> Node 1), for when which
+  goal (or whether Planning applies at all) isn't already known. Uses
+  the single, process-wide `session` below.
+- GET/POST /api/goals[/<id>/feedback], GET /api/goals/completed,
+  GET /api/history, GET/POST /api/visions[/<id>/archive] - known
+  capability context (see
+  docs/03-architecture.md Part 3 § 3): the goal_id (where one applies)
+  is already given explicitly, by the caller, not inferred from
+  session state or guessed by a Node - so these call planner.py/
+  data_persistence.py directly, skip Node 1/2/3 entirely, and are
+  immune to the topic-continuity defect docs/04-current-state.md § 5
+  documents for the free-conversation path. No natural-language
+  voicing (Node 1) on these responses either - see manifestation.py's
+  own surface_text()/to_planning_node(), already deterministic and
+  already what ui/active.html shows directly.
 
 Stdlib only (http.server) - no new dependency, matching agent/'s
 requirements.txt ("ollama" only, nothing added for this).
 
-Single, process-wide Session - deliberately NOT per-browser/per-user.
-This is the same limitation cli.py already had (one session per
-process); server.py does not solve multi-session/context, it only
-exposes the same single conversation over HTTP instead of a terminal.
-See the accompanying report for what this means and doesn't mean.
+Single, process-wide Session for /api/message only - deliberately NOT
+per-browser/per-user. This is the same limitation cli.py already had
+(one session per process); server.py does not solve multi-session/
+context for free conversation, it only exposes the same single
+conversation over HTTP instead of a terminal.
 
 Run from agent/ (this directory), with agent/'s own venv:
     .venv/bin/python server.py
@@ -22,10 +38,15 @@ Then open http://localhost:8000/ in a browser.
 """
 
 import json
+import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from cli import Session, process_turn
+from backend.manifestation import surface_text, to_planning_node
+from backend.infrastructure.data_persistence import load_history, load_visions, save_vision
+from backend.planning.goal.resolver import created_at_key, get_latest_for_all_goals, get_latest_for_goal
+from backend.planning.plan.planner import apply_feedback, archive_vision, create_goal
 
 UI_DIR = (Path(__file__).parent / "ui").resolve()
 PORT = 8000
@@ -36,11 +57,121 @@ _CONTENT_TYPES = {
     ".css": "text/css; charset=utf-8",
 }
 
-session = Session()  # process-wide - see module docstring
+_FEEDBACK_PATH_RE = re.compile(r"^/api/goals/(\d+)/feedback$")
+_VISION_ARCHIVE_PATH_RE = re.compile(r"^/api/visions/(\d+)/archive$")
+
+session = Session()  # process-wide - see module docstring, /api/message only
+
+
+def _goal_view(record: dict) -> dict:
+    """The one shape every /api/goals response uses for a single goal
+    - record fields a UI actually needs (identity, display text,
+    completion) plus the same manifestation.py translation
+    /api/message already relies on, so ui/active.ts and ui/src/main.ts
+    render an identical plan tree from an identical shape."""
+    try:
+        node = to_planning_node(record)
+    except Exception as e:
+        # A record saved before plan_structure.py's steps-with-
+        # microsteps shape (2026-09-11) still has plan.steps as flat
+        # strings, which to_planning_node() no longer understands -
+        # show the goal without a tree rather than losing the whole
+        # /api/goals list over one legacy record.
+        print(f"(debug: to_planning_node() failed for goal {record.get('goal_id')}: {e})")
+        node = None
+    return {
+        "goal_id": record["goal_id"],
+        "goal": record["goal"],
+        "completed": bool(record.get("completed")),
+        "cancelled": bool(record.get("cancelled")),
+        "surface": surface_text(record),
+        "node": node,
+    }
+
+
+def _active_goals() -> list[dict]:
+    """Every goal that's neither completed nor cancelled, newest-first
+    - same filter frontend-legacy/view_data/goal_overview.py already
+    established (build_goal_overview()), not a new convention."""
+    latest = get_latest_for_all_goals()
+    active = [r for r in latest if not r.get("completed") and not r.get("cancelled")]
+    active.sort(key=created_at_key, reverse=True)
+    return active
+
+
+def _completed_goals() -> list[dict]:
+    """Every goal marked completed - cancelled goals are deliberately
+    excluded, same reasoning as frontend-legacy's build_goal_overview():
+    cancelled is its own status, not a kind of completed. Oldest-first,
+    also matching that precedent (unlike _active_goals())."""
+    latest = get_latest_for_all_goals()
+    completed = [r for r in latest if r.get("completed")]
+    completed.sort(key=created_at_key)
+    return completed
+
+
+# The plan fields worth showing in a history entry, in a fixed,
+# readable order - not every key in the raw plan dict (e.g. `steps`
+# renders as a count, not the full nested tree; History is a log to
+# scan, not another place to render the live plan tree Active already
+# shows).
+_HISTORY_PLAN_FIELDS = (
+    "clarification", "suggested_action", "suggested_duration",
+    "year", "month", "week", "today", "hour", "minute", "now",
+)
+
+
+def _history_view(record: dict) -> dict:
+    """One raw history entry - deliberately closer to
+    frontend-legacy/templates/_plan_entry.html's plain key:value dump
+    than to _goal_view()'s curated, UI-ready shape. History is the
+    unfiltered log (every record ever saved, not just the latest per
+    goal - see load_history()), so it shows what was actually saved,
+    not a live status."""
+    plan = record.get("plan") or {}
+    steps = plan.get("steps")
+    return {
+        "id": record["id"],
+        "goal_id": record["goal_id"],
+        "goal": record["goal"],
+        "duration": record.get("duration"),
+        "completed": bool(record.get("completed")),
+        "cancelled": bool(record.get("cancelled")),
+        "feedback": record.get("feedback"),
+        "created_at": record["created_at"],
+        "plan": {key: plan.get(key) for key in _HISTORY_PLAN_FIELDS if plan.get(key)},
+        "step_count": len(steps) if steps else 0,
+    }
+
+
+def _vision_view(vision: dict) -> dict:
+    """{id, text, archived, created_at} - load_visions()'s own record
+    shape already has exactly these fields, `archived` just isn't
+    guaranteed present (see data_persistence.archive_vision(), only
+    ever set once true) - normalized to always-present here so the UI
+    doesn't need to know that."""
+    return {
+        "id": vision["id"],
+        "text": vision["text"],
+        "archived": bool(vision.get("archived")),
+        "created_at": vision["created_at"],
+    }
 
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
+        if self.path == "/api/goals":
+            self._send_json([_goal_view(r) for r in _active_goals()])
+            return
+        if self.path == "/api/goals/completed":
+            self._send_json([_goal_view(r) for r in _completed_goals()])
+            return
+        if self.path == "/api/history":
+            self._send_json([_history_view(r) for r in reversed(load_history())])
+            return
+        if self.path == "/api/visions":
+            self._send_json([_vision_view(v) for v in load_visions()])
+            return
         requested = "index.html" if self.path == "/" else self.path.lstrip("/")
         file_path = (UI_DIR / requested).resolve()
         if UI_DIR not in file_path.parents or not file_path.is_file():
@@ -54,20 +185,45 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_POST(self) -> None:
-        if self.path != "/api/message":
-            self.send_error(404)
+        if self.path == "/api/message":
+            self._handle_message()
             return
+        if self.path == "/api/goals":
+            self._handle_create_goal()
+            return
+        if self.path == "/api/visions":
+            self._handle_create_vision()
+            return
+        feedback_match = _FEEDBACK_PATH_RE.match(self.path)
+        if feedback_match:
+            self._handle_goal_feedback(int(feedback_match.group(1)))
+            return
+        archive_match = _VISION_ARCHIVE_PATH_RE.match(self.path)
+        if archive_match:
+            self._handle_archive_vision(int(archive_match.group(1)))
+            return
+        self.send_error(404)
+
+    def _read_text_body(self) -> str | None:
+        """The `{"text": ...}` body every POST route here shares -
+        None (after sending its own error response) if the body is
+        missing, malformed, or empty once stripped."""
         length = int(self.headers.get("Content-Length", 0))
         try:
             payload_in = json.loads(self.rfile.read(length) or b"{}")
-            user_text = (payload_in.get("text") or "").strip()
         except json.JSONDecodeError:
             self.send_error(400, "invalid JSON")
-            return
-        if not user_text:
+            return None
+        text = (payload_in.get("text") or "").strip()
+        if not text:
             self.send_error(400, "empty text")
-            return
+            return None
+        return text
 
+    def _handle_message(self) -> None:
+        user_text = self._read_text_body()
+        if user_text is None:
+            return
         try:
             result = process_turn(session, user_text)
         except Exception as e:  # transport must not crash on one bad turn
@@ -83,8 +239,54 @@ class Handler(BaseHTTPRequestHandler):
                 "node": None, "goal_id": None,
                 "reply": "That took longer than expected - try again in a moment.",
             }
+        self._send_json(result)
 
-        body = json.dumps(result).encode("utf-8")
+    def _handle_create_goal(self) -> None:
+        text = self._read_text_body()
+        if text is None:
+            return
+        try:
+            record = create_goal(text, "", "")
+        except Exception as e:  # same reasoning as _handle_message()
+            print(f"(debug: {e})")
+            self.send_error(503, "that took longer than expected - try again in a moment")
+            return
+        self._send_json(_goal_view(record))
+
+    def _handle_goal_feedback(self, goal_id: int) -> None:
+        note = self._read_text_body()
+        if note is None:
+            return
+        latest = get_latest_for_goal(goal_id)
+        if latest is None:
+            self.send_error(404, "no such goal")
+            return
+        try:
+            record = apply_feedback(latest, note)
+        except Exception as e:  # same reasoning as _handle_message()
+            print(f"(debug: {e})")
+            self.send_error(503, "that took longer than expected - try again in a moment")
+            return
+        self._send_json(_goal_view(record))
+
+    def _handle_create_vision(self) -> None:
+        text = self._read_text_body()
+        if text is None:
+            return
+        vision = save_vision(text)  # pure append, no model call - nothing to retry
+        self._send_json(_vision_view(vision))
+
+    def _handle_archive_vision(self, vision_id: int) -> None:
+        # No request body to read - archiving names the Vision by id
+        # in the path, same as feedback names the Goal by id.
+        vision = archive_vision(vision_id)
+        if vision is None:
+            self.send_error(404, "no such vision")
+            return
+        self._send_json(_vision_view(vision))
+
+    def _send_json(self, payload) -> None:
+        body = json.dumps(payload).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))

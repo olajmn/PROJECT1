@@ -1,7 +1,7 @@
 {
-  "name": "v4-ui",
+  "name": "agent-ui",
   "private": true,
-  "description": "Minimal TypeScript conversation UI for v4 - no framework, no bundler. Compiles to plain browser ES modules.",
+  "description": "Minimal TypeScript UI for agent/ - no framework, no bundler. Compiles to plain browser ES modules.",
   "devDependencies": {
     "typescript": "^5.9.3"
   },
