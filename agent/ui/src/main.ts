@@ -39,6 +39,8 @@ const form = document.getElementById("form") as HTMLFormElement;
 const input = document.getElementById("input") as HTMLTextAreaElement;
 const chatFocus = document.getElementById("chat-focus") as HTMLDivElement;
 
+// 1. Chat focus
+
 function renderChatFocus(view: ChatFocusView): void {
   chatFocus.innerHTML = "";
 
@@ -78,6 +80,8 @@ function loadChatFocus(): void {
     });
 }
 
+// 2. Transcript
+
 function appendMessage(who: "You" | "Agent", text: string): void {
   const row = document.createElement("div");
   row.className = `message message-${who.toLowerCase()}`;
@@ -91,6 +95,8 @@ function appendMessage(who: "You" | "Agent", text: string): void {
   transcript.appendChild(row);
   transcript.scrollTop = transcript.scrollHeight;
 }
+
+// 3. Event listeners
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -116,6 +122,8 @@ form.addEventListener("submit", async (event) => {
     input.focus();
   }
 });
+
+// 4. Initialization
 
 input.focus();
 initNavCounts();

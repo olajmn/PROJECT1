@@ -29,6 +29,8 @@ import type { SessionGoalEvent, SessionLogView, SessionVisionEvent } from "./typ
 const list = document.getElementById("session-list") as HTMLDivElement;
 const empty = document.getElementById("empty") as HTMLParagraphElement;
 
+// 1. Rendering
+
 function addLine(container: HTMLElement, label: string, value: string): void {
   const line = document.createElement("div");
   line.className = "history-line";
@@ -40,6 +42,8 @@ function addLine(container: HTMLElement, label: string, value: string): void {
   line.append(key, val);
   container.appendChild(line);
 }
+
+// 2. Timeline
 
 // One shared timeline shape for rendering - goal and Vision events
 // otherwise have different fields, but both reduce to "when, and what
@@ -99,6 +103,8 @@ function renderSession(session: SessionLogView): HTMLElement {
   return card;
 }
 
+// 3. Data loading
+
 async function loadSessions(): Promise<void> {
   const sessions = await fetchSessions();
   list.innerHTML = "";
@@ -107,6 +113,8 @@ async function loadSessions(): Promise<void> {
     list.appendChild(renderSession(session));
   }
 }
+
+// 4. Initialization
 
 loadSessions().catch((err) => {
   empty.hidden = false;

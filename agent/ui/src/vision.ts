@@ -29,6 +29,8 @@ const emptyArchived = document.getElementById("empty-archived") as HTMLParagraph
 const form = document.getElementById("form") as HTMLFormElement;
 const input = document.getElementById("input") as HTMLTextAreaElement;
 
+// 1. Rendering
+
 function renderVisionCard(vision: VisionView, goals: GoalView[]): HTMLElement {
   const card = document.createElement("article");
   card.className = "vision-card";
@@ -95,6 +97,8 @@ function renderVisionCard(vision: VisionView, goals: GoalView[]): HTMLElement {
   return card;
 }
 
+// 2. Data loading
+
 async function loadVisions(): Promise<void> {
   const [visions, goals] = await Promise.all([fetchVisions(), fetchActiveGoals()]);
   const goalsByVision = new Map<number, GoalView[]>();
@@ -121,6 +125,8 @@ async function loadVisions(): Promise<void> {
   }
 }
 
+// 3. Event listeners
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const text = input.value.trim();
@@ -141,6 +147,8 @@ form.addEventListener("submit", async (event) => {
     input.focus();
   }
 });
+
+// 4. Initialization
 
 loadVisions().catch((err) => {
   emptyActive.hidden = false;

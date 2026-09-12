@@ -19,6 +19,8 @@ import type { GoalView } from "./types.js";
 const list = document.getElementById("goal-list") as HTMLDivElement;
 const empty = document.getElementById("empty") as HTMLParagraphElement;
 
+// 1. Rendering
+
 function renderGoalCard(goal: GoalView): HTMLElement {
   const card = document.createElement("article");
   card.className = "goal-card";
@@ -47,6 +49,8 @@ function renderGoalCard(goal: GoalView): HTMLElement {
   return card;
 }
 
+// 2. Data loading
+
 async function loadGoals(): Promise<void> {
   const goals = await fetchCompletedGoals();
   list.innerHTML = "";
@@ -55,6 +59,8 @@ async function loadGoals(): Promise<void> {
     list.appendChild(renderGoalCard(goal));
   }
 }
+
+// 3. Initialization
 
 loadGoals().catch((err) => {
   empty.hidden = false;

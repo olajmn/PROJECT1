@@ -22,6 +22,8 @@ import type { HistoryEntry } from "./types.js";
 const list = document.getElementById("history-list") as HTMLDivElement;
 const empty = document.getElementById("empty") as HTMLParagraphElement;
 
+// 1. Field labels
+
 const PLAN_FIELD_LABELS: Record<string, string> = {
   clarification: "clarification",
   suggested_action: "suggested action",
@@ -34,6 +36,8 @@ const PLAN_FIELD_LABELS: Record<string, string> = {
   minute: "minute",
   now: "now",
 };
+
+// 2. Rendering
 
 function addLine(container: HTMLElement, label: string, value: string): void {
   const line = document.createElement("div");
@@ -66,6 +70,8 @@ function renderEntry(entry: HistoryEntry): HTMLElement {
   return card;
 }
 
+// 3. Data loading
+
 async function loadHistory(): Promise<void> {
   const entries = await fetchHistory();
   list.innerHTML = "";
@@ -74,6 +80,8 @@ async function loadHistory(): Promise<void> {
     list.appendChild(renderEntry(entry));
   }
 }
+
+// 4. Initialization
 
 loadHistory().catch((err) => {
   empty.hidden = false;

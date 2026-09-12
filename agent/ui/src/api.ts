@@ -26,6 +26,8 @@
 
 import type { AgentResponse, ChatFocusView, GoalView, HistoryEntry, SessionLogView, VisionView } from "./types.js";
 
+// 1. Free conversation
+
 export async function sendMessage(text: string): Promise<AgentResponse> {
   const res = await fetch("/api/message", {
     method: "POST",
@@ -37,6 +39,8 @@ export async function sendMessage(text: string): Promise<AgentResponse> {
   }
   return (await res.json()) as AgentResponse;
 }
+
+// 2. Goals
 
 export async function fetchActiveGoals(): Promise<GoalView[]> {
   const res = await fetch("/api/goals");
@@ -98,6 +102,8 @@ export async function fetchCompletedGoals(): Promise<GoalView[]> {
   return (await res.json()) as GoalView[];
 }
 
+// 3. History
+
 export async function fetchHistory(): Promise<HistoryEntry[]> {
   const res = await fetch("/api/history");
   if (!res.ok) {
@@ -105,6 +111,8 @@ export async function fetchHistory(): Promise<HistoryEntry[]> {
   }
   return (await res.json()) as HistoryEntry[];
 }
+
+// 4. Vision
 
 export async function fetchVisions(): Promise<VisionView[]> {
   const res = await fetch("/api/visions");
@@ -134,6 +142,8 @@ export async function archiveVision(visionId: number): Promise<VisionView> {
   return (await res.json()) as VisionView;
 }
 
+// 5. Chat focus
+
 export async function fetchChatFocus(): Promise<ChatFocusView> {
   const res = await fetch("/api/chat-focus");
   if (!res.ok) {
@@ -153,6 +163,8 @@ export async function setChatFocus(goalId: number | null): Promise<ChatFocusView
   }
   return (await res.json()) as ChatFocusView;
 }
+
+// 6. Sessions
 
 export async function fetchSessions(): Promise<SessionLogView[]> {
   const res = await fetch("/api/sessions");

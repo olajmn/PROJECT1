@@ -21,6 +21,8 @@
 
 import type { PlanningNode } from "./types.js";
 
+// 1. Numbering
+
 const ROMAN_NUMERALS = [
   "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x",
   "xi", "xii", "xiii", "xiv", "xv", "xvi", "xvii", "xviii", "xix", "xx",
@@ -34,6 +36,8 @@ function treeLabel(depth: number, index: number): string {
   // breaking if that ever changes.
   return `${String.fromCharCode(97 + (index % 26))}.`;
 }
+
+// 2. Rendering
 
 // `depth` is -1 for the root Goal node (no number - it's a title, not
 // a list item); its children (steps) start at depth 0, their children

@@ -30,6 +30,8 @@ const error = document.getElementById("error") as HTMLParagraphElement;
 const list = document.getElementById("goal-list") as HTMLDivElement;
 const empty = document.getElementById("empty") as HTMLParagraphElement;
 
+// 1. Rendering
+
 function renderGoalLine(goal: GoalView): HTMLElement {
   const line = document.createElement("div");
   line.className = "goal-line";
@@ -42,6 +44,8 @@ function renderGoalLine(goal: GoalView): HTMLElement {
   return line;
 }
 
+// 2. Data loading
+
 async function loadGoals(): Promise<void> {
   const goals = await fetchActiveGoals();
   list.innerHTML = "";
@@ -50,6 +54,8 @@ async function loadGoals(): Promise<void> {
     list.appendChild(renderGoalLine(goal));
   }
 }
+
+// 3. Event listeners
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -70,6 +76,8 @@ form.addEventListener("submit", async (event) => {
     error.textContent = `(error: ${(err as Error).message})`;
   }
 });
+
+// 4. Initialization
 
 input.focus();
 loadGoals().catch((err) => {

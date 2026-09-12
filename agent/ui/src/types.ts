@@ -21,6 +21,8 @@
 //      - SessionVisionEvent
 //      - SessionLogView
 
+// 1. Plan tree
+
 /** A generic, capability-agnostic node - not a final domain model.
  * Present only when a Planning result actually had a step list to
  * show; most results won't, and that's expected (see PlanningResult). */
@@ -31,6 +33,8 @@ export interface PlanningNode {
   children: PlanningNode[];
 }
 
+// 2. Free conversation
+
 /** The full response for one conversation turn, as returned by
  * POST /api/message - matches cli.py's process_turn() return shape. */
 export interface AgentResponse {
@@ -40,6 +44,8 @@ export interface AgentResponse {
   node: PlanningNode | null;
   goal_id: number | null;
 }
+
+// 3. Goals
 
 /** One goal, as returned by GET /api/goals, POST /api/goals, and
  * POST /api/goals/<id>/feedback - matches server.py's _goal_view().
@@ -73,6 +79,8 @@ export interface HistoryEntry {
   step_count: number;
 }
 
+// 4. Vision
+
 /** One Vision, as returned by GET /api/visions, POST /api/visions,
  * and POST /api/visions/<id>/archive - matches server.py's
  * _vision_view(). vision.ts itself only creates, lists, and archives
@@ -84,6 +92,8 @@ export interface VisionView {
   archived: boolean;
   created_at: string;
 }
+
+// 5. Chat focus
 
 /** Which goal, if any, the free-conversation path is currently
  * "focused" on, as returned by GET/POST /api/chat-focus - matches
@@ -99,6 +109,8 @@ export interface ChatFocusView {
   goal_id: number | null;
   goal: string | null;
 }
+
+// 6. Session log
 
 /** One goal/plan event in a Session's derived log, as returned inside
  * GET /api/sessions - matches server.py's _session_goal_event().

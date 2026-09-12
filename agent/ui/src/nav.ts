@@ -21,6 +21,8 @@
 
 import { fetchActiveGoals, fetchCompletedGoals, fetchVisions } from "./api.js";
 
+// 1. initNavCounts()
+
 export async function initNavCounts(): Promise<void> {
   const visionLink = document.querySelector<HTMLAnchorElement>('nav a[href="vision.html"]');
   const activeLink = document.querySelector<HTMLAnchorElement>('nav a[href="active.html"]');
