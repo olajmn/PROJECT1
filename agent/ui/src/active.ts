@@ -49,7 +49,7 @@ function renderGoalCard(goal: GoalView, visions: VisionView[]): HTMLElement {
   }
   const visionButton = document.createElement("button");
   visionButton.type = "submit";
-  visionButton.textContent = "Update vision";
+  visionButton.textContent = "Update vision (set_goal_vision)";
   visionForm.append(select, visionButton);
 
   visionForm.addEventListener("submit", async (event) => {
@@ -91,7 +91,7 @@ function renderGoalCard(goal: GoalView, visions: VisionView[]): HTMLElement {
   textarea.required = true;
   const button = document.createElement("button");
   button.type = "submit";
-  button.textContent = "Send";
+  button.textContent = "Send (apply_feedback)";
   form.append(textarea, button);
 
   form.addEventListener("submit", async (event) => {
@@ -124,7 +124,7 @@ function renderGoalCard(goal: GoalView, visions: VisionView[]): HTMLElement {
   // No confirmation step, matching that same precedent.
   const cancelButton = document.createElement("button");
   cancelButton.type = "button";
-  cancelButton.textContent = "Cancel goal";
+  cancelButton.textContent = "Cancel goal (cancel_goal)";
   cancelButton.className = "cancel-button";
   cancelButton.addEventListener("click", async () => {
     cancelButton.disabled = true;

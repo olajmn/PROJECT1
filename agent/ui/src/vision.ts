@@ -41,7 +41,7 @@ function renderVisionCard(vision: VisionView, goals: GoalView[]): HTMLElement {
   if (!vision.archived) {
     const button = document.createElement("button");
     button.type = "button";
-    button.textContent = "Archive";
+    button.textContent = "Archive (archive_vision)";
     button.className = "archive-button";
     button.addEventListener("click", async () => {
       button.disabled = true;
