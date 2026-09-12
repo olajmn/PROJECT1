@@ -2,7 +2,7 @@
 // here decides anything - it sends text, returns whatever the server
 // already decided.
 
-import type { AgentResponse, GoalView, HistoryEntry, SessionLogView, SessionView, VisionView } from "./types.js";
+import type { AgentResponse, ChatFocusView, GoalView, HistoryEntry, SessionLogView, VisionView } from "./types.js";
 
 export async function sendMessage(text: string): Promise<AgentResponse> {
   const res = await fetch("/api/message", {
@@ -112,16 +112,16 @@ export async function archiveVision(visionId: number): Promise<VisionView> {
   return (await res.json()) as VisionView;
 }
 
-export async function fetchSession(): Promise<SessionView> {
-  const res = await fetch("/api/session");
+export async function fetchChatFocus(): Promise<ChatFocusView> {
+  const res = await fetch("/api/chat-focus");
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
-  return (await res.json()) as SessionView;
+  return (await res.json()) as ChatFocusView;
 }
 
-export async function setSession(goalId: number | null): Promise<SessionView> {
-  const res = await fetch("/api/session", {
+export async function setChatFocus(goalId: number | null): Promise<ChatFocusView> {
+  const res = await fetch("/api/chat-focus", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ goal_id: goalId }),
@@ -129,7 +129,7 @@ export async function setSession(goalId: number | null): Promise<SessionView> {
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
-  return (await res.json()) as SessionView;
+  return (await res.json()) as ChatFocusView;
 }
 
 export async function fetchSessions(): Promise<SessionLogView[]> {

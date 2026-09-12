@@ -7,7 +7,7 @@
 // never /api/message - this page has no free-conversation box of its
 // own; that's what the Conversation page (index.html/main.ts) is for.
 
-import { cancelGoal, fetchActiveGoals, fetchVisions, sendGoalFeedback, setGoalVision, setSession } from "./api.js";
+import { cancelGoal, fetchActiveGoals, fetchVisions, sendGoalFeedback, setChatFocus, setGoalVision } from "./api.js";
 import { initNavCounts } from "./nav.js";
 import { planElement } from "./tree.js";
 import type { GoalView, VisionView } from "./types.js";
@@ -148,17 +148,17 @@ function renderGoalCard(goal: GoalView, visions: VisionView[]): HTMLElement {
   actions.appendChild(cancelButton);
 
   // The manual bridge to the free-conversation path: points cli.py's
-  // own Session.current_goal_id (otherwise invisible, only ever
-  // guessed at) at this goal, then sends the browser to Conversation
-  // to continue there - see main.ts's own session-info bar.
+  // own Session.current_goal_id ("chat focus", otherwise invisible,
+  // only ever guessed at) at this goal, then sends the browser to
+  // Conversation to continue there - see main.ts's own chat-focus bar.
   const continueButton = document.createElement("button");
   continueButton.type = "button";
-  continueButton.textContent = "Continue in chat (set_session)";
+  continueButton.textContent = "Continue in chat (set_chat_focus)";
   continueButton.className = "continue-chat-button";
   continueButton.addEventListener("click", async () => {
     continueButton.disabled = true;
     try {
-      await setSession(goal.goal_id);
+      await setChatFocus(goal.goal_id);
       window.location.href = "index.html";
     } catch (err) {
       continueButton.disabled = false;

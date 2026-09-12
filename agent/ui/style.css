@@ -259,7 +259,7 @@ nav a[aria-current="page"] {
   padding: 0.25rem 0.75rem;
 }
 
-.session-info {
+.chat-focus {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -271,7 +271,7 @@ nav a[aria-current="page"] {
   color: #444;
 }
 
-.clear-session-button {
+.clear-chat-focus-button {
   background: transparent;
   color: #888;
   border: 1px solid #ccc;

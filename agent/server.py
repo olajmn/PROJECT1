@@ -23,13 +23,17 @@ Two distinct paths into Planning, deliberately different shapes:
   voicing (Node 1) on these responses either - see manifestation.py's
   own surface_text()/to_planning_node(), already deterministic and
   already what ui/active.html shows directly.
-- GET/POST /api/session - the manual bridge between the two paths
+- GET/POST /api/chat-focus - the manual bridge between the two paths
   above: reads or overwrites the free-conversation `session`'s own
-  `current_goal_id`, otherwise invisible and unsettable from any page.
+  `current_goal_id` - which goal, if any, the chat is currently
+  "focused" on - otherwise invisible and unsettable from any page.
   Lets e.g. Active point the chat at a specific existing goal instead
   of only ever guessing - still doesn't address § 5's mid-conversation
   topic-switch defect itself, only gives an explicit, visible starting
-  point.
+  point. Named "chat focus", not "session", to keep it distinct from
+  the persisted Session below - `cli.py`'s `Session` object happens to
+  hold both, but they're different concepts (see _chat_focus_view()'s
+  own docstring).
 - GET /api/sessions - every persisted Session record (one per real run
   of cli.py's main() or this file), each with its "what happened"
   derived at read time from load_history()/load_visions() filtered to
@@ -65,7 +69,7 @@ Then open http://localhost:8000/ in a browser.
 #      - _completed_goals()
 #      - _HISTORY_PLAN_FIELDS
 #      - _history_view()
-#      - _session_view()
+#      - _chat_focus_view()
 #      - _session_goal_event()
 #      - _session_vision_event()
 #      - _session_log_view()
@@ -81,7 +85,7 @@ Then open http://localhost:8000/ in a browser.
 #          - _handle_goal_feedback()
 #          - _handle_cancel_goal()
 #          - _handle_set_goal_vision()
-#          - _handle_set_session()
+#          - _handle_set_chat_focus()
 #          - _handle_create_vision()
 #          - _handle_archive_vision()
 #          - _send_json()
@@ -203,14 +207,22 @@ def _history_view(record: dict) -> dict:
     }
 
 
-def _session_view() -> dict:
-    """{goal_id, goal} - goal_id mirrors cli.py's Session.
-    current_goal_id (None if the free-conversation path hasn't touched
-    a goal yet this process); goal is that record's own text, looked
-    up fresh each call rather than cached, same reasoning as every
-    other _*_view() here. Deliberately just this process's live
-    pointer, not the persisted Session record itself - see
-    _session_log_view() below for that."""
+def _chat_focus_view() -> dict:
+    """{goal_id, goal} - which goal, if any, the free-conversation path
+    is currently "focused" on: goal_id mirrors cli.py's Session.
+    current_goal_id (None if the chat hasn't touched a goal yet this
+    process); goal is that record's own text, looked up fresh each
+    call rather than cached, same reasoning as every other _*_view()
+    here.
+
+    Named "chat focus" rather than "session" - added 2026-09-12,
+    renamed from _session_view() the same day - specifically to keep
+    it distinct from the persisted Session record (_session_log_view()
+    below): `cli.py`'s `Session` object happens to hold both
+    `current_goal_id` (this) and `id`/`started_at` (that), but they're
+    two different concepts sharing one Python object, not one concept.
+    This function is deliberately just the live pointer, never the
+    persisted Session record itself."""
     goal_id = session.current_goal_id
     if goal_id is None:
         return {"goal_id": None, "goal": None}
@@ -324,8 +336,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/visions":
             self._send_json([_vision_view(v) for v in load_visions()])
             return
-        if self.path == "/api/session":
-            self._send_json(_session_view())
+        if self.path == "/api/chat-focus":
+            self._send_json(_chat_focus_view())
             return
         if self.path == "/api/sessions":
             # Oldest-first while computing each one's window_end (the
@@ -365,8 +377,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/visions":
             self._handle_create_vision()
             return
-        if self.path == "/api/session":
-            self._handle_set_session()
+        if self.path == "/api/chat-focus":
+            self._handle_set_chat_focus()
             return
         feedback_match = _FEEDBACK_PATH_RE.match(self.path)
         if feedback_match:
@@ -481,12 +493,13 @@ class Handler(BaseHTTPRequestHandler):
             return
         self._send_json(_goal_view(record))
 
-    def _handle_set_session(self) -> None:
+    def _handle_set_chat_focus(self) -> None:
         # Body is {"goal_id": <int>} or {"goal_id": null} to clear it -
         # not {"text": ...} like every other POST route here, so this
         # doesn't go through _read_text_body(). No model call, same
         # reasoning as _handle_cancel_goal() - a pure state write onto
-        # the module-level `session` object, nothing saved to disk.
+        # the module-level `session` object's own current_goal_id,
+        # nothing saved to disk.
         length = int(self.headers.get("Content-Length", 0))
         try:
             payload_in = json.loads(self.rfile.read(length) or b"{}")
@@ -496,14 +509,14 @@ class Handler(BaseHTTPRequestHandler):
         raw_goal_id = payload_in.get("goal_id")
         if raw_goal_id is None:
             session.current_goal_id = None
-            self._send_json(_session_view())
+            self._send_json(_chat_focus_view())
             return
         goal_id = int(raw_goal_id)
         if get_latest_for_goal(goal_id) is None:
             self.send_error(404, "no such goal")
             return
         session.current_goal_id = goal_id
-        self._send_json(_session_view())
+        self._send_json(_chat_focus_view())
 
     def _handle_create_vision(self) -> None:
         text = self._read_text_body()

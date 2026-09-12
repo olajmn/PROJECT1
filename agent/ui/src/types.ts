@@ -68,11 +68,17 @@ export interface VisionView {
   created_at: string;
 }
 
-/** The free-conversation path's own session state, as returned by
- * GET/POST /api/session - matches server.py's _session_view(). Mirrors
- * cli.py's Session.current_goal_id: null until the chat has touched a
- * goal this process, otherwise that goal's id and text. */
-export interface SessionView {
+/** Which goal, if any, the free-conversation path is currently
+ * "focused" on, as returned by GET/POST /api/chat-focus - matches
+ * server.py's _chat_focus_view(). Mirrors cli.py's Session.
+ * current_goal_id: null until the chat has touched a goal this
+ * process, otherwise that goal's id and text.
+ *
+ * Named "chat focus", not "session" - cli.py's Session object happens
+ * to hold this AND the persisted Session record below (SessionLogView)
+ * as two attributes on one object, but they're different concepts;
+ * see _chat_focus_view()'s own docstring for why this stays separate. */
+export interface ChatFocusView {
   goal_id: number | null;
   goal: string | null;
 }
