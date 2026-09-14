@@ -22,7 +22,7 @@ collapse to a flat constant for nearly every real goal - any span over
 Deliberately ONE call, not two - an earlier two-call version (a
 separate structure decision, then step_generator.py's own separate
 content call) measurably destabilized the second call's output
-against the local model (backend/reasoning/model_client.py); folding
+against the local model (backend/model/client.py); folding
 both into a single response removes that risk rather than working
 around it. step_generator.py is retired - this module fully replaces
 it.
@@ -38,7 +38,7 @@ step shape, used uniformly, removes the ambiguity.
 
 import json
 
-from backend.reasoning.model_client import call_with_retry, send_message
+from backend.model.client import call_with_retry, send_message
 from backend.foundation.time import resolve_span
 
 # A safety ceiling only - guards against a malformed/degenerate
@@ -85,9 +85,9 @@ def generate_structure(goal: str, duration: str, right_now: str) -> dict | None:
 
     Raises ValueError if the model's response still doesn't have the
     expected shape after a few retries (see
-    reasoning.model_client.call_with_retry's own docstring for why a
+    model.client.call_with_retry's own docstring for why a
     bounded retry is worth it) - same "trust the shape or fail loudly"
-    approach as model_client.ask_model()/the retired step_generator.py.
+    approach as json_request.ask_model()/the retired step_generator.py.
     """
     if resolve_span(duration) is None:
         return None

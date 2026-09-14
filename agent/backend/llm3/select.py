@@ -14,7 +14,7 @@ consistent with the data-flow direction in docs/v4-migration-decision.md.
 
 import json
 
-from backend.reasoning.model_client import send_message
+from backend.model.client import send_message
 
 SYSTEM_PROMPT = (
     "You decide whether a conversation turn needs a system capability "

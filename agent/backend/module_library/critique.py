@@ -10,7 +10,7 @@ them in as `context`, in whatever words it chooses.
 
 import json
 
-from backend.reasoning.model_client import send_message
+from backend.model.client import send_message
 
 SYSTEM_PROMPT = (
     "You critique one piece of text, given the purpose it is being "

@@ -12,7 +12,7 @@ caller feeds whatever prior output it wants considered in as
 
 import json
 
-from backend.reasoning.model_client import send_message
+from backend.model.client import send_message
 
 SYSTEM_PROMPT = (
     "You reason about one piece of text, given the purpose it is "

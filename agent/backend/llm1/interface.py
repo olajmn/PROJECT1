@@ -11,7 +11,7 @@ a capability's raw result is the calling harness's job, not LLM1's or
 the capability's - see cli.py's `_surface_text()`.
 """
 
-from backend.reasoning.model_client import send_message
+from backend.model.client import send_message
 
 SYSTEM_PROMPT = (
     "You are a warm, direct personal assistant talking with the user in "

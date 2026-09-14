@@ -17,8 +17,8 @@ Used today by `goals/plan/` (JSON plan/step generation) and
 `../decision/` (phrasing an intervention) or `../knowledge/`
 (answering from retrieved context) later. Never decides anything
 itself and never validates what the text means - that interpretation
-stays with each caller (see `goals/plan/model_client.py`'s
-`ask_model()`, `goals/feedback/acknowledger.py`).
+stays with each caller (see `planning/plan/json_request.py`'s
+`ask_model()`, `planning/feedback/acknowledger.py`).
 
 ## Boundary
 
@@ -45,8 +45,8 @@ diagram, where it sits between Conversation and Memory.
 
 ## Reference implementation
 
-`backend/reasoning/model_client.py`'s `send_message()` - the shared
-raw call, with two independent callers: `backend/goals/plan/model_client.py`'s
+`backend/model/client.py`'s `send_message()` - the shared
+raw call, with two independent callers: `backend/planning/plan/json_request.py`'s
 `ask_model()` (JSON-shape validation, Plan-specific) and
-`backend/goals/feedback/acknowledger.py`'s `acknowledge()` (plain text,
+`backend/planning/feedback/acknowledger.py`'s `acknowledge()` (plain text,
 Feedback-specific, with a deterministic fallback if the call fails).

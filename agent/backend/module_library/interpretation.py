@@ -13,7 +13,7 @@ inspects their origin or assumes a particular shape behind them.
 
 import json
 
-from backend.reasoning.model_client import send_message
+from backend.model.client import send_message
 
 SYSTEM_PROMPT = (
     "You interpret one piece of text, given the purpose it is being "

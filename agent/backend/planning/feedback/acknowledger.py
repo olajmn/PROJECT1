@@ -12,7 +12,7 @@ existed. A check-in must always succeed and save, with or without the
 model.
 """
 
-from backend.reasoning.model_client import send_message
+from backend.model.client import send_message
 
 ACKNOWLEDGMENT_SYSTEM_PROMPT = (
     "You are acknowledging a short check-in note from someone working "

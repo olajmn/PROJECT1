@@ -8,7 +8,7 @@ is; it only ever sees whatever text and context it is called with.
 
 import json
 
-from backend.reasoning.model_client import send_message
+from backend.model.client import send_message
 
 SYSTEM_PROMPT = (
     "You generate hypotheses for one piece of text, given the purpose "

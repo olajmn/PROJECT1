@@ -7,13 +7,13 @@ across seven time horizons and revises it based on feedback, and owns
 the decisions around creating a goal and reacting to feedback on one -
 persisted via infrastructure/data_persistence.py's save_plan(), not
 reimplemented here. Never talks to the model directly (see
-model_client.py/plan_structure.py).
+json_request.py/plan_structure.py).
 
 Runs 100% locally - no API key, no internet, no cost. Requires Ollama
 running in the background (start with: brew services start ollama)
 and the model pulled (ollama pull qwen3.5:9b) - see
-backend/reasoning/model_client.py for the one place the concrete
-model is actually named.
+backend/model/client.py for the one place the concrete model is
+actually named.
 
 PLAN_KEYS stays in this module rather than with the helpers that split
 out into their own files - it's genuine Plan shape, passed INTO
@@ -72,7 +72,7 @@ from backend.planning.feedback.acknowledger import acknowledge
 from backend.planning.feedback.feedback_parser import parse_outcome, requests_duration_change
 from backend.planning.goal.resolver import get_history_for_goal, get_latest_for_all_goals, get_latest_for_goal
 from backend.infrastructure.data_persistence import archive_vision as archive_vision_record, get_vision, save_plan, save_vision
-from backend.planning.plan.model_client import ask_model
+from backend.planning.plan.json_request import ask_model
 from backend.planning.plan.plan_prompts import REPLAN_SYSTEM_PROMPT, SYSTEM_PROMPT
 from backend.planning.plan.plan_structure import generate_structure
 

@@ -126,7 +126,7 @@ def main() -> None:
             result = process_turn(session.chat_focus, user_text)
         except Exception as e:  # an experiment script must not die on one bad turn
             # A friendly, deterministic fallback, not the raw exception
-            # text - reasoning.model_client.call_with_retry already
+            # text - model.client.call_with_retry already
             # absorbs the model-shape hiccups this is most likely to
             # be; what reaches here is either a genuinely persistent
             # failure or something unrelated to the model entirely,

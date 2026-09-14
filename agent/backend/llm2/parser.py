@@ -13,7 +13,7 @@ concepts").
 
 import json
 
-from backend.reasoning.model_client import send_message
+from backend.model.client import send_message
 
 SYSTEM_PROMPT = (
     "You read one message from an ongoing conversation and describe, "

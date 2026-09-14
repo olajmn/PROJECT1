@@ -424,8 +424,8 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:  # transport must not crash on one bad turn
             # Same reasoning as cli.py's own fallback: a friendly,
             # deterministic line, not the raw exception text, standing
-            # in as "the agent's reply" - reasoning.model_client.
-            # call_with_retry already absorbs the model-shape hiccups
+            # in as "the agent's reply" - model.client.call_with_retry
+            # already absorbs the model-shape hiccups
             # this is most likely to be. Printed server-side (not to
             # the client) for whoever is actually debugging this run.
             print(f"(debug: {e})")
