@@ -47,6 +47,8 @@ stable identity (for referring back to it), not its rank.
 5. **Structured step-completion signal** (Step) - `advance_step()` exists in `planner.py` but has no route or UI control. § 5, § 9, § 10.
 6. **Vision-archive timing in the Session log** (Step) - `archive_vision()` doesn't stamp when archiving happened, only creation. § 5, § 10.
 7. **Session end detection** (Step) - no graceful-shutdown hook sets a Session's real `ended_at`. Lower actual impact than the others in this tier - the read-side window-bounding fix already makes the derived log accurate without it. § 5, § 10.
+12. **Decomposition / zoom, for real plans** (Step) - the mechanism exists and is demonstrated (`plan/zoom.py`, `plan/step.py`, the Steps page), but only against an in-memory scratch tree: no real Goal record produces or consumes a `Step`, and real plans still carry the two-level `{"label", "microsteps": [str]}` shape. Moved out of Tier 4 2026-09-14 - what's left is a data-shape decision (see 18 below) plus wiring, not a new domain. § 5, § 7, § 9.
+16. **Zoom cannot ask for anything** (Step) - `zoom_into()` returns children or nothing, so the third state of Minimum planability's gate (UNKNOWN and NECESSARY → ask) has no per-level equivalent; a step whose breakdown depends on something personal and unstated gets a plausible invented one instead of a question. The asking machinery already exists for goal creation (`clarification`/`suggested_action`), just not here. § 5.
 
 ### Tier 3
 
@@ -57,10 +59,12 @@ stable identity (for referring back to it), not its rank.
 9. **Node 3's second capability** (Step) - `select_capability()` can only ever return `"planning"` or `None`. § 7, § 10.
 10. **Memory domain** (Step) - not built at all. § 7, § 9.
 11. **Knowledge / RAG** (Step) - not built at all. § 7.
-12. **Decomposition / zoom** (Step) - no way to increase an already-generated step's resolution on demand. § 7.
 13. **Acting** (Step) - the agent performs no external action. § 7.
-14. **Continuity / proactivity** (Step) - no scheduler or background behavior. § 7.
+14. **Continuity / proactivity** (Step) - no scheduler or background behavior. § 7. Related to 17 below: for a practice, the absence of input is itself information, and nothing runs between two user messages.
 
 ### Untiered
 
 15. **Node 1 re-voicing** (Question) - whether Node 1 should re-voice a capability's output verbatim or in its own words is undecided. § 9; see also `docs/03-architecture.md` Part 3 § 8.
+17. **Practices have no shape** (Question) - a recurring, open-ended commitment ("save 10 a day", "10 push-ups a day") fits the implemented model on no axis: no deadline to count down toward, no completion to reach, nothing to decompose - a rate and an accumulation instead. Whether it's a third kind of record, a Goal with different fields, or not a Goal at all is undecided. `docs/concepts.md` § 4.ix.
+18. **A plan can only be regenerated, never edited** (Question) - `step_status` is parallel-indexed to `steps`, so identity is positional and reorganizing silently moves statuses onto different steps; `current_step` is forward-only, so "2 is done but 1 isn't" is unexpressible. `replan()` regenerates; nothing edits. `docs/concepts.md` § 4.x.
+19. **Vision as a typing mechanism, or as background context** (Question) - whether a Vision decides what counts as progress for everything under it, or stays the weak background context `plan_prompts.SYSTEM_PROMPT` currently instructs it to be ("never let it override... what the goal itself actually asks for"). The two readings can't both hold. `docs/concepts.md` § 4.xi.
