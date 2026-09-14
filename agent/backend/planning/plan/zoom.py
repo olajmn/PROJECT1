@@ -17,7 +17,7 @@ tree.
 returns None without a resolvable span: there is nothing honest to
 break a step into without the timeframe it has to fit inside. A goal
 is not plannable from its wording alone in this project - see
-planner.create_goal()'s clarification/suggested_duration branches.
+create_goal()'s clarification/suggested_duration branches.
 
 TWO calls, deliberately - the depth verdict is asked separately from
 the decomposition, and measured to need to be. Asked to judge and

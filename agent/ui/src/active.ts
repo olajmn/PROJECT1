@@ -1,14 +1,16 @@
 // The Active page - docs/03-architecture.md's "known capability
 // context" path (Part 3 § 3), actually built: each active goal is its
-// own card with its own feedback box, so which goal a message is
-// about is never inferred or guessed - it's simply which card the
-// textarea belongs to. Talks to /api/goals[/<id>/feedback] (see
-// server.py's own docstring for why those skip Node 1/2/3 entirely),
-// never /api/message - this page has no free-conversation box of its
-// own; that's what the Conversation page (index.html/main.ts) is for.
+// own card with its own chat, so which goal a message is about is
+// never inferred or guessed - it's simply which card the textarea
+// belongs to. Talks to /api/goals[/<id>/feedback] (see server.py),
+// which runs planning/chat/turn.py (parse in context, route_note,
+// LLM1). The Conversation page (index.html/main.ts) is the global
+// instance; this is the per-goal one. Continue in chat / chat-focus
+// is left as the bridge to that global instance.
 
 // Contents
 //  1. Rendering
+//      - renderThread()
 //      - renderGoalCard()
 //  2. Data loading
 //      - loadGoals()
@@ -17,12 +19,30 @@
 import { cancelGoal, fetchActiveGoals, fetchVisions, sendGoalFeedback, setChatFocus, setGoalVision } from "./api.js";
 import { initNavCounts } from "./nav.js";
 import { planElement } from "./tree.js";
-import type { GoalView, VisionView } from "./types.js";
+import type { ChatMessage, GoalView, VisionView } from "./types.js";
 
 const list = document.getElementById("goal-list") as HTMLDivElement;
 const empty = document.getElementById("empty") as HTMLParagraphElement;
 
 // 1. Rendering
+
+function renderThread(messages: ChatMessage[]): HTMLElement {
+  const thread = document.createElement("div");
+  thread.className = "goal-thread";
+  for (const message of messages) {
+    const row = document.createElement("div");
+    row.className = `message message-${message.role === "user" ? "you" : "agent"}`;
+    const label = document.createElement("span");
+    label.className = "who";
+    label.textContent = message.role === "user" ? "You" : "Agent";
+    const body = document.createElement("span");
+    body.className = "text";
+    body.textContent = message.text;
+    row.append(label, body);
+    thread.appendChild(row);
+  }
+  return thread;
+}
 
 function renderGoalCard(goal: GoalView, visions: VisionView[]): HTMLElement {
   const card = document.createElement("article");
@@ -81,12 +101,7 @@ function renderGoalCard(goal: GoalView, visions: VisionView[]): HTMLElement {
 
   card.appendChild(visionForm);
 
-  if (goal.surface) {
-    const surface = document.createElement("p");
-    surface.className = "surface";
-    surface.textContent = goal.surface;
-    card.appendChild(surface);
-  }
+  card.appendChild(renderThread(goal.thread ?? []));
 
   if (goal.node) {
     card.appendChild(planElement(goal.node));
@@ -96,11 +111,11 @@ function renderGoalCard(goal: GoalView, visions: VisionView[]): HTMLElement {
   form.className = "feedback-form";
   const textarea = document.createElement("textarea");
   textarea.rows = 2;
-  textarea.placeholder = "How's it going?";
+  textarea.placeholder = "Reply...";
   textarea.required = true;
   const button = document.createElement("button");
   button.type = "submit";
-  button.textContent = "Send (apply_feedback)";
+  button.textContent = "Send";
   form.append(textarea, button);
 
   form.addEventListener("submit", async (event) => {

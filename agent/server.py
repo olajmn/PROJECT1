@@ -19,10 +19,13 @@ Two distinct paths into Planning, deliberately different shapes:
   session state or guessed by a Node - so these call planner.py/
   data_persistence.py directly, skip Node 1/2/3 entirely, and are
   immune to the topic-continuity defect docs/04-current-state.md § 5
-  documents for the free-conversation path. No natural-language
-  voicing (Node 1) on these responses either - see manifestation.py's
-  own surface_text()/to_planning_node(), already deterministic and
-  already what ui/active.html shows directly.
+  documents for the free-conversation path. POST /api/goals/<id>/feedback
+  is the exception on this path: it runs planning/chat/turn.py (LLM2 in
+  context -> route_note -> LLM1), still keyed by the id in the URL, so
+  it cannot pick the wrong goal. Other known-context routes stay
+  silent of Node 1 - see manifestation.py's surface_text()/
+  to_planning_node(), already deterministic and already what
+  ui/active.html's plan tree shows directly.
 - GET/POST /api/chat-focus - the manual bridge between the two paths
   above: reads or overwrites the free-conversation `session`'s own
   `chat_focus.goal_id` - which goal, if any, the chat is currently
@@ -110,8 +113,10 @@ from cli import Session, process_turn
 from backend.manifestation import surface_text, to_planning_node
 from backend.foundation.time import extract_duration_phrase
 from backend.infrastructure.data_persistence import load_history, load_sessions, load_visions, save_vision
+from backend.planning.chat.turn import take_turn, thread_for
+from backend.planning.goal.lifecycle import cancel_goal, create_goal
 from backend.planning.goal.resolver import created_at_key, get_latest_for_all_goals, get_latest_for_goal
-from backend.planning.plan.planner import apply_feedback, archive_vision, cancel_goal, create_goal, set_goal_vision
+from backend.planning.plan.planner import archive_vision, set_goal_vision
 from backend.planning.plan.step import Step
 from backend.planning.plan.zoom import zoom_into
 
@@ -159,12 +164,15 @@ def _mint_step_id() -> str:
 # 2. View builders
 
 
-def _goal_view(record: dict) -> dict:
+def _goal_view(record: dict, reply: str | None = None) -> dict:
     """The one shape every /api/goals response uses for a single goal
     - record fields a UI actually needs (identity, display text,
     completion) plus the same manifestation.py translation
     /api/message already relies on, so ui/active.ts and ui/src/main.ts
-    render an identical plan tree from an identical shape."""
+    render an identical plan tree from an identical shape. `thread` is
+    the goal-scoped chat reconstructed from this goal's history;
+    `reply` is LLM1's wording for the turn just taken, or null on a
+    plain GET."""
     try:
         node = to_planning_node(record)
     except Exception as e:
@@ -183,6 +191,8 @@ def _goal_view(record: dict) -> dict:
         "vision_id": record.get("vision_id"),
         "surface": surface_text(record),
         "node": node,
+        "thread": thread_for(record["goal_id"], reply),
+        "reply": reply,
     }
 
 
@@ -524,7 +534,7 @@ class Handler(BaseHTTPRequestHandler):
         than pre-expanding one level for free.
 
         Rejects text with no recognizable time phrase in it, before
-        any model call, exactly as planner.create_goal() does - a goal
+        any model call, exactly as create_goal() does - a goal
         is not plannable from its wording alone here (see zoom.py).
         The 422 says which half is missing; the real Set Goal flow
         asks a clarification question instead, which this workbench
@@ -590,12 +600,12 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(404, "no such goal")
             return
         try:
-            record = apply_feedback(latest, note)
+            result = take_turn(latest, note)
         except Exception as e:  # same reasoning as _handle_message()
             print(f"(debug: {e})")
             self.send_error(503, "that took longer than expected - try again in a moment")
             return
-        self._send_json(_goal_view(record))
+        self._send_json(_goal_view(result["record"], reply=result["reply"]))
 
     def _handle_cancel_goal(self, goal_id: int) -> None:
         # No request body - same reasoning as _handle_archive_vision():

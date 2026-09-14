@@ -13,7 +13,7 @@ One thing deliberately lives in THIS file, not in any LLM module or in
 Planning, because it is harness/orchestration glue, not reasoning:
 
 - Which existing Planning function to call (create_goal vs.
-  apply_feedback) - decided by simple session state (is there already
+  route_note) - decided by simple session state (is there already
   an active goal in this terminal session), never by an LLM judgment.
   A real system would need a real answer for this; this experiment
   deliberately uses the crudest one that still lets more than one kind
@@ -33,8 +33,9 @@ from backend.llm1.interface import respond
 from backend.llm2.parser import understand
 from backend.llm3.select import select_capability
 from backend.manifestation import surface_text, to_planning_node
+from backend.planning.feedback.route_note import route_note
+from backend.planning.goal.lifecycle import create_goal
 from backend.planning.goal.resolver import get_latest_for_goal
-from backend.planning.plan.planner import apply_feedback, create_goal
 
 
 class ChatFocus:
@@ -99,7 +100,7 @@ def process_turn(chat_focus: ChatFocus, user_text: str) -> dict:
         chat_focus.goal_id = record["goal_id"]
     else:
         latest = get_latest_for_goal(chat_focus.goal_id)
-        record = apply_feedback(latest, user_text)
+        record = route_note(latest, user_text)
 
     surface = surface_text(record)
     node = to_planning_node(record)

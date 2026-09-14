@@ -13,17 +13,26 @@ WIRING (which branch runs, what gets carried forward, what gets saved),
 not whether a live model actually produces a `suggested_action` in
 practice.
 
-Run from the project root:
-    .venv/bin/python -m backend.goals.plan.test_planner
+Run from agent/:
+    .venv/bin/python -m backend.planning.plan.test_planner
 """
 
 import shutil
 import tempfile
 from pathlib import Path
 
-from backend.planning.goal import resolver
-from backend.planning.plan import planner
 from backend.infrastructure import data_persistence as dp
+from backend.planning.feedback.route_note import route_note
+from backend.planning.goal import resolver
+from backend.planning.goal.lifecycle import create_goal
+from backend.planning.plan import planner
+
+
+def _pending_suggestion(vision_id=None):
+    """A saved record with suggested_action, via generate_plan() not
+    create_goal() - opening mints refuse that field."""
+    plan = planner.generate_plan(GOAL_TEXT)
+    return dp.save_plan(GOAL_TEXT, plan, duration=None, frozen_duration=None, vision_id=vision_id)
 
 _original_data_dir = dp.DATA_DIR
 _original_plans_file = dp.PLANS_FILE
@@ -95,16 +104,27 @@ try:
 
     print("OK - generate_plan() suggested_action validation/priority")
 
+    # create_goal() opening cannot land on an Action.
+    planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
+    opened = create_goal("I want to start working out", "", "")
+    assert opened["plan"]["suggested_action"] is None
+    assert opened["plan"]["clarification"]
+    planner.ask_model = _canned({**_BLANK_PLAN, "now": "Choose any piece of equipment and begin immediately"})
+    opened_now = create_goal("start working out", "", "")
+    assert opened_now["plan"]["now"] is None
+    assert opened_now["plan"]["clarification"]
+    print("OK - create_goal() opening refuses an Action")
+
     # ------------------------------------------------------------------
     # Test 1 - SUGGEST -> "Yes" -> accepted as the current Action
     # ------------------------------------------------------------------
 
     planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
-    pending = planner.create_goal(GOAL_TEXT, "", "")
+    pending = _pending_suggestion()
     assert pending["plan"]["suggested_action"] == SUGGESTION_TEXT
     history_before = len(dp.load_history())
 
-    accepted = planner.apply_feedback(pending, "Yes.")
+    accepted = route_note(pending, "Yes.")
     assert accepted["plan"]["now"] == SUGGESTION_TEXT
     assert accepted["plan"]["suggested_action"] is None
     assert accepted["plan"]["clarification"] is None
@@ -124,7 +144,7 @@ try:
     planner.replan = lambda goal, history, feedback, duration=None, vision_id=None: {
         **_BLANK_PLAN, "now": "Send one application",
     }
-    done = planner.apply_feedback(accepted, "Done.")
+    done = route_note(accepted, "Done.")
     assert done["plan"]["now"] == "Send one application", "an ordinary completion report must still call replan()"
     assert done["feedback"].startswith("Completed the action."), done["feedback"]
     planner.replan = _original_replan
@@ -136,10 +156,10 @@ try:
     # ------------------------------------------------------------------
 
     planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
-    pending2 = planner.create_goal(GOAL_TEXT, "", "")
+    pending2 = _pending_suggestion()
 
     planner.ask_model = _canned({**_BLANK_PLAN, "now": "Update the CV's summary section"})
-    alt = planner.apply_feedback(pending2, "I'd rather start with my CV.")
+    alt = route_note(pending2, "I'd rather start with my CV.")
     assert alt["plan"]["now"] == "Update the CV's summary section"
     assert alt["plan"]["suggested_action"] is None, "the original suggestion must not be forced through"
     assert alt["feedback"] == "I'd rather start with my CV."
@@ -151,10 +171,10 @@ try:
     # ------------------------------------------------------------------
 
     planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
-    pending3 = planner.create_goal(GOAL_TEXT, "", "")
+    pending3 = _pending_suggestion()
 
     planner.ask_model = _canned({**_BLANK_PLAN, "clarification": "Which job boards or contacts does your list already cover?"})
-    corrected = planner.apply_feedback(pending3, "No, I already have a list.")
+    corrected = route_note(pending3, "No, I already have a list.")
     assert corrected["plan"]["now"] is None
     assert corrected["completed"] is False, "a premise correction must never be read as Action completion"
     assert corrected["plan"]["clarification"] == "Which job boards or contacts does your list already cover?"
@@ -166,14 +186,14 @@ try:
     # ------------------------------------------------------------------
 
     planner.ask_model = _canned({**_BLANK_PLAN, "now": "Send four applications"})
-    ordinary = planner.create_goal("Send four job applications this week", "", "")
+    ordinary = create_goal("Send four job applications this week", "", "")
     assert ordinary["plan"]["now"] == "Send four applications"
     assert ordinary["plan"]["suggested_action"] is None
 
     planner.replan = lambda goal, history, feedback, duration=None, vision_id=None: {
         **_BLANK_PLAN, "now": "Send the next application",
     }
-    completed = planner.apply_feedback(ordinary, "Yes.")
+    completed = route_note(ordinary, "Yes.")
     assert completed["feedback"].startswith("Completed the action."), completed["feedback"]
     assert completed["plan"]["now"] == "Send the next application"
     planner.replan = _original_replan
@@ -185,12 +205,12 @@ try:
     # ------------------------------------------------------------------
 
     planner.ask_model = _canned({**_BLANK_PLAN, "suggested_duration": "8 weeks"})
-    duration_pending = planner.create_goal("I want to start exercising regularly", "", "")
+    duration_pending = create_goal("I want to start exercising regularly", "", "")
     assert duration_pending["plan"]["suggested_duration"] == "8 weeks"
     assert duration_pending["plan"]["suggested_action"] is None
 
     planner.ask_model = _canned({**_BLANK_PLAN, "today": "Do one session", "now": "Put on your shoes and go for a walk"})
-    duration_confirmed = planner.apply_feedback(duration_pending, "Yes, 8 weeks works.")
+    duration_confirmed = route_note(duration_pending, "Yes, 8 weeks works.")
     assert duration_confirmed["duration"] == "8 weeks"
     assert duration_confirmed["plan"]["now"] == "Put on your shoes and go for a walk"
 
@@ -201,11 +221,11 @@ try:
     # ------------------------------------------------------------------
 
     planner.ask_model = _canned({**_BLANK_PLAN, "clarification": "What do you want to read?"})
-    vague = planner.create_goal("read", "", "")
+    vague = create_goal("read", "", "")
     assert vague["plan"]["clarification"] == "What do you want to read?"
 
     planner.ask_model = _canned({**_BLANK_PLAN, "now": "Open the book and read one chapter"})
-    answered = planner.apply_feedback(vague, "A novel, for 30 minutes today.")
+    answered = route_note(vague, "A novel, for 30 minutes today.")
     assert answered["plan"]["clarification"] is None
     assert answered["plan"]["now"] == "Open the book and read one chapter"
 
@@ -218,11 +238,11 @@ try:
 
     vision = dp.save_vision("Grow as a professional")
     planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": "Take stock of your current applications."})
-    v_pending = planner.create_goal(GOAL_TEXT, "", str(vision["id"]))
+    v_pending = _pending_suggestion(vision_id=vision["id"])
     assert v_pending["vision_id"] == vision["id"]
 
     history_before_goal = resolver.get_history_for_goal(v_pending["goal_id"])
-    v_accepted = planner.apply_feedback(v_pending, "Yes")
+    v_accepted = route_note(v_pending, "Yes")
     history_after_goal = resolver.get_history_for_goal(v_accepted["goal_id"])
 
     assert v_accepted["vision_id"] == vision["id"], "Vision link must survive confirmation"

@@ -39,7 +39,9 @@ stable identity (for referring back to it), not its rank.
 
 1. **`clarification`+`now` leak** (Bug) - the `clarification` branch doesn't null `now` the way the `suggested_action` branch does. § 5.
 2. **Accepting a `suggested_action` never produces a step tree** (Bug) - the acceptance branch sets `now` directly, never calls `generate_structure()`. § 5.
-3. **Topic continuity / multi-goal free conversation** (Bug) - `cli.py`'s `ChatFocus` holds one goal only, and nothing detects a mid-conversation topic switch. Largest of the three Tier 1 items - discussed as roughly comparable in size to a full session's own work, not a quick fix. § 5, § 9, § 10.
+3. **Topic continuity / multi-goal free conversation** (Bug) - `cli.py`'s `ChatFocus` holds one goal only, and nothing detects a mid-conversation topic switch. Largest of the Tier 1 items - discussed as roughly comparable in size to a full session's own work, not a quick fix. § 5, § 9, § 10.
+20. **Opening gate is a duration proxy** (Bug) - `create_goal()` refuses any planable `now` when no duration phrase was extracted, which stops a thin goal landing on an Action and would also stop a goal that is already a `now`. § 5.
+21. **Session-grain tree painted across a longer span** (Bug) - `generate_structure()` starts from `now` and `step_plan()` slices those steps evenly across the frozen duration, so a gym-visit breakdown can be dated across a month. § 5. Related to 17.
 
 ### Tier 2
 
@@ -53,6 +55,7 @@ stable identity (for referring back to it), not its rank.
 ### Tier 3
 
 8. **Module Library unwired** (Step) - five working Modules, reachable from nothing. § 5.
+22. **Planability slots unread** (Step) - `goal/planability_slots.py` names CONTENT/TIME/CURRENT_STATE/CAPACITY and is imported by nothing. § 5. Related to 20.
 
 ### Tier 4
 

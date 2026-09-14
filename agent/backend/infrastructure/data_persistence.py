@@ -218,7 +218,7 @@ def save_plan(
     `cancelled` marks the whole goal as abandoned - a distinct terminal
     status from `completed`, not a lesser/failed version of it. This
     function doesn't enforce the two being mutually exclusive; that's
-    `planner.cancel_goal()`'s job (it refuses to cancel an already-
+    `cancel_goal()`'s job (it refuses to cancel an already-
     completed goal), same division of responsibility as everywhere
     else in this file - persistence stores what it's given, decisions
     live in planner.py.
@@ -390,7 +390,7 @@ def archive_vision(vision_id: int) -> dict | None:
     `vision_id` doesn't resolve to any Vision. Archiving an
     already-archived Vision is a genuine no-op - returns it unchanged
     rather than rewriting the file, same idiom as
-    planner.cancel_goal().
+    cancel_goal().
 
     Never touches `data/plans.json` - a Goal's `vision_id` reference is
     left exactly as it was.

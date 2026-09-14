@@ -1,3 +1,4 @@
-"""Parses free-text feedback into action_completed/action_not_completed/
-action_in_progress/goal_completed, or a duration-change request
-(feedback_parser.py)."""
+"""Parses free-text feedback into a named signal (feedback_parser.py)
+and acts on that signal against one existing goal record (route_note.py).
+acknowledge.py is display text only, for notes the parser could not
+classify."""

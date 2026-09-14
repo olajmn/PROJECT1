@@ -10,6 +10,7 @@
 //  2. Free conversation
 //      - AgentResponse
 //  3. Goals
+//      - ChatMessage
 //      - GoalView
 //      - HistoryEntry
 //  4. Vision
@@ -72,8 +73,13 @@ export interface AgentResponse {
 
 /** One goal, as returned by GET /api/goals, POST /api/goals, and
  * POST /api/goals/<id>/feedback - matches server.py's _goal_view().
- * No natural-language `reply` here (unlike AgentResponse) - these
- * routes skip Node 1 entirely, see server.py's own docstring for why. */
+ * `reply` is set only after a chat turn (POST feedback); GET leaves
+ * it null and the thread uses surface_text for every agent line. */
+export interface ChatMessage {
+  role: "user" | "agent";
+  text: string;
+}
+
 export interface GoalView {
   goal_id: number;
   goal: string;
@@ -82,6 +88,8 @@ export interface GoalView {
   vision_id: number | null;
   surface: string | null;
   node: PlanningNode | null;
+  thread: ChatMessage[];
+  reply: string | null;
 }
 
 /** One raw saved record, as returned by GET /api/history - matches
