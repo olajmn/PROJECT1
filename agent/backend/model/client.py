@@ -18,15 +18,23 @@ import ollama
 MODEL = "qwen3.5:9b"
 
 
-def send_message(system_prompt: str, user_content: str, json_mode: bool = False) -> str:
+def send_message(
+    system_prompt: str,
+    user_content: str,
+    json_mode: bool = False,
+    schema: dict | None = None,
+) -> str:
     """Send system + user to the local model; return raw text.
 
-    json_mode asks Ollama for JSON *syntax* only. Parsing and
-    validating shape is the caller's job.
+    json_mode asks Ollama for JSON *syntax* only - the caller still
+    has to parse and validate the shape. A `schema` (a JSON Schema
+    dict) instead constrains generation itself, so a response that
+    doesn't fit the shape cannot come back at all; it takes precedence
+    when both are given.
     """
     response = ollama.chat(
         model=MODEL,
-        format="json" if json_mode else None,
+        format=schema if schema is not None else ("json" if json_mode else None),
         think=False,
         messages=[
             {"role": "system", "content": system_prompt},
