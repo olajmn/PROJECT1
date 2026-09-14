@@ -61,8 +61,10 @@ Then open http://localhost:8000/ in a browser.
 #      - UI_DIR, PORT
 #      - _CONTENT_TYPES
 #      - _FEEDBACK_PATH_RE, _CANCEL_PATH_RE, _GOAL_VISION_PATH_RE,
-#        _VISION_ARCHIVE_PATH_RE
+#        _VISION_ARCHIVE_PATH_RE, _ZOOM_PATH_RE
 #      - session (process-wide, /api/message only)
+#      - tree, tree_duration, tree_zoomed (process-wide, Steps page)
+#      - _mint_step_id()
 #
 #  2. View builders
 #      - _goal_view()
@@ -75,6 +77,9 @@ Then open http://localhost:8000/ in a browser.
 #      - _session_vision_event()
 #      - _session_log_view()
 #      - _vision_view()
+#      - _step_view()
+#      - _tree_view()
+#      - _ancestor_labels()
 #
 #  3. HTTP handler
 #      - Handler
@@ -82,6 +87,8 @@ Then open http://localhost:8000/ in a browser.
 #          - do_POST()
 #          - _read_text_body()
 #          - _handle_message()
+#          - _handle_create_tree()
+#          - _handle_zoom_step()
 #          - _handle_create_goal()
 #          - _handle_goal_feedback()
 #          - _handle_cancel_goal()
@@ -101,9 +108,12 @@ from pathlib import Path
 
 from cli import Session, process_turn
 from backend.manifestation import surface_text, to_planning_node
+from backend.foundation.time import extract_duration_phrase
 from backend.infrastructure.data_persistence import load_history, load_sessions, load_visions, save_vision
 from backend.planning.goal.resolver import created_at_key, get_latest_for_all_goals, get_latest_for_goal
 from backend.planning.plan.planner import apply_feedback, archive_vision, cancel_goal, create_goal, set_goal_vision
+from backend.planning.plan.step import Step
+from backend.planning.plan.zoom import zoom_into
 
 # 1. Configuration
 
@@ -120,8 +130,31 @@ _FEEDBACK_PATH_RE = re.compile(r"^/api/goals/(\d+)/feedback$")
 _CANCEL_PATH_RE = re.compile(r"^/api/goals/(\d+)/cancel$")
 _GOAL_VISION_PATH_RE = re.compile(r"^/api/goals/(\d+)/vision$")
 _VISION_ARCHIVE_PATH_RE = re.compile(r"^/api/visions/(\d+)/archive$")
+_ZOOM_PATH_RE = re.compile(r"^/api/tree/(s\d+)/zoom$")
 
 session = Session()  # process-wide - see module docstring, /api/message only
+
+# The Steps page's scratch tree (§ 5 below). In memory, one at a
+# time, lost on restart, and deliberately NOT written through
+# data_persistence: docs/planning-model.md § Decomposition / zoom
+# leaves whether zoomed content is persisted explicitly undecided, so
+# this page exists to look at the shape before that call is made. It
+# is a workbench for the recursive Step model, not a second way to
+# create a real Goal.
+tree: Step | None = None
+tree_duration = ""
+# Which steps have actually been through zoom_into(). A step with no
+# children means "not zoomed yet" or "zoomed, and the verdict was
+# that an Action can already be projected from it" - opposite
+# meanings for the UI, and nothing in Step itself distinguishes them.
+tree_zoomed: set[str] = set()
+_step_counter = 0
+
+
+def _mint_step_id() -> str:
+    global _step_counter
+    _step_counter += 1
+    return f"s{_step_counter}"
 
 # 2. View builders
 
@@ -320,6 +353,39 @@ def _vision_view(vision: dict) -> dict:
     }
 
 
+def _step_view(step: Step) -> dict:
+    """A Step as the Steps page needs it: the PlanningNode fields the
+    UI's tree renderer already understands, plus `zoomed` (see
+    tree_zoomed) so a childless step can say whether it is unexplored
+    or settled."""
+    return {
+        "id": step.id,
+        "label": step.label,
+        "status": "done" if step.resolved else "open",
+        "zoomed": step.id in tree_zoomed,
+        "children": [_step_view(child) for child in step.children],
+    }
+
+
+def _tree_view() -> dict:
+    return {"duration": tree_duration, "root": _step_view(tree) if tree else None}
+
+
+def _ancestor_labels(root: Step, step_id: str) -> list[str] | None:
+    """The labels on the path from `root` down to (not including)
+    `step_id`, outermost first - what zoom_into() wants as context.
+    None if `step_id` isn't in this tree. Recomputed by walking rather
+    than stored as parent links on Step, which would make the tree
+    cyclic and so unserializable (see step.py's own docstring)."""
+    if root.id == step_id:
+        return []
+    for child in root.children:
+        below = _ancestor_labels(child, step_id)
+        if below is not None:
+            return [root.label, *below]
+    return None
+
+
 # 3. HTTP handler
 
 
@@ -339,6 +405,13 @@ class Handler(BaseHTTPRequestHandler):
             return
         if self.path == "/api/chat-focus":
             self._send_json(_chat_focus_view())
+            return
+        if self.path == "/api/tree":
+            # So a reload (or coming back from another page) shows the
+            # tree that's already there instead of a blank form -
+            # every zoom costs two model calls, which is far too
+            # expensive to redo just because the page was left.
+            self._send_json(_tree_view())
             return
         if self.path == "/api/sessions":
             # Oldest-first while computing each one's window_end (the
@@ -380,6 +453,13 @@ class Handler(BaseHTTPRequestHandler):
             return
         if self.path == "/api/chat-focus":
             self._handle_set_chat_focus()
+            return
+        if self.path == "/api/tree":
+            self._handle_create_tree()
+            return
+        zoom_match = _ZOOM_PATH_RE.match(self.path)
+        if zoom_match:
+            self._handle_zoom_step(zoom_match.group(1))
             return
         feedback_match = _FEEDBACK_PATH_RE.match(self.path)
         if feedback_match:
@@ -435,6 +515,59 @@ class Handler(BaseHTTPRequestHandler):
                 "reply": "That took longer than expected - try again in a moment.",
             }
         self._send_json(result)
+
+    def _handle_create_tree(self) -> None:
+        """Start a fresh scratch tree from typed text: the text
+        becomes the root step, and the tree starts unexpanded - even
+        the root's first level is a zoom the user asks for, so the
+        page shows on-demand depth from the very first click rather
+        than pre-expanding one level for free.
+
+        Rejects text with no recognizable time phrase in it, before
+        any model call, exactly as planner.create_goal() does - a goal
+        is not plannable from its wording alone here (see zoom.py).
+        The 422 says which half is missing; the real Set Goal flow
+        asks a clarification question instead, which this workbench
+        deliberately doesn't reimplement."""
+        global tree, tree_duration, tree_zoomed
+        text = self._read_text_body()
+        if text is None:
+            return
+        duration = extract_duration_phrase(text)
+        if duration is None:
+            self.send_error(422, "no timeframe recognized - say when, e.g. 'in 18 months'")
+            return
+        tree = Step(id=_mint_step_id(), label=text)
+        tree_duration = duration
+        tree_zoomed = set()
+        self._send_json(_tree_view())
+
+    def _handle_zoom_step(self, step_id: str) -> None:
+        """Raise the resolution of one step, in place, and return the
+        WHOLE tree rather than just the new children - the tree is
+        small, and one shape for every response keeps the page from
+        having to splice a subtree into what it already has.
+
+        Re-zooming a step that already has children replaces them:
+        the step keeps its identity while the understanding underneath
+        it changes, which is the point of § Decomposition / zoom."""
+        if tree is None:
+            self.send_error(409, "no tree yet")
+            return
+        step = tree.find(step_id)
+        ancestors = _ancestor_labels(tree, step_id)
+        if step is None or ancestors is None:
+            self.send_error(404, "no such step")
+            return
+        try:
+            labels = zoom_into(step.label, ancestors, tree_duration)
+        except Exception as e:  # same reasoning as _handle_message()
+            print(f"(debug: {e})")
+            self.send_error(503, "that took longer than expected - try again in a moment")
+            return
+        step.children = [Step(id=_mint_step_id(), label=label) for label in labels]
+        tree_zoomed.add(step_id)
+        self._send_json(_tree_view())
 
     def _handle_create_goal(self) -> None:
         text = self._read_text_body()

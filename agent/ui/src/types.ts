@@ -26,6 +26,29 @@
 /** A generic, capability-agnostic node - not a final domain model.
  * Present only when a Planning result actually had a step list to
  * show; most results won't, and that's expected (see PlanningResult). */
+/** One node of the Steps page's scratch tree (POST /api/tree,
+ * server.py's _step_view()). Deliberately NOT PlanningNode: it has a
+ * stable per-step `id` and a `zoomed` flag, neither of which exists
+ * in a plan record's two-level shape, and it recurses to any depth.
+ * See backend/planning/plan/step.py. */
+export interface StepNode {
+  id: string;
+  label: string;
+  status: "open" | "current" | "done";
+  /** False means "never zoomed into", not "nothing under it" - a
+   * zoomed step with no children is one an Action can be projected
+   * from directly (see backend/planning/plan/zoom.py). */
+  zoomed: boolean;
+  children: StepNode[];
+}
+
+export interface TreeView {
+  /** The time phrase extracted from the typed text - a step can't be
+   * decomposed without the span it has to fit inside. */
+  duration: string;
+  root: StepNode | null;
+}
+
 export interface PlanningNode {
   id: string;
   label: string;

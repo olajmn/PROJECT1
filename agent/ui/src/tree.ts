@@ -28,7 +28,7 @@ const ROMAN_NUMERALS = [
   "xi", "xii", "xiii", "xiv", "xv", "xvi", "xvii", "xviii", "xix", "xx",
 ];
 
-function treeLabel(depth: number, index: number): string {
+export function treeLabel(depth: number, index: number): string {
   if (depth === 0) return `${index + 1}.`;
   if (depth === 1) return `${ROMAN_NUMERALS[index] ?? String(index + 1)}.`;
   // Depth 2+ isn't produced by today's data (steps -> microsteps is

@@ -1,11 +1,12 @@
 // Shared nav-badge populator, called once by every page's own entry
 // script (main.ts, active.ts, set-goal.ts, vision.ts, completed.ts,
-// history.ts) - the <nav> markup itself is duplicated per static HTML
-// file (no templating here), but the counts it shows come from one
-// place so all six pages stay in sync.
+// history.ts, sessions.ts, steps.ts) - the <nav> markup itself is
+// duplicated per static HTML file (no templating here), but the
+// counts it shows come from one place so all pages stay in sync.
 //
 // Only Vision/Active/Completed get a count - the three that name a
-// concrete, countable set of things (Conversation and Set Goal don't;
+// concrete, countable set of things (Conversation, Set Goal and Steps
+// don't; Steps holds one unsaved scratch tree, not a collection;
 // History already shows its own count as every entry's key:value
 // dump). Vision's count is active (non-archived) visions only, same
 // "live, not terminal" scope Active already has by excluding

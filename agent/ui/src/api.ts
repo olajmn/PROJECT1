@@ -23,8 +23,12 @@
 //      - setChatFocus()
 //  6. Sessions
 //      - fetchSessions()
+//  7. Steps (scratch tree)
+//      - fetchTree()
+//      - createTree()
+//      - zoomStep()
 
-import type { AgentResponse, ChatFocusView, GoalView, HistoryEntry, SessionLogView, VisionView } from "./types.js";
+import type { AgentResponse, ChatFocusView, GoalView, HistoryEntry, SessionLogView, TreeView, VisionView } from "./types.js";
 
 // 1. Free conversation
 
@@ -172,4 +176,41 @@ export async function fetchSessions(): Promise<SessionLogView[]> {
     throw new Error(`request failed: ${res.status}`);
   }
   return (await res.json()) as SessionLogView[];
+}
+
+// 7. Steps (scratch tree)
+
+/** Whatever tree the server currently holds - `root` is null if none
+ * has been built yet, or if the process restarted (it is in memory
+ * only). */
+export async function fetchTree(): Promise<TreeView> {
+  const res = await fetch("/api/tree");
+  if (!res.ok) {
+    throw new Error(`request failed: ${res.status}`);
+  }
+  return (await res.json()) as TreeView;
+}
+
+/** Unlike the wrappers above, these surface the server's own reason
+ * phrase instead of just the status code - the Steps routes reject
+ * text with no timeframe in it (422), and that reason is the whole
+ * point of the rejection, not an internal detail. */
+async function postTree(path: string, body?: unknown): Promise<TreeView> {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(res.statusText || `request failed: ${res.status}`);
+  }
+  return (await res.json()) as TreeView;
+}
+
+export function createTree(text: string): Promise<TreeView> {
+  return postTree("/api/tree", { text });
+}
+
+export function zoomStep(stepId: string): Promise<TreeView> {
+  return postTree(`/api/tree/${stepId}/zoom`);
 }
