@@ -24,6 +24,9 @@
    vi. The agent actually doing things, not just explaining how
    vii. Goal ≠ Plan: the goal stays stable, the plan is revisable
    viii. Reflection / progress summaries
+   ix. Practices, not projects: a recurring commitment has no shape yet
+   x. A plan can only be regenerated, never edited
+   xi. Vision as what makes an activity legitimate, not a larger goal
 5. Interface, platform, and delivery
    i. Multi-device sync via end-to-end encryption
    ii. Calendar integration
@@ -180,6 +183,7 @@ With "Task (right now)" as just the current step in it — instead of today's mo
 - Explicitly deferred: which horizons actually become step-lists (`this_week` only, or `one_month`/`one_year` too) — "we take it bit by bit, but it's something to come back to."
 - Concept for when feedback changes direction: start simple — it changes which step it's currently asking about (edits/swaps the current step), not a full regeneration of the whole list. Real, named, unsolved problem this runs into immediately: steps have implicit prerequisites ("you can't put water in the kettle before you've gotten off the couch") — freely editing one step in isolation can silently break the steps that assumed it. Explicitly parked, not solved, at the concept stage.
 - Raised 2026-08-23: click into any individual step and generate steps FOR that step — the same "break this into smaller pieces" mechanism `_generate_steps()` already applies once to `right_now`, applied recursively/on-demand to any step in the list, drilling down as deep as needed. Same unsolved prerequisite problem as above applies one level deeper too (sub-steps inherit whatever their parent step assumed) — not a separate problem, the same one, just recursive.
+  **Partly built 2026-09-14** — `backend/planning/plan/zoom.py` and `step.py` do exactly this, on the Steps page's own scratch tree only; real plans are untouched, and whether the finer content is persisted stays undecided (see [[04-current-state]] § 5, § 9). The prerequisite problem above is still entirely unsolved: `Step.ordered` records *whether* a step's children have to happen in sequence, which is a flag, not knowledge of what any particular child assumed.
 
 ### ii. Recognize a real, already-happened start time
 
@@ -205,6 +209,7 @@ Discussed 2026-08-24: the agent should understand what a duration actually means
 - Whether this belongs to the Time faculty or a different one: RESOLVED for relative-duration (pure magnitude comparison needs no knowledge of activities, fits Time cleanly). STILL OPEN for the activity-specific half — looks like it belongs to a Language/Semantics faculty that doesn't exist yet.
 - What "relative" duration requires: RESOLVED — a second duration string to compare against (`reference` in `relative_length(duration, reference)`). Nothing calls it with a real reference yet.
 - The actual trigger: STILL OPEN — `relative_length()` exists as a capability, isn't wired into `plan.py`/`replan()`/the UI anywhere yet, so whether it runs on every plan generation or only on shrink is undecided.
+- Noted 2026-09-14, not decided: the activity-specific half may be the same absent input as the depth verdict's own weak spot on the structural axis. `zoom.py`'s `is_too_coarse()` judges a step's wording without knowing whose step it is, exactly as `relative_length()` judges a span without knowing what it is a span *of* — and `planning-model.md` § Structural axis already states that resolution is "not a property of the text itself". If it is one gap rather than two, it is one thing to fix (see [[04-current-state]] § 9). Also a steer against the lookup-table option above: `planning-model.md` § Minimum planability counts "reliable general/background knowledge the agent already has access to" as KNOWN, and how long a run typically takes is exactly that — which makes this a model question, not a table to maintain.
 
 ### vi. The agent actually doing things, not just explaining how
 
@@ -223,6 +228,39 @@ Discussed 2026-09-01, following a Goal-card UI and generation-logic review (see 
 ### viii. Reflection / progress summaries
 
 E.g. "you actually trained 1 hour/week — that's 52 hours this year."
+
+### ix. Practices, not projects: a recurring commitment has no shape yet
+
+Raised 2026-09-14, from two examples offered as interchangeable and structurally identical: "save 10 kroner every day" and "do 10 push-ups every day, and see how far it goes." Neither fits the implemented model on any axis. There is no deadline (explicitly open-ended — "see how far it goes"), so `duration`/`frozen_duration` have nothing to count down toward. There is no completion, so `resolved` never fires. And there is nothing to decompose — "do 10 push-ups" is already a single action, so the recursive Step of § 4.i is a tree with one node. What actually matters instead is a *rate* and an *accumulation*: how often, and what it has added up to.
+
+Suggested name for the distinction, not a decided term: **projects** (climbing Everest, a master's degree, writing a song — a target, a depth, an end) versus **practices** (saving, push-ups, reading, tidying — a rhythm and a sum). Everything built today, including the on-demand zoom, addresses the project side.
+
+- Why this matters more than its position in this document suggests: the motivating examples behind the project's own framing (include gaming, training, reading, cleaning in a day without any of it feeling like an obligation) are almost entirely practices, not one project among them. The shape the product cares most about is the one currently least represented.
+- Open, and not investigated: whether a practice is a third kind of record alongside Goal and Vision, a Goal with a different set of fields, or something that isn't a Goal at all. Nothing here argues for one.
+- Connects to § 4.viii above — accumulation ("52 hours this year") is the natural read of a practice, where for a project it is at best a side note.
+- Second half of the same gap, also open: a practice that only knows what it is told can never notice that nothing has been logged for five days. For a practice, the *absence* of input is itself information, and nothing in the system acts between two user messages today (see [[04-current-state]] § 7, "Continuity / proactivity").
+
+### x. A plan can only be regenerated, never edited
+
+Raised 2026-09-14, from the wish to talk to a plan about one of its parts — "I finished step 2 already, on the 15th, not the 21st" — and the observation that this is close to what an issue tracker does, except with the agent doing the reorganizing rather than the user.
+
+Three capabilities that this needs, separated deliberately because they are not the same thing and only the first is about objects: **reference** (the agent can tell which step is meant), **local mutation** (something changes at that step without the rest being rewritten), and **consequence** (the change propagates — six days freed up should move the windows of the steps after it). A recursive Step with a stable `id` (§ 4.i, built) supplies the first and nothing else.
+
+- Concrete blocker found in existing code, not a design preference: `advance_step()`'s `step_status` is a per-step open/resolved list *parallel-indexed* to `steps`. Identity is therefore positional, and positional identity is incompatible with reorganizing — the moment steps move, the statuses silently describe different steps. Stable ids are what make reorganization expressible at all.
+- Second blocker: `current_step` is one forward-only pointer per goal that advances "exactly once", so being done with step 2 but not step 1 cannot be represented. The implemented model assumes a ladder; both motivating examples ("we already did 1 and 2", "I completed step 2") assume something that isn't one. Whether every plan is a ladder is itself the question `Step.ordered` was added to hold an answer to.
+- The deepest version of the gap: `replan()` regenerates a whole plan; nothing anywhere *edits* one. Keeping a tree and moving two nodes within it is a different operation from producing a new tree, and it does not exist in any form today.
+- Tension to resolve rather than a bug: `frozen_duration` freezes a plan's windows deliberately, so a countdown doesn't silently reset on every render ([[04-current-state]] § 8). That is right for honesty and wrong for responsiveness. Possible reconciliation, untested — freeze the goal's *outer* span (a real deadline shouldn't drift) and recompute the steps' windows *within* it when something actually changes.
+- Related but distinct from § 4.vii: that entry is about not redefining a Goal when a plan fails; this is about whether a plan can be changed in place at all.
+
+### xi. Vision as what makes an activity legitimate, not a larger goal
+
+Raised 2026-09-14, across two framings offered separately and probably the same idea: Vision as what determines which *framework* applies (a business vision implies metrics and deadlines; "get more healthy" implies consistency and has no deadline at all), and Vision as what makes an activity permissible rather than stolen time (gaming inside a vision of "a life I actually enjoy" is aligned, not a guilty pleasure).
+
+Both point at Vision doing a **typing** job — deciding what counts as progress, what counts as success, and what vocabulary applies to everything underneath it — rather than being a bigger Goal above Goals. This would give Vision a concrete function, which is what it has been missing; it was paused precisely because it wasn't clear what it was *for*.
+
+- Directly at odds with the implemented behavior, which is worth stating plainly: `plan_prompts.SYSTEM_PROMPT` passes a linked Vision in as "background context only", instructed to "never let it override, replace, or expand what the goal itself actually asks for". That is the weakest possible use of it, close to the opposite of a typing mechanism. Not necessarily wrong — that instruction exists to stop the model inventing personal specifics from a vague direction — but the two readings cannot both be right, and nothing here decides which is.
+- Why it may matter beyond Vision itself: the implemented vocabulary is uniformly one of obligation (`duration`, `frozen_duration`, deadlines, `resolved`, a forward-only pointer, a "Done?" control), while the product's stated aim is the absence of obligation. Two of the four motivating activities (gaming, reading) are things wanted and felt guilty about; two (training, tidying) are avoided but valued. They need opposite treatment and are currently treated identically, as goals with timeframes. Whether that dimension belongs to Vision, to a Goal, or somewhere else is open.
+- Overlaps § 4.ix above — a Vision that implies "consistency, no deadline" is describing a practice, so these two may be one question approached from different sides.
 
 ## 5. Interface, platform, and delivery
 
