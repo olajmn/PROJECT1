@@ -44,10 +44,11 @@ def create_goal(typed_text: str, new_vision_text: str, vision_id_value: str) -> 
     be proposed instead (`suggested_duration`), or, for a goal that's
     already complete without a broader duration, simply returns a plan
     scoped to `now` alone. create_goal() passes opening=True so that
-    first mint cannot land on a suggested_action or a now-without-
-    duration plan - those are Actions, and the opening job is to get
-    enough to write a Plan. `_planability()` reads that one response and
-    gives the result an explicit, inspectable name
+    first mint cannot land on a suggested_action - opening is not
+    "do this now". Missing duration no longer blocks a planable mint;
+    Decide asks for a checkable End when the goal is vague. Time stays
+    optional for co-building the WHAT line. `_planability()` reads that
+    one response and gives the result an explicit, inspectable name
     ("ask"/"suggest"/"planable") - the reasoning step between a Goal
     and treating its plan as real, not a second model call (see
     docs/planning-model.md § Minimum planability).

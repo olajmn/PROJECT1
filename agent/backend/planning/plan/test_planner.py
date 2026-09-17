@@ -131,16 +131,18 @@ try:
 
     print("OK - generate_plan() suggested_action validation/priority")
 
-    # create_goal() opening cannot land on an Action.
+    # create_goal() opening cannot land on an Action (suggested_action).
+    # Missing timeframe no longer blocks a planable mint — End clarity
+    # is Decide's job; co-build does not wait on a span.
     _set_stage3({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
     opened = create_goal("I want to start working out", "", "")
     assert opened["plan"]["suggested_action"] is None
     assert opened["plan"]["clarification"]
     _set_stage3({**_BLANK_PLAN, "now": "Choose any piece of equipment and begin immediately"})
     opened_now = create_goal("start working out", "", "")
-    assert opened_now["plan"]["now"] is None
-    assert opened_now["plan"]["clarification"]
-    print("OK - create_goal() opening refuses an Action")
+    assert opened_now["plan"]["now"] == "Choose any piece of equipment and begin immediately"
+    assert opened_now["plan"]["clarification"] is None
+    print("OK - create_goal() opening refuses Action; allows planable without duration")
 
     # ------------------------------------------------------------------
     # Test 1 - SUGGEST -> "Yes" -> accepted as the current Action

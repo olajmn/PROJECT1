@@ -27,7 +27,8 @@ def decide(
     """
     One model call: {clarification, suggested_action, suggested_duration},
     each a string or null. Callers (generate_plan) enforce mutual
-    exclusion and opening rules after this returns.
+    exclusion and opening rules after this returns. Opening asks for a
+    checkable End when thin; missing timeframe must not force ASK.
     """
     user_content = f"The current date and time is: {_now_str()}\n\nMy goal is: {goal}"
     if vision_id is not None:
@@ -53,9 +54,13 @@ def decide(
     if opening:
         user_content += (
             "\n\nThis is the opening of a new goal. Your job is to get "
-            "enough to write a plan, not to propose a first action to "
-            "do right now. Do not set suggested_action. If the goal is "
-            "too thin, set clarification to one short question, or set "
-            "suggested_duration if a reasonable timeframe default exists."
+            "a clear enough end to start a coarse outline with the "
+            "user - not to propose a first action to do right now, and "
+            "not to invent a full plan alone. Do not set "
+            "suggested_action. If the goal has no checkable 'done', "
+            "set clarification to one short question about what done "
+            "would look like. Missing timeframe is fine - do not ask "
+            "about timeframe on opening, and never invent a default "
+            "like '8 weeks' in suggested_duration."
         )
     return ask_model(DECIDE_SYSTEM_PROMPT, user_content, DECIDE_KEYS)

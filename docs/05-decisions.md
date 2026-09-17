@@ -185,10 +185,25 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Alternatives considered:** keep calendar `plan.steps` / `PLAN_KEYS` as the only plan structure; replace them in one rewrite with recursive Steps; build progression only in the Steps workbench until later.
 **Why this choice:** `planning-model.md` already treats Progression (WHAT) and Time (WHEN) as separate axes; runtime had mixed them (week candles as step count). Minting a shallow Step tree via `construct_progression.py` on Decide=PLAN, stored as `plan.progression`, lets Active show a real WHAT list without deleting legacy Fill/`generate_structure` yet. `to_planning_node()` prefers progression when present, else falls back to `plan.steps`. Calendar fill soft-fails without blocking progression. Matches the agreed "shadow first" migration — dual paths visible in `TODO.md` P3 until zoom writes into progression and legacy structure can be demoted.
-**Trade-off:** two structures can exist on one record; replan still regenerates `PLAN_KEYS` and carries both trees forward unchanged. Zoom from Active into `progression` is not built — Steps workbench remains a separate scratch tree.
+**Trade-off:** two structures can exist on one record; replan still regenerates `PLAN_KEYS` and carries both trees forward unchanged. (Zoom-into-progression and user +/- beads were added the same day — see [[04-current-state]]; this entry's "zoom not built" line is stale.)
 **Reversible?** Yes — stop writing `progression`, or ignore it in manifestation; old records without the field already fall back to legacy steps / surface only.
+
+## 25. 2026-09-17 — Product direction: Project / mental-map workspace; user steers; Goal engine remains for now
+
+**Decision:** Treat the product as a **Project** workspace whose job is a **mental map** (Start → waypoints → End), not an agent that finishes a plan or teaches. The **user steers** the line (chat + click; named beads via +/-); the agent **proposes** (one question or one concrete suggestion) and does not dump a syllabus. **Time is optional** for co-building and for progression zoom — not the gate and not the spine. Primary UI home is **Projects** (`/` → `projects.html`); Active stays as legacy. Persistence may keep `goal_id` / Goal records until a later rename; language and prompts migrate first.
+
+**Date:** 2026-09-17
+
+**Alternatives considered:** stay a Goal/execution planner that mints full progressions on PLAN; require timeframe before any structure; chat-only or click-only editing of the map; rename storage/`goal_id` in the same breath as the UI shell.
+
+**Why this choice:** Live tests showed both failure modes of the old feel — agent dumps a middle, or interrogates forever — while the wanted experience was co-building a map of *the user's* landmarks (e.g. school, first project). Teaching and schedules can be outsourced; the app orients. A Projects shell and user +/- beads already express that; Decide/Fill/prompts still speak Goal and still auto-mint on PLAN — so the direction is settled here, and implementation is a staged migration (thin slice: prompts + UI copy first; `02-product` / IDs later). See `TODO.md` Active 23 / Queue 23 and [[04-current-state]] § 5.
+
+**Trade-off:** dual vocabulary (Project UI, Goal engine) until migration catches up; auto-`construct_progression` on PLAN still fights "user steers" until that path is narrowed. Zoom children can still feel like worksheets — map-vs-teaching is a prompt/product rule, not fully enforced in code. Dual paths must stay **named** in root `TODO.md` § Parallel paths (anti-mess rule) so the base does not grow a second undocumented planner.
+
+**Reversible?** Yes at the product layer — drop Projects, restore Active-as-home, re-emphasize timeframe gates — without deleting `plan.progression`. Storage rename is independent and can wait or never happen.
 
 ## See also
 
 - [[03-architecture]]
 - [[06-development]]
+- [[02-product]] (still Goal-era wording until migration updates it)

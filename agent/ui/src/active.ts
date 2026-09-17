@@ -16,13 +16,30 @@
 //      - loadGoals()
 //  3. Initialization
 
-import { cancelGoal, fetchActiveGoals, fetchVisions, sendGoalFeedback, setChatFocus, setGoalVision } from "./api.js";
+import { cancelGoal, fetchActiveGoals, fetchVisions, sendGoalFeedback, setChatFocus, setGoalVision, zoomGoalStep } from "./api.js";
 import { initNavCounts } from "./nav.js";
 import { planElement } from "./tree.js";
-import type { ChatMessage, GoalView, VisionView } from "./types.js";
+import type { ChatMessage, GoalView, PlanningNode, VisionView } from "./types.js";
 
 const list = document.getElementById("goal-list") as HTMLDivElement;
 const empty = document.getElementById("empty") as HTMLParagraphElement;
+
+// Progression steps mint ids like p1, p2 (construct_progression).
+// Legacy calendar trees use other ids — those are not zoom targets.
+const PROGRESSION_STEP_ID = /^p\d+$/;
+
+function findNode(node: PlanningNode, id: string): PlanningNode | null {
+  if (node.id === id) return node;
+  for (const child of node.children) {
+    const found = findNode(child, id);
+    if (found) return found;
+  }
+  return null;
+}
+
+function isProgressionTree(node: PlanningNode): boolean {
+  return node.children.some((child) => PROGRESSION_STEP_ID.test(child.id));
+}
 
 // 1. Rendering
 
@@ -104,7 +121,34 @@ function renderGoalCard(goal: GoalView, visions: VisionView[]): HTMLElement {
   card.appendChild(renderThread(goal.thread ?? []));
 
   if (goal.node) {
-    card.appendChild(planElement(goal.node));
+    const onZoom = isProgressionTree(goal.node)
+      ? async (stepId: string) => {
+          planBox.classList.add("plan-busy");
+          try {
+            const updated = await zoomGoalStep(goal.goal_id, stepId);
+            const before = goal.node ? findNode(goal.node, stepId) : null;
+            const after = updated.node ? findNode(updated.node, stepId) : null;
+            const grew = (after?.children.length ?? 0) > (before?.children.length ?? 0);
+            const next = renderGoalCard(updated, visions);
+            card.replaceWith(next);
+            if (!grew) {
+              const note = document.createElement("p");
+              note.className = "zoom-note";
+              note.textContent =
+                "Already fine enough to act on — nothing more under that step.";
+              next.querySelector(".plan")?.appendChild(note);
+            }
+          } catch (err) {
+            planBox.classList.remove("plan-busy");
+            const error = document.createElement("p");
+            error.className = "error";
+            error.textContent = `(error: ${(err as Error).message})`;
+            planBox.appendChild(error);
+          }
+        }
+      : undefined;
+    const planBox = planElement(goal.node, onZoom);
+    card.appendChild(planBox);
   }
 
   const form = document.createElement("form");

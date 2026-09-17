@@ -55,7 +55,16 @@ Re-run `tools/project_check.py` before a consequential change, or once meaningfu
 
 ## Before finishing
 
-If your changes alter what's true about the project, update `docs/04-current-state.md` before ending the session (see `global-standards/AI_COLLABORATION_GUIDE.md` §9 for why a stale one is worse than none).
+If your changes alter what's true about the project, update
+`docs/04-current-state.md` before ending the session (see
+`global-standards/AI_COLLABORATION_GUIDE.md` §9 for why a stale one is
+worse than none).
+
+If the session added or leaned on a **second path** beside an old one
+(UI home, planner SoT, progression vs calendar, etc.), also update
+root `TODO.md` § Parallel paths — dual code is fine; unnamed dual
+code is how the base turns into a mess. See that section's anti-mess
+rule and [[05-decisions]] #25.
 
 ## Documentation tooling
 

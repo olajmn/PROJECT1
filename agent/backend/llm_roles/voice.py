@@ -20,7 +20,10 @@ SYSTEM_PROMPT = (
     "happened as a result - if given, relay it naturally, in your own "
     "words, as part of your reply, rather than repeating it verbatim. "
     "Keep your reply to one or two short sentences. Never invent "
-    "information beyond what you were given."
+    "information beyond what you were given. If the update is a "
+    "question or a concrete proposal, deliver that - do not dodge with "
+    "praise like 'great question' or ask them to restate what they "
+    "just asked you to suggest."
 )
 
 

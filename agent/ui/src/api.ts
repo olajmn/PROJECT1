@@ -98,6 +98,43 @@ export async function setGoalVision(goalId: number, visionId: number | null): Pr
   return (await res.json()) as GoalView;
 }
 
+export async function zoomGoalStep(goalId: number, stepId: string): Promise<GoalView> {
+  const res = await fetch(`/api/goals/${goalId}/zoom/${stepId}`, { method: "POST" });
+  if (!res.ok) {
+    const detail = (await res.text()).trim();
+    // send_error() returns an HTML page; pull the plain reason if present.
+    const plain = detail.match(/no timeframe[\s\S]*?(?=<|$)/i)?.[0]
+      ?? detail.match(/Error code: (\d+)[\s\S]*?<p>([^<]+)/i)?.[2]
+      ?? detail.match(/cannot zoom[^.<]*/i)?.[0];
+    throw new Error((plain || detail || `request failed: ${res.status}`).slice(0, 200));
+  }
+  return (await res.json()) as GoalView;
+}
+
+export async function addProgressionStep(goalId: number, label: string): Promise<GoalView> {
+  const res = await fetch(`/api/goals/${goalId}/progression`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ label }),
+  });
+  if (!res.ok) {
+    const detail = (await res.text()).trim();
+    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+  }
+  return (await res.json()) as GoalView;
+}
+
+export async function removeProgressionStep(goalId: number, stepId: string): Promise<GoalView> {
+  const res = await fetch(`/api/goals/${goalId}/progression/${stepId}/remove`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const detail = (await res.text()).trim();
+    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+  }
+  return (await res.json()) as GoalView;
+}
+
 export async function fetchCompletedGoals(): Promise<GoalView[]> {
   const res = await fetch("/api/goals/completed");
   if (!res.ok) {

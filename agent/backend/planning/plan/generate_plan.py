@@ -28,11 +28,10 @@ from backend.planning.plan.plan_schema import (
 from backend.planning.plan.plan_structure import generate_structure
 
 # create_goal()'s first mint cannot land on an Action. Used when
-# opening=True and Decide still returned suggested_action or Fill
-# returned a now-scoped plan with no timeframe.
+# opening=True and Decide still returned suggested_action with nothing
+# else to hold the turn.
 OPENING_CLARIFICATION = (
-    "This isn't specific enough to plan yet. What would done look like, "
-    "and over what span of time?"
+    "This isn't specific enough yet. What would done look like?"
 )
 
 
@@ -41,12 +40,20 @@ def _empty_horizons() -> dict:
 
 
 def _reject_opening_action(plan: dict) -> dict:
-    """Strip an Action off an opening mint. Keep clarification or
-    suggested_duration if the model already produced one; otherwise
-    ask OPENING_CLARIFICATION and clear every horizon so nothing
-    looks like a plan."""
+    """Strip an Action off an opening mint. Timeframe is optional —
+    missing duration must not force a clarification or wipe a
+    planable Decide/Fill result. If the only thing left after
+    clearing suggested_action is emptiness (pre-fill SUGGEST with no
+    ASK), ask what done looks like."""
+    had_action = bool(plan.get("suggested_action"))
     plan["suggested_action"] = None
     if plan.get("clarification") or plan.get("suggested_duration"):
+        return plan
+    # Decide already said PLAN (all nulls), or Fill already wrote
+    # horizons — leave planable. Co-build does not wait on a span.
+    if any(plan.get(key) for key in PLAN_KEYS):
+        return plan
+    if not had_action:
         return plan
     plan["clarification"] = OPENING_CLARIFICATION
     plan["now"] = None

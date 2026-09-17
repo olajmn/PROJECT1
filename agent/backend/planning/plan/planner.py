@@ -50,12 +50,7 @@ Run from the PROJECT ROOT: .venv/bin/python -m backend.goals.plan.planner
 from backend.foundation.time import freeze_duration, resolve_duration
 from backend.planning.goal.resolver import get_latest_for_all_goals, get_latest_for_goal
 from backend.infrastructure.data_persistence import archive_vision as archive_vision_record, get_vision, save_plan
-from backend.planning.plan.generate_plan import (
-    OPENING_CLARIFICATION,
-    _planability,
-    _reject_opening_action,
-    generate_plan,
-)
+from backend.planning.plan import generate_plan as generate_plan_mod
 from backend.planning.plan.json_request import ask_model
 from backend.planning.plan.plan_prompts import REPLAN_SYSTEM_PROMPT
 from backend.planning.plan.plan_schema import (
@@ -68,9 +63,11 @@ from backend.planning.plan.plan_schema import (
 # 1. Re-exports (schema + Stage 3)
 # ============================================================
 
-# PLAN_KEYS, generate_plan, _planability, OPENING_CLARIFICATION,
-# _reject_opening_action - imported above for callers that use
-# `planner.*`.
+# Callers that use `planner.*` (lifecycle, route_note, tests).
+generate_plan = generate_plan_mod.generate_plan
+OPENING_CLARIFICATION = generate_plan_mod.OPENING_CLARIFICATION
+_planability = generate_plan_mod._planability
+_reject_opening_action = generate_plan_mod._reject_opening_action
 
 
 # ============================================================

@@ -47,7 +47,8 @@ def _setting(latest: dict) -> str:
         pending = f"The agent suggested this first step: {plan['suggested_action']}"
     elif plan.get("suggested_duration"):
         pending = (
-            f"The agent proposed {plan['suggested_duration']} as the timeframe"
+            "The agent asked whether the user has a preferred date or "
+            "timeframe (saying no / no deadline is fine)"
         )
     elif plan.get("pending_duration_question"):
         pending = f"The agent asked: {plan['pending_duration_question']}"

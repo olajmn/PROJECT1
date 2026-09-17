@@ -33,7 +33,12 @@ def surface_text(record: dict) -> str:
     if plan.get("suggested_action"):
         return plan["suggested_action"]
     if plan.get("suggested_duration"):
-        return f"No timeframe was given for this - would {plan['suggested_duration']} work?"
+        # Older records may still store an invented span here; ask
+        # openly instead of confirming that guess.
+        return (
+            "Do you have a preferred date or timeframe to finish this "
+            "within? (You can also say no / no deadline.)"
+        )
     if plan.get("pending_duration_question"):
         return plan["pending_duration_question"]
     if plan.get("now"):

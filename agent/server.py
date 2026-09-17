@@ -118,6 +118,11 @@ from backend.planning.chat.turn import take_turn
 from backend.planning.goal.lifecycle import cancel_goal, create_goal
 from backend.planning.goal.resolver import created_at_key, get_latest_for_all_goals, get_latest_for_goal
 from backend.planning.plan.planner import archive_vision, set_goal_vision
+from backend.planning.plan.progression_zoom import (
+    add_progression_bead,
+    remove_progression_bead,
+    zoom_progression_step,
+)
 from backend.planning.plan.step import Step
 from backend.planning.plan.zoom import zoom_into
 
@@ -135,6 +140,11 @@ _CONTENT_TYPES = {
 _FEEDBACK_PATH_RE = re.compile(r"^/api/goals/(\d+)/feedback$")
 _CANCEL_PATH_RE = re.compile(r"^/api/goals/(\d+)/cancel$")
 _GOAL_VISION_PATH_RE = re.compile(r"^/api/goals/(\d+)/vision$")
+_GOAL_ZOOM_PATH_RE = re.compile(r"^/api/goals/(\d+)/zoom/(p\d+)$")
+_GOAL_PROGRESSION_PATH_RE = re.compile(r"^/api/goals/(\d+)/progression$")
+_GOAL_PROGRESSION_REMOVE_RE = re.compile(
+    r"^/api/goals/(\d+)/progression/(p\d+)/remove$",
+)
 _VISION_ARCHIVE_PATH_RE = re.compile(r"^/api/visions/(\d+)/archive$")
 _ZOOM_PATH_RE = re.compile(r"^/api/tree/(s\d+)/zoom$")
 
@@ -440,7 +450,9 @@ class Handler(BaseHTTPRequestHandler):
             ]
             self._send_json(list(reversed(views)))
             return
-        requested = "index.html" if self.path == "/" else self.path.lstrip("/")
+        # Project workspace is the product home (prototype); free chat
+        # remains at /index.html.
+        requested = "projects.html" if self.path == "/" else self.path.lstrip("/")
         file_path = (UI_DIR / requested).resolve()
         if UI_DIR not in file_path.parents or not file_path.is_file():
             self.send_error(404)
@@ -471,6 +483,22 @@ class Handler(BaseHTTPRequestHandler):
         zoom_match = _ZOOM_PATH_RE.match(self.path)
         if zoom_match:
             self._handle_zoom_step(zoom_match.group(1))
+            return
+        goal_zoom_match = _GOAL_ZOOM_PATH_RE.match(self.path)
+        if goal_zoom_match:
+            self._handle_goal_zoom(
+                int(goal_zoom_match.group(1)), goal_zoom_match.group(2),
+            )
+            return
+        goal_progression_match = _GOAL_PROGRESSION_PATH_RE.match(self.path)
+        if goal_progression_match:
+            self._handle_add_progression(int(goal_progression_match.group(1)))
+            return
+        goal_remove_match = _GOAL_PROGRESSION_REMOVE_RE.match(self.path)
+        if goal_remove_match:
+            self._handle_remove_progression(
+                int(goal_remove_match.group(1)), goal_remove_match.group(2),
+            )
             return
         feedback_match = _FEEDBACK_PATH_RE.match(self.path)
         if feedback_match:
@@ -589,6 +617,57 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:  # same reasoning as _handle_message()
             print(f"(debug: {e})")
             self.send_error(503, "that took longer than expected - try again in a moment")
+            return
+        self._send_json(_goal_view(record))
+
+    def _handle_goal_zoom(self, goal_id: int, step_id: str) -> None:
+        """One level deeper under a Step in plan.progression — persists
+        on the Goal so Active's plan box grows. Steps workbench
+        (/api/tree) is unchanged."""
+        latest = get_latest_for_goal(goal_id)
+        if latest is None:
+            self.send_error(404, "no such goal")
+            return
+        try:
+            record = zoom_progression_step(latest, step_id)
+        except ValueError as e:
+            self.send_error(422, str(e))
+            return
+        except Exception as e:
+            print(f"(debug: {e})")
+            self.send_error(503, "that took longer than expected - try again in a moment")
+            return
+        self._send_json(_goal_view(record))
+
+    def _handle_add_progression(self, goal_id: int) -> None:
+        """Append one user-named bead to plan.progression — no model."""
+        length = int(self.headers.get("Content-Length", 0))
+        try:
+            payload_in = json.loads(self.rfile.read(length) or b"{}")
+        except json.JSONDecodeError:
+            self.send_error(400, "invalid JSON")
+            return
+        latest = get_latest_for_goal(goal_id)
+        if latest is None:
+            self.send_error(404, "no such goal")
+            return
+        try:
+            record = add_progression_bead(latest, str(payload_in.get("label") or ""))
+        except ValueError as e:
+            self.send_error(422, str(e))
+            return
+        self._send_json(_goal_view(record))
+
+    def _handle_remove_progression(self, goal_id: int, step_id: str) -> None:
+        """Drop one bead from plan.progression — no model."""
+        latest = get_latest_for_goal(goal_id)
+        if latest is None:
+            self.send_error(404, "no such goal")
+            return
+        try:
+            record = remove_progression_bead(latest, step_id)
+        except ValueError as e:
+            self.send_error(422, str(e))
             return
         self._send_json(_goal_view(record))
 

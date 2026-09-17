@@ -67,8 +67,8 @@ form.addEventListener("submit", async (event) => {
   error.hidden = true;
 
   try {
-    await createGoal(text);
-    window.location.href = "active.html";
+    const created = await createGoal(text);
+    window.location.href = `projects.html?id=${created.goal_id}`;
   } catch (err) {
     input.disabled = false;
     button.disabled = false;

@@ -6,6 +6,10 @@ for what must happen toward the Goal. It deliberately does NOT use
 week_windows / day_windows — calendar length must not dictate how many
 progression steps exist.
 
+First mint stays coarse on purpose: a few phase-level claims only.
+Lesson-level detail belongs under zoom (progression_zoom / zoom.py),
+not this call — otherwise the agent finishes the middle without the user.
+
 Written onto plan["progression"] by generate_plan() after Decide=PLAN.
 Active prefers this field via manifestation.to_planning_node() when
 present; legacy plan["steps"] remains a fallback. Not yet the sole
@@ -17,16 +21,25 @@ import json
 from backend.model.client import call_with_retry, send_message
 from backend.planning.plan.step import Step, from_nested_labels
 
+# Hard cap: first glance must stay note-sized. Zoom adds depth later.
+_MIN_STEPS = 2
+_MAX_STEPS = 4
+
 PROGRESSION_SYSTEM_PROMPT = (
     "You list what must happen for the user's goal to be fulfilled — "
     "the progression of work, not a calendar schedule. "
     "Do NOT invent one step per week or per day. "
     "Do NOT name months, weekdays, or dates as the structure. "
-    "Each step is a short claim about something that needs to become "
-    "true or get done. "
+    "This is the FIRST, coarse outline only — co-built with the user "
+    "later. Each step MUST be a phase name of at most 5 words "
+    "(examples: 'Basics', 'Set up tools', 'Build one page', "
+    "'Make it interactive'). Forbidden: full sentences, lesson "
+    "descriptions, HTML/CSS/JS as separate curriculum steps, tool "
+    "lists, or anything that already teaches how. Detail comes later "
+    "when the user expands a phase. "
     "Respond with ONLY a JSON object with exactly one key, \"steps\", "
-    "whose value is an array of 2 to 8 short strings, in the order "
-    "they should happen. "
+    "whose value is an array of 2 to 4 short phase labels, in the "
+    "order they should happen. Prefer fewer. "
     "If you are given an immediate action, the first step should lead "
     "into or match that action."
 )
@@ -62,10 +75,16 @@ def construct_progression(
         for item in steps:
             if not isinstance(item, str) or not item.strip():
                 raise ValueError(f"Progression step is not a non-empty string: {data}")
-            labels.append(item.strip())
-        if len(labels) < 2 or len(labels) > 8:
+            label = item.strip()
+            # Soft truncate runaway syllabus sentences the model still emits.
+            words = label.split()
+            if len(words) > 5:
+                label = " ".join(words[:5])
+            labels.append(label)
+        if len(labels) < _MIN_STEPS or len(labels) > _MAX_STEPS:
             raise ValueError(
-                f"Progression needs 2–8 steps, got {len(labels)}: {data}"
+                f"Progression needs {_MIN_STEPS}–{_MAX_STEPS} steps, "
+                f"got {len(labels)}: {data}"
             )
         return labels
 

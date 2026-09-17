@@ -34,15 +34,19 @@ def ask_model(system_prompt: str, user_content: str, required_keys: tuple[str, .
     def attempt() -> dict:
         raw = send_message(system_prompt, user_content, json_mode=True)
         plan = json.loads(raw)
+        if not isinstance(plan, dict):
+            raise ValueError(f"Model response is not a JSON object: {plan!r}")
 
-        missing = [key for key in required_keys if key not in plan]
-        if missing:
-            raise ValueError(
-                f"Model response is missing required plan key(s) {missing}: {plan}"
-            )
+        # Local models often omit broad horizons (year/month) when the
+        # span is short. Treat missing keys as null rather than failing
+        # the whole Fill/replan — callers already accept null values.
+        for key in required_keys:
+            if key not in plan:
+                plan[key] = None
+
         wrong_type = [
             key for key in required_keys
-            if key in plan and not isinstance(plan[key], (str, type(None)))
+            if not isinstance(plan[key], (str, type(None)))
         ]
         if wrong_type:
             raise ValueError(
