@@ -1,8 +1,8 @@
 """thread_messages() only - no model call. Run from agent/:
-    .venv/bin/python -m backend.planning.chat.test_turn
+    .venv/bin/python -m backend.planning.chat.test_thread
 """
 
-from backend.planning.chat.turn import thread_messages
+from backend.planning.chat.thread import thread_messages
 
 history = [
     {

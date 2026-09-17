@@ -4,7 +4,8 @@ in, raw text out. Callers interpret that text (JSON shape, meaning);
 this module does not.
 
 MODEL is the only place the concrete model is named, so a swap is a
-one-line change here (see docs/05-decisions.md).
+one-line change here (see docs/05-decisions.md). TEMPERATURE is likewise
+set once here for every call — not per Voice/Decide/Fill site.
 
 think=False is unconditional, not a qwen-specific branch. Some
 models expose a separate thinking channel; left on, it has taken 3+
@@ -16,6 +17,10 @@ without that channel ignore the flag.
 import ollama
 
 MODEL = "qwen3.5:9b"
+
+# Low and global: structured JSON (Decide/Fill/progression) and Voice
+# both drift less. Callers do not override — one dial for the agent.
+TEMPERATURE = 0.2
 
 
 def send_message(
@@ -36,6 +41,7 @@ def send_message(
         model=MODEL,
         format=schema if schema is not None else ("json" if json_mode else None),
         think=False,
+        options={"temperature": TEMPERATURE},
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content},

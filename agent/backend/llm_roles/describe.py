@@ -1,14 +1,12 @@
 """
-LLM2 - Parser / Compiler (docs/v4-migration-decision.md).
+Describe - the shared role that names what a message is about.
 
-Transforms the human conversation into a structured, capability-
-agnostic understanding of what is being talked about. Deliberately
-produces NO judgment about whether action is needed and NO capability
-name - that decision belongs to LLM3, not here. An "actionable" flag
-here would already be a hidden capability-adjacent judgment dressed up
-as a neutral description, not a genuinely capability-agnostic one (see
-docs/v4-migration-decision.md, "LLM2 must not produce capability-specific
-concepts").
+Formerly LLM2 / `backend/llm2/parser.py` ("Parser / Compiler" /
+Understand). One LLM call: a short neutral sentence, capability-
+agnostic. No judgment about whether action is needed, no capability
+name (see docs/v4-migration-decision.md, "LLM2 must not produce
+capability-specific concepts"). Gate/Focus (today llm3) decides what
+runs next; Planning owns domain fields.
 """
 
 import json
@@ -26,9 +24,9 @@ SYSTEM_PROMPT = (
 )
 
 
-def understand(message: str) -> dict:
+def describe(message: str) -> dict:
     """{"about": <neutral description of what `message` concerns>} -
-    the only thing LLM3 sees of this turn. Falls back to the raw
+    what intake / llm3 sees of this turn. Falls back to the raw
     message itself if the model's response doesn't have the expected
     shape - the turn is never silently dropped."""
     return _about(SYSTEM_PROMPT, message, fallback=message)
@@ -45,12 +43,11 @@ CONTEXT_SYSTEM_PROMPT = (
 )
 
 
-def understand_in_context(message: str, setting: str) -> dict:
-    """Same shape as understand(), but the message is read against a
+def describe_in_context(message: str, setting: str) -> dict:
+    """Same shape as describe(), but the message is read against a
     known setting (e.g. a pending question) rather than in isolation.
-    Still produces no judgment and no capability name - see the module
-    docstring. Falls back to the raw message on a bad response, same
-    as understand()."""
+    Still produces no judgment and no capability name. Falls back to
+    the raw message on a bad response, same as describe()."""
     user_content = f"Setting: {setting}\n\nThe user said: {message}"
     return _about(CONTEXT_SYSTEM_PROMPT, user_content, fallback=message)
 

@@ -1,7 +1,7 @@
 """
 Smallest possible vertical-slice experiment for docs/v4-migration-decision.md:
 
-    USER -> LLM1 -> LLM2 -> LLM3 -> Planning (unmodified) -> LLM1 -> USER
+    USER -> Voice -> Describe -> LLM3 -> Planning -> Voice -> USER
 
 Not a product, not a UI, not Flask - a terminal loop whose only job is
 to test whether the boundary in docs/v4-migration-decision.md actually holds
@@ -29,8 +29,8 @@ Run from agent/ (this directory), with agent/'s own venv:
 """
 
 from backend.infrastructure.data_persistence import start_session
-from backend.llm1.interface import respond
-from backend.llm2.parser import understand
+from backend.llm_roles.voice import respond
+from backend.llm_roles.describe import describe
 from backend.llm3.select import select_capability
 from backend.manifestation import surface_text, to_planning_node
 from backend.planning.feedback.route_note import route_note
@@ -85,7 +85,7 @@ def process_turn(chat_focus: ChatFocus, user_text: str) -> dict:
     needs to know which goal the chat is pointed at, never a Session's
     own id/started_at, so it doesn't need to know Session exists at
     all (see main()'s own `session.chat_focus` call site)."""
-    understanding = understand(user_text)
+    understanding = describe(user_text)
     capability = select_capability(understanding)
 
     if capability != "planning":
@@ -113,7 +113,7 @@ def process_turn(chat_focus: ChatFocus, user_text: str) -> dict:
 
 
 def main() -> None:
-    print("USER -> LLM1 -> LLM2 -> LLM3 -> Planning experiment. Ctrl+C to quit.\n")
+    print("USER -> Voice -> Describe -> LLM3 -> Planning experiment. Ctrl+C to quit.\n")
     session = Session()
     while True:
         try:

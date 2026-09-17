@@ -10,11 +10,11 @@ Pure shape and tree operations - no model call, no persistence. A
 step is stored inside a plan record's own dict, so every field here
 has to survive json.dumps().
 
-Not wired into anything yet. Today's plan records still carry
-plan_structure.py's two-level {"label", "microsteps": [str]} shape,
-where a microstep is a bare string and so can never have children, a
-status, or an identity of its own - that asymmetry is what caps the
-current tree at two levels.
+Shadow-wired from generate_plan() as plan["progression"] (WHAT
+tree beside legacy plan["steps"]). Active's to_planning_node()
+prefers progression when present; zoom into that tree from Active
+is not built yet. Legacy calendar/session records still use
+plan_structure.py's two-level {"label", "microsteps"} shape.
 """
 
 from collections.abc import Callable, Iterator

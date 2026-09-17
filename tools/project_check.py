@@ -68,7 +68,7 @@ RELEVANT_AREAS = [AGENT_ROOT / "backend", DOCS_ROOT]
 # .py corpus for stale-path and orphan-import scanning: backend/
 # recursively, plus the top-level entry points that import from it -
 # cli.py/server.py aren't under backend/, but are exactly where
-# backend.llm1/llm2/llm3/planning are actually wired together (see
+# backend.llm_roles/llm3/planning are actually wired together (see
 # docs/04-current-state.md § 3.ii), so excluding them would make every
 # one of those modules look orphaned.
 PY_SCAN_AREAS = ["backend"]
@@ -80,8 +80,8 @@ SMOKE_IMPORT_MODULES = [
     "backend.planning.plan.planner",
     "backend.planning.goal.resolver",
     "backend.infrastructure.data_persistence",
-    "backend.llm1.interface",
-    "backend.llm2.parser",
+    "backend.llm_roles.voice",
+    "backend.llm_roles.describe",
     "backend.llm3.select",
     "backend.manifestation",
     "backend.module_library.modules",

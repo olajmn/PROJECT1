@@ -325,11 +325,13 @@ def route_note(latest: dict, note: str) -> dict:
     )
     # replan() only ever returns PLAN_KEYS - REPLAN_SYSTEM_PROMPT never
     # mentions steps, so `new_plan` has no "steps" key at all. Carry the
-    # existing step list and pointer forward unchanged rather than
-    # silently losing them on every real replan; this is a data-loss
-    # fix, not a re-evaluation of whether the steps still make sense
-    # (see docs/planning-model.md, "Feedback and Replanning").
+    # existing step list, shadow progression, and pointer forward
+    # unchanged rather than silently losing them on every real replan;
+    # this is a data-loss fix, not a re-evaluation of whether the steps
+    # still make sense (see docs/planning-model.md, "Feedback and
+    # Replanning").
     new_plan["steps"] = latest["plan"].get("steps")
+    new_plan["progression"] = latest["plan"].get("progression")
     # goal_id carried forward explicitly - without this, save_plan() would
     # mint a fresh one and this replan would silently start a *new*
     # goal entry instead of continuing the existing goal's chain.

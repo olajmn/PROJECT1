@@ -6,12 +6,11 @@ bottom, not a test framework. See docs/planning-model.md's ASK vs.
 SUGGEST for the semantics being verified here.
 
 Runs entirely against a temporary directory (never the real data/), and
-never calls the real Ollama model - planner.ask_model()/planner.replan()
-are monkeypatched to canned responses so these checks are deterministic
-and don't depend on a running model. That also means they verify the
-WIRING (which branch runs, what gets carried forward, what gets saved),
-not whether a live model actually produces a `suggested_action` in
-practice.
+never calls the real Ollama model for Stage 3 Decide/Fill or step
+trees - decide.ask_model, generate_plan.ask_model (Fill), and
+generate_structure are monkeypatched. These checks verify the WIRING
+(which branch runs, what gets carried forward, what gets saved), not
+live model wording.
 
 Run from agent/:
     .venv/bin/python -m backend.planning.plan.test_planner
@@ -25,6 +24,8 @@ from backend.infrastructure import data_persistence as dp
 from backend.planning.feedback.route_note import route_note
 from backend.planning.goal import resolver
 from backend.planning.goal.lifecycle import create_goal
+from backend.planning.plan import decide as decide_mod
+from backend.planning.plan import generate_plan as generate_plan_mod
 from backend.planning.plan import planner
 
 
@@ -37,13 +38,19 @@ def _pending_suggestion(vision_id=None):
 _original_data_dir = dp.DATA_DIR
 _original_plans_file = dp.PLANS_FILE
 _original_visions_file = dp.VISIONS_FILE
-_original_ask_model = planner.ask_model
+_original_decide_ask = decide_mod.ask_model
+_original_fill_ask = generate_plan_mod.ask_model
+_original_generate_structure = generate_plan_mod.generate_structure
+_original_construct_progression = generate_plan_mod.construct_progression
 _original_replan = planner.replan
 
 _tmp_dir = Path(tempfile.mkdtemp(prefix="planner_test_"))
 dp.DATA_DIR = _tmp_dir
 dp.PLANS_FILE = _tmp_dir / "plans.json"
 dp.VISIONS_FILE = _tmp_dir / "visions.json"
+# Never hit Ollama for step trees or shadow progression in these wiring checks.
+generate_plan_mod.generate_structure = lambda *args, **kwargs: None
+generate_plan_mod.construct_progression = lambda *args, **kwargs: None
 
 GOAL_TEXT = "I want to get my job search organized and get a job in development"
 SUGGESTION_TEXT = "Create a list of your current job-search tasks and prioritize them."
@@ -64,27 +71,46 @@ _BLANK_PLAN = {
     "hour": None, "minute": None, "now": None,
 }
 
+
+def _set_stage3(response: dict) -> None:
+    """One combined-shaped canned dict → Decide stub + Fill stub.
+    ASK/SUGGEST never call Fill; PLAN uses Fill for horizons."""
+    decide_mod.ask_model = _canned({
+        "clarification": response.get("clarification"),
+        "suggested_action": response.get("suggested_action"),
+        "suggested_duration": response.get("suggested_duration"),
+    })
+    generate_plan_mod.ask_model = _canned({
+        "year": response.get("year"),
+        "month": response.get("month"),
+        "week": response.get("week"),
+        "today": response.get("today"),
+        "hour": response.get("hour"),
+        "minute": response.get("minute"),
+        "now": response.get("now"),
+    })
+
+
 try:
     # ------------------------------------------------------------------
     # generate_plan(): suggested_action validation/priority
     # ------------------------------------------------------------------
 
-    planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
+    _set_stage3({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
     plan = planner.generate_plan(GOAL_TEXT)
     assert plan["suggested_action"] == SUGGESTION_TEXT
     assert plan["clarification"] is None
     assert plan["now"] is None
     assert plan["steps"] is None
 
-    # The model non-compliance already observed for clarification/
-    # suggested_duration (filling in `now` anyway) must not leak through
-    # suggested_action either - generate_plan() clears it defensively.
-    planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT, "now": "Do the thing right now"})
+    # Decide never returns horizons; a leaked `now` on a combined-shaped
+    # stub must not appear on the plan when suggested_action wins.
+    _set_stage3({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT, "now": "Do the thing right now"})
     plan = planner.generate_plan(GOAL_TEXT)
     assert plan["now"] is None, "suggested_action must clear a leaked `now`"
 
     # clarification wins if the model somehow sets both.
-    planner.ask_model = _canned({**_BLANK_PLAN, "clarification": "What does organized mean to you?", "suggested_action": SUGGESTION_TEXT})
+    _set_stage3({**_BLANK_PLAN, "clarification": "What does organized mean to you?", "suggested_action": SUGGESTION_TEXT})
     plan = planner.generate_plan(GOAL_TEXT)
     assert plan["clarification"] == "What does organized mean to you?"
     assert plan["suggested_action"] is None
@@ -92,24 +118,25 @@ try:
     # suggested_action wins over suggested_duration if the model somehow
     # sets both - resolving what to do first matters before discussing
     # how long it should take.
-    planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT, "suggested_duration": "8 weeks"})
+    _set_stage3({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT, "suggested_duration": "8 weeks"})
     plan = planner.generate_plan(GOAL_TEXT)
     assert plan["suggested_action"] == SUGGESTION_TEXT
     assert plan["suggested_duration"] is None
 
-    # A malformed suggested_action (wrong type) is discarded, not trusted.
-    planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": 12345, "now": "Something to do"})
+    # A malformed suggested_action (wrong type) is discarded; Fill then
+    # runs as planable and may supply `now`.
+    _set_stage3({**_BLANK_PLAN, "suggested_action": 12345, "now": "Something to do"})
     plan = planner.generate_plan(GOAL_TEXT)
     assert plan["suggested_action"] is None
 
     print("OK - generate_plan() suggested_action validation/priority")
 
     # create_goal() opening cannot land on an Action.
-    planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
+    _set_stage3({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
     opened = create_goal("I want to start working out", "", "")
     assert opened["plan"]["suggested_action"] is None
     assert opened["plan"]["clarification"]
-    planner.ask_model = _canned({**_BLANK_PLAN, "now": "Choose any piece of equipment and begin immediately"})
+    _set_stage3({**_BLANK_PLAN, "now": "Choose any piece of equipment and begin immediately"})
     opened_now = create_goal("start working out", "", "")
     assert opened_now["plan"]["now"] is None
     assert opened_now["plan"]["clarification"]
@@ -119,7 +146,7 @@ try:
     # Test 1 - SUGGEST -> "Yes" -> accepted as the current Action
     # ------------------------------------------------------------------
 
-    planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
+    _set_stage3({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
     pending = _pending_suggestion()
     assert pending["plan"]["suggested_action"] == SUGGESTION_TEXT
     history_before = len(dp.load_history())
@@ -155,10 +182,10 @@ try:
     # Test 2 - SUGGEST -> explicit alternative ("I'd rather start with my CV")
     # ------------------------------------------------------------------
 
-    planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
+    _set_stage3({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
     pending2 = _pending_suggestion()
 
-    planner.ask_model = _canned({**_BLANK_PLAN, "now": "Update the CV's summary section"})
+    _set_stage3({**_BLANK_PLAN, "now": "Update the CV's summary section"})
     alt = route_note(pending2, "I'd rather start with my CV.")
     assert alt["plan"]["now"] == "Update the CV's summary section"
     assert alt["plan"]["suggested_action"] is None, "the original suggestion must not be forced through"
@@ -170,10 +197,10 @@ try:
     # Test 3 - SUGGEST -> Current State correction ("No, I already have a list")
     # ------------------------------------------------------------------
 
-    planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
+    _set_stage3({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
     pending3 = _pending_suggestion()
 
-    planner.ask_model = _canned({**_BLANK_PLAN, "clarification": "Which job boards or contacts does your list already cover?"})
+    _set_stage3({**_BLANK_PLAN, "clarification": "Which job boards or contacts does your list already cover?"})
     corrected = route_note(pending3, "No, I already have a list.")
     assert corrected["plan"]["now"] is None
     assert corrected["completed"] is False, "a premise correction must never be read as Action completion"
@@ -185,7 +212,7 @@ try:
     # Test 5 - ordinary Action -> "Yes" still means completed (unaffected)
     # ------------------------------------------------------------------
 
-    planner.ask_model = _canned({**_BLANK_PLAN, "now": "Send four applications"})
+    _set_stage3({**_BLANK_PLAN, "now": "Send four applications"})
     ordinary = create_goal("Send four job applications this week", "", "")
     assert ordinary["plan"]["now"] == "Send four applications"
     assert ordinary["plan"]["suggested_action"] is None
@@ -204,12 +231,12 @@ try:
     # Test 6 - existing suggested_duration flow unaffected
     # ------------------------------------------------------------------
 
-    planner.ask_model = _canned({**_BLANK_PLAN, "suggested_duration": "8 weeks"})
+    _set_stage3({**_BLANK_PLAN, "suggested_duration": "8 weeks"})
     duration_pending = create_goal("I want to start exercising regularly", "", "")
     assert duration_pending["plan"]["suggested_duration"] == "8 weeks"
     assert duration_pending["plan"]["suggested_action"] is None
 
-    planner.ask_model = _canned({**_BLANK_PLAN, "today": "Do one session", "now": "Put on your shoes and go for a walk"})
+    _set_stage3({**_BLANK_PLAN, "today": "Do one session", "now": "Put on your shoes and go for a walk"})
     duration_confirmed = route_note(duration_pending, "Yes, 8 weeks works.")
     assert duration_confirmed["duration"] == "8 weeks"
     assert duration_confirmed["plan"]["now"] == "Put on your shoes and go for a walk"
@@ -220,11 +247,11 @@ try:
     # Test 7 - existing clarification flow unaffected
     # ------------------------------------------------------------------
 
-    planner.ask_model = _canned({**_BLANK_PLAN, "clarification": "What do you want to read?"})
+    _set_stage3({**_BLANK_PLAN, "clarification": "What do you want to read?"})
     vague = create_goal("read", "", "")
     assert vague["plan"]["clarification"] == "What do you want to read?"
 
-    planner.ask_model = _canned({**_BLANK_PLAN, "now": "Open the book and read one chapter"})
+    _set_stage3({**_BLANK_PLAN, "now": "Open the book and read one chapter"})
     answered = route_note(vague, "A novel, for 30 minutes today.")
     assert answered["plan"]["clarification"] is None
     assert answered["plan"]["now"] == "Open the book and read one chapter"
@@ -237,7 +264,7 @@ try:
     # ------------------------------------------------------------------
 
     vision = dp.save_vision("Grow as a professional")
-    planner.ask_model = _canned({**_BLANK_PLAN, "suggested_action": "Take stock of your current applications."})
+    _set_stage3({**_BLANK_PLAN, "suggested_action": "Take stock of your current applications."})
     v_pending = _pending_suggestion(vision_id=vision["id"])
     assert v_pending["vision_id"] == vision["id"]
 
@@ -258,7 +285,10 @@ try:
     print()
     print("ALL OK - content-SUGGEST confirmation behaves as expected")
 finally:
-    planner.ask_model = _original_ask_model
+    decide_mod.ask_model = _original_decide_ask
+    generate_plan_mod.ask_model = _original_fill_ask
+    generate_plan_mod.generate_structure = _original_generate_structure
+    generate_plan_mod.construct_progression = _original_construct_progression
     planner.replan = _original_replan
     dp.DATA_DIR = _original_data_dir
     dp.PLANS_FILE = _original_plans_file

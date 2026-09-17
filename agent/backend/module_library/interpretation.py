@@ -46,7 +46,7 @@ def interpret(text: str, purpose: str, context: str | None = None) -> dict:
     back to `text` itself as `explicit`, with no inferred items or
     ambiguous terms, if the model's response doesn't have the
     expected shape - the input is never silently dropped, same idiom
-    as llm2/parser.py's understand().
+    as llm_roles.describe.describe().
     """
     user_content = f"Purpose: {purpose}\n\nText: {text}"
     if context:

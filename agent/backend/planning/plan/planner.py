@@ -5,10 +5,10 @@ Planner
 Goal -> structured Plan, via a local LLM (Ollama). Produces a plan
 across seven time horizons and revises it (replan()). Minting or
 abandoning a Goal is goal/lifecycle.py, which calls generate_plan()
-here on create. Acting on a free-text note against an existing goal
-is feedback/route_note.py, which calls back into generate_plan()/
-replan() here. Never talks to the model directly (see
-json_request.py/plan_structure.py).
+(Stage 3 - see generate_plan.py) on create. Acting on a free-text note
+against an existing goal is feedback/route_note.py, which calls back
+into generate_plan()/replan() here. Never talks to the model directly
+(see json_request.py/plan_structure.py).
 
 Runs 100% locally - no API key, no internet, no cost. Requires Ollama
 running in the background (start with: brew services start ollama)
@@ -16,116 +16,66 @@ and the model pulled (ollama pull qwen3.5:9b) - see
 backend/model/client.py for the one place the concrete model is
 actually named.
 
-PLAN_KEYS stays in this module rather than with the helpers that split
-out into their own files - it's genuine Plan shape, passed INTO
-ask_model() as a parameter rather than read by it directly, so keeping
-it here avoids a circular import. See docs/06-development.md for this
-file's naming/reorganization history.
+PLAN_KEYS and prompt-grounding helpers live in plan_schema.py;
+Stage 3 Decide lives in decide.py, orchestrated by generate_plan.py
+(Fill + steps when planable). Re-exported here so existing
+`planner.generate_plan` / `planner.PLAN_KEYS` callers keep working.
+See docs/06-development.md for this file's naming/reorganization
+history.
 
 Run from the PROJECT ROOT: .venv/bin/python -m backend.goals.plan.planner
 """
 
 # Contents
-#  1. Plan schema
-#      - PLAN_KEYS
+#  1. Re-exports (schema + Stage 3 orchestration)
+#      - PLAN_KEYS, generate_plan, _planability, …
 #
-#  2. Time helpers
-#      - _now_str()
-#      - _horizon_scope_instruction()
+#  2. Frozen duration for save
 #      - frozen_duration_for()
 #
-#  3. Plan generation
-#      - OPENING_CLARIFICATION
-#      - _reject_opening_action()
-#      - generate_plan()
-#      - _planability()
-#
-#  4. Replanning
+#  3. Replanning
 #      - replan()
 #      - apply_new_duration()
 #
-#  5. Step handling
+#  4. Step handling
 #      - advance_step()
 #
-#  6. Vision management
+#  5. Vision management
 #      - set_goal_vision()
 #      - archive_vision()
 #
-#  7. CLI entry point
+#  6. CLI entry point
 #      (module execution block; no named function)
 
-from backend.foundation.time import (
-    broadest_relevant_horizon,
-    freeze_duration,
-    now,
-    resolve_duration,
-)
+from backend.foundation.time import freeze_duration, resolve_duration
 from backend.planning.goal.resolver import get_latest_for_all_goals, get_latest_for_goal
 from backend.infrastructure.data_persistence import archive_vision as archive_vision_record, get_vision, save_plan
+from backend.planning.plan.generate_plan import (
+    OPENING_CLARIFICATION,
+    _planability,
+    _reject_opening_action,
+    generate_plan,
+)
 from backend.planning.plan.json_request import ask_model
-from backend.planning.plan.plan_prompts import REPLAN_SYSTEM_PROMPT, SYSTEM_PROMPT
-from backend.planning.plan.plan_structure import generate_structure
-
-# ============================================================
-# 1. Plan schema
-# ============================================================
-
-# Defined once. ask_model() validates the LLM's response has exactly
-# these keys (passed in by generate_plan()/replan() below); the
-# templates (via frontend/app.py) iterate this same list to render
-# every horizon in order.
-PLAN_KEYS = (
-    "year",
-    "month",
-    "week",
-    "today",
-    "hour",
-    "minute",
-    "now"
+from backend.planning.plan.plan_prompts import REPLAN_SYSTEM_PROMPT
+from backend.planning.plan.plan_schema import (
+    PLAN_KEYS,
+    _horizon_scope_instruction,
+    _now_str,
 )
 
 # ============================================================
-# 2. Time helpers
+# 1. Re-exports (schema + Stage 3)
 # ============================================================
 
+# PLAN_KEYS, generate_plan, _planability, OPENING_CLARIFICATION,
+# _reject_opening_action - imported above for callers that use
+# `planner.*`.
 
-def _now_str() -> str:
-    """Grounds the model's "right now" in the real current moment - it has no other sense of time."""
-    return now().strftime("%A, %Y-%m-%d %H:%M")
 
-
-def _horizon_scope_instruction(duration: str | None) -> str:
-    """
-    The "fill these horizons in, leave these as null" line, shared by
-    generate_plan() and replan() so both compute the boundary the same
-    way (see frozen_duration.py §3). `now` is always included in
-    fill_keys - it's always the last/narrowest PLAN_KEYS entry, never
-    the broadest relevant horizon itself.
-
-    PLAN_KEYS[0] ("year") is a level name, not a literal duration - it
-    has no broader horizon above it, so it's the one slot a goal's real
-    length can exceed - a 5-year goal is just as "broadest relevant" as
-    a 10-month one (see _HORIZON_LENGTH_THRESHOLDS), but the two need
-    very different content. When PLAN_KEYS[0] is the broadest, the
-    instruction names the goal's own actual resolved span instead of
-    leaving the model to assume a literal year (SYSTEM_PROMPT's framing
-    example talks about "that goal's own outer horizon" for the same
-    reason).
-    """
-    broadest = broadest_relevant_horizon(duration)
-    start = PLAN_KEYS.index(broadest)
-    fill_keys = PLAN_KEYS[start:]
-    null_keys = PLAN_KEYS[:start]
-    instruction = f"\n\nFill in these horizons: {', '.join(fill_keys)}."
-    if null_keys:
-        instruction += f" Leave these horizons as JSON null: {', '.join(null_keys)}."
-    if broadest == PLAN_KEYS[0]:
-        instruction += (
-            f" This goal's own actual outer timeframe is {resolve_duration(duration)} - "
-            f"describe the '{PLAN_KEYS[0]}' horizon around that real timeframe, not "
-            "literally one calendar year, whenever it's longer or shorter than that."
-        )
-    return instruction
+# ============================================================
+# 2. Frozen duration for save
+# ============================================================
 
 
 def frozen_duration_for(plan: dict, duration: str | None) -> dict | None:
@@ -144,224 +94,7 @@ def frozen_duration_for(plan: dict, duration: str | None) -> dict | None:
 
 
 # ============================================================
-# 3. Plan generation
-# ============================================================
-
-
-# create_goal()'s first mint cannot land on an Action. Used when
-# opening=True and the model still returned suggested_action or a
-# now-scoped plan with no timeframe.
-OPENING_CLARIFICATION = (
-    "This isn't specific enough to plan yet. What would done look like, "
-    "and over what span of time?"
-)
-
-
-def _reject_opening_action(plan: dict) -> dict:
-    """Strip an Action off an opening mint. Keep clarification or
-    suggested_duration if the model already produced one; otherwise
-    ask OPENING_CLARIFICATION and clear every horizon so nothing
-    looks like a plan."""
-    plan["suggested_action"] = None
-    if plan.get("clarification") or plan.get("suggested_duration"):
-        return plan
-    plan["clarification"] = OPENING_CLARIFICATION
-    plan["now"] = None
-    for key in PLAN_KEYS:
-        plan[key] = None
-    return plan
-
-
-def generate_plan(
-    goal: str, duration: str | None = None, vision_id: int | None = None,
-    prior_suggestion: str | None = None, reply: str | None = None,
-    opening: bool = False,
-) -> dict:
-    """
-    Takes a goal (a text string) and asks the local model to produce a
-    structured plan, grounded in the real current date/time. `duration`
-    is optional free text from the user (e.g. "30 minutes", "this
-    week") describing how far ahead this plan should reach - no fixed
-    choices, whatever the user types is passed straight through.
-    Returns a dict with keys: clarification, suggested_duration, year,
-    month, week, now, steps.
-
-    `clarification` (added 2026-08-21) is a single question (string)
-    instead of a real plan when the goal as given is too vague to plan
-    at all - e.g. a bare noun/verb like "read", with no object or
-    context (see SYSTEM_PROMPT). Every other key is JSON null in that
-    case; callers MUST check `clarification` first and, if it's set,
-    treat this as "ask the user again", not as a plan to save - there's
-    nothing real in the rest of the dict to act on yet.
-
-    `suggested_duration` (added 2026-09-06) is the model's proposed
-    default timeframe (a short phrase, e.g. "8 weeks") when `duration`
-    is None and the goal looks open-ended or project-shaped enough for
-    a reasonable default to exist (see SYSTEM_PROMPT) - the agent
-    proposing a timeframe rather than only ever asking a blank
-    question or silently assuming one (see docs/planning-model.md §
-    Minimum planability). Mutually exclusive with `clarification` by
-    construction; discarded back to None if `duration` was already
-    known (code's own extract_duration_phrase() result always wins
-    over the model second-guessing it) or if the model returns
-    anything other than a string/null for it - "trust the shape or
-    fail safely", same idiom as plan_structure.py's isinstance check.
-    Like `clarification`, a truthy value here means nothing else in
-    the dict is real yet.
-
-    `suggested_action` (added 2026-09-08) is the content-axis
-    counterpart of `suggested_duration`, for the case
-    docs/planning-model.md § ASK vs. SUGGEST calls a "convergent
-    exploratory Action": the goal's content isn't specific enough to
-    plan with confidence, but a safe, generic first step exists that
-    doesn't require knowing anything personal about the user (see
-    SYSTEM_PROMPT). Mutually exclusive with `clarification` (which
-    wins if the model sets both) and takes priority over
-    `suggested_duration` (resolving what to do first matters before
-    discussing how long it should take) - both enforced below, not
-    left to the model's own compliance. `now` is defensively cleared
-    when this is set, since the model has been observed filling it in
-    anyway despite SYSTEM_PROMPT saying not to (the same non-compliance
-    already seen with `clarification`). route_note() is what
-    resolves a pending `suggested_action` - see its docstring.
-
-    `steps` (added 2026-08-21) is a list of short step descriptions
-    only when `duration` actually resolves to a real span (see
-    frozen_duration.py §4 - Step planning) - None otherwise (no
-    duration given, free text that isn't grounded in a real span, a
-    clarification question, or a suggested_duration came back instead
-    of a plan). There's nothing honest to break into steps without a
-    real timeframe to divide - same reasoning DEADLINE_RE's ungrounded
-    deadlines already follow elsewhere in this project.
-
-    `vision_id` (added 2026-09-06) optionally supplies the Goal's
-    linked Vision (see docs/planning-model.md, the authority on
-    Vision) as its own,
-    separate section of `user_content` - never folded into `goal`
-    itself, so the model's own content-vagueness check above keeps
-    inspecting only the actual goal text, not Vision prose. A stale or
-    missing vision_id (get_vision() returns None) is silently treated
-    as no context at all, same as set_goal_vision()'s existing
-    handling of that case.
-
-    `prior_suggestion` and `reply` (added 2026-09-08, experimental - see
-    docs/planning-model.md § Interpreting a response to ASK/SUGGEST) let
-    a caller give the model its own previous `suggested_action` (`X`) as
-    an explicit, separately-labeled reference point, alongside the
-    user's actual reply to it (`Y`) - so the model can read `Y` in light
-    of `X` instead of `Y` arriving folded, unlabeled, into `goal` itself
-    (which is what route_note() did before this). Both default to
-    None and add nothing to `user_content` when absent - every other
-    caller (create_goal(), apply_new_duration(), the clarification
-    branch) is unaffected.
-
-    `opening` (added 2026-09-14) is True only for create_goal()'s first
-    mint: the job is to get enough to write a plan, not to propose a
-    first Action. suggested_action is refused; a planable result with
-    no timeframe is refused too (a `now` with no span is an Action
-    dressed as a plan). clarification and suggested_duration still
-    stand. Enforced in code after the model returns, not left to the
-    prompt - same "trust the shape or fail safely" as the other
-    suggested_* fields.
-    """
-    user_content = f"The current date and time is: {_now_str()}\n\nMy goal is: {goal}"
-    if vision_id is not None:
-        vision = get_vision(vision_id)
-        if vision is not None:
-            user_content += f"\n\nThis goal is part of a broader direction: {vision['text']}"
-    if prior_suggestion:
-        user_content += f"\n\nYou previously suggested this as a possible first step, before the user replied: \"{prior_suggestion}\""
-        if reply:
-            user_content += (
-                f"\n\nThe user's reply to that suggestion: {reply}\n\n"
-                "Read the reply in light of what you just suggested - it may accept it, "
-                "correct or add to your understanding of the goal, or propose something "
-                "else of their own, rather than being an unrelated restatement of the goal."
-            )
-    if duration:
-        user_content += f"\n\nI want this plan to span roughly: {resolve_duration(duration)}"
-    else:
-        user_content += "\n\nNo timeframe was given for this goal."
-    if opening:
-        user_content += (
-            "\n\nThis is the opening of a new goal. Your job is to get "
-            "enough to write a plan, not to propose a first action to "
-            "do right now. Do not set suggested_action. If the goal is "
-            "too thin, set clarification to one short question, or set "
-            "suggested_duration if a reasonable timeframe default exists."
-        )
-    user_content += _horizon_scope_instruction(duration)
-    # suggested_duration/suggested_action are deliberately NOT in
-    # required_keys below - ask_model() raises if a required key is
-    # missing at all, which would turn a model that simply omits one of
-    # these newer fields into a hard failure for every generate_plan()
-    # call, including ones where it's irrelevant. Treated as absent
-    # (None) via .get() instead - the same safe fallback as a malformed
-    # value.
-    plan = ask_model(SYSTEM_PROMPT, user_content, PLAN_KEYS + ("clarification",))
-
-    plan["steps"] = None
-    if duration or not isinstance(plan.get("suggested_duration"), (str, type(None))):
-        # A duration was already known, or the model returned something
-        # other than a string/null (or omitted it entirely) for the new
-        # field - either way, discard rather than trust the value (see
-        # docstring above).
-        plan["suggested_duration"] = None
-    if not isinstance(plan.get("suggested_action"), (str, type(None))):
-        plan["suggested_action"] = None
-    if opening and not duration:
-        plan = _reject_opening_action(plan)
-    if plan.get("clarification"):
-        plan["suggested_duration"] = None  # mutually exclusive, see docstring
-        plan["suggested_action"] = None
-        return plan
-    if plan.get("suggested_action"):
-        # Nothing else here is real yet (same treatment as
-        # clarification/suggested_duration above) - and `now` is
-        # cleared defensively in case the model filled it in anyway
-        # (see docstring).
-        plan["suggested_duration"] = None
-        plan["now"] = None
-        return plan
-    if plan.get("suggested_duration"):
-        return plan
-    if duration:
-        # One combined call decides step count and content (each step
-        # optionally carrying its own microsteps) - see
-        # plan_structure.py's own docstring for why this replaced two
-        # separate calls (a measured local-model stability issue, not
-        # just a style preference). None if `duration` doesn't resolve
-        # to a real span - nothing honest to plan steps against.
-        result = generate_structure(goal, duration, plan.get("now") or goal)
-        if result is not None:
-            plan["steps"] = result["steps"]
-    return plan
-
-
-def _planability(plan: dict) -> str:
-    """
-    Named, inspectable verdict on a generate_plan()-shaped dict:
-    "ask" if the goal's content needs clarifying, "suggest" if a
-    default timeframe or a generic first action was proposed instead,
-    "planable" otherwise. This is the explicit reasoning step between a
-    Goal and treating its plan as real (see docs/planning-model.md §
-    Minimum planability) - a named decision on the model's response,
-    not a fourth call. `clarification` wins if more than one were
-    somehow set (generate_plan() already enforces mutual exclusion;
-    this is a second, cheap check, not the primary one). create_goal()
-    only distinguishes "planable" from everything else, so
-    `suggested_duration` and `suggested_action` share the same verdict
-    here - see route_note() for where they're actually told apart.
-    """
-    if plan.get("clarification"):
-        return "ask"
-    if plan.get("suggested_duration") or plan.get("suggested_action"):
-        return "suggest"
-    return "planable"
-
-
-# ============================================================
-# 4. Replanning
+# 3. Replanning
 # ============================================================
 
 
@@ -435,7 +168,7 @@ def apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
 
 
 # ============================================================
-# 5. Step handling
+# 4. Step handling
 # ============================================================
 
 
@@ -520,7 +253,7 @@ def advance_step(latest: dict, done: bool, resolved: bool = False) -> dict:
 
 
 # ============================================================
-# 6. Vision management
+# 5. Vision management
 # ============================================================
 
 

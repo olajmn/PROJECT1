@@ -3,8 +3,8 @@
 // own card with its own chat, so which goal a message is about is
 // never inferred or guessed - it's simply which card the textarea
 // belongs to. Talks to /api/goals[/<id>/feedback] (see server.py),
-// which runs planning/chat/turn.py (parse in context, route_note,
-// LLM1). The Conversation page (index.html/main.ts) is the global
+// which runs planning/chat/turn.py (Describe in context, route_note,
+// Voice). The Conversation page (index.html/main.ts) is the global
 // instance; this is the per-goal one. Continue in chat / chat-focus
 // is left as the bridge to that global instance.
 

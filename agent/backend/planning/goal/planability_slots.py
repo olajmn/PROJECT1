@@ -52,7 +52,7 @@ class Slot:
         self.name = name
         # What the dimension actually asks - phrased as the thing to be
         # established, not as wording to show the user. Producing the
-        # sentence a person sees is LLM1's job (backend/llm1/interface.py).
+        # sentence a person sees is Voice's job (backend/llm_roles/voice.py).
         self.question = question
         self.unresolved_move = unresolved_move
         # True where deterministic code already resolves this without

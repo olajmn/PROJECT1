@@ -7,8 +7,8 @@ own job, not LLM3's). Exactly one capability exists today: "planning".
 This is a deliberately thin stub, not real multi-capability reasoning
 - see docs/v4-migration-decision.md, "Planning is the first capability."
 
-Receives only LLM2's capability-agnostic understanding, never the raw
-user message again - LLM3 works from what LLM2 already produced,
+Receives only Describe's capability-agnostic {"about": ...}, never the
+raw user message again - works from what Describe already produced,
 consistent with the data-flow direction in docs/v4-migration-decision.md.
 """
 
@@ -29,7 +29,7 @@ SYSTEM_PROMPT = (
 
 
 def select_capability(understanding: dict) -> str | None:
-    """"planning" or None, given LLM2's {"about": ...} output only."""
+    """"planning" or None, given Describe's {"about": ...} output only."""
     raw = send_message(SYSTEM_PROMPT, understanding["about"], json_mode=True)
     data = json.loads(raw)
     capability = data.get("capability")

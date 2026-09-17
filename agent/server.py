@@ -20,8 +20,8 @@ Two distinct paths into Planning, deliberately different shapes:
   data_persistence.py directly, skip Node 1/2/3 entirely, and are
   immune to the topic-continuity defect docs/04-current-state.md § 5
   documents for the free-conversation path. POST /api/goals/<id>/feedback
-  is the exception on this path: it runs planning/chat/turn.py (LLM2 in
-  context -> route_note -> LLM1), still keyed by the id in the URL, so
+  is the exception on this path: it runs planning/chat/turn.py (Describe in
+  context -> route_note -> Voice), still keyed by the id in the URL, so
   it cannot pick the wrong goal. Other known-context routes stay
   silent of Node 1 - see manifestation.py's surface_text()/
   to_planning_node(), already deterministic and already what
@@ -113,7 +113,8 @@ from cli import Session, process_turn
 from backend.manifestation import surface_text, to_planning_node
 from backend.foundation.time import extract_duration_phrase
 from backend.infrastructure.data_persistence import load_history, load_sessions, load_visions, save_vision
-from backend.planning.chat.turn import take_turn, thread_for
+from backend.planning.chat.thread import thread_for
+from backend.planning.chat.turn import take_turn
 from backend.planning.goal.lifecycle import cancel_goal, create_goal
 from backend.planning.goal.resolver import created_at_key, get_latest_for_all_goals, get_latest_for_goal
 from backend.planning.plan.planner import archive_vision, set_goal_vision
@@ -171,7 +172,7 @@ def _goal_view(record: dict, reply: str | None = None) -> dict:
     /api/message already relies on, so ui/active.ts and ui/src/main.ts
     render an identical plan tree from an identical shape. `thread` is
     the goal-scoped chat reconstructed from this goal's history;
-    `reply` is LLM1's wording for the turn just taken, or null on a
+    `reply` is Voice's wording for the turn just taken, or null on a
     plain GET."""
     try:
         node = to_planning_node(record)

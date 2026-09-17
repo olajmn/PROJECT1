@@ -36,8 +36,9 @@ logic/ - what acts on that data:
   phrase_matching.py.
 - frozen_duration.py - the "frozen duration" lifecycle (freeze once at
   goal creation, read back unchanged on every later render) and
-  everything built on top of a frozen span: progress bars, step
-  slicing, horizon scoping.
+  everything built on top of a frozen span: progress bars, week-grain
+  windows (week_windows), consecutive calendar day candles under a
+  week (day_windows), step time labels (step_plan), horizon scoping.
 - relative_time.py - is one duration short/medium/long relative to
   another (e.g. the goal's overall length) - deterministic, no
   knowledge of what either span is FOR (see its own docstring).
@@ -55,9 +56,11 @@ history: docs/06-development.md, 2026-08-25. See docs/03-architecture.md
 from backend.foundation.time.time_logic import now
 from backend.foundation.time.time_logic.frozen_duration import (
     broadest_relevant_horizon,
+    day_windows,
     duration_progress,
     freeze_duration,
     step_plan,
+    week_windows,
 )
 from backend.foundation.time.time_logic.phrase_matching import extract_duration_phrase
 from backend.foundation.time.time_logic.relative_time import relative_length
@@ -65,6 +68,7 @@ from backend.foundation.time.time_logic.duration_resolution import describe_dura
 
 __all__ = [
     "broadest_relevant_horizon",
+    "day_windows",
     "describe_duration",
     "duration_progress",
     "extract_duration_phrase",
@@ -74,4 +78,5 @@ __all__ = [
     "resolve_duration",
     "resolve_span",
     "step_plan",
+    "week_windows",
 ]
