@@ -296,6 +296,32 @@ def save_plan(
     return record
 
 
+def stamp_map_focus(
+    goal_id: int,
+    map_focus: str,
+    focus_step_id: str | None = None,
+) -> dict | None:
+    """Attach map_focus (and optional step id) to the latest history
+    record for this goal — so the chat thread can frame 'about this
+    node' and re-select it from the frame. Returns that record, or
+    None if none found."""
+    label = (map_focus or "").strip()
+    if not label:
+        return None
+    records = _load_all()
+    for i in range(len(records) - 1, -1, -1):
+        if records[i].get("goal_id") == goal_id:
+            records[i]["map_focus"] = label
+            step = (focus_step_id or "").strip()
+            if step:
+                records[i]["focus_step_id"] = step
+            else:
+                records[i].pop("focus_step_id", None)
+            _save_all(records)
+            return records[i]
+    return None
+
+
 def load_history() -> list[dict]:
     """Return every saved goal+plan record, oldest first."""
     return _load_all()

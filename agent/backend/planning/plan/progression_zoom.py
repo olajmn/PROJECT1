@@ -1,7 +1,8 @@
 """
 User-authored and zoom writes on a Goal's shadow plan.progression.
 
-add_progression_bead() — one top-level Step the user named (no LLM).
+add_progression_bead() — one Step the user named (no LLM), at the
+root or under a parent_id.
 remove_progression_bead() — drop a Step by id (no LLM).
 zoom_progression_step() — expand one Step via planning/plan/zoom.py
 (same is_too_coarse / children_of as the Steps workbench).
@@ -12,16 +13,22 @@ Does not touch the Steps-page scratch tree.
 import copy
 import re
 
-from backend.infrastructure.data_persistence import save_plan
-from backend.planning.plan.zoom import zoom_into
+from backend.infrastructure.data_persistence import load_history, save_plan
+from backend.planning.plan.zoom import children_from_conversation, zoom_into
 
 _ID_NUM = re.compile(r"^p(\d+)$")
 
 
-def add_progression_bead(latest: dict, label: str) -> dict:
+def add_progression_bead(
+    latest: dict,
+    label: str,
+    parent_id: str | None = None,
+) -> dict:
     """
-    Append one top-level Step the user named — no model call.
+    Append one Step the user named — no model call.
     Creates plan.progression if missing. Empty/whitespace label raises.
+    If parent_id is set, append under that step's children; otherwise
+    at the progression root.
     """
     text = (label or "").strip()
     if not text:
@@ -38,20 +45,33 @@ def add_progression_bead(latest: dict, label: str) -> dict:
         progression["steps"] = steps
 
     mint = _id_minter(progression)
-    steps.append(
-        {
-            "id": mint(),
-            "label": text,
-            "ordered": True,
-            "resolved": False,
-            "children": [],
-        }
-    )
+    new_step = {
+        "id": mint(),
+        "label": text,
+        "ordered": True,
+        "resolved": False,
+        "children": [],
+    }
+
+    if parent_id:
+        found = _find_step(steps, parent_id, ancestors=[])
+        if found is None:
+            raise ValueError(f"parent step not found: {parent_id}")
+        parent, _ancestors = found
+        children = parent.get("children")
+        if not isinstance(children, list):
+            children = []
+            parent["children"] = children
+        children.append(new_step)
+        feedback = f"Added step under {parent.get('label') or parent_id}: {text}"
+    else:
+        steps.append(new_step)
+        feedback = f"Added step: {text}"
 
     return save_plan(
         latest["goal"],
         plan,
-        feedback=f"Added step: {text}",
+        feedback=feedback,
         duration=latest.get("duration"),
         goal_id=latest["goal_id"],
         frozen_duration=latest.get("frozen_duration"),
@@ -110,7 +130,6 @@ def _remove_step(steps: list, step_id: str) -> str | None:
             if found is not None:
                 return found
     return None
-
 
 def zoom_progression_step(latest: dict, step_id: str) -> dict:
     """
@@ -174,6 +193,91 @@ def zoom_progression_step(latest: dict, step_id: str) -> dict:
         vision_id=latest.get("vision_id"),
         step_status=latest.get("step_status"),
     )
+
+
+def suggest_progression_from_chat(
+    latest: dict,
+    step_id: str,
+    note: str,
+) -> tuple[dict, list[str]]:
+    """
+    User asked for structure under a focused map node while chatting.
+    Proposes children grounded in recent conversation + this note.
+    Appends under the node (does not wipe existing children).
+    Returns (saved record, new labels).
+    """
+    plan = copy.deepcopy(latest.get("plan") or {})
+    progression = plan.get("progression")
+    if not isinstance(progression, dict):
+        raise ValueError("goal has no progression tree to suggest under")
+
+    duration = latest.get("duration")
+    if not duration:
+        frozen = latest.get("frozen_duration") or {}
+        duration = frozen.get("text")
+    if not duration:
+        duration = (
+            "no fixed timeframe — a few next units of work only, "
+            "not a full syllabus"
+        )
+
+    steps = (plan.get("progression") or {}).get("steps") or []
+    found = _find_step(steps, step_id, ancestors=[])
+    if found is None:
+        raise ValueError(f"step not found: {step_id}")
+
+    step, ancestors = found
+    conversation = _recent_conversation(latest["goal_id"], note)
+    labels = children_from_conversation(
+        step["label"], ancestors, duration, conversation,
+    )
+    if not labels:
+        return latest, []
+
+    mint = _id_minter(plan["progression"])
+    existing = step.get("children")
+    if not isinstance(existing, list):
+        existing = []
+        step["children"] = existing
+    for label in labels:
+        existing.append(
+            {
+                "id": mint(),
+                "label": label,
+                "ordered": True,
+                "resolved": False,
+                "children": [],
+            }
+        )
+
+    record = save_plan(
+        latest["goal"],
+        plan,
+        feedback=note,
+        duration=latest.get("duration"),
+        goal_id=latest["goal_id"],
+        frozen_duration=latest.get("frozen_duration"),
+        current_step=latest.get("current_step", 0),
+        vision_id=latest.get("vision_id"),
+        step_status=latest.get("step_status"),
+    )
+    return record, labels
+
+
+def _recent_conversation(goal_id: int, latest_note: str, limit: int = 8) -> str:
+    """Recent user feedback lines for this goal, plus the current note."""
+    lines: list[str] = []
+    for record in load_history():
+        if record.get("goal_id") != goal_id:
+            continue
+        feedback = (record.get("feedback") or "").strip()
+        if feedback:
+            lines.append(f"User: {feedback}")
+    lines = lines[-limit:]
+    note = (latest_note or "").strip()
+    if note and (not lines or lines[-1] != f"User: {note}"):
+        lines.append(f"User: {note}")
+    return "\n".join(lines)
 
 
 def _find_step(

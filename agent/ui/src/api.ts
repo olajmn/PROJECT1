@@ -66,11 +66,27 @@ export async function createGoal(text: string): Promise<GoalView> {
   return (await res.json()) as GoalView;
 }
 
-export async function sendGoalFeedback(goalId: number, text: string): Promise<GoalView> {
+export async function sendGoalFeedback(
+  goalId: number,
+  text: string,
+  focusLabel?: string | null,
+  focusStepId?: string | null,
+): Promise<GoalView> {
+  const body: {
+    text: string;
+    focus_label?: string;
+    focus_step_id?: string;
+  } = { text };
+  if (focusLabel) {
+    body.focus_label = focusLabel;
+  }
+  if (focusStepId) {
+    body.focus_step_id = focusStepId;
+  }
   const res = await fetch(`/api/goals/${goalId}/feedback`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
@@ -111,11 +127,19 @@ export async function zoomGoalStep(goalId: number, stepId: string): Promise<Goal
   return (await res.json()) as GoalView;
 }
 
-export async function addProgressionStep(goalId: number, label: string): Promise<GoalView> {
+export async function addProgressionStep(
+  goalId: number,
+  label: string,
+  parentId?: string | null,
+): Promise<GoalView> {
+  const body: { label: string; parent_id?: string } = { label };
+  if (parentId) {
+    body.parent_id = parentId;
+  }
   const res = await fetch(`/api/goals/${goalId}/progression`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ label }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const detail = (await res.text()).trim();

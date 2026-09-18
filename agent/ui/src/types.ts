@@ -78,6 +78,10 @@ export interface AgentResponse {
 export interface ChatMessage {
   role: "user" | "agent";
   text: string;
+  /** Map node this turn was about (Talk about this / Looking at). */
+  focus?: string;
+  /** Progression step id for that node, when known. */
+  focus_step_id?: string;
 }
 
 export interface GoalView {

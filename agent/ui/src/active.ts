@@ -46,7 +46,25 @@ function isProgressionTree(node: PlanningNode): boolean {
 function renderThread(messages: ChatMessage[]): HTMLElement {
   const thread = document.createElement("div");
   thread.className = "goal-thread";
+  let section: HTMLDivElement | null = null;
+  let sectionFocus: string | null = null;
+
   for (const message of messages) {
+    const focus = message.focus?.trim() || null;
+    if (focus !== sectionFocus) {
+      sectionFocus = focus;
+      if (focus) {
+        section = document.createElement("div");
+        section.className = "chat-focus-section";
+        const marker = document.createElement("div");
+        marker.className = "chat-focus-marker";
+        marker.textContent = `About “${focus}”`;
+        section.appendChild(marker);
+        thread.appendChild(section);
+      } else {
+        section = null;
+      }
+    }
     const row = document.createElement("div");
     row.className = `message message-${message.role === "user" ? "you" : "agent"}`;
     const label = document.createElement("span");
@@ -56,7 +74,7 @@ function renderThread(messages: ChatMessage[]): HTMLElement {
     body.className = "text";
     body.textContent = message.text;
     row.append(label, body);
-    thread.appendChild(row);
+    (section ?? thread).appendChild(row);
   }
   return thread;
 }

@@ -652,7 +652,13 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(404, "no such goal")
             return
         try:
-            record = add_progression_bead(latest, str(payload_in.get("label") or ""))
+            parent_raw = payload_in.get("parent_id")
+            parent_id = str(parent_raw).strip() if parent_raw else None
+            record = add_progression_bead(
+                latest,
+                str(payload_in.get("label") or ""),
+                parent_id=parent_id or None,
+            )
         except ValueError as e:
             self.send_error(422, str(e))
             return
@@ -672,15 +678,31 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json(_goal_view(record))
 
     def _handle_goal_feedback(self, goal_id: int) -> None:
-        note = self._read_text_body()
-        if note is None:
+        length = int(self.headers.get("Content-Length", 0))
+        try:
+            payload_in = json.loads(self.rfile.read(length) or b"{}")
+        except json.JSONDecodeError:
+            self.send_error(400, "invalid JSON")
             return
+        note = (payload_in.get("text") or "").strip()
+        if not note:
+            self.send_error(400, "empty text")
+            return
+        focus_raw = payload_in.get("focus_label")
+        map_focus = str(focus_raw).strip() if focus_raw else None
+        step_raw = payload_in.get("focus_step_id")
+        focus_step_id = str(step_raw).strip() if step_raw else None
         latest = get_latest_for_goal(goal_id)
         if latest is None:
             self.send_error(404, "no such goal")
             return
         try:
-            result = take_turn(latest, note)
+            result = take_turn(
+                latest,
+                note,
+                map_focus=map_focus or None,
+                focus_step_id=focus_step_id or None,
+            )
         except Exception as e:  # same reasoning as _handle_message()
             print(f"(debug: {e})")
             self.send_error(503, "that took longer than expected - try again in a moment")

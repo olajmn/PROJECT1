@@ -31,7 +31,8 @@ from backend.planning.plan.plan_structure import generate_structure
 # opening=True and Decide still returned suggested_action with nothing
 # else to hold the turn.
 OPENING_CLARIFICATION = (
-    "This isn't specific enough yet. What would done look like?"
+    "This project needs a clearer end — what would 'far enough for now' "
+    "look like?"
 )
 
 

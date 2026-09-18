@@ -98,6 +98,15 @@ CHILDREN_SYSTEM_PROMPT = (
     "however many actually make sense here, not a fixed count."
 )
 
+CHAT_CHILDREN_SYSTEM_PROMPT = (
+    "You propose child nodes under ONE project-map node. The user has "
+    "been talking about this node and asked for suggestions. Ground "
+    "the children in the recent conversation — do not invent a "
+    "generic syllabus that ignores what they said. Go exactly one "
+    "level down. Produce however many make sense (often 2–4), not a "
+    "fixed count. Short labels only."
+)
+
 # A safety ceiling only, not a target range - same role as
 # plan_structure.py's MAX_SANE_STEPS.
 MAX_SANE_CHILDREN = 20
@@ -130,6 +139,31 @@ def children_of(label: str, ancestors: list[str], duration: str) -> list[str]:
     raw = send_message(
         CHILDREN_SYSTEM_PROMPT,
         _describe_position(label, ancestors, duration),
+        schema=CHILDREN_SCHEMA,
+    )
+    children = json.loads(raw)["children"]
+    if len(children) > MAX_SANE_CHILDREN:
+        raise ValueError(f"Model returned a runaway child list: {len(children)}")
+    return [child["label"] for child in children]
+
+
+def children_from_conversation(
+    label: str,
+    ancestors: list[str],
+    duration: str,
+    conversation: str,
+) -> list[str]:
+    """Propose children under `label`, grounded in chat — used when
+    the user explicitly asked for suggestions while focused on a
+    map node. Skips the coarseness gate (they asked)."""
+    user_content = (
+        f"{_describe_position(label, ancestors, duration)}\n\n"
+        f"Recent conversation:\n{conversation.strip() or '(none yet)'}\n\n"
+        "Propose children under the step that fit what was discussed."
+    )
+    raw = send_message(
+        CHAT_CHILDREN_SYSTEM_PROMPT,
+        user_content,
         schema=CHILDREN_SCHEMA,
     )
     children = json.loads(raw)["children"]

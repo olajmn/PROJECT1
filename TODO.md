@@ -16,17 +16,22 @@ for that same principle applied to documentation, not just this file).
 
 ## Active
 
-**23. Goal → Project migration — thin first slice** (next when resuming)
+**23. Goal → Project migration — thin first slice** (in progress)
 
-Product direction is **settled** in [[05-decisions]] #25 (Project /
-mental-map; user steers; time optional; Projects UI home; Goal engine
-until rename). Still running on `goal_id` / Decide/Fill / auto
-`construct_progression` on PLAN.
+Product direction is **settled** in [[05-decisions]] #25. Still running
+on `goal_id` / Decide/Fill / auto `construct_progression` on PLAN.
 
-**Tomorrow's door (not the whole rename):** Decide / opening / surface
-copy + Projects UI language toward "project" to match #25. **Do not**
-rename storage/`goal_id` in the first slice. Broader rename (docs
-`02-product`, API names) later.
+**Done this slice (through 2026-09-18):** Decide + opening use project/map
+language; project map (DOM + SVG spines; Copy as ASCII); nested `+`;
+click = select (not auto-zoom), click-outside clears; surface quieted
+above the map; ⋯ **Add here** / **Suggest structure** / **Talk about this**;
+chat-grounded Suggest when asking for ideas under focus; resizable
+sidebar + chat (`columnResize.ts`); map-focus stamped on turns → framed
+**About "…"** sections; click a frame to re-select the tree node.
+Parameter `goal` / `goal_id` unchanged.
+
+**Still open in the slice:** FILL/REPLAN prompts; `02-product`. **Do not**
+rename storage/`goal_id` here.
 
 Facts / dual surface: `docs/04-current-state.md` § 1 / § 5 / § 9.
 
@@ -62,7 +67,7 @@ stable identity (for referring back to it), not its rank.
 5. **Structured step-completion signal** (Step) - `advance_step()` exists in `planner.py` but has no route or UI control. § 5, § 9, § 10.
 6. **Vision-archive timing in the Session log** (Step) - `archive_vision()` doesn't stamp when archiving happened, only creation. § 5, § 10.
 7. **Session end detection** (Step) - no graceful-shutdown hook sets a Session's real `ended_at`. Lower actual impact than the others in this tier - the read-side window-bounding fix already makes the derived log accurate without it. § 5, § 10.
-12. **Decomposition / zoom, for real plans** (Step) - shallow WHAT `plan.progression` is minted and shown; Projects/Active click-zoom + user +/- beads persist (`progression_zoom`, 2026-09-17). Still open: chat-named zoom, zoom-ask (16), retiring legacy calendar `plan.steps` as display SoT, and any remaining data-shape questions in [[planning-model.md]]. Steps page remains scratch. § 5, § 7, § 9.
+12. **Decomposition / zoom, for real plans** (Step) - shallow WHAT `plan.progression` is minted and shown; Projects select / Suggest / Talk / nested +/- / chat-grounded suggest under focus persist (`progression_zoom`, 2026-09-17/18). Still open: free-text step naming without map focus, zoom-ask (16), retiring legacy calendar `plan.steps` as display SoT, and any remaining data-shape questions in [[planning-model.md]]. Steps page remains scratch. § 5, § 7, § 9.
 16. **Zoom cannot ask for anything** (Step) - `zoom_into()` returns children or nothing, so the third state of Minimum planability's gate (UNKNOWN and NECESSARY → ask) has no per-level equivalent; a step whose breakdown depends on something personal and unstated gets a plausible invented one instead of a question. The asking machinery already exists for goal creation (`clarification`/`suggested_action`), just not here. § 5.
 
 ### Tier 3

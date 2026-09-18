@@ -14,8 +14,11 @@ import {
   setGoalVision,
   zoomGoalStep,
 } from "./api.js";
+import { installChatResize, installSidebarResize } from "./columnResize.js";
 import { progressLineElement } from "./tree.js";
-import type { ChatMessage, GoalView, PlanningNode, VisionView } from "./types.js";
+import { projectMapToAscii } from "./asciiMap.js";
+import type { NodeMenuActionId } from "./tree.js";
+import type { ChatMessage, GoalView, VisionView } from "./types.js";
 
 const createForm = document.getElementById("create-form") as HTMLFormElement;
 const createInput = document.getElementById("create-input") as HTMLTextAreaElement;
@@ -29,23 +32,36 @@ const chatThread = document.getElementById("chat-thread") as HTMLDivElement;
 const chatForm = document.getElementById("chat-form") as HTMLFormElement;
 const chatInput = document.getElementById("chat-input") as HTMLTextAreaElement;
 const chatError = document.getElementById("chat-error") as HTMLParagraphElement;
+const appShell = document.querySelector(".app-shell") as HTMLElement;
+const workspace = document.querySelector(".workspace") as HTMLElement;
+const sidebarResize = document.getElementById("sidebar-resize") as HTMLElement;
+const chatResize = document.getElementById("chat-resize") as HTMLElement;
+
+installSidebarResize(appShell, sidebarResize);
+installChatResize(workspace, chatResize);
 
 const PROGRESSION_STEP_ID = /^p\d+$/;
+const DEFAULT_CHAT_PLACEHOLDER = "Talk about this project…";
 
 let projects: GoalView[] = [];
 let visions: VisionView[] = [];
 let selectedId: number | null = null;
+/** Which map node is selected (click / Talk about this). */
+let selectedNodeId: string | null = null;
+let selectedNodeLabel: string | null = null;
 
-function findNode(node: PlanningNode, id: string): PlanningNode | null {
-  if (node.id === id) return node;
-  for (const child of node.children) {
-    const found = findNode(child, id);
-    if (found) return found;
-  }
-  return null;
+/** Drop map focus — next chat is project-wide again. */
+function clearNodeSelection(scope: ParentNode = projectMain): void {
+  selectedNodeId = null;
+  selectedNodeLabel = null;
+  chatInput.placeholder = DEFAULT_CHAT_PLACEHOLDER;
+  scope.querySelectorAll(".progress-row.is-selected").forEach((el) => {
+    el.classList.remove("is-selected");
+  });
+  scope.querySelectorAll(".node-focus-note").forEach((el) => el.remove());
 }
 
-function isProgressionTree(node: PlanningNode): boolean {
+function isProgressionTree(node: { children: { id: string }[] }): boolean {
   return node.children.some((child) => PROGRESSION_STEP_ID.test(child.id));
 }
 
@@ -72,6 +88,8 @@ function renderList(): void {
     button.append(title, id);
     button.addEventListener("click", () => {
       selectedId = project.goal_id;
+      selectedNodeId = null;
+      selectedNodeLabel = null;
       renderList();
       renderWorkspace();
     });
@@ -79,19 +97,82 @@ function renderList(): void {
   }
 }
 
-function fillThread(messages: ChatMessage[]): void {
+function messageRow(message: ChatMessage): HTMLDivElement {
+  const row = document.createElement("div");
+  row.className = `message message-${message.role === "user" ? "you" : "agent"}`;
+  const label = document.createElement("span");
+  label.className = "who";
+  label.textContent = message.role === "user" ? "You" : "Agent";
+  const body = document.createElement("span");
+  body.className = "text";
+  body.textContent = message.text;
+  row.append(label, body);
+  return row;
+}
+
+/** Resolve a tree step id from a focus label when history has no id. */
+function stepIdForFocusLabel(label: string): string | null {
+  const rows = projectMain.querySelectorAll(".progress-row[data-step-id]");
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const text =
+      row.querySelector(".progress-bead-btn, .progress-bead-label")
+        ?.textContent ?? "";
+    if (text === label) {
+      return row.getAttribute("data-step-id");
+    }
+  }
+  return null;
+}
+
+function fillThread(
+  messages: ChatMessage[],
+  onFocusClick?: (stepId: string, label: string) => void,
+): void {
   chatThread.innerHTML = "";
+  let section: HTMLDivElement | null = null;
+  let sectionFocus: string | null = null;
+
   for (const message of messages) {
-    const row = document.createElement("div");
-    row.className = `message message-${message.role === "user" ? "you" : "agent"}`;
-    const label = document.createElement("span");
-    label.className = "who";
-    label.textContent = message.role === "user" ? "You" : "Agent";
-    const body = document.createElement("span");
-    body.className = "text";
-    body.textContent = message.text;
-    row.append(label, body);
-    chatThread.appendChild(row);
+    const focus = message.focus?.trim() || null;
+    if (focus !== sectionFocus) {
+      sectionFocus = focus;
+      if (focus) {
+        const frame = document.createElement("div");
+        frame.className = "chat-focus-section";
+        frame.dataset.focusLabel = focus;
+        const stepId = message.focus_step_id?.trim();
+        if (stepId) frame.dataset.focusStepId = stepId;
+        if (onFocusClick) {
+          frame.classList.add("is-clickable");
+          frame.title = `Select “${focus}” on the map`;
+          frame.addEventListener("click", () => {
+            const label = frame.dataset.focusLabel || focus;
+            const id =
+              frame.dataset.focusStepId ||
+              stepIdForFocusLabel(label) ||
+              null;
+            if (id) onFocusClick(id, label);
+          });
+        }
+        const marker = document.createElement("div");
+        marker.className = "chat-focus-marker";
+        marker.textContent = `About “${focus}”`;
+        frame.appendChild(marker);
+        chatThread.appendChild(frame);
+        section = frame;
+      } else {
+        section = null;
+      }
+    } else if (
+      focus &&
+      section &&
+      message.focus_step_id &&
+      !section.dataset.focusStepId
+    ) {
+      section.dataset.focusStepId = message.focus_step_id.trim();
+    }
+    (section ?? chatThread).appendChild(messageRow(message));
   }
   chatThread.scrollTop = chatThread.scrollHeight;
 }
@@ -114,34 +195,53 @@ function renderWorkspace(): void {
   const body = document.createElement("div");
   body.className = "project-body";
 
-  const header = document.createElement("div");
-  header.className = "card-header";
-  const title = document.createElement("h1");
-  title.className = "project-title";
-  title.textContent = project.goal;
-  const id = document.createElement("span");
-  id.className = "entity-id";
-  id.textContent = `#${project.goal_id}`;
-  header.append(title, id);
-  body.appendChild(header);
+  // Map is the hero — do not park the planner's Action/`now` surface
+  // (e.g. "print Hello World") above the tree. Chat still carries
+  // agent lines via the thread.
 
-  if (project.surface) {
-    const surface = document.createElement("p");
-    surface.className = "project-surface";
-    surface.textContent = project.surface;
-    body.appendChild(surface);
-  }
-
-  // Progress line: Start — (optional middle steps) — End.
-  // Middle comes from progression children when present.
-  // + lets the user name a bead (no LLM) — steers the map.
+  // Progress outline: project root / middle steps (ASCII tree).
+  // + nests; click selects; ⋯ = Add here / Suggest / Talk about this.
   const middle = project.node?.children ?? [];
-  const canZoom = project.node ? isProgressionTree(project.node) : false;
+  const canSelect = project.node ? isProgressionTree(project.node) : false;
   let line: HTMLDivElement;
-  const addBead = async (trimmed: string) => {
+
+  const markSelected = (stepId: string, note: string) => {
+    selectedNodeId = stepId;
+    const row = line.querySelector(`[data-step-id="${CSS.escape(stepId)}"]`);
+    const label =
+      row?.querySelector(".progress-bead-btn, .progress-bead-label")
+        ?.textContent ?? stepId;
+    selectedNodeLabel = label;
+    chatInput.placeholder = `About “${label}”…`;
+    line.querySelectorAll(".progress-row.is-selected").forEach((el) => {
+      el.classList.remove("is-selected");
+    });
+    row?.classList.add("is-selected");
+    let focus = body.querySelector(".node-focus-note") as HTMLParagraphElement | null;
+    if (!focus) {
+      focus = document.createElement("p");
+      focus.className = "node-focus-note";
+      line.insertAdjacentElement("afterend", focus);
+    }
+    focus.textContent = note;
+  };
+
+  const nodeLabel = (stepId: string): string => {
+    const row = line.querySelector(`[data-step-id="${CSS.escape(stepId)}"]`);
+    return (
+      row?.querySelector(".progress-bead-btn, .progress-bead-label")
+        ?.textContent ?? stepId
+    );
+  };
+
+  const addBead = async (trimmed: string, parentId?: string) => {
     line.classList.add("plan-busy");
     try {
-      const updated = await addProgressionStep(project.goal_id, trimmed);
+      const updated = await addProgressionStep(
+        project.goal_id,
+        trimmed,
+        parentId,
+      );
       replaceProject(updated);
     } catch (err) {
       line.classList.remove("plan-busy");
@@ -164,39 +264,128 @@ function renderWorkspace(): void {
       line.appendChild(error);
     }
   };
+
+  const onMenuAction = async (action: NodeMenuActionId, stepId: string) => {
+    const label = nodeLabel(stepId);
+    if (action === "register") {
+      markSelected(stepId, `Add under: ${label}`);
+      const row = line.querySelector(`[data-step-id="${CSS.escape(stepId)}"]`);
+      const addBtn = row?.querySelector(
+        ".progress-add-inline",
+      ) as HTMLButtonElement | null;
+      addBtn?.click();
+      return;
+    }
+    if (action === "analyze") {
+      markSelected(stepId, `Talk about: ${label}`);
+      chatInput.focus();
+      return;
+    }
+    // suggest — agent proposes children (old zoom, on request only)
+    markSelected(stepId, `Suggesting under: ${label}…`);
+    line.classList.add("plan-busy");
+    try {
+      const childCount = (id: string): number => {
+        const walk = (
+          n: { id: string; children: typeof n[] } | null | undefined,
+        ): number | null => {
+          if (!n) return null;
+          if (n.id === id) return n.children.length;
+          for (const c of n.children) {
+            const hit = walk(c);
+            if (hit !== null) return hit;
+          }
+          return null;
+        };
+        return walk(project.node) ?? 0;
+      };
+      const beforeCount = childCount(stepId);
+      const updated = await zoomGoalStep(project.goal_id, stepId);
+      const afterWalk = (
+        n: { id: string; children: typeof n[] } | null | undefined,
+      ): number | null => {
+        if (!n) return null;
+        if (n.id === stepId) return n.children.length;
+        for (const c of n.children) {
+          const hit = afterWalk(c);
+          if (hit !== null) return hit;
+        }
+        return null;
+      };
+      const afterCount = afterWalk(updated.node) ?? 0;
+      replaceProject(updated);
+      if (afterCount <= beforeCount) {
+        const note = document.createElement("p");
+        note.className = "node-focus-note";
+        note.textContent =
+          "Nothing more to suggest under that node — already fine enough.";
+        projectMain
+          .querySelector(".progress-line")
+          ?.insertAdjacentElement("afterend", note);
+      }
+    } catch (err) {
+      line.classList.remove("plan-busy");
+      const error = document.createElement("p");
+      error.className = "error";
+      error.textContent = `(error: ${(err as Error).message})`;
+      line.appendChild(error);
+    }
+  };
+
   line = progressLineElement(
     project.goal,
     middle,
-    canZoom
-      ? async (stepId: string) => {
-          line.classList.add("plan-busy");
-          try {
-            const updated = await zoomGoalStep(project.goal_id, stepId);
-            const before = project.node ? findNode(project.node, stepId) : null;
-            const after = updated.node ? findNode(updated.node, stepId) : null;
-            const grew =
-              (after?.children.length ?? 0) > (before?.children.length ?? 0);
-            replaceProject(updated);
-            if (!grew) {
-              const note = document.createElement("p");
-              note.className = "zoom-note";
-              note.textContent =
-                "Already fine enough to act on — nothing more under that step.";
-              projectMain.querySelector(".progress-line")?.appendChild(note);
-            }
-          } catch (err) {
-            line.classList.remove("plan-busy");
-            const error = document.createElement("p");
-            error.className = "error";
-            error.textContent = `(error: ${(err as Error).message})`;
-            line.appendChild(error);
-          }
+    canSelect
+      ? (stepId: string) => {
+          markSelected(stepId, `Looking at: ${nodeLabel(stepId)}`);
         }
       : undefined,
     addBead,
     removeBead,
+    null,
+    selectedNodeId,
+    canSelect ? onMenuAction : undefined,
+    `#${project.goal_id}`,
   );
   body.appendChild(line);
+
+  const copyRow = document.createElement("div");
+  copyRow.className = "map-copy-row";
+  const copyBtn = document.createElement("button");
+  copyBtn.type = "button";
+  copyBtn.className = "map-copy-button";
+  copyBtn.textContent = "Copy as ASCII";
+  copyBtn.title = "Copy a classic text tree for docs or chat";
+  copyBtn.addEventListener("click", async () => {
+    const text = projectMapToAscii(
+      project.goal,
+      middle,
+      `#${project.goal_id}`,
+    );
+    try {
+      await navigator.clipboard.writeText(text);
+      copyBtn.textContent = "Copied";
+      window.setTimeout(() => {
+        copyBtn.textContent = "Copy as ASCII";
+      }, 1200);
+    } catch {
+      copyBtn.textContent = "Copy failed";
+      window.setTimeout(() => {
+        copyBtn.textContent = "Copy as ASCII";
+      }, 1500);
+    }
+  });
+  copyRow.appendChild(copyBtn);
+  body.appendChild(copyRow);
+
+  // Click empty map space (not a node row) to unselect focus.
+  body.addEventListener("click", (event) => {
+    const target = event.target as Element | null;
+    if (!target) return;
+    if (target.closest(".progress-row")) return;
+    if (target.closest(".progress-add-form")) return;
+    clearNodeSelection(body);
+  });
 
   if (!project.node) {
     const hint = document.createElement("p");
@@ -275,7 +464,9 @@ function renderWorkspace(): void {
   footer.appendChild(actions);
   projectMain.appendChild(footer);
 
-  fillThread(project.thread ?? []);
+  fillThread(project.thread ?? [], (stepId, label) => {
+    markSelected(stepId, `Looking at: ${label}`);
+  });
 }
 
 function replaceProject(updated: GoalView): void {
@@ -340,7 +531,12 @@ chatForm.addEventListener("submit", async (event) => {
   chatInput.disabled = true;
   chatError.hidden = true;
   try {
-    const updated = await sendGoalFeedback(project.goal_id, text);
+    const updated = await sendGoalFeedback(
+      project.goal_id,
+      text,
+      selectedNodeLabel,
+      selectedNodeId,
+    );
     chatInput.value = "";
     replaceProject(updated);
   } catch (err) {
