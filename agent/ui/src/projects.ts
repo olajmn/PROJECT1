@@ -49,6 +49,10 @@ let selectedId: number | null = null;
 /** Which map node is selected (click / Talk about this). */
 let selectedNodeId: string | null = null;
 let selectedNodeLabel: string | null = null;
+/** Chat thread filtered to one "About X" focus label, or null for the full thread. */
+let isolatedFocus: string | null = null;
+/** Full-thread scroll position to restore after leaving isolation, instead of snapping to bottom. */
+let preIsolationScrollTop: number | null = null;
 
 /** Drop map focus — next chat is project-wide again. */
 function clearNodeSelection(scope: ParentNode = projectMain): void {
@@ -90,6 +94,7 @@ function renderList(): void {
       selectedId = project.goal_id;
       selectedNodeId = null;
       selectedNodeLabel = null;
+      isolatedFocus = null;
       renderList();
       renderWorkspace();
     });
@@ -125,11 +130,39 @@ function stepIdForFocusLabel(label: string): string | null {
   return null;
 }
 
+function isolationBanner(): HTMLDivElement {
+  const banner = document.createElement("div");
+  banner.className = "thread-isolation-banner";
+  const label = document.createElement("span");
+  label.textContent = `Showing only: About “${isolatedFocus}”`;
+  const back = document.createElement("button");
+  back.type = "button";
+  back.className = "thread-isolation-back";
+  back.textContent = "← Show full conversation";
+  back.addEventListener("click", () => {
+    isolatedFocus = null;
+    renderWorkspace();
+  });
+  banner.append(label, back);
+  return banner;
+}
+
 function fillThread(
   messages: ChatMessage[],
   onFocusClick?: (stepId: string, label: string) => void,
 ): void {
   chatThread.innerHTML = "";
+
+  if (isolatedFocus) {
+    chatThread.appendChild(isolationBanner());
+    for (const message of messages) {
+      if ((message.focus?.trim() || null) !== isolatedFocus) continue;
+      chatThread.appendChild(messageRow(message));
+    }
+    chatThread.scrollTop = chatThread.scrollHeight;
+    return;
+  }
+
   let section: HTMLDivElement | null = null;
   let sectionFocus: string | null = null;
 
@@ -155,10 +188,23 @@ function fillThread(
             if (id) onFocusClick(id, label);
           });
         }
-        const marker = document.createElement("div");
+        const header = document.createElement("div");
+        header.className = "chat-focus-header";
+        const marker = document.createElement("span");
         marker.className = "chat-focus-marker";
         marker.textContent = `About “${focus}”`;
-        frame.appendChild(marker);
+        const isolateBtn = document.createElement("button");
+        isolateBtn.type = "button";
+        isolateBtn.className = "thread-isolate-button";
+        isolateBtn.textContent = "Show only this →";
+        isolateBtn.addEventListener("click", (event) => {
+          event.stopPropagation();
+          preIsolationScrollTop = chatThread.scrollTop;
+          isolatedFocus = focus;
+          renderWorkspace();
+        });
+        header.append(marker, isolateBtn);
+        frame.appendChild(header);
         chatThread.appendChild(frame);
         section = frame;
       } else {
@@ -174,7 +220,12 @@ function fillThread(
     }
     (section ?? chatThread).appendChild(messageRow(message));
   }
-  chatThread.scrollTop = chatThread.scrollHeight;
+  if (preIsolationScrollTop !== null) {
+    chatThread.scrollTop = preIsolationScrollTop;
+    preIsolationScrollTop = null;
+  } else {
+    chatThread.scrollTop = chatThread.scrollHeight;
+  }
 }
 
 function renderWorkspace(): void {

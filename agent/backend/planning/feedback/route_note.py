@@ -152,6 +152,15 @@ def route_note(latest: dict, note: str) -> dict:
         if duration is None:
             duration = extract_duration_phrase(note)
         plan = planner.generate_plan(combined_goal, duration, vision_id=latest.get("vision_id"))
+        # Same data-loss fix as the replan() branch below: a clarification
+        # round that lands on ASK/SUGGEST again leaves generate_plan()'s
+        # own steps/progression at their fresh-mint None, which would
+        # otherwise silently wipe a progression tree built since the last
+        # real plan (manual +/-, cold Suggest, chat-grounded suggest).
+        if plan.get("steps") is None:
+            plan["steps"] = latest["plan"].get("steps")
+        if plan.get("progression") is None:
+            plan["progression"] = latest["plan"].get("progression")
         # frozen_duration stays None for as long as clarification keeps
         # coming back (same reasoning as create_goal() above: nothing
         # has actually started yet) - only frozen for real, for the
@@ -217,6 +226,12 @@ def route_note(latest: dict, note: str) -> dict:
             combined_goal, duration, vision_id=latest.get("vision_id"),
             prior_suggestion=suggested_action, reply=note,
         )
+        # Same data-loss fix as the clarification branch above and the
+        # replan() branch below.
+        if plan.get("steps") is None:
+            plan["steps"] = latest["plan"].get("steps")
+        if plan.get("progression") is None:
+            plan["progression"] = latest["plan"].get("progression")
         return save_plan(
             latest["goal"], plan, feedback=note, duration=duration,
             goal_id=latest["goal_id"],
