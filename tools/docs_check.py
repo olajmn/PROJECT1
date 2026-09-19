@@ -68,6 +68,9 @@ EXPECTED_DOCS = [
     # historical document several app/ code docstrings still cite by
     # name (see docs/03-architecture.md § Related documentation).
     "v4-migration-decision.md",
+    # Deliberately unnumbered - Goal → Project product-then-wire plan
+    # (not the old LLM1/2/3 v4 record). See docs/goal-to-project-migration.md.
+    "goal-to-project-migration.md",
     # Deliberately unnumbered, same reasoning - a standalone, ever-
     # growing conceptual/speculative document, not one of the seven
     # numbered vault roles (see COLLABORATION.md's doc-role table).

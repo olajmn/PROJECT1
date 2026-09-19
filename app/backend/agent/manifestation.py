@@ -16,9 +16,11 @@ LLM, or persistence:
   precedence current/'s _active_goal/_conversation.html chat thread
   already uses.
 - to_planning_node(): an OPTIONAL, generic {id, label, status,
-  children} tree. Prefers shadow plan["progression"] (WHAT Step tree)
-  when present; otherwise falls back to legacy plan["steps"] /
-  step_status / current_step. Callers get None when neither exists.
+  children} tree from plan["progression"] (WHAT Step tree) only.
+  Legacy plan["steps"] is WHEN / calendar fill — not shown as the
+  project map (display SoT is progression; see
+  docs/goal-to-project-migration.md A3). Callers get None when there
+  is no progression tree.
 """
 
 from backend.foundation.time import step_plan as _step_plan
@@ -47,12 +49,9 @@ def surface_text(record: dict) -> str:
 
 
 def to_planning_node(record: dict) -> dict | None:
-    """{"id", "label", "status", "children"} rooted at the Goal, or
-    None if there is no progression/steps tree to show."""
-    from_progression = _node_from_progression(record)
-    if from_progression is not None:
-        return from_progression
-    return _node_from_legacy_steps(record)
+    """{"id", "label", "status", "children"} rooted at the project, or
+    None if there is no WHAT progression tree to show."""
+    return _node_from_progression(record)
 
 
 def _node_from_progression(record: dict) -> dict | None:
@@ -127,7 +126,12 @@ def _progression_child_node(step: dict, parent_id: str, index: int) -> dict:
 
 
 def _node_from_legacy_steps(record: dict) -> dict | None:
-    """Legacy calendar/session plan.steps (two-level dicts)."""
+    """WHEN / calendar plan.steps → tree shape.
+
+    Not used by to_planning_node() (display SoT is progression only,
+    migration A3). Kept so calendar fill can still be inspected or
+    re-wired later without rewriting the mapping.
+    """
     plan = record.get("plan", {})
     steps = plan.get("steps")
     if not steps:

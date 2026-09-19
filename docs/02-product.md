@@ -1,146 +1,102 @@
 # 02 — Product
 
-> What the product actually is, concretely: what it does, what it's made of, what the MVP is, what's explicitly out of scope. Not how the system is built (see [[03-architecture]]) or what's actually implemented right now (see [[04-current-state]]) — trimmed 2026-08-25 to stop mixing product definition with architecture notes and implementation status.
+What the product is, concretely: job, primary surface, MVP shape, and
+what is out of scope. Not how the system is built ([[03-architecture]])
+or what the code looks like today ([[04-current-state]]). Product
+direction settled in [[05-decisions]] #25; remaining wire rename is
+[[goal-to-project-migration]] Phase B.
 
-## 1. Product Definition
+## Contents
 
-> [[06-development]] § The Approach, Phase 4.
+- Product definition
+- Primary surface and loop
+- MVP
+- Non-goals
+- See also
 
-The product is currently being defined through the MVP and testing process. The first user is the project owner, and the current product hypothesis is expressed through the capabilities, user flow, and MVP below.
+## 1. Product definition
 
-## 2. User Flows
+The product is a **Project** workspace. Its job is a **mental map** —
+Start → waypoints → End — that the user co-builds with the agent.
 
-> [[06-development]] § The Approach, Phase 5. Builds on § Product definition above.
+- The **user steers** the line (chat, click, named beads via + / ×,
+  Paste, Suggest).
+- The agent **proposes** (one question or one concrete suggestion) and
+  does not dump a syllabus or finish the middle for the user.
+- **Time is optional** for co-building and for deepening the map — not
+  the gate and not the spine.
+- Persistence may still store records as goals (`goal_id`) until a later
+  rename; the product language is Project.
 
-### Main flow (draft from the kickoff conversation)
+The first user is the project owner, testing on themselves.
 
-```text
-New user
-↓
-States a goal
-↓
-Agent asks questions
-↓
-Agent creates a plan
-↓
-User approves
-↓
-Today's action
-↓
-Feedback
-↓
-Agent evaluates
-↓
-Next action
-↓
-Replanning
-```
+## 2. Primary surface and loop
 
-### Refined as a closed loop (see [[06-development]] § Hypothesis, Refined framing)
+**Home:** Projects (`/` → Projects page) — list | canvas (map) | chat
+for the open project. Vision and Log (Completed / History / Sessions)
+sit beside it. Free Conversation, Set Goal, and Steps are secondary
+(“Other”).
 
-This isn't a one-time sequence — it's a loop that feeds back into memory and starts again:
-
-```text
-GOAL → PLAN → TODAY/RIGHT NOW → ACTION → USER FEEDBACK → REPLAN → ACTION → MEMORY ↺
-```
-
-"Prototype 0.1" (see § MVP below) is the smallest version of this that
-actually closes the circle.
-
-### Current status
-
-**Target loop:** Goal → Plan → Action → Feedback → Replan.
-
-See [[04-current-state]] for implementation status.
-
-## 3. Capabilities
-
-> See § Product definition above for what the agent should/shouldn't do. These are possible capabilities, not a committed roadmap — see § Non-goals below and [[06-development]] § Parking Lot for what's deliberately deferred.
-
-### Candidate list (from the core idea description)
-
-The agent should potentially be able to:
-
-- [ ] understand goals (natural language input)
-- [ ] break goals down (multiple time horizons)
-- [ ] prioritize
-- [ ] create tasks
-- [ ] track progress
-- [ ] detect deviations
-- [ ] replan
-- [ ] adapt to the user's situation
-- [ ] choose the right granularity
-- [ ] communicate proactively
-- [ ] reduce how much project-managing the user has to do themselves
-
-**Don't build all of it.** This list is a menu, not a spec — pick what proves the hypothesis in [[06-development]] § Hypothesis, defer the rest to [[06-development]] § Parking Lot.
-
-### Refined long-term capability list (2026-08-18)
-
-More precise naming for the same idea, from a parallel ChatGPT discussion — capabilities the agent could eventually have, explicitly **not built simultaneously**:
-
-- Goal interpretation
-- Planning
-- Replanning
-- Task decomposition
-- User interaction
-- Memory
-- Temporal awareness (see [[03-architecture]])
-- Information retrieval / aggregation (a *capability* the agent can call on, not the core product — e.g. weather, calendar, maps, resources — see [[06-development]] § Parking Lot)
-- Personal knowledge base — see § Personal knowledge below
-- Proactive notifications
-- Reflection
-- Progress tracking
-
-### Personal knowledge (2026-08-22, sketched — not built)
-
-A possible future capability is allowing the agent to use documents supplied by the user (e.g. text files with documented science behind them) as contextual knowledge when reasoning about a goal or plan — not just the model's own training, not a live internet search either. Distinct from "Information retrieval / aggregation" above (weather/calendar/maps — live *external* data) — this is the user's *own*, offline, supplied material.
-
-Technical implementation (the RAG mechanism, sketched pipeline, storage approach): [[03-architecture]] § Knowledge.
-
-## 4. MVP
-
-> [[06-development]] § The Approach, Phase 7. See § User Flows above for the full flow.
-
-**This is "Prototype 0.1"** — the smallest version of the full agent loop in [[06-development]] § Hypothesis that closes the circle (goal → plan → action → feedback → replan → next action). Not a one-time plan generator.
-
-### Target flow for the MVP
+### Co-build loop (current product)
 
 ```text
-User writes a goal
+Name a Project (End clear enough to start)
 ↓
-LLM creates a plan
+Optional horizons / nudge from the engine
 ↓
-Plan is saved
+User builds or edits the map (+ / Paste / Suggest / focused chat)
 ↓
-User gets today's task
+Chat under a selected waypoint (map focus)
 ↓
-User reports progress
-↓
-LLM can adjust the plan
+Feedback → agent proposes; user keeps steering the map
 ```
 
-### Status
+This replaces the earlier draft loop “goal → full plan → today’s
+action → replan” as the **product** story. The engine may still fill
+optional time horizons and a `now` nudge; those are not the map.
 
-Prototype 0.1's loop first closed end-to-end 2026-08-18 (see [[06-development]] for the log entry). See [[04-current-state]] for current implementation status. Next: real usage/testing (see Testing philosophy below), not more features.
+### What “done enough” means
 
-**Important distinction:** implemented doesn't mean the agent's answers are always accurate. The model has already been caught hallucinating a specific, unfounded detail (see [[06-development]] § Experiments) — the mechanism working and the output being reliable are two different things. Don't conflate them when reporting progress.
+A session succeeds when the user has a clearer map of *their* landmarks
+than when they started — not when the agent has produced a complete
+schedule or curriculum.
+
+## 3. MVP
+
+Smallest useful slice of the definition above:
+
+- Create / open a Project on the Projects surface
+- Coarse End clarity via Decide (ASK / SUGGEST / PLAN) without requiring
+  a timeframe
+- Empty or user-built WHAT map (`plan.progression`) — no agent dump of
+  the middle on PLAN
+- Chat with optional map focus; agent proposes, user edits
+- Vision as optional broader direction; Log to look back
+
+Accuracy of model wording is separate from “the loop works” — see
+[[04-current-state]] and [[05-decisions]].
 
 ### Testing philosophy
 
-First user is the project owner, testing on themselves. Explicitly **not needed** to test the core hypothesis: web app, mobile app, voice, cloud, advanced UI, an aggregator system, or an advanced memory database. The question that matters right now:
+> Can this help me orient a real project I would otherwise muddle through?
 
-> Can the agent actually help me do something I would otherwise have
-> struggled to do?
+Not needed to test the core: mobile app, voice, cloud, multi-user,
+advanced memory DB, or wiring every unused Module. Prefer real use over
+more ideation.
 
-If Prototype 0.1 works well → build further. If it doesn't → find out why before building more. Testing takes priority over further ideation — see [[05-decisions]].
+## 4. Non-goals (for now)
 
-## 5. Non-Goals
-
-We shouldn't start with "how do we build the complete agent?" — that's too big. We also shouldn't decide that this has to become a startup. And we shouldn't assume the idea is good just because it feels exciting. We're going to test the hypothesis instead — see § Testing philosophy above and [[06-development]] § Hypothesis.
+- Agent that finishes the plan or teaches a full course in the middle
+- Timeframe as a hard gate before any map
+- Renaming `goal_id` / `/api/goals` before product feel is settled
+  ([[goal-to-project-migration]] Phase B)
+- Building every long-term capability menu item at once (old Planning /
+  Memory / RAG sketches live in history docs; they are not this MVP)
 
 ## See also
 
 - [[00-project-brief]]
+- [[05-decisions]] #25
+- [[goal-to-project-migration]]
+- [[04-current-state]]
 - [[03-architecture]]
-- [[06-development]]

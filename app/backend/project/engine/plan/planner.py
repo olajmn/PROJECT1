@@ -136,7 +136,10 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     if vision_id is not None:
         vision = get_vision(vision_id)
         if vision is not None:
-            user_content += f"\n\nThis goal is part of a broader direction: {vision['text']}"
+            user_content += (
+                f"\n\nThis project is part of a broader direction: "
+                f"{vision['text']}"
+            )
     if duration:
         user_content += f"\n\nThis plan should still span roughly: {resolve_duration(duration)}"
     user_content += _horizon_scope_instruction(duration)

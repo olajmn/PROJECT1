@@ -6,9 +6,10 @@ module is Planning's Stage 3 path: decide() (ASK / SUGGEST / PLAN),
 then a separate fill call for horizons when planable, then
 generate_structure() when a real duration span exists.
 
-Also attaches plan["progression"] (shadow WHAT Step tree) when
-planable — see construct_progression.py. Active still reads
-plan["steps"] / PLAN_KEYS; progression is persisted beside them.
+Does NOT auto-mint plan["progression"] children on PLAN — the user
+steers the WHAT map via + / Paste / Suggest (see
+docs/goal-to-project-migration.md A2). Legacy plan["steps"] / PLAN_KEYS
+may still run beside an empty progression.
 
 Clarification is not a separate LLM step in front of Decide - it is
 one possible outcome of decide().
@@ -16,7 +17,6 @@ one possible outcome of decide().
 
 from backend.foundation.time import resolve_duration
 from backend.store.data_persistence import get_vision
-from backend.project.panes.canvas.construct_first_map import construct_progression
 from backend.project.engine.plan.decide import decide
 from backend.project.engine.plan.json_request import ask_model
 from backend.project.engine.plan.plan_prompts import FILL_SYSTEM_PROMPT
@@ -76,7 +76,10 @@ def _fill_user_content(
     if vision_id is not None:
         vision = get_vision(vision_id)
         if vision is not None:
-            user_content += f"\n\nThis goal is part of a broader direction: {vision['text']}"
+            user_content += (
+                f"\n\nThis project is part of a broader direction: "
+                f"{vision['text']}"
+            )
     if prior_suggestion:
         user_content += (
             f"\n\nYou previously suggested this as a possible first step, "
@@ -180,16 +183,12 @@ def generate_plan(
             if result is not None:
                 plan["steps"] = result["steps"]
         except ValueError:
-            # Legacy calendar fill can fail soft; shadow WHAT still runs.
+            # Legacy calendar fill can fail soft; WHAT map is user-steered.
             plan["steps"] = None
 
-    # Shadow WHAT tree — count is progression judgment, not week candles.
-    # Failure leaves progression None; legacy steps/now still stand.
-    plan["progression"] = construct_progression(
-        goal,
-        right_now=plan.get("now"),
-        duration=duration,
-    )
+    # No auto-mint of progression children — user fills the middle
+    # (+ / Paste / Suggest / chat-grounded suggest). construct_first_map
+    # remains available for those paths; not called here (migration A2).
     return plan
 
 

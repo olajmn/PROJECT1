@@ -1,19 +1,19 @@
 """
 Construct a shallow WHAT progression (shadow).
 
+Available for callers that explicitly want a coarse first middle.
+generate_plan() no longer auto-calls this on PLAN — the user steers
+waypoints via + / Paste / Suggest (see docs/goal-to-project-migration.md
+A2). Kept here so Suggest / future invite paths can still mint a
+coarse outline when asked.
+
 This is the structural axis from docs/planning-model.md: ordered Steps
-for what must happen toward the Goal. It deliberately does NOT use
+for what must happen toward the End. It deliberately does NOT use
 week_windows / day_windows — calendar length must not dictate how many
 progression steps exist.
 
 First mint stays coarse on purpose: a few phase-level claims only.
-Lesson-level detail belongs under edit_map / call_suggest,
-not this call — otherwise the agent finishes the middle without the user.
-
-Written onto plan["progression"] by generate_plan() after Decide=PLAN.
-Active prefers this field via manifestation.to_planning_node() when
-present; legacy plan["steps"] remains a fallback. Not yet the sole
-source of truth — calendar fill and PLAN_KEYS still run beside it.
+Lesson-level detail belongs under edit_map / call_suggest.
 """
 
 import json

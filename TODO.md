@@ -16,29 +16,24 @@ for that same principle applied to documentation, not just this file).
 
 ## Active
 
-**23. Goal → Project migration — thin first slice** (in progress)
+**23. Goal → Project migration — Phase A** (~~done~~ 2026-09-20)
 
-Product direction is **settled** in [[05-decisions]] #25. Still running
-on `goal_id` / Decide/Fill / auto `construct_progression` on PLAN.
+Product direction [[05-decisions]] #25. Phase A complete per
+[[goal-to-project-migration]]: A1 FILL/REPLAN language; A2 no auto-mint
+on PLAN; A3 `to_planning_node` = progression only (calendar `plan.steps`
+still written as WHEN, not shown as the map); A4 [[02-product]] rewritten.
+Wire still `goal_id` / `/api/goals` — **Phase B parked** until that
+doc’s gate.
 
-**Done this slice (through 2026-09-19):** Decide + opening use project/map
-language; project map under `ui/src/map/` (`treeWords` / `mapFamily` /
-`mapLines` / `copyAsText` / `pasteTree`); nested `+`;
-click = select (not auto-zoom), click-outside clears; surface quieted
-above the map; ⋯ **Add here** / **Suggest structure** / **Talk about this**;
-chat-grounded Suggest when asking for ideas under focus; resizable
-sidebar + chat (`columnResize.ts`); map-focus stamped on turns → framed
-**About "…"** sections; click a frame to re-select the tree node;
-outline/ASCII paste-import with preview; progression preserved across
-clarification; chat threads isolatable by focus. Orientation:
-visual / do / data inventar ([[05-decisions]] #26, [[04-current-state]]
-§ 2) — map visual gathered under `map/`; `planning/` renamed to `project/` 2026-09-19.
-Parameter `goal` / `goal_id` unchanged.
+**Done this slice (through 2026-09-20):** Decide/Fill/REPLAN project/map
+language; Projects map/chat/focus/paste; panes + engine layout;
+vocabulary #28; no auto-mint middle; display SoT = progression;
+[[02-product]] matches #25.
 
-**Still open in the slice:** FILL/REPLAN prompts; `02-product`. **Do not**
-rename storage/`goal_id` here.
+Next when chosen: Phase B (wire rename) or other Queue items — not
+automatic.
 
-Facts / dual surface: `docs/04-current-state.md` § 1 / § 5 / § 9.
+Facts: `docs/04-current-state.md` § 1 / § 5 / § 9; Parallel P3 / P9.
 
 ## Queue
 
@@ -72,7 +67,7 @@ stable identity (for referring back to it), not its rank.
 5. **Structured step-completion signal** (Step) - `advance_step()` exists in `planner.py` but has no route or UI control. § 5, § 9, § 10.
 6. **Vision-archive timing in the Session log** (Step) - `archive_vision()` doesn't stamp when archiving happened, only creation. § 5, § 10.
 7. **Session end detection** (Step) - no graceful-shutdown hook sets a Session's real `ended_at`. Lower actual impact than the others in this tier - the read-side window-bounding fix already makes the derived log accurate without it. § 5, § 10.
-12. **Decomposition / zoom, for real plans** (Step) - shallow WHAT `plan.progression` is minted and shown; Projects select / Suggest / Talk / nested +/- / chat-grounded suggest under focus persist (`edit_map`, 2026-09-17/18). Still open: free-text step naming without map focus, zoom-ask (16), retiring legacy calendar `plan.steps` as display SoT, and any remaining data-shape questions in [[planning-model.md]]. Steps page remains scratch. § 5, § 7, § 9.
+12. **Decomposition / zoom, for real plans** (Step) - WHAT `plan.progression` is user-steered and is the display SoT (`to_planning_node`, A3); Projects select / Suggest / Talk / nested +/- / chat-grounded suggest under focus persist (`edit_map`). Still open: free-text step naming without map focus, zoom-ask (16), whether to stop writing calendar `plan.steps` entirely, and any remaining data-shape questions in [[planning-model.md]]. Steps page remains scratch. § 5, § 7, § 9.
 16. **Zoom cannot ask for anything** (Step) - `zoom_into()` returns children or nothing, so the third state of Minimum planability's gate (UNKNOWN and NECESSARY → ask) has no per-level equivalent; a step whose breakdown depends on something personal and unstated gets a plausible invented one instead of a question. The asking machinery already exists for goal creation (`clarification`/`suggested_action`), just not here. § 5.
 24. ~~**ASCII map has no way back in**~~ (built 2026-09-19) - `parse_outline.py` parses a pasted outline/ASCII tree into `import_progression_outline()`'s append. Projects' **Paste structure** form calls it. § 1.i / § 4.
 
@@ -134,10 +129,10 @@ Detail and reasoning: `docs/04-current-state.md` § 5 (Parallel / dual paths).
 |---|---|---|---|
 | P1 | Week grain vs session grain | Intentional dual | `plan_structure.py`, `week_windows()`, `day_windows()`; recipe in unread `plan_skeleton.py` |
 | P2 | Even-slice `step_plan` vs dates on the step | Both live | `frozen_duration.step_plan`, manifestation |
-| P3 | `plan.progression` vs legacy `plan.steps` + zoom scratch | Unfinished migration | Display prefers progression; Projects/Active click-zoom + user +/- beads; Steps page still scratch; calendar steps still written when fill works — Queue 12 |
+| P3 | `plan.progression` vs legacy `plan.steps` + zoom scratch | Intentional dual (display SoT settled) | Display = progression only (`to_planning_node`, A3 2026-09-20); calendar `plan.steps` still written when fill works (WHEN); Steps page scratch — Queue 12; [[goal-to-project-migration]] A3 |
 | P4 | `planability_slots` vs `_planability()` | Unread / unwired | `goal/planability_slots.py` — Queue 22 |
 | P5 | Opening duration-proxy vs necessity test | Proxy (narrowed) | Missing time no longer blocks PLAN/zoom; End clarity still Decide — Queue 20 |
 | P6 | `ui/` vs `frontend-legacy/` | ~~Deleted~~ | `frontend-legacy/` removed 2026-09-19 — only `ui/` remains |
 | P7 | Module Library vs callers | Unread / unwired | `module_library/` — Queue 8 |
 | P8 | Projects workspace vs Active (legacy) | ~~Deleted~~ | Active UI removed 2026-09-19; Projects is the only known-context surface |
-| P9 | Agent auto-`construct_progression` vs user-steered map | Unfinished migration | Coarse 2–4 mint still on PLAN; +/× exist; co-build “accept before middle” not enforced — Queue 23 |
+| P9 | Agent auto-`construct_progression` vs user-steered map | ~~Retired~~ (A2) | `generate_plan` no longer calls `construct_progression` on PLAN (2026-09-19); middle via + / Paste / Suggest — [[goal-to-project-migration]] A2 |

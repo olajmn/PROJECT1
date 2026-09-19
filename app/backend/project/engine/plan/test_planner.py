@@ -42,7 +42,6 @@ _original_visions_file = dp.VISIONS_FILE
 _original_decide_ask = decide_mod.ask_model
 _original_fill_ask = generate_plan_mod.ask_model
 _original_generate_structure = generate_plan_mod.generate_structure
-_original_construct_progression = generate_plan_mod.construct_progression
 _original_replan = planner.replan
 
 _tmp_dir = Path(tempfile.mkdtemp(prefix="planner_test_"))
@@ -50,9 +49,8 @@ dp.DATA_DIR = _tmp_dir
 dp.PLANS_FILE = _tmp_dir / "plans.jsonl"
 dp.LEGACY_PLANS_FILE = _tmp_dir / "plans.json"
 dp.VISIONS_FILE = _tmp_dir / "visions.json"
-# Never hit Ollama for step trees or shadow progression in these wiring checks.
+# Never hit Ollama for calendar step trees in these wiring checks.
 generate_plan_mod.generate_structure = lambda *args, **kwargs: None
-generate_plan_mod.construct_progression = lambda *args, **kwargs: None
 
 GOAL_TEXT = "I want to get my job search organized and get a job in development"
 SUGGESTION_TEXT = "Create a list of your current job-search tasks and prioritize them."
@@ -292,7 +290,6 @@ finally:
     decide_mod.ask_model = _original_decide_ask
     generate_plan_mod.ask_model = _original_fill_ask
     generate_plan_mod.generate_structure = _original_generate_structure
-    generate_plan_mod.construct_progression = _original_construct_progression
     planner.replan = _original_replan
     dp.DATA_DIR = _original_data_dir
     dp.PLANS_FILE = _original_plans_file
