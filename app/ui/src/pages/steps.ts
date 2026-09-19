@@ -1,5 +1,5 @@
 // The Steps page - a workbench for the recursive Step model
-// (backend/project/engine/plan/step.py), where a typed goal becomes one
+// (backend/project/engine/step.py), where a typed goal becomes one
 // root Step and every level below it is expanded only when clicked.
 // Existing pages render a plan record's fixed two levels; this one
 // renders whatever depth the tree actually has, so the on-demand

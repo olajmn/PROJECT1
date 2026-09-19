@@ -211,7 +211,7 @@ Replanning
 deterministic Planning state (persistence, Time/Math use, feedback parsing)
 ```
 
-None of this moves to Node 2 or Node 3 because of where it happens to sit in the data flow relative to them. Planning is reached *through* Node 3's routing decision, but everything that happens once Planning is selected — including Planning's own use of an LLM for the parts that genuinely require language reasoning (deciding whether a goal is vague, producing plan content, generating step text) — remains entirely internal to Planning. `backend/project/engine/plan/planner.py`'s own use of `ask_model()`/`generate_steps()` alongside deterministic logic (Time/Math Faculties, `feedback_parser.py`, persistence) does not change in kind — only in what sits in front of it.
+None of this moves to Node 2 or Node 3 because of where it happens to sit in the data flow relative to them. Planning (today: **Project**) is reached *through* Node 3's routing decision, but everything that happens once Project is selected — including the engine's own use of an LLM for language judgment (Decide, Fill, calendar step labels) — remains entirely internal to `backend/project/`. `engine/judgment/ask.py`'s `ask()` / `when/calendar.py`'s `generate_structure()` / `planner.replan()` alongside deterministic logic (Time/Math Faculties, `feedback_parser.py`, persistence) does not change in kind — only in what sits in front of it.
 
 A capability is therefore not "an LLM call." It is a bounded domain responsibility that uses both LLM reasoning and deterministic program logic internally, in whatever mix its own domain actually requires — the same "code decides, the model is told" split already established for Time and Math, generalized to a whole domain rather than one Faculty.
 
@@ -231,7 +231,7 @@ How the components in Part 2 actually interact.
 
 > LLMs reason and interpret; deterministic software handles what requires determinism, state, persistence, validation, and concrete execution.
 
-Persistence is Infrastructure (see the note above) — `backend/store/data_persistence.py`. Beyond that, concretely, today: validation of LLM output shape (`ask_model()`'s required-key check), deterministic calculations and interpretation where the input is unambiguous (Time, Math Faculties), feedback parsing where the judgment is deliberately kept out of LLM hands (`feedback_parser.py`), and UI manifestation (§ 4 below).
+Persistence is Infrastructure (see the note above) — `backend/store/data_persistence.py`. Beyond that, concretely, today: validation of LLM output shape (`judgment/ask.py`'s required-key check), deterministic calculations and interpretation where the input is unambiguous (Time, Math Faculties), feedback parsing where the judgment is deliberately kept out of LLM hands (`feedback_parser.py`), and UI manifestation (§ 4 below).
 
 ### 2. Data flow
 

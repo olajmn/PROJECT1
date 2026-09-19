@@ -2,7 +2,7 @@
 
 > Working conceptual model for what a Goal's plan actually means in this agent — not a technical specification, a data model, or a system prompt. Concepts below are labeled **fact** (confirmed in the running prototype), **hypothesis** (a working idea, not yet decided), **limitation** (a confirmed gap in current behavior), or **open question** (deliberately unresolved) — the same taxonomy as `global-standards/DOCUMENTATION_STYLE_GUIDE.md` §5. Most of what follows is hypothesis: this document exists to give planning a shared vocabulary to reason with, not to record a settled architecture. Nothing here changes existing code, data, or prompts on its own.
 
-> **Read today:** capability name = **Project**; structural / WHAT axis = **canvas** (`project/panes/canvas/`); judgment (ASK/SUGGEST/PLAN, Fill, WHEN) = **engine** (`project/engine/plan/`). Full label map: [[04-current-state]] § Vocabulary (Planning → Project), [[05-decisions]] #28. This file still says Goal/Plan where that is the conceptual vocabulary.
+> **Read today:** capability name = **Project**; structural / WHAT axis = **canvas** (`project/panes/canvas/`); Stage 3 = **engine/judgment/** (`decide`, `run_stage3`, …); calendar dual = **engine/when/calendar.py**; facade = `engine/planner.py` (`generate_plan` aliases `run_stage3`). Wire identity = `project_id` (deprecated `goal_id` mirror — #29). Full label map: [[04-current-state]] § Vocabulary, [[05-decisions]] #28. This file still says Goal/Plan where that is the conceptual vocabulary.
 
 ## Contents
 
@@ -30,7 +30,7 @@
 
 ## Goal
 
-**Fact.** A Goal is the stable, persistent unit of "what the user wants to achieve" — identified by `goal_id`, its current truth always its latest history record (see [[03-architecture]] § Planning, [[04-current-state]]). This document doesn't redefine Goal; it only asks what has to be true about a Goal before "Plan" can mean anything.
+**Fact.** A Goal (product: **Project**) is the stable, persistent unit of "what the user wants to achieve" — identified by `project_id` on the wire (legacy field/param name `goal_id` still appears in Python and as a deprecated API mirror — see [[05-decisions]] #29); its current truth is always its latest history record (see [[03-architecture]] § Planning, [[04-current-state]]). This document doesn't redefine Goal; it only asks what has to be true about a Goal before "Plan" can mean anything.
 
 Fulfilling a Goal means bridging it to something concrete happening in the world. That bridge is Plan — and at each point the agent is about to commit to something more concrete (a first Action, a Plan, a deeper level of a Step), it needs enough understanding to do so responsibly. That assessment is Minimum Planability, below.
 

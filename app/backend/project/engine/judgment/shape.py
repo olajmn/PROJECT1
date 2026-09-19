@@ -1,16 +1,13 @@
-"""
-Plan shape and shared prompt-grounding helpers.
+"""Which Fill/replan answer boxes exist (PLAN_KEYS) and which to fill.
 
-PLAN_KEYS and the time lines generate_plan()/replan() both need -
-kept here so generate_plan.py (Stage 3) and planner.py can share
-them without a circular import.
+Does not own «what time is it» — see current_time.py.
+Shared by run_stage3.py and planner.py without a circular import.
 """
 
-from backend.foundation.time import broadest_relevant_horizon, now, resolve_duration
+from backend.foundation.time import broadest_relevant_horizon, resolve_duration
 
-# Defined once. ask_model() validates the LLM's response has exactly
-# these keys (passed in by generate_plan()/replan()); templates that
-# iterate horizons use the same list.
+# Defined once. ask() validates the LLM's response has these keys
+# (passed in by run_stage3()/replan()).
 PLAN_KEYS = (
     "year",
     "month",
@@ -22,15 +19,10 @@ PLAN_KEYS = (
 )
 
 
-def _now_str() -> str:
-    """Grounds the model's "right now" in the real current moment - it has no other sense of time."""
-    return now().strftime("%A, %Y-%m-%d %H:%M")
-
-
 def _horizon_scope_instruction(duration: str | None) -> str:
     """
     The "fill these horizons in, leave these as null" line, shared by
-    generate_plan() and replan() so both compute the boundary the same
+    run_stage3() and replan() so both compute the boundary the same
     way (see frozen_duration.py §3). `now` is always included in
     fill_keys - it's always the last/narrowest PLAN_KEYS entry, never
     the broadest relevant horizon itself.
@@ -41,9 +33,7 @@ def _horizon_scope_instruction(duration: str | None) -> str:
     a 10-month one (see _HORIZON_LENGTH_THRESHOLDS), but the two need
     very different content. When PLAN_KEYS[0] is the broadest, the
     instruction names the goal's own actual resolved span instead of
-    leaving the model to assume a literal year (SYSTEM_PROMPT's framing
-    example talks about "that goal's own outer horizon" for the same
-    reason).
+    leaving the model to assume a literal year.
     """
     broadest = broadest_relevant_horizon(duration)
     start = PLAN_KEYS.index(broadest)

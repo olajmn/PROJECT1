@@ -27,7 +27,7 @@ test steps including "climb Mount Everest" over 18 months. Asked to
 do nothing but judge (is_too_coarse()), it was unanimous and correct
 on five of seven cases, and when forbidden to stop it decomposed
 well. It can do either job; it collapses when one call has to do
-both. Note this is the opposite finding from plan_structure.py's
+both. Note this is the opposite finding from calendar.py's
 one-call rule, and not a contradiction of it: what destabilized that
 module was a second call CONSUMING the first's output, where here the
 verdict only gates whether the second call happens.
@@ -108,7 +108,7 @@ CHAT_CHILDREN_SYSTEM_PROMPT = (
 )
 
 # A safety ceiling only, not a target range - same role as
-# plan_structure.py's MAX_SANE_STEPS.
+# calendar.py's MAX_SANE_STEPS.
 MAX_SANE_CHILDREN = 20
 
 

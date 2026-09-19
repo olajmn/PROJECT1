@@ -6,7 +6,7 @@ Run the full project verification routine, in order:
    - `-m backend.foundation.time.test_time`
    - `-m backend.store.test_data_persistence`
    - `-m backend.project.panes.chat.feedback.test_feedback_parser`
-   - `-m backend.project.engine.plan.test_planner` (live-model calls - if this fails, re-run it once before treating it as a real finding; this project has repeatedly observed transient local-model shape failures that resolve on a bare retry)
+   - `-m backend.project.engine.test_planner` (live-model calls - if this fails, re-run it once before treating it as a real finding; this project has repeatedly observed transient local-model shape failures that resolve on a bare retry)
 
 After both: report a compact summary - what's clean, and call out anything that isn't (a real stale-path/orphan finding, a docs_lint REVIEW hit not already known-legitimate, a test failure that persists on retry, `docs/04-current-state.md` staleness). Don't dump the full raw output unless something is actually wrong.
 

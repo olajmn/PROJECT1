@@ -9,9 +9,9 @@ and not an entry orchestrator: reusable LLM *roles* any caller may invoke.
   (was `llm2/` / Understand)
 
 Decide / Stage 3 is documented in `decide.md`. Stage 3 Decide lives in
-`planning/plan/decide.py`; Fill orchestration in `generate_plan.py`
-(not this package). The `backend.agent.llm3` gate is only global
-small-talk vs Planning - not Stage 3.
+`project/engine/judgment/decide.py`; Fill orchestration in
+`judgment/run_stage3.py` (not this package). The `backend.agent.llm3`
+gate is only global small-talk vs Project - not Stage 3.
 """
 
 from backend.agent.llm_roles.describe import describe, describe_in_context

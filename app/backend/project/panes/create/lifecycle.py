@@ -18,7 +18,7 @@ on planner.set_goal_vision() until Vision's own shape is decided.
 from backend.foundation.time import extract_duration_phrase
 from backend.store.data_persistence import save_plan, save_vision
 from backend.project.panes.create.resolver import get_latest_for_goal
-from backend.project.engine.plan import planner
+from backend.project.engine import planner
 
 
 # ============================================================

@@ -10,9 +10,9 @@ planable. Parameter `goal` is still the stored project text
 
 from backend.foundation.time import resolve_duration
 from backend.store.data_persistence import get_vision
-from backend.project.engine.plan.json_request import ask_model
-from backend.project.engine.plan.plan_prompts import DECIDE_SYSTEM_PROMPT
-from backend.project.engine.plan.plan_schema import _now_str
+from backend.project.engine.judgment.ask import ask
+from backend.project.engine.judgment.prompts import DECIDE_SYSTEM_PROMPT
+from backend.project.engine.judgment.current_time import current_time
 
 DECIDE_KEYS = ("clarification", "suggested_action", "suggested_duration")
 
@@ -33,7 +33,7 @@ def decide(
     not force ASK.
     """
     user_content = (
-        f"The current date and time is: {_now_str()}\n\n"
+        f"The current date and time is: {current_time()}\n\n"
         f"My project is: {goal}"
     )
     if vision_id is not None:
@@ -76,4 +76,4 @@ def decide(
             "suggested_duration. Prefer welcoming project language over "
             "calling the aim a 'broad goal'."
         )
-    return ask_model(DECIDE_SYSTEM_PROMPT, user_content, DECIDE_KEYS)
+    return ask(DECIDE_SYSTEM_PROMPT, user_content, DECIDE_KEYS)

@@ -14,7 +14,7 @@ Shadow-wired from generate_plan() as plan["progression"] (WHAT
 tree beside legacy plan["steps"]). Active's to_planning_node()
 prefers progression when present; zoom into that tree from Active
 is not built yet. Legacy calendar/session records still use
-plan_structure.py's two-level {"label", "microsteps"} shape.
+calendar.py's two-level {"label", "microsteps"} shape.
 """
 
 from collections.abc import Callable, Iterator

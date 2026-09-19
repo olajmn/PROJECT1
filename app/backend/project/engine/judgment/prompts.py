@@ -1,9 +1,7 @@
-"""
-System prompts for Planning's model calls: DECIDE_SYSTEM_PROMPT
-(Stage 3 judgment), FILL_SYSTEM_PROMPT (horizon content once
-planable), REPLAN_SYSTEM_PROMPT (revise an existing plan). Prompt
-text only - no function, no model call. Orchestration lives in
-decide.py / generate_plan.py / planner.py.
+"""Lappen med instruksjoner til roboten (system prompts).
+
+DECIDE / FILL / REPLAN text only — no functions, no model call.
+Orchestration: decide.py / run_stage3.py / planner.py.
 """
 
 DECIDE_SYSTEM_PROMPT = (

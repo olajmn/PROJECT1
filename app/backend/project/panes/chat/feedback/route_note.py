@@ -32,7 +32,7 @@ from backend.store.data_persistence import save_plan
 from backend.project.panes.chat.feedback.acknowledger import acknowledge
 from backend.project.panes.chat.feedback.feedback_parser import parse_outcome, requests_duration_change
 from backend.project.panes.create.resolver import get_history_for_goal
-from backend.project.engine.plan import planner
+from backend.project.engine import planner
 
 
 # ============================================================

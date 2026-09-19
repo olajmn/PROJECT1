@@ -20,10 +20,11 @@ for that same principle applied to documentation, not just this file).
 
 Product [[05-decisions]] #25; wire [[05-decisions]] #29 /
 [[goal-to-project-migration]]. Primary: `project_id`, `/api/projects`,
-llm3 `"project"`. Still present for one release: `/api/goals` alias,
-response `goal_id` mirror. Follow-ups (not Active): drop aliases;
-rename display field `goal`; mass-rename Python symbols
-(`create_goal`, …).
+llm3 `"project"`. Engine: `judgment/` + `when/` (plan folder gone).
+Still present for one release: `/api/goals` alias, response `goal_id`
+mirror; `planner.generate_plan` → `run_stage3`. Follow-ups (not Active):
+drop aliases; rename display field `goal`; mass-rename Python symbols
+(`create_goal`, …); optionally split `planner.py` facade.
 
 Facts: `docs/04-current-state.md` § Vocabulary / § 1; Parallel P3 / P9.
 
@@ -51,7 +52,7 @@ stable identity (for referring back to it), not its rank.
 2. **Accepting a `suggested_action` never produces a step tree** (Bug) - the acceptance branch sets `now` directly, never calls `generate_structure()`. § 5.
 3. **Topic continuity / multi-goal free conversation** (Bug) - `cli.py`'s `ChatFocus` holds one goal only, and nothing detects a mid-conversation topic switch. Largest of the Tier 1 items - discussed as roughly comparable in size to a full session's own work, not a quick fix. § 5, § 9, § 10.
 20. ~~**Opening gate is a duration proxy**~~ (narrowed 2026-09-17) - opening still refuses `suggested_action`; missing timeframe no longer blocks planable mint or progression click-zoom (soft grounding). Residual: planability_slots still unread; Steps scratch zoom still needs a span. § 5.
-21. **Week/day calendar baseline (was: session tree painted across a longer span)** (Step residual) — **Baseline established 2026-09-16:** `week_windows()` + consecutive `day_windows()`; live-verified (#26: four real weeks). Recipe named in unread `plan/plan_skeleton.py`. Still open on this line (not blocking): year face; wire skeleton into `plan_structure`/Time. Session path unchanged for short spans. § 5. Related to 17.
+21. **Week/day calendar baseline (was: session tree painted across a longer span)** (Step residual) — **Baseline established 2026-09-16:** `week_windows()` + consecutive `day_windows()`; live-verified (#26: four real weeks). Unread `plan_skeleton` recipe removed 2026-09-20 (rules live in Time + `when/calendar.py`). Still open: year face if needed; later **ambient timeline** on the visual/do edge. Session path unchanged for short spans. § 5. Related to 17.
 
 ### Tier 2
 
@@ -82,7 +83,7 @@ stable identity (for referring back to it), not its rank.
 15. **Node 1 re-voicing** (Question) - whether Node 1 should re-voice a capability's output verbatim or in its own words is undecided. § 9; see also `docs/03-architecture.md` Part 3 § 8.
 17. **Practices have no shape** (Question) - a recurring, open-ended commitment ("save 10 a day", "10 push-ups a day") fits the implemented model on no axis: no deadline to count down toward, no completion to reach, nothing to decompose - a rate and an accumulation instead. Whether it's a third kind of record, a Goal with different fields, or not a Goal at all is undecided. `docs/concepts.md` § 4.ix.
 18. **A plan can only be regenerated, never edited** (Question) - `step_status` is parallel-indexed to `steps`, so identity is positional and reorganizing silently moves statuses onto different steps; `current_step` is forward-only, so "2 is done but 1 isn't" is unexpressible. `replan()` regenerates; nothing edits. User **+** / **×** on `plan.progression` (2026-09-17) is a partial exception for the WHAT line only. `docs/concepts.md` § 4.x.
-19. **Vision as a typing mechanism, or as background context** (Question) - whether a Vision decides what counts as progress for everything under it, or stays the weak background context `plan_prompts.SYSTEM_PROMPT` currently instructs it to be ("never let it override... what the goal itself actually asks for"). The two readings can't both hold. `docs/concepts.md` § 4.xi.
+19. **Vision as a typing mechanism, or as background context** (Question) - whether a Vision decides what counts as progress for everything under it, or stays the weak background context `judgment/prompts.py` (`FILL_SYSTEM_PROMPT`) currently instructs it to be ("never let it override... what the goal itself actually asks for"). The two readings can't both hold. `docs/concepts.md` § 4.xi.
 23. **Goal → Project product migration** (Step / Question) - UI shell is Projects; backend/prompts still Goal-planner. Thin first slice is **Active** above. Residual after that: `02-product` / concepts language; stop auto-minting a full middle without user accept; End pole = done not title; storage rename last. § 5 / § 9.
 
 ## Parallel paths
@@ -119,7 +120,7 @@ Detail and reasoning: `docs/04-current-state.md` § 5 (Parallel / dual paths).
 
 | # | Pair | Status | Where |
 |---|---|---|---|
-| P1 | Week grain vs session grain | Intentional dual | `plan_structure.py`, `week_windows()`, `day_windows()`; recipe in unread `plan_skeleton.py` |
+| P1 | Week grain vs session grain | Intentional dual | `when/calendar.py`, `week_windows()`, `day_windows()` |
 | P2 | Even-slice `step_plan` vs dates on the step | Both live | `frozen_duration.step_plan`, manifestation |
 | P3 | `plan.progression` vs legacy `plan.steps` + zoom scratch | Intentional dual (display SoT settled) | Display = progression only (`to_planning_node`, A3 2026-09-20); calendar `plan.steps` still written when fill works (WHEN); Steps page scratch — Queue 12; [[goal-to-project-migration]] A3 |
 | P4 | `planability_slots` vs `_planability()` | Unread / unwired | `goal/planability_slots.py` — Queue 22 |

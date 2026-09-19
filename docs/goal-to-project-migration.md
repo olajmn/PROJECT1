@@ -16,7 +16,8 @@ architecture is largely already built; leave that file as history.
 - Status
 - Phase A — product (wire unchanged)
 - Gate before Phase B
-- Phase B — wire / storage (parked until gate)
+- Phase B — wire / storage (done, alias period)
+- Engine layout follow-up (2026-09-20)
 - Out of scope
 - Recommended order
 
@@ -24,8 +25,11 @@ architecture is largely already built; leave that file as history.
 
 **Phase A + Phase B (compat) complete** (2026-09-20). Primary wire is
 `project_id` / `/api/projects`; `/api/goals` and response `goal_id` are
-deprecated aliases for one release ([[05-decisions]] #29). Follow-ups:
-drop aliases; rename display field `goal` and Python symbols.
+deprecated aliases for one release ([[05-decisions]] #29). Engine layout
+the same day: `engine/plan/` flattened to `engine/judgment/` +
+`engine/when/`; `planner.generate_plan` aliases `run_stage3`. Follow-ups:
+drop aliases; rename display field `goal` and Python symbols; optionally
+split `planner.py` facade / stop writing unused horizon keys.
 
 | Phase | Goal | Status |
 |---|---|---|
@@ -43,7 +47,7 @@ docs may say Project.
 ### A1 — Engine language
 
 Update `FILL_SYSTEM_PROMPT` and `REPLAN_SYSTEM_PROMPT` in
-`app/backend/project/engine/plan/plan_prompts.py` to the same
+`app/backend/project/engine/judgment/prompts.py` to the same
 **project / map** language Decide and opening already use (2026-09-18).
 Confirm ASK / SUGGEST / PLAN still parse (live or planner tests).
 Update [[04-current-state]] where it still says Fill/REPLAN are
@@ -73,7 +77,7 @@ before the user asks for one.
 calendar `plan.steps` in this phase — mark them explicitly as WHEN
 side-effect / legacy in [[04-current-state]] and Parallel P3. Stop
 showing `plan.steps` anywhere Projects cares about, if any remain.
-Calendar fill (`plan_structure`) may soft-fail as today — must not
+Calendar fill (`calendar`) may soft-fail as today — must not
 block WHAT.
 
 **Exit A3:** Projects / chat tree = progression only; the dual path is
@@ -128,12 +132,23 @@ Done: llm3 asks for `"project"`; accepts legacy `"planning"`.
 Done: Vocabulary in [[04-current-state]], decision #29, this status
 table, `TODO.md` Active 23.
 
+## Engine layout follow-up (2026-09-20)
+
+Done the same day as Phase B compat (not a numbered Phase C):
+
+- Flattened `engine/plan/` → `engine/judgment/` + `engine/when/`
+- Renamed Stage 3 modules to plain names (`decide`, `run_stage3`,
+  `prompts`, `shape`, `ask`, `current_time`; calendar fill =
+  `when/calendar.py`)
+- Deleted unread `plan_skeleton.py` (ambient timeline noted on Queue 21)
+- `planner.generate_plan` remains an alias for `run_stage3`
+
 ## Out of scope
 
 - Module Library wiring (`TODO.md` Queue 8)
 - Topic continuity / multi-goal free conversation (Queue 3)
 - Zoom-ask (Queue 16)
-- Year grain / `plan_skeleton` wiring
+- Year grain / ambient timeline (WHEN on the visual edge)
 - Gathering chat ↔ tree UI into one module (declined)
 - Mass rewrite of historical `06-development` or [[v4-migration-decision]]
 

@@ -26,7 +26,7 @@ from backend.project.panes.chat.turn import take_turn
 from backend.project.panes.create.lifecycle import cancel_goal, create_goal
 from backend.project.panes.create.resolver import get_latest_for_goal
 from backend.project.panes.canvas.text_to_tree import parse_outline
-from backend.project.engine.plan.planner import archive_vision, set_goal_vision
+from backend.project.engine.planner import archive_vision, set_goal_vision
 from backend.project.panes.canvas.edit_map import (
     add_progression_bead,
     import_progression_outline,

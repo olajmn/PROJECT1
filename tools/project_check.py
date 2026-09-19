@@ -77,7 +77,7 @@ PY_SCAN_FILES = ["cli.py", "server.py"]
 # Real entry points worth confirming still import - not dynamically
 # discovered.
 SMOKE_IMPORT_MODULES = [
-    "backend.project.engine.plan.planner",
+    "backend.project.engine.planner",
     "backend.project.panes.create.resolver",
     "backend.store.data_persistence",
     "backend.agent.llm_roles.voice",

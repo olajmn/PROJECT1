@@ -1,10 +1,9 @@
 """
-Stage 3 orchestration — decide, then fill when planable.
+run_stage3 — Stage 3: decide, then fill when planable.
 
-Conversation Stages 1–2 (Voice, Describe) live in llm_roles/. This
-module is Planning's Stage 3 path: decide() (ASK / SUGGEST / PLAN),
-then a separate fill call for horizons when planable, then
-generate_structure() when a real duration span exists.
+Stages 1–2 (Voice, Describe) live in llm_roles/. This module is the
+boss: decide() (ASK / SUGGEST / PLAN), then a fill call for horizons
+when planable, then when/calendar when a real duration span exists.
 
 Does NOT auto-mint plan["progression"] children on PLAN — the user
 steers the WHAT map via + / Paste / Suggest (see
@@ -17,15 +16,15 @@ one possible outcome of decide().
 
 from backend.foundation.time import resolve_duration
 from backend.store.data_persistence import get_vision
-from backend.project.engine.plan.decide import decide
-from backend.project.engine.plan.json_request import ask_model
-from backend.project.engine.plan.plan_prompts import FILL_SYSTEM_PROMPT
-from backend.project.engine.plan.plan_schema import (
+from backend.project.engine.judgment.decide import decide
+from backend.project.engine.judgment.ask import ask
+from backend.project.engine.judgment.prompts import FILL_SYSTEM_PROMPT
+from backend.project.engine.judgment.shape import (
     PLAN_KEYS,
     _horizon_scope_instruction,
-    _now_str,
 )
-from backend.project.engine.plan.plan_structure import generate_structure
+from backend.project.engine.judgment.current_time import current_time
+from backend.project.engine.when.calendar import generate_structure
 
 # create_goal()'s first mint cannot land on an Action. Used when
 # opening=True and Decide still returned suggested_action with nothing
@@ -72,7 +71,7 @@ def _fill_user_content(
 ) -> str:
     """Grounding lines for the fill call - same context as Decide, plus
     which horizons to fill. No opening/decide instructions."""
-    user_content = f"The current date and time is: {_now_str()}\n\nMy goal is: {goal}"
+    user_content = f"The current date and time is: {current_time()}\n\nMy goal is: {goal}"
     if vision_id is not None:
         vision = get_vision(vision_id)
         if vision is not None:
@@ -100,7 +99,7 @@ def _fill_user_content(
     return user_content
 
 
-def generate_plan(
+def run_stage3(
     goal: str, duration: str | None = None, vision_id: int | None = None,
     prior_suggestion: str | None = None, reply: str | None = None,
     opening: bool = False,
@@ -164,7 +163,7 @@ def generate_plan(
         return plan
 
     # PLAN — second call fills horizons only.
-    filled = ask_model(
+    filled = ask(
         FILL_SYSTEM_PROMPT,
         _fill_user_content(goal, duration, vision_id, prior_suggestion, reply),
         PLAN_KEYS,
@@ -192,9 +191,13 @@ def generate_plan(
     return plan
 
 
+# Older name — same function (planner / lifecycle still say generate_plan).
+generate_plan = run_stage3
+
+
 def _planability(plan: dict) -> str:
     """
-    Named verdict on a generate_plan()-shaped dict: "ask", "suggest",
+    Named verdict on a run_stage3()/generate_plan()-shaped dict: "ask", "suggest",
     or "planable". Not a fourth model call - reads fields Decide (and
     opening enforcement) already set. create_goal() only distinguishes
     planable from everything else; route_note() tells suggest kinds apart.

@@ -2,28 +2,18 @@
 Planner
 =======
 
-Goal -> structured Plan, via a local LLM (Ollama). Produces a plan
-across seven time horizons and revises it (replan()). Minting or
-abandoning a Goal is create/lifecycle.py, which calls generate_plan()
-(Stage 3 - see generate_plan.py) on create. Acting on a free-text note
-against an existing goal is feedback/route_note.py, which calls back
-into generate_plan()/replan() here. Never talks to the model directly
-(see json_request.py/plan_structure.py).
+Project engine facade: revises a plan (replan()), advances calendar
+steps, links Vision. Minting is create/lifecycle.py →
+judgment.run_stage3(); free-text notes are feedback/route_note.py
+→ generate_plan()/replan() here. Never talks to the model directly
+(see judgment/ask.py / when/calendar.py).
 
-Runs 100% locally - no API key, no internet, no cost. Requires Ollama
-running in the background (start with: brew services start ollama)
-and the model pulled (ollama pull qwen3.5:9b) - see
-backend/llm_client.py for the one place the concrete model is
-actually named.
-
-PLAN_KEYS and prompt-grounding helpers live in plan_schema.py;
-Stage 3 Decide lives in decide.py, orchestrated by generate_plan.py
-(Fill + steps when planable). Re-exported here so existing
+PLAN_KEYS live in judgment/shape.py; Decide in judgment/decide.py;
+orchestration in judgment/run_stage3.py. Re-exported here so existing
 `planner.generate_plan` / `planner.PLAN_KEYS` callers keep working.
-See docs/06-development.md for this file's naming/reorganization
-history.
 
-Run from the PROJECT ROOT: .venv/bin/python -m backend.goals.plan.planner
+Runs 100% locally via Ollama — see backend/llm_client.py for the
+concrete model name.
 """
 
 # Contents
@@ -50,24 +40,24 @@ Run from the PROJECT ROOT: .venv/bin/python -m backend.goals.plan.planner
 from backend.foundation.time import freeze_duration, resolve_duration
 from backend.project.panes.create.resolver import get_latest_for_all_goals, get_latest_for_goal
 from backend.store.data_persistence import archive_vision as archive_vision_record, get_vision, save_plan
-from backend.project.engine.plan import generate_plan as generate_plan_mod
-from backend.project.engine.plan.json_request import ask_model
-from backend.project.engine.plan.plan_prompts import REPLAN_SYSTEM_PROMPT
-from backend.project.engine.plan.plan_schema import (
+from backend.project.engine.judgment import run_stage3 as run_mod
+from backend.project.engine.judgment.shape import (
     PLAN_KEYS,
     _horizon_scope_instruction,
-    _now_str,
 )
+from backend.project.engine.judgment.current_time import current_time
+from backend.project.engine.judgment.ask import ask
+from backend.project.engine.judgment.prompts import REPLAN_SYSTEM_PROMPT
 
 # ============================================================
 # 1. Re-exports (schema + Stage 3)
 # ============================================================
 
 # Callers that use `planner.*` (lifecycle, route_note, tests).
-generate_plan = generate_plan_mod.generate_plan
-OPENING_CLARIFICATION = generate_plan_mod.OPENING_CLARIFICATION
-_planability = generate_plan_mod._planability
-_reject_opening_action = generate_plan_mod._reject_opening_action
+generate_plan = run_mod.run_stage3
+OPENING_CLARIFICATION = run_mod.OPENING_CLARIFICATION
+_planability = run_mod._planability
+_reject_opening_action = run_mod._reject_opening_action
 
 
 # ============================================================
@@ -115,7 +105,7 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     Vision).
     """
     # Named history_lines, not "steps" - unrelated to this file's
-    # `steps` plan field/plan_structure.generate_structure() (added
+    # `steps` plan field/calendar.generate_structure() (added
     # later the same day); this is prose lines for the replan prompt,
     # not the step list.
     history_lines = []
@@ -128,7 +118,7 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     history_text = "\n".join(history_lines)
 
     user_content = (
-        f"The current date and time is: {_now_str()}\n\n"
+        f"The current date and time is: {current_time()}\n\n"
         f"My goal is: {goal}\n\n"
         f"This goal's full history so far, oldest first:\n{history_text}\n\n"
         f"My feedback on the most recent 'now' action: {feedback}"
@@ -143,7 +133,7 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     if duration:
         user_content += f"\n\nThis plan should still span roughly: {resolve_duration(duration)}"
     user_content += _horizon_scope_instruction(duration)
-    return ask_model(REPLAN_SYSTEM_PROMPT, user_content, PLAN_KEYS)
+    return ask(REPLAN_SYSTEM_PROMPT, user_content, PLAN_KEYS)
 
 
 def apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:

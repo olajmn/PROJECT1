@@ -7,13 +7,13 @@ SUGGEST for the semantics being verified here.
 
 Runs entirely against a temporary directory (never the real data/), and
 never calls the real Ollama model for Stage 3 Decide/Fill or step
-trees - decide.ask_model, generate_plan.ask_model (Fill), and
-generate_structure are monkeypatched. These checks verify the WIRING
+trees - decide.ask, run.ask (Fill), and generate_structure are
+monkeypatched. These checks verify the WIRING
 (which branch runs, what gets carried forward, what gets saved), not
 live model wording.
 
 Run from app/:
-    .venv/bin/python -m backend.project.engine.plan.test_planner
+    .venv/bin/python -m backend.project.engine.test_planner
 """
 
 import shutil
@@ -24,9 +24,9 @@ from backend.store import data_persistence as dp
 from backend.project.panes.chat.feedback.route_note import route_note
 from backend.project.panes.create import resolver
 from backend.project.panes.create.lifecycle import create_goal
-from backend.project.engine.plan import decide as decide_mod
-from backend.project.engine.plan import generate_plan as generate_plan_mod
-from backend.project.engine.plan import planner
+from backend.project.engine.judgment import decide as decide_mod
+from backend.project.engine.judgment import run_stage3 as run_mod
+from backend.project.engine import planner
 
 
 def _pending_suggestion(vision_id=None):
@@ -39,9 +39,9 @@ _original_data_dir = dp.DATA_DIR
 _original_plans_file = dp.PLANS_FILE
 _original_legacy_plans = dp.LEGACY_PLANS_FILE
 _original_visions_file = dp.VISIONS_FILE
-_original_decide_ask = decide_mod.ask_model
-_original_fill_ask = generate_plan_mod.ask_model
-_original_generate_structure = generate_plan_mod.generate_structure
+_original_decide_ask = decide_mod.ask
+_original_fill_ask = run_mod.ask
+_original_generate_structure = run_mod.generate_structure
 _original_replan = planner.replan
 
 _tmp_dir = Path(tempfile.mkdtemp(prefix="planner_test_"))
@@ -50,7 +50,7 @@ dp.PLANS_FILE = _tmp_dir / "plans.jsonl"
 dp.LEGACY_PLANS_FILE = _tmp_dir / "plans.json"
 dp.VISIONS_FILE = _tmp_dir / "visions.json"
 # Never hit Ollama for calendar step trees in these wiring checks.
-generate_plan_mod.generate_structure = lambda *args, **kwargs: None
+run_mod.generate_structure = lambda *args, **kwargs: None
 
 GOAL_TEXT = "I want to get my job search organized and get a job in development"
 SUGGESTION_TEXT = "Create a list of your current job-search tasks and prioritize them."
@@ -75,12 +75,12 @@ _BLANK_PLAN = {
 def _set_stage3(response: dict) -> None:
     """One combined-shaped canned dict → Decide stub + Fill stub.
     ASK/SUGGEST never call Fill; PLAN uses Fill for horizons."""
-    decide_mod.ask_model = _canned({
+    decide_mod.ask = _canned({
         "clarification": response.get("clarification"),
         "suggested_action": response.get("suggested_action"),
         "suggested_duration": response.get("suggested_duration"),
     })
-    generate_plan_mod.ask_model = _canned({
+    run_mod.ask = _canned({
         "year": response.get("year"),
         "month": response.get("month"),
         "week": response.get("week"),
@@ -287,9 +287,9 @@ try:
     print()
     print("ALL OK - content-SUGGEST confirmation behaves as expected")
 finally:
-    decide_mod.ask_model = _original_decide_ask
-    generate_plan_mod.ask_model = _original_fill_ask
-    generate_plan_mod.generate_structure = _original_generate_structure
+    decide_mod.ask = _original_decide_ask
+    run_mod.ask = _original_fill_ask
+    run_mod.generate_structure = _original_generate_structure
     planner.replan = _original_replan
     dp.DATA_DIR = _original_data_dir
     dp.PLANS_FILE = _original_plans_file
