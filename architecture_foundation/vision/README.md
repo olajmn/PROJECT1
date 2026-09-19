@@ -26,7 +26,7 @@ beyond `goals/goal/` optionally carrying a reference to one.
 
 ## Reference implementation
 
-Fully built in the prototype: `backend/infrastructure/data_persistence.py`
+Fully built in the prototype: `backend/store/data_persistence.py`
 (`save_vision`/`load_visions`/`get_vision`, a separate `data/visions.json`),
 an optional `vision_id` on a Goal record, a creation form and grouped
 display in `frontend/`. See the prototype's `docs/03-architecture.md` §

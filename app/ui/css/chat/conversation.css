@@ -1,0 +1,102 @@
+/* Free-conversation transcript, plan tree, Steps zoom.
+ *
+ * Contents
+ *  1. Free-conversation transcript
+ *      - #transcript
+ *      - .message
+ *  2. Plan tree
+ *      - .plan / .node / .plan-busy
+ *  3. Steps zoom
+ *      - .step-zoom / .zoom-note
+ */
+
+/* 1. Free-conversation transcript */
+
+#transcript {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 1rem;
+}
+
+.message {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.message .who {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #888;
+  min-width: 3.5rem;
+}
+
+.message-agent .text {
+  color: #1a1a1a;
+}
+
+/* 2. Plan tree */
+
+.plan {
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+}
+
+.plan ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.plan > ul {
+  padding-left: 0;
+}
+
+.node {
+  padding: 0.15rem 0;
+}
+
+.node-done { color: #6b6b6b; text-decoration: line-through; }
+.node-current { font-weight: 600; }
+.node-open { color: #1a1a1a; }
+
+.plan-busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* 3. Steps zoom */
+
+.step-zoom {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  width: auto;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: #ccc;
+  text-underline-offset: 0.15em;
+}
+
+.step-zoom:hover {
+  text-decoration-color: #666;
+}
+
+.step-zoom:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.zoom-note {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  color: #555;
+}

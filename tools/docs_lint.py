@@ -1,13 +1,13 @@
 """
 Checks docs/*.md and code comments/docstrings under current/ and
-agent/ for personal-narrative language (see CONVENTIONS.md's
+app/ for personal-narrative language (see CONVENTIONS.md's
 "Documentation neutrality" rule).
 
 Two confidence tiers: CONFIRMED patterns are unambiguous regardless of
 context and fail the run; REVIEW patterns are genuinely ambiguous,
 always printed, but never fail on their own.
 
-Lives at the project root, not under current/ or agent/, same reasoning
+Lives at the project root, not under current/ or app/, same reasoning
 as tools/docs_check.py: docs/ and CONVENTIONS.md are shared resources
 spanning both projects, not owned by either one.
 
@@ -47,7 +47,7 @@ ROOT = Path(__file__).resolve().parent.parent
 # Default scan targets - same scope CONVENTIONS.md's rule names, and
 # the same curated-areas reasoning as tools/docs_check.py's
 # REFERENCE_SCAN_TARGETS (avoids walking into current/.venv,
-# agent/.venv, and agent/ui/node_modules).
+# app/.venv, and app/ui/node_modules).
 DEFAULT_TARGETS = [
     "docs",
     "CONVENTIONS.md",
@@ -55,10 +55,10 @@ DEFAULT_TARGETS = [
     "current/backend",
     "current/frontend",
     "current/SESSION-TODO.md",
-    "agent/backend",
-    "agent/cli.py",
-    "agent/server.py",
-    "agent/ui/src",
+    "app/backend",
+    "app/cli.py",
+    "app/server.py",
+    "app/ui/src",
 ]
 
 # Extensions scanned inside a directory target.
@@ -141,7 +141,7 @@ def main() -> int:
         "paths",
         nargs="*",
         default=DEFAULT_TARGETS,
-        help="Files/directories to scan, relative to the project root (default: docs/, current/ and agent/ backend/frontend, CONVENTIONS.md, COLLABORATION.md)",
+        help="Files/directories to scan, relative to the project root (default: docs/, current/ and app/ backend/frontend, CONVENTIONS.md, COLLABORATION.md)",
     )
     parser.add_argument(
         "--strict",

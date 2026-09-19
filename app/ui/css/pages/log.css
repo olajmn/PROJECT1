@@ -1,0 +1,36 @@
+/* Log page tabs and panels. */
+
+.log-lead {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.log-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+}
+
+.log-tabs button {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  color: #666;
+  cursor: pointer;
+}
+
+.log-tabs button[aria-selected="true"] {
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+  color: #fff;
+}
+
+.log-panel {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}

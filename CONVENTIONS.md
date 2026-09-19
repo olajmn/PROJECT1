@@ -34,15 +34,15 @@ Source-code Contents (what a file's navigation block should contain, and when on
 
 ## Project structure
 
-Root only holds shared resources spanning every project here (`docs/`, `tools/`, `CONVENTIONS.md`, `COLLABORATION.md`, `.gitignore` — these stay at root because Git/the tooling that reads them expect that, or because they're genuinely shared, not owned by one project) plus each self-contained project as its own top-level folder (currently `agent/` only — see root `README.md`). A project's own runtime — `.venv/`, `requirements.txt`, `data/` — lives inside that project's own folder, never at the repository root; there is no root-level `.venv/` or `requirements.txt`. New source code belongs inside the relevant project's own subdirectory; source files must not be placed loose at the repository root.
+Root only holds shared resources spanning every project here (`docs/`, `tools/`, `CONVENTIONS.md`, `COLLABORATION.md`, `.gitignore` — these stay at root because Git/the tooling that reads them expect that, or because they're genuinely shared, not owned by one project) plus each self-contained project as its own top-level folder (currently `app/` only — see root `README.md`). A project's own runtime — `.venv/`, `requirements.txt`, `data/` — lives inside that project's own folder, never at the repository root; there is no root-level `.venv/` or `requirements.txt`. New source code belongs inside the relevant project's own subdirectory; source files must not be placed loose at the repository root.
 
 See `docs/04-current-state.md` for which directories actually exist today and what's in each.
 
 ## Environment
 
-- Each project here is self-contained: its own `.venv/`, its own `requirements.txt`, its own `data/` (see root `README.md`). For `agent/`, that means `agent/.venv/` and `agent/requirements.txt` — there is no shared, repository-root virtual environment to activate instead.
-- `agent/backend/` is a Python package (`agent/ui/` is a separate TypeScript prototype, not part of this package). Because its modules import from each other, project scripts must be run from `agent/`'s own root using `-m` rather than as file paths — a plain file path will not work, since the imports rely on Python treating them as package members. `cd agent/` first, then activate its environment once per terminal session (`source .venv/bin/activate`) to run things as plain `python -m ...` instead of `.venv/bin/python -m ...` each time. See `docs/04-current-state.md` for which modules actually exist and how to run them today.
-- New dependencies: from within `agent/`, install into its `.venv`, then refresh its own lockfile:
+- Each project here is self-contained: its own `.venv/`, its own `requirements.txt`, its own `data/` (see root `README.md`). For `app/`, that means `app/.venv/` and `app/requirements.txt` — there is no shared, repository-root virtual environment to activate instead.
+- `app/backend/` is a Python package (`app/ui/` is a separate TypeScript prototype, not part of this package). Because its modules import from each other, project scripts must be run from `app/`'s own root using `-m` rather than as file paths — a plain file path will not work, since the imports rely on Python treating them as package members. `cd app/` first, then activate its environment once per terminal session (`source .venv/bin/activate`) to run things as plain `python -m ...` instead of `.venv/bin/python -m ...` each time. See `docs/04-current-state.md` for which modules actually exist and how to run them today.
+- New dependencies: from within `app/`, install into its `.venv`, then refresh its own lockfile:
   ```bash
   .venv/bin/pip install <package>
   .venv/bin/pip freeze > requirements.txt

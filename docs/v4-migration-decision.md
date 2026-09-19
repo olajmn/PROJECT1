@@ -60,7 +60,7 @@ Full detail: `04-current-state.md`. Summarized here only as much as the mapping 
 - **One LLM boundary.** `backend/reasoning/model_client.py:send_message()` is the only place `ollama.chat()` is called. Three independent callers use it, all inside what is today informally "the planning stack": `backend/goals/plan/model_client.py:ask_model()`, `backend/goals/plan/step_generator.py:generate_steps()`, and `backend/goals/feedback/acknowledger.py:acknowledge()`.
 - **No LLM1, LLM2, or LLM3 exist in any form today.** The `/` Conversation page is a disabled placeholder. What happens next is decided entirely by which of the six work-area routes (`frontend/app.py`) the user is on and which button they pressed — capability selection is a navigation choice, not a reasoning step.
 - **One model call does the work of Minimum Planability, ASK/SUGGEST, and plan-content generation together.** `backend/goals/plan/planner.py`'s `generate_plan()`/`replan()`, via `ask_model()`, decide in one round-trip whether a goal is too vague (ASK), whether a default duration or a generic first action can be proposed (SUGGEST), and produce the actual horizon content (PLAN).
-- **Deterministic logic already exists and is already cleanly separated from LLM calls:** `backend/goals/feedback/feedback_parser.py` (free text → outcome, no LLM), `backend/foundation/time/` and `backend/foundation/math.py` (the two established Faculties), `backend/infrastructure/data_persistence.py` and `backend/goals/goal/resolver.py` (state/persistence), and the orchestration logic in `planner.py` itself (`create_goal`, `apply_feedback`, `advance_step`, `set_goal_vision`, `archive_vision`, `cancel_goal`).
+- **Deterministic logic already exists and is already cleanly separated from LLM calls:** `backend/goals/feedback/feedback_parser.py` (free text → outcome, no LLM), `backend/foundation/time/` and `backend/foundation/math.py` (the two established Faculties), `backend/store/data_persistence.py` and `backend/goals/goal/resolver.py` (state/persistence), and the orchestration logic in `planner.py` itself (`create_goal`, `apply_feedback`, `advance_step`, `set_goal_vision`, `archive_vision`, `cancel_goal`).
 - **`backend/memory/` and `backend/world/` are empty placeholders** — no behavior to migrate.
 - **The UI (`frontend/`) already does not make domain decisions** — `frontend/view_data/` shapes already-decided data for templates; it does not decide anything about a Goal, Plan, or Vision (see `04-current-state.md` §4).
 
@@ -174,7 +174,7 @@ The deterministic program is the part of the system that does not reason in natu
 
 Concretely, today, this already includes:
 
-- state and persistence (`backend/infrastructure/data_persistence.py`, `backend/goals/goal/resolver.py`)
+- state and persistence (`backend/store/data_persistence.py`, `backend/goals/goal/resolver.py`)
 - validation of LLM output shape (`backend/goals/plan/model_client.py:ask_model()`'s required-key check)
 - deterministic calculations and interpretation where the input is unambiguous (`backend/foundation/time/`, `backend/foundation/math.py`)
 - feedback parsing where the judgment is deliberately kept out of LLM hands (`backend/goals/feedback/feedback_parser.py`) — this is a considered decision, not an oversight (see `05-decisions.md` #1), and stays deterministic under this architecture for the same reason

@@ -2,7 +2,7 @@
 Cheap, deterministic repository orientation - meant to run at the start
 of a session, so it doesn't have to trust its own memory or
 docs/04-current-state.md's prose at face value. Reports observable
-facts: git status, files newer than docs/04-current-state.md, agent/'s
+facts: git status, files newer than docs/04-current-state.md, app/'s
 actual backend/ tree, whether the core modules still import,
 code-level hygiene (pyflakes, stale backend/ path mentions, modules
 with no inbound import), and this same tools/'s docs_check.py/
@@ -15,9 +15,9 @@ docs_lint.py (this same directory - one shared tools/ for the whole
 project, not a per-project copy) and pyflakes as sub-checks rather
 than duplicating their logic.
 
-Run from the project root, but against agent/'s own venv (this is the
+Run from the project root, but against app/'s own venv (this is the
 only project this script's backend/import checks target):
-    agent/.venv/bin/python3 -m tools.project_check
+    app/.venv/bin/python3 -m tools.project_check
 
 Exit code 0 if docs_check.py, docs_lint.py, pyflakes, and the import
 smoke test all pass; 1 if any of them found something. Every other
@@ -26,7 +26,7 @@ section is pure information and never affects the exit code.
 
 # Contents
 #  1. Configuration
-#      - PROJECT_ROOT / AGENT_ROOT / DOCS_ROOT / CURRENT_STATE / PYTHON
+#      - PROJECT_ROOT / APP_ROOT / DOCS_ROOT / CURRENT_STATE / PYTHON
 #      - RELEVANT_AREAS
 #      - PY_SCAN_AREAS / PY_SCAN_FILES
 #      - SMOKE_IMPORT_MODULES
@@ -54,21 +54,21 @@ from pathlib import Path
 # 1. Configuration
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent  # PROJECT1/ - tools/ lives directly under it
-AGENT_ROOT = PROJECT_ROOT / "agent"
+APP_ROOT = PROJECT_ROOT / "app"
 DOCS_ROOT = PROJECT_ROOT / "docs"
 CURRENT_STATE = DOCS_ROOT / "04-current-state.md"
-PYTHON = AGENT_ROOT / ".venv" / "bin" / "python3"
+PYTHON = APP_ROOT / ".venv" / "bin" / "python3"
 
 # Areas docs/04-current-state.md actually describes, each an absolute
 # path since docs/ is shared at the project root while backend/ lives
-# under agent/ itself. No "frontend" yet - see docs/04-current-state.md
-# § 6 for what agent/ hasn't carried over from current/.
-RELEVANT_AREAS = [AGENT_ROOT / "backend", DOCS_ROOT]
+# under app/ itself. No "frontend" yet - see docs/04-current-state.md
+# § 6 for what app/ hasn't carried over from current/.
+RELEVANT_AREAS = [APP_ROOT / "backend", DOCS_ROOT]
 
 # .py corpus for stale-path and orphan-import scanning: backend/
 # recursively, plus the top-level entry points that import from it -
 # cli.py/server.py aren't under backend/, but are exactly where
-# backend.llm_roles/llm3/planning are actually wired together (see
+# backend.agent / planning are actually wired together (see
 # docs/04-current-state.md § 3.ii), so excluding them would make every
 # one of those modules look orphaned.
 PY_SCAN_AREAS = ["backend"]
@@ -77,13 +77,13 @@ PY_SCAN_FILES = ["cli.py", "server.py"]
 # Real entry points worth confirming still import - not dynamically
 # discovered.
 SMOKE_IMPORT_MODULES = [
-    "backend.planning.plan.planner",
-    "backend.planning.goal.resolver",
-    "backend.infrastructure.data_persistence",
-    "backend.llm_roles.voice",
-    "backend.llm_roles.describe",
-    "backend.llm3.select",
-    "backend.manifestation",
+    "backend.project.engine.plan.planner",
+    "backend.project.panes.create.resolver",
+    "backend.store.data_persistence",
+    "backend.agent.llm_roles.voice",
+    "backend.agent.llm_roles.describe",
+    "backend.agent.llm3.select",
+    "backend.agent.manifestation",
     "backend.module_library.modules",
     "cli",
     "server",
@@ -93,7 +93,7 @@ SMOKE_IMPORT_MODULES = [
 # 2. Checks
 
 
-def _run(cmd: list[str], cwd: Path = AGENT_ROOT) -> tuple[int, str]:
+def _run(cmd: list[str], cwd: Path = APP_ROOT) -> tuple[int, str]:
     """Run a subprocess; never raises, since a failing sub-check is
     itself part of the report. Trims only trailing whitespace - `git
     status --porcelain`'s columns are position-sensitive, so
@@ -104,7 +104,7 @@ def _run(cmd: list[str], cwd: Path = AGENT_ROOT) -> tuple[int, str]:
 
 def git_status() -> list[str]:
     """Changed/untracked paths from `git status --porcelain`, relative
-    to the repo root (the whole PROJECT1 checkout, not just agent/ -
+    to the repo root (the whole PROJECT1 checkout, not just app/ -
     one git repository spans both)."""
     code, output = _run(["git", "status", "--porcelain"], cwd=PROJECT_ROOT)
     if code != 0 or not output:
@@ -153,7 +153,7 @@ def directory_tree(area_path: Path) -> list[str]:
 
 def import_smoke_test() -> list[str]:
     """Imports each module in SMOKE_IMPORT_MODULES in its own
-    subprocess (cwd=agent/, so both `backend.*` and the top-level
+    subprocess (cwd=app/, so both `backend.*` and the top-level
     `cli`/`server` resolve), so one bad import can't take down the
     rest. Reports failures only. Confirms importability, not runtime
     behavior."""
@@ -173,7 +173,7 @@ def run_tool(module: str) -> tuple[int, str]:
 
 
 def run_pyflakes() -> tuple[int, str]:
-    """Run pyflakes (see agent/requirements.txt) against agent/'s
+    """Run pyflakes (see app/requirements.txt) against app/'s
     backend/ and its top-level entry points."""
     return _run([str(PYTHON), "-m", "pyflakes", "backend", "cli.py", "server.py"])
 
@@ -181,7 +181,7 @@ def run_pyflakes() -> tuple[int, str]:
 # A backend/...-looking .py path mentioned in a comment, docstring, or
 # docs/ prose - either the current "backend/..." prefix, or "goals/...",
 # a former backend/ subpackage name (pre-2026-09-11 rename to
-# backend/planning/) still mentioned bare, without "backend/", in some
+# backend/project/) still mentioned bare, without "backend/", in some
 # historical text - found via a real miss: reasoning/model_client.py's
 # own docstring said "goals/plan/model_client.py", which the original,
 # backend/-only pattern couldn't see at all, not even in principle -
@@ -190,22 +190,22 @@ def run_pyflakes() -> tuple[int, str]:
 # above.
 CODE_PATH_RE = re.compile(r"\b(?:backend/|goals/)[A-Za-z0-9_/().-]+\.py\b")
 
-# Where to scan for CODE_PATH_RE mentions: .py under agent/backend/ and
+# Where to scan for CODE_PATH_RE mentions: .py under app/backend/ and
 # its top-level entry points, .md under the shared docs/.
 STALE_PATH_SCAN_TARGETS: list[tuple[Path, str]] = [
-    (AGENT_ROOT / "backend", "*.py"),
-    (AGENT_ROOT, "cli.py"),
-    (AGENT_ROOT, "server.py"),
+    (APP_ROOT / "backend", "*.py"),
+    (APP_ROOT, "cli.py"),
+    (APP_ROOT, "server.py"),
     (DOCS_ROOT, "*.md"),
 ]
 
 
 def stale_code_path_mentions() -> list[str]:
     """Every backend/...-looking (or bare goals/...-looking - see
-    CODE_PATH_RE) .py path mentioned anywhere under agent/backend/,
-    agent/cli.py, agent/server.py, or the shared docs/ that doesn't
-    resolve to a real file under agent/backend/ (a docs/ mention of
-    `backend/...` or `goals/...` means agent/backend/... specifically -
+    CODE_PATH_RE) .py path mentioned anywhere under app/backend/,
+    app/cli.py, app/server.py, or the shared docs/ that doesn't
+    resolve to a real file under app/backend/ (a docs/ mention of
+    `backend/...` or `goals/...` means app/backend/... specifically -
     current/backend/ uses the same relative shape but a different tree
     entirely). Doesn't distinguish a genuine leftover reference from a
     docstring or doc deliberately narrating "moved from X" as
@@ -223,12 +223,12 @@ def stale_code_path_mentions() -> list[str]:
                 for match in CODE_PATH_RE.finditer(line):
                     referenced = match.group(0)
                     # Both recognized prefixes always resolve under
-                    # agent/backend/ - "backend/" is already rooted
+                    # app/backend/ - "backend/" is already rooted
                     # there once stripped, and a bare "goals/..." match
                     # always lived directly under backend/goals/, never
                     # at the project root.
                     normalized = referenced.removeprefix("backend/")
-                    if not (AGENT_ROOT / "backend" / normalized).exists():
+                    if not (APP_ROOT / "backend" / normalized).exists():
                         stale.append(f"{path.relative_to(PROJECT_ROOT)}:{line_number}: {referenced}")
     return stale
 
@@ -242,19 +242,19 @@ def modules_with_no_inbound_import() -> list[str]:
     py_files = [
         p
         for area in PY_SCAN_AREAS
-        for p in (AGENT_ROOT / area).rglob("*.py")
+        for p in (APP_ROOT / area).rglob("*.py")
         if "__pycache__" not in p.parts
-    ] + [AGENT_ROOT / f for f in PY_SCAN_FILES if (AGENT_ROOT / f).exists()]
+    ] + [APP_ROOT / f for f in PY_SCAN_FILES if (APP_ROOT / f).exists()]
     contents = {p: p.read_text(encoding="utf-8", errors="replace") for p in py_files}
     backend_modules = [
         p
-        for p in (AGENT_ROOT / "backend").rglob("*.py")
+        for p in (APP_ROOT / "backend").rglob("*.py")
         if "__pycache__" not in p.parts and p.name != "__init__.py"
     ]
 
     orphans = []
     for module_path in backend_modules:
-        dotted = ".".join(module_path.relative_to(AGENT_ROOT).with_suffix("").parts)
+        dotted = ".".join(module_path.relative_to(APP_ROOT).with_suffix("").parts)
         base = module_path.stem
         referenced = any(
             dotted in text or f"import {base}" in text or f".{base}" in text
@@ -262,7 +262,7 @@ def modules_with_no_inbound_import() -> list[str]:
             if other_path != module_path
         )
         if not referenced:
-            orphans.append(str(module_path.relative_to(AGENT_ROOT)))
+            orphans.append(str(module_path.relative_to(APP_ROOT)))
     return sorted(orphans)
 
 
@@ -295,8 +295,8 @@ def main() -> int:
         print("  touched file among the areas it describes")
 
     print()
-    print("=== agent/backend/ tree (compare against docs/04-current-state.md § 1. Project Structure) ===")
-    for line in directory_tree(AGENT_ROOT / "backend"):
+    print("=== app/backend/ tree (compare against docs/04-current-state.md § 1. Project Structure) ===")
+    for line in directory_tree(APP_ROOT / "backend"):
         print(f"  {line}")
 
     print()
@@ -310,14 +310,14 @@ def main() -> int:
         print("  all modules import cleanly")
 
     print()
-    print("=== pyflakes (agent/backend/, agent/cli.py, agent/server.py) ===")
+    print("=== pyflakes (app/backend/, app/cli.py, app/server.py) ===")
     code, output = run_pyflakes()
     print(output if output else "  no issues found")
     if code != 0:
         exit_code = 1
 
     print()
-    print("=== stale agent/backend/ .py path mentions ===")
+    print("=== stale app/backend/ .py path mentions ===")
     stale_paths = stale_code_path_mentions()
     if stale_paths:
         for line in stale_paths:
@@ -331,7 +331,7 @@ def main() -> int:
         print("  none")
 
     print()
-    print("=== agent/backend/ modules with no detected inbound import ===")
+    print("=== app/backend/ modules with no detected inbound import ===")
     orphans = modules_with_no_inbound_import()
     if orphans:
         for path in orphans:

@@ -120,7 +120,7 @@ This creates a distinction between Domains and Faculties:
 
 Time provides the first concrete example. Time is a Domain because the system operates on durations, timeframes, dates and deadlines. Temporal understanding is a Faculty because it provides the reusable capability to interpret temporal expressions and durations. The two are related, but they are not the same thing.
 
-The same principle explains why `infrastructure/data_persistence.py` is Infrastructure rather than a Faculty. It is reused broadly by every Domain and by `devtools/app.py` directly, but it does not understand what the data represents — it only stores and retrieves it.
+The same principle explains why `store/data_persistence.py` (was `infrastructure/…`) is Infrastructure-category rather than a Faculty. It is reused broadly by every Domain, but it does not understand what the data represents — it only stores and retrieves it.
 
 Similarly, `outcome_classifier.py` is not currently a Faculty merely because it shares a deterministic phrase-matching *pattern* with `foundation/time/time_logic/phrase_matching.py`. It is currently specific to Goal's feedback flow and has not demonstrated reuse as a general agent capability.
 
@@ -162,9 +162,9 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 ## 21. 2026-09-09 — Swap local model: llama3.1:8b → qwen3.5:9b (Q4_K_M), same runtime and boundary
 
 **Alternatives considered:** keep `llama3.1:8b`; move to a hosted API model; switch to Qwen3.5-9B via a different local runtime (MLX) instead of staying on Ollama.
-**Why this choice:** `qwen3.5:9b` is available directly from the Ollama library at a 4-bit (Q4_K_M) quantization (6.6GB) — no new runtime, no new model format handling, and no change to `backend/model/client.py`'s `send_message()` interface, which already treats the concrete model as a one-line `MODEL` constant no caller depends on. MLX was considered (native to Apple Silicon) but rejected for now: Ollama already runs this exact model well on this machine (M3 Pro, 18GB), and Ollama's own MLX-backed tag (`qwen3.5:9b-mlx`, 8.9GB) is larger on disk/memory for no demonstrated benefit here — see `03-architecture.md` § Architectural principles, "Start simple." This is a development/testing choice, not a permanent architecture decision — the model is expected to change again.
+**Why this choice:** `qwen3.5:9b` is available directly from the Ollama library at a 4-bit (Q4_K_M) quantization (6.6GB) — no new runtime, no new model format handling, and no change to `backend/llm_client.py`'s `send_message()` interface, which already treats the concrete model as a one-line `MODEL` constant no caller depends on. MLX was considered (native to Apple Silicon) but rejected for now: Ollama already runs this exact model well on this machine (M3 Pro, 18GB), and Ollama's own MLX-backed tag (`qwen3.5:9b-mlx`, 8.9GB) is larger on disk/memory for no demonstrated benefit here — see `03-architecture.md` § Architectural principles, "Start simple." This is a development/testing choice, not a permanent architecture decision — the model is expected to change again.
 **Trade-off:** `qwen3.5:9b` is a multimodal (text+image) model used here in text-only mode — unused capability, not a cost. Slightly larger on disk than `llama3.1:8b` (6.6GB vs 4.9GB); comparable memory headroom on this machine (see `04-current-state.md`).
-**Reversible?** Yes, trivially — the model name is a single constant (`MODEL` in `backend/model/client.py`); no caller of `send_message()` knows or needs to know which model is behind it.
+**Reversible?** Yes, trivially — the model name is a single constant (`MODEL` in `backend/llm_client.py`); no caller of `send_message()` knows or needs to know which model is behind it.
 
 ## 22. 2026-09-14 — Ask a zoom's depth verdict in its own model call, separately from producing the level
 
@@ -177,7 +177,7 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 ## 23. 2026-09-17 — Global Ollama temperature 0.2 on every `send_message()` call
 
 **Alternatives considered:** leave Ollama's default (~0.8); set temperature per caller (Voice higher, Decide/Fill/progression lower); omit the option and rely on prompts alone.
-**Why this choice:** all model traffic already passes through `backend/model/client.py`. Default sampling was producing inventiveness where the agent needs discipline (Voice claiming work already done; Decide ignoring an explicit "1 month"; fragile week-day JSON shapes). One low dial (`TEMPERATURE = 0.2`) for Voice, Describe, llm3, and Planning keeps the boundary honest — callers do not each invent a sampling policy. Same "one place to change the model" reasoning as decision #21's `MODEL` constant.
+**Why this choice:** all model traffic already passes through `backend/llm_client.py`. Default sampling was producing inventiveness where the agent needs discipline (Voice claiming work already done; Decide ignoring an explicit "1 month"; fragile week-day JSON shapes). One low dial (`TEMPERATURE = 0.2`) for Voice, Describe, llm3, and Planning keeps the boundary honest — callers do not each invent a sampling policy. Same "one place to change the model" reasoning as decision #21's `MODEL` constant.
 **Trade-off:** Voice may sound slightly flatter; if naturalness becomes a real product need, a second optional argument on `send_message()` can raise temperature for Voice only without scattering defaults elsewhere.
 **Reversible?** Yes — change or remove `TEMPERATURE` in `client.py`; no persisted data depends on it.
 
@@ -201,6 +201,48 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Trade-off:** dual vocabulary (Project UI, Goal engine) until migration catches up; auto-`construct_progression` on PLAN still fights "user steers" until that path is narrowed. Zoom children can still feel like worksheets — map-vs-teaching is a prompt/product rule, not fully enforced in code. Dual paths must stay **named** in root `TODO.md` § Parallel paths (anti-mess rule) so the base does not grow a second undocumented planner.
 
 **Reversible?** Yes at the product layer — drop Projects, restore Active-as-home, re-emphasize timeframe gates — without deleting `plan.progression`. Storage rename is independent and can wait or never happen.
+
+## 26. 2026-09-19 — Orient the codebase as visual / do / data (inventory first, no mass move)
+
+**Decision:** Treat **visual / do / data** as the standing orientation for where new code belongs and how cleanup is judged. **Visual** = `app/ui/` (DOM, SVG, layout, page chrome). **Do** = `app/backend/` plus entry wiring (`server.py` / `cli.py`) — `backend/project/` (was `planning/`), `backend/agent/` (Voice, Describe, Node 3, manifestation), faculties, model boundary. **Data** = `backend/store/data_persistence.py` and `data/*.json` — store and load only.
+
+**Date:** 2026-09-19
+
+**Alternatives considered:** reorganize `project/engine/plan/` into WHAT/WHEN packages immediately; invent new top-level packages outside `ui/` / `backend/` / `data`; keep organizing only by creation date or by Goal-era subfolders without stating the three buckets.
+
+**Why this choice:** Top level already roughly matches the three buckets; the real muddle is **inside do**, especially `project/engine/plan/` (Decide, calendar structure, WHAT progression, outline import, prompts in one folder). Naming the buckets stops “where does this go?” drift and supports later splits without a premature mass move mid-migration ([[05-decisions]] #25 / `TODO.md` Active 23). Inventory lives in [[04-current-state]] § 2.iv–v.
+
+**Trade-off:** `plan/` stays mixed on disk until a later move; `projects.ts` remains a thick visual orchestrator for shell/chat (map visual gathered under `ui/src/map/` as of 2026-09-19) — chat split still flagged for a later round.
+
+**Reversible?** Yes — the buckets are orientation, not a new runtime layer. Drop or refine the wording in docs without touching imports.
+
+## 27. 2026-09-19 — Goal history on disk as JSONL (`plans.jsonl`)
+
+**Decision:** Store goal/plan history as **JSON Lines** (`data/plans.jsonl` — one JSON object per line) instead of one JSON array (`data/plans.json`). `save_plan()` appends a line; in-place edits (`stamp_map_focus`) still rewrite the file atomically. A leftover `plans.json` array is migrated once on first load (written to `plans.jsonl`, original renamed `plans.json.bak`).
+
+**Date:** 2026-09-19
+
+**Alternatives considered:** keep the array file; split one file per goal; separate map storage from history; full event-sourcing (small events, not snapshots).
+
+**Why this choice:** History had grown large enough that a single pretty-printed array was hard to open and costly to rewrite on every save. JSONL keeps the same snapshot semantics, makes append cheap, and stays greppable line-by-line. Per-goal files and map-out-of-band can wait.
+
+**Trade-off:** Reads still load the whole history into memory (same as before). Append is not crash-atomic the way a full temp+rename rewrite is — a torn last line is possible if the process dies mid-append; rare for this single-user local MVP.
+
+**Reversible?** Yes — convert JSONL back to a JSON array with a one-off script; call sites still go through `load_history()` / `save_plan()`.
+
+## 28. 2026-09-19 — Vocabulary: Planning/Goal/map → Project/panes/engine
+
+**Decision:** Treat older **Planning / Goal / map / plan-folder** wording as labels for today's **Project** capability and its layout: capability = Project (`backend/project/`); product unit = Project (wire still `goal_id` / `/api/goals`); WHAT progression = canvas (`project/panes/canvas/`); Decide–Fill motor = engine (`project/engine/plan/`, not a capability); UI home = Projects. Canonical table lives in [[04-current-state]] § Vocabulary. Dated history (`06-development`, older entries here) keeps old words on purpose.
+
+**Date:** 2026-09-19
+
+**Alternatives considered:** rewrite all historical docs to say Project; rename store/API in the same pass; leave dual vocabulary without a single map.
+
+**Why this choice:** Knowledge about Decide, WHAT trees, and feedback still applies; only the capability *name* and folder layout changed. One Rosetta table stops re-asking "is Planning still the capability?" without a mass rewrite or a premature `goal_id` migration (#25 storage rename still open).
+
+**Trade-off:** Readers still see "Goal" and `"planning"` in wire paths and llm3 until those renames land. Speculation in `concepts.md` may keep Goal/Plan language.
+
+**Reversible?** Yes — update or drop the 04 table; no runtime dependency.
 
 ## See also
 

@@ -4,6 +4,8 @@
 
 > Speculation — not decided, not built, and not a committed roadmap. See `../COLLABORATION.md`'s doc-role table: "What might happen? → Not decided, not built." Ranges from concrete, scoped feature ideas to open, unresolved conceptual reflection — both belong here side by side; neither is a promise.
 
+> **Vocabulary:** entries below often say Goal / Plan / Planning. For today's product names (Project, canvas, engine), see [[04-current-state]] § Vocabulary — speculation here keeps the older words on purpose.
+
 ## Contents
 
 1. Architectural context
@@ -175,6 +177,8 @@ The most speculative part, flagged as such: the idea that the agent could repres
 
 ## 4. Planning and product features
 
+Speculation in this section keeps Goal/Plan wording; map those labels via [[04-current-state]] § Vocabulary when reading against today's code.
+
 ### i. Plan as an ordered step list
 
 With "Task (right now)" as just the current step in it — instead of today's model, where `right_now` is its own independently-generated text field with no real connection to a "step 2" waiting after it. Discussed 2026-08-21, directly motivated by the drift bug fixed the same day ([[05-decisions]]): without a real step list, nothing *structurally* stopped `right_now` from drifting into something meaningless — fixing it needed a promise in the prompt ("only shrink once"), not something the data shape itself prevented. A real step list (step 3 of 7, inspectable) would make that kind of drift harder to produce in the first place.
@@ -183,7 +187,7 @@ With "Task (right now)" as just the current step in it — instead of today's mo
 - Explicitly deferred: which horizons actually become step-lists (`this_week` only, or `one_month`/`one_year` too) — "we take it bit by bit, but it's something to come back to."
 - Concept for when feedback changes direction: start simple — it changes which step it's currently asking about (edits/swaps the current step), not a full regeneration of the whole list. Real, named, unsolved problem this runs into immediately: steps have implicit prerequisites ("you can't put water in the kettle before you've gotten off the couch") — freely editing one step in isolation can silently break the steps that assumed it. Explicitly parked, not solved, at the concept stage.
 - Raised 2026-08-23: click into any individual step and generate steps FOR that step — the same "break this into smaller pieces" mechanism `_generate_steps()` already applies once to `right_now`, applied recursively/on-demand to any step in the list, drilling down as deep as needed. Same unsolved prerequisite problem as above applies one level deeper too (sub-steps inherit whatever their parent step assumed) — not a separate problem, the same one, just recursive.
-  **Partly built 2026-09-14** — `backend/planning/plan/zoom.py` and `step.py` do exactly this, on the Steps page's own scratch tree only; real plans are untouched, and whether the finer content is persisted stays undecided (see [[04-current-state]] § 5, § 9). The prerequisite problem above is still entirely unsolved: `Step.ordered` records *whether* a step's children have to happen in sequence, which is a flag, not knowledge of what any particular child assumed.
+  **Partly built 2026-09-14** — `backend/project/engine/plan/zoom.py` and `step.py` do exactly this, on the Steps page's own scratch tree only; real plans are untouched, and whether the finer content is persisted stays undecided (see [[04-current-state]] § 5, § 9). The prerequisite problem above is still entirely unsolved: `Step.ordered` records *whether* a step's children have to happen in sequence, which is a flag, not knowledge of what any particular child assumed.
 
 ### ii. Recognize a real, already-happened start time
 

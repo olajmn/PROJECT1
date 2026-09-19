@@ -45,8 +45,8 @@ diagram, where it sits between Conversation and Memory.
 
 ## Reference implementation
 
-`backend/model/client.py`'s `send_message()` - the shared
-raw call, with two independent callers: `backend/planning/plan/json_request.py`'s
+`backend/llm_client.py`'s `send_message()` - the shared
+raw call, with two independent callers: `backend/project/engine/plan/json_request.py`'s
 `ask_model()` (JSON-shape validation, Plan-specific) and
-`backend/planning/feedback/acknowledger.py`'s `acknowledge()` (plain text,
+`backend/project/panes/chat/feedback/acknowledger.py`'s `acknowledge()` (plain text,
 Feedback-specific, with a deterministic fallback if the call fails).

@@ -9,7 +9,7 @@ Deterministic only - no semantic judgment about where content belongs
 (see COLLABORATION.md), no automatic rewriting. Companion to
 docs_lint.py, which checks prose style rather than structure/references.
 
-Lives at the project root, not under current/ or agent/, because docs/
+Lives at the project root, not under current/ or app/, because docs/
 itself is now a shared resource spanning both projects (see README.md)
 - one checker, one docs/ vault to be true against, rather than a
 separate copy per project drifting out of sync with the other.
@@ -65,7 +65,7 @@ EXPECTED_DOCS = [
     "planning-model.md",
     # Deliberately unnumbered, same reasoning as planning-model.md -
     # the original v1->v4 migration decision record, kept as a frozen
-    # historical document several agent/ code docstrings still cite by
+    # historical document several app/ code docstrings still cite by
     # name (see docs/03-architecture.md § Related documentation).
     "v4-migration-decision.md",
     # Deliberately unnumbered, same reasoning - a standalone, ever-
@@ -77,8 +77,8 @@ EXPECTED_DOCS = [
 # Files/directories outside docs/ scanned for docs/<name>.md-style
 # references (docs/ itself included, for cross-references between
 # docs). A curated list of real source areas, not a wildcard project-
-# root walk - current/ and agent/ each carry their own .venv/ and
-# (agent/ui) node_modules/, which would otherwise flood this with
+# root walk - current/ and app/ each carry their own .venv/ and
+# (app/ui) node_modules/, which would otherwise flood this with
 # irrelevant .py hits from third-party packages.
 REFERENCE_SCAN_TARGETS = [
     "docs",
@@ -92,11 +92,11 @@ REFERENCE_SCAN_TARGETS = [
     "current/COLLABORATION.md",
     "current/SESSION-TODO.md",
     "current/README.md",
-    "agent/backend",
-    "agent/cli.py",
-    "agent/server.py",
-    "agent/ui/src",
-    "agent/README.md",
+    "app/backend",
+    "app/cli.py",
+    "app/server.py",
+    "app/ui/src",
+    "app/README.md",
 ]
 SCANNED_SUFFIXES = {".md", ".py"}
 

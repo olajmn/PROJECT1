@@ -4,9 +4,9 @@ __pycache__/
 .DS_Store
 node_modules/
 
-# Compiled from agent/ui/src/*.ts - regenerate with `npm install && npx tsc`
-# in agent/ui/, not committed as source.
-agent/ui/dist/
+# Compiled from app/ui/src/*.ts - regenerate with `npm install && npx tsc`
+# in app/ui/, not committed as source.
+app/ui/dist/
 
 # Personal data - goals, plans, history. Never commit this, even once
 # the code itself is public. See docs/05-decisions.md.

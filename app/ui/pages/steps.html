@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Steps (lab)</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <h1>Steps (lab)</h1>
+  <nav>
+    <a href="projects.html">Projects</a>
+    <a href="vision.html">Vision</a>
+    <a href="log.html">Log</a>
+  </nav>
+  <p class="empty-state">
+    A workbench for the recursive Step model - one Step type at every
+    depth, expanded only where you ask. Nothing here is saved.
+  </p>
+  <form id="tree-form">
+    <input id="tree-input" type="text" autocomplete="off"
+           placeholder="A goal, and by when - e.g. climb Mount Everest in 18 months">
+    <button type="submit">Build</button>
+  </form>
+  <p id="status" hidden></p>
+  <div id="tree"></div>
+</main>
+<script type="module" src="dist/pages/steps.js"></script>
+</body>
+</html>

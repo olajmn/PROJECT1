@@ -1,0 +1,11 @@
+{
+  "name": "app-ui",
+  "private": true,
+  "description": "Minimal TypeScript UI for app/ - no framework, no bundler. Compiles to plain browser ES modules.",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "scripts": {
+    "build": "tsc"
+  }
+}

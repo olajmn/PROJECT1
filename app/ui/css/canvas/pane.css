@@ -1,0 +1,103 @@
+/* Middle pane: canvas column chrome (node drawing is canvas.css).
+ *
+ * Contents
+ *  1. Column & topbar
+ *      - .project-column / .project-topbar / .project-main
+ *  2. Scrollable canvas area
+ *      - .project-body / .project-title / .project-surface
+ *      - .project-hint / .workspace-empty
+ */
+
+/* 1. Column & topbar */
+
+.project-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  border-right: 1px solid #e0e0e0;
+  background: #fafaf8;
+}
+
+.project-topbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.project-topbar[hidden] {
+  display: none;
+}
+
+.project-topbar .vision-link-form {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.project-topbar .card-actions {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.project-topbar .error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.project-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  padding: 0;
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* 2. Scrollable canvas area */
+
+.project-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* Generous bottom padding, deliberately - past the Copy/Paste row,
+     there must be real empty canvas to click to clear a selection
+     (§ "Click empty map space" in projects.ts), even on a dense tree
+     that otherwise fills the whole visible area. */
+  padding: 1.5rem 1.5rem 12rem;
+}
+
+.project-title {
+  font-size: 1.35rem;
+  margin: 0;
+  font-weight: 650;
+}
+
+.project-surface {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 0.85rem;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 0.4rem;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.project-hint,
+.workspace-empty {
+  margin: 1rem 0 0;
+  color: #777;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 800px) {
+  .project-column {
+    border-right: none;
+  }
+}

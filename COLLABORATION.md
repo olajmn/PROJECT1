@@ -39,15 +39,15 @@ Three scripts keep the mapping above honest — against itself and against the a
 
 - **`tools/docs_check.py`** — structural integrity of `docs/`: expected files present, `[[wikilinks]]` and `docs/<name>.md` references resolve, each doc's own heading number matches its filename.
 - **`tools/docs_lint.py`** — this project's documentation-neutrality style rule (`CONVENTIONS.md`), on `docs/` and code comments/docstrings.
-- **`tools/project_check.py`** — broader repository orientation: wraps both of the above as sub-checks, plus git status, whether `docs/04-current-state.md` is older than the areas it describes, `agent/`'s actual `backend/` tree, an import smoke test, pyflakes, and a few repo-hygiene checks nothing else covers.
+- **`tools/project_check.py`** — broader repository orientation: wraps both of the above as sub-checks, plus git status, whether `docs/04-current-state.md` is older than the areas it describes, `app/`'s actual `backend/` tree, an import smoke test, pyflakes, and a few repo-hygiene checks nothing else covers.
 
-At the start of a session, run (from the project root, against `agent/`'s own venv - the only project this script's code checks target):
+At the start of a session, run (from the project root, against `app/`'s own venv - the only project this script's code checks target):
 
-    agent/.venv/bin/python3 -m tools.project_check
+    app/.venv/bin/python3 -m tools.project_check
 
 then read `docs/04-current-state.md`. The output is what's mechanically observable right now, not proof the project is verified — each script only reports what it actually checks (see `global-standards/AI_COLLABORATION_GUIDE.md` §1).
 
-`/full-check` (`.claude/commands/full-check.md`) runs `project_check.py` plus `agent/`'s full test suite (`test_math`, `test_time`, `test_data_persistence`, `test_feedback_parser`, `test_planner`) in one go, and reports a compact summary rather than raw output — the version of the above actually meant to be typed day to day.
+`/full-check` (`.claude/commands/full-check.md`) runs `project_check.py` plus `app/`'s full test suite (`test_math`, `test_time`, `test_data_persistence`, `test_feedback_parser`, `test_planner`) in one go, and reports a compact summary rather than raw output — the version of the above actually meant to be typed day to day.
 
 Before renaming, moving, or deleting anything another file might reference, grep the vault and the code for the old name first; run `tools/project_check.py` afterward as the mechanical backstop, not a substitute for the grep.
 

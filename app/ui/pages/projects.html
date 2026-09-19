@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projects</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="workspace-body">
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-brand">Projects</div>
+    <form id="create-form" class="create-project-form">
+      <textarea id="create-input" rows="2" placeholder="New project…" required></textarea>
+      <button type="submit">Create</button>
+    </form>
+    <p id="create-error" class="error" hidden></p>
+    <div id="project-list" class="project-list"></div>
+    <p id="list-empty" class="sidebar-empty" hidden>No projects yet.</p>
+    <nav class="sidebar-more">
+      <a href="vision.html">Vision</a>
+      <a href="log.html">Log</a>
+      <details class="sidebar-other">
+        <summary>Other</summary>
+        <a href="index.html">Conversation</a>
+        <a href="set-goal.html">Set Goal</a>
+        <a href="steps.html">Steps (lab)</a>
+      </details>
+    </nav>
+  </aside>
+  <div
+    id="sidebar-resize"
+    class="sidebar-resize"
+    role="separator"
+    aria-orientation="vertical"
+    aria-label="Resize project list"
+    title="Drag to resize project list"
+  ></div>
+  <div class="workspace">
+    <div class="project-column">
+      <section id="project-topbar" class="project-topbar" hidden></section>
+      <section id="project-main" class="project-main">
+        <p id="main-empty" class="workspace-empty">Select a project, or create one.</p>
+      </section>
+    </div>
+    <div
+      id="chat-resize"
+      class="chat-resize"
+      role="separator"
+      aria-orientation="vertical"
+      aria-label="Resize chat"
+      title="Drag to resize chat"
+    ></div>
+    <section id="project-chat" class="project-chat" hidden>
+      <div id="chat-thread" class="goal-thread"></div>
+      <p id="chat-error" class="error" hidden></p>
+      <form id="chat-form" class="feedback-form">
+        <textarea id="chat-input" rows="2" placeholder="Talk about this project…" required></textarea>
+        <button type="submit">Send</button>
+      </form>
+    </section>
+  </div>
+</div>
+<script type="module" src="dist/pages/projects.js"></script>
+</body>
+</html>

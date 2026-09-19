@@ -23,7 +23,7 @@ also touch storage.
 
 ## Reference implementation
 
-`backend/infrastructure/data_persistence.py` - local JSON, atomic
+`backend/store/data_persistence.py` - local JSON, atomic
 temp-file-then-rename writes, no database. See the prototype's
 `docs/05-decisions.md` #14 for why SQL/a database isn't justified at this
 project's actual scale.

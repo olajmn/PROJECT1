@@ -188,7 +188,7 @@ else:
 
 This mirrors a precedent already built and proven in Planning itself: `generate_plan()` calls `generate_steps()` only when `step_count()` (code, not the model) says a real step list is warranted — the same "code decides whether to go deeper" shape, independently arrived at before Module Library existed.
 
-**What's actually built today:** `backend/module_library/` — five Modules (`interpret`, `hypothesize`, `critique`, `reason`, `synthesize`), each `(text, purpose, context=None) -> dict`, none aware of the others or of any Node. Every Module — like every Node's own LLM call — routes through `backend/model/client.py`, the shared model-call boundary. That boundary is Infrastructure (see Part 3's opening note): it moves text to the model and back, and decides nothing about what either side means. **Not yet wired into any Node in production** — an experiment building Node 2 around a mandatory Module pipeline was tried and reverted; Node 2's own single LLM call remains the primary mechanism (§ i.b above). See [[06-development]] for that experiment's own log entry.
+**What's actually built today:** `backend/module_library/` — five Modules (`interpret`, `hypothesize`, `critique`, `reason`, `synthesize`), each `(text, purpose, context=None) -> dict`, none aware of the others or of any Node. Every Module — like every Node's own LLM call — routes through `backend/llm_client.py`, the shared model-call boundary. That boundary is Infrastructure (see Part 3's opening note): it moves text to the model and back, and decides nothing about what either side means. **Not yet wired into any Node in production** — an experiment building Node 2 around a mandatory Module pipeline was tried and reverted; Node 2's own single LLM call remains the primary mechanism (§ i.b above). See [[06-development]] for that experiment's own log entry.
 
 Whether any Node should use a Module by default, and whether adaptive depth (as sketched above) actually improves a Node's output over its own single call, is not decided — see Part 3 § 8.
 
@@ -211,7 +211,7 @@ Replanning
 deterministic Planning state (persistence, Time/Math use, feedback parsing)
 ```
 
-None of this moves to Node 2 or Node 3 because of where it happens to sit in the data flow relative to them. Planning is reached *through* Node 3's routing decision, but everything that happens once Planning is selected — including Planning's own use of an LLM for the parts that genuinely require language reasoning (deciding whether a goal is vague, producing plan content, generating step text) — remains entirely internal to Planning. `backend/planning/plan/planner.py`'s own use of `ask_model()`/`generate_steps()` alongside deterministic logic (Time/Math Faculties, `feedback_parser.py`, persistence) does not change in kind — only in what sits in front of it.
+None of this moves to Node 2 or Node 3 because of where it happens to sit in the data flow relative to them. Planning is reached *through* Node 3's routing decision, but everything that happens once Planning is selected — including Planning's own use of an LLM for the parts that genuinely require language reasoning (deciding whether a goal is vague, producing plan content, generating step text) — remains entirely internal to Planning. `backend/project/engine/plan/planner.py`'s own use of `ask_model()`/`generate_steps()` alongside deterministic logic (Time/Math Faculties, `feedback_parser.py`, persistence) does not change in kind — only in what sits in front of it.
 
 A capability is therefore not "an LLM call." It is a bounded domain responsibility that uses both LLM reasoning and deterministic program logic internally, in whatever mix its own domain actually requires — the same "code decides, the model is told" split already established for Time and Math, generalized to a whole domain rather than one Faculty.
 
@@ -231,7 +231,7 @@ How the components in Part 2 actually interact.
 
 > LLMs reason and interpret; deterministic software handles what requires determinism, state, persistence, validation, and concrete execution.
 
-Persistence is Infrastructure (see the note above) — `backend/infrastructure/data_persistence.py`. Beyond that, concretely, today: validation of LLM output shape (`ask_model()`'s required-key check), deterministic calculations and interpretation where the input is unambiguous (Time, Math Faculties), feedback parsing where the judgment is deliberately kept out of LLM hands (`feedback_parser.py`), and UI manifestation (§ 4 below).
+Persistence is Infrastructure (see the note above) — `backend/store/data_persistence.py`. Beyond that, concretely, today: validation of LLM output shape (`ask_model()`'s required-key check), deterministic calculations and interpretation where the input is unambiguous (Time, Math Faculties), feedback parsing where the judgment is deliberately kept out of LLM hands (`feedback_parser.py`), and UI manifestation (§ 4 below).
 
 ### 2. Data flow
 
