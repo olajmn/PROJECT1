@@ -9,6 +9,9 @@ import {
   createGoal,
   fetchActiveGoals,
   fetchVisions,
+  importProgressionForest,
+  importProgressionOutline,
+  previewOutline,
   removeProgressionStep,
   sendGoalFeedback,
   setGoalVision,
@@ -18,13 +21,14 @@ import { installChatResize, installSidebarResize } from "./columnResize.js";
 import { progressLineElement } from "./tree.js";
 import { projectMapToAscii } from "./asciiMap.js";
 import type { NodeMenuActionId } from "./tree.js";
-import type { ChatMessage, GoalView, VisionView } from "./types.js";
+import type { ChatMessage, GoalView, OutlineNode, VisionView } from "./types.js";
 
 const createForm = document.getElementById("create-form") as HTMLFormElement;
 const createInput = document.getElementById("create-input") as HTMLTextAreaElement;
 const createError = document.getElementById("create-error") as HTMLParagraphElement;
 const projectList = document.getElementById("project-list") as HTMLDivElement;
 const listEmpty = document.getElementById("list-empty") as HTMLParagraphElement;
+const projectTopbar = document.getElementById("project-topbar") as HTMLElement;
 const projectMain = document.getElementById("project-main") as HTMLElement;
 const mainEmpty = document.getElementById("main-empty") as HTMLParagraphElement;
 const projectChat = document.getElementById("project-chat") as HTMLElement;
@@ -113,6 +117,68 @@ function messageRow(message: ChatMessage): HTMLDivElement {
   body.textContent = message.text;
   row.append(label, body);
   return row;
+}
+
+/** Paste structure preview node: parse_outline()'s {"label",
+ * "children"} plus a per-node, user-toggled `excluded` flag - every
+ * node is clickable, not just a single outer title, so the user can
+ * drop any label at any depth and keep its children (see
+ * applyExclusions()). Plain and local to the preview; not the live
+ * map's own layout/SVG, since this is a before-import sketch. */
+interface PreviewNode {
+  label: string;
+  children: PreviewNode[];
+  excluded: boolean;
+}
+
+function toPreviewNode(node: OutlineNode, excluded: boolean): PreviewNode {
+  return {
+    label: node.label,
+    children: node.children.map((c) => toPreviewNode(c, false)),
+    excluded,
+  };
+}
+
+/** An excluded node drops out, but its children are promoted to
+ * where it stood - the same "this label is just a wrapper, keep what
+ * is under it" idea generalized from the single-root case to any
+ * node at any depth. */
+function applyExclusions(nodes: PreviewNode[]): OutlineNode[] {
+  const result: OutlineNode[] = [];
+  for (const node of nodes) {
+    const children = applyExclusions(node.children);
+    if (node.excluded) {
+      result.push(...children);
+    } else {
+      result.push({ label: node.label, children });
+    }
+  }
+  return result;
+}
+
+function previewTreeElement(
+  nodes: PreviewNode[],
+  onToggle: (node: PreviewNode) => void,
+): HTMLUListElement {
+  const list = document.createElement("ul");
+  list.className = "outline-preview-list";
+  for (const node of nodes) {
+    const item = document.createElement("li");
+    const label = document.createElement("span");
+    label.className = "outline-preview-title-toggle";
+    label.classList.toggle("is-excluded", node.excluded);
+    label.textContent = node.label;
+    label.title = node.excluded
+      ? "Click to keep this as its own node"
+      : "Click to drop this as its own node (its children still import)";
+    label.addEventListener("click", () => onToggle(node));
+    item.appendChild(label);
+    if (node.children.length > 0) {
+      item.appendChild(previewTreeElement(node.children, onToggle));
+    }
+    list.appendChild(item);
+  }
+  return list;
 }
 
 /** Resolve a tree step id from a focus label when history has no id. */
@@ -231,16 +297,19 @@ function fillThread(
 function renderWorkspace(): void {
   const project = selected();
   projectMain.innerHTML = "";
+  projectTopbar.innerHTML = "";
   chatError.hidden = true;
 
   if (!project) {
     projectMain.appendChild(mainEmpty);
     mainEmpty.hidden = false;
+    projectTopbar.hidden = true;
     projectChat.hidden = true;
     return;
   }
 
   mainEmpty.hidden = true;
+  projectTopbar.hidden = false;
   projectChat.hidden = false;
 
   const body = document.createElement("div");
@@ -306,6 +375,15 @@ function renderWorkspace(): void {
     line.classList.add("plan-busy");
     try {
       const updated = await removeProgressionStep(project.goal_id, stepId);
+      // Removing the currently-selected node would otherwise leave
+      // selectedNodeId pointing at a step that no longer exists -
+      // silently stale until the next action (Paste structure, Talk
+      // about this, a chat send) targets a node that's already gone.
+      if (stepId === selectedNodeId) {
+        selectedNodeId = null;
+        selectedNodeLabel = null;
+        chatInput.placeholder = DEFAULT_CHAT_PLACEHOLDER;
+      }
       replaceProject(updated);
     } catch (err) {
       line.classList.remove("plan-busy");
@@ -330,6 +408,14 @@ function renderWorkspace(): void {
     if (action === "analyze") {
       markSelected(stepId, `Talk about: ${label}`);
       chatInput.focus();
+      return;
+    }
+    if (action === "paste") {
+      markSelected(stepId, `Will import under: ${label}`);
+      pasteForm.hidden = false;
+      updatePasteHint();
+      pasteForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      pasteInput.focus();
       return;
     }
     // suggest — agent proposes children (old zoom, on request only)
@@ -389,6 +475,7 @@ function renderWorkspace(): void {
     canSelect
       ? (stepId: string) => {
           markSelected(stepId, `Looking at: ${nodeLabel(stepId)}`);
+          if (!pasteForm.hidden) updatePasteHint();
         }
       : undefined,
     addBead,
@@ -427,14 +514,181 @@ function renderWorkspace(): void {
     }
   });
   copyRow.appendChild(copyBtn);
+
+  const pasteBtn = document.createElement("button");
+  pasteBtn.type = "button";
+  pasteBtn.className = "map-copy-button";
+  pasteBtn.textContent = "Paste structure";
+  pasteBtn.title =
+    "Import an outline or ASCII tree (e.g. from another LLM) as steps";
+  const pasteForm = document.createElement("form");
+  pasteForm.className = "map-paste-form";
+  pasteForm.hidden = true;
+  const pasteInput = document.createElement("textarea");
+  pasteInput.className = "map-paste-input";
+  pasteInput.placeholder = "Paste an outline or ASCII tree…";
+  pasteInput.rows = 6;
+  const pasteHint = document.createElement("p");
+  pasteHint.className = "map-paste-hint";
+  // Recomputed every time the form opens, not just once at this
+  // render pass's construction - markSelected() (e.g. the ⋯ menu's
+  // own Paste structure, which selects a node THEN opens this form)
+  // changes selectedNodeId without a full re-render, so a value fixed
+  // here at build time would otherwise go stale and show the wrong
+  // target - see pasteBtn's and the menu's "paste" case below.
+  const updatePasteHint = () => {
+    pasteHint.textContent = selectedNodeLabel
+      ? `Will import under: ${selectedNodeLabel}`
+      : "Will import at the project root.";
+  };
+  updatePasteHint();
+
+  // Preview, not a guess acted on silently: parse_outline() can't tell
+  // a throwaway title line from content the user actually wants kept
+  // (see its own docstring), so both readings are shown and the user
+  // picks - rather than always accepting the parser's positional guess.
+  const previewBox = document.createElement("div");
+  previewBox.className = "map-paste-preview";
+  const previewEmpty = document.createElement("p");
+  previewEmpty.className = "map-paste-preview-empty";
+  previewEmpty.textContent = "Preview appears here as you type or paste.";
+  previewBox.appendChild(previewEmpty);
+
+  const pasteActions = document.createElement("div");
+  pasteActions.className = "map-paste-actions";
+  const pasteSubmit = document.createElement("button");
+  pasteSubmit.type = "submit";
+  pasteSubmit.textContent = "Import";
+  const pasteCancel = document.createElement("button");
+  pasteCancel.type = "button";
+  pasteCancel.textContent = "Cancel";
+  const pasteError = document.createElement("p");
+  pasteError.className = "error";
+  pasteError.hidden = true;
+  pasteActions.append(pasteSubmit, pasteCancel);
+  pasteForm.append(pasteInput, pasteHint, previewBox, pasteActions, pasteError);
+
+  // The working preview tree - every node individually toggleable.
+  // Only the single droppable outer title (parse_outline()'s own
+  // unwrap condition) starts excluded, matching the default guess;
+  // everything else starts included. null until a preview loads.
+  let workingTree: PreviewNode[] | null = null;
+  let previewSeq = 0;
+
+  const renderPreview = () => {
+    previewBox.innerHTML = "";
+    if (!workingTree) {
+      previewBox.appendChild(previewEmpty);
+      return;
+    }
+    if (applyExclusions(workingTree).length === 0) {
+      const none = document.createElement("p");
+      none.className = "map-paste-preview-empty";
+      none.textContent = "(nothing recognizable yet)";
+      previewBox.appendChild(none);
+      return;
+    }
+    previewBox.appendChild(
+      previewTreeElement(workingTree, (node) => {
+        node.excluded = !node.excluded;
+        renderPreview();
+      }),
+    );
+  };
+
+  let previewTimer: number | undefined;
+  const schedulePreview = () => {
+    window.clearTimeout(previewTimer);
+    const text = pasteInput.value.trim();
+    if (!text) {
+      workingTree = null;
+      renderPreview();
+      return;
+    }
+    previewTimer = window.setTimeout(async () => {
+      const seq = ++previewSeq;
+      try {
+        const preview = await previewOutline(text);
+        if (seq !== previewSeq) return; // a newer keystroke already fired
+        const droppableRoot =
+          preview.kept.length === 1 && preview.kept[0].children.length > 0
+            ? preview.kept[0]
+            : null;
+        workingTree = droppableRoot
+          ? [toPreviewNode(droppableRoot, true)]
+          : preview.kept.map((n) => toPreviewNode(n, false));
+        renderPreview();
+      } catch {
+        if (seq !== previewSeq) return;
+        workingTree = null;
+        renderPreview();
+      }
+    }, 300);
+  };
+
+  pasteInput.addEventListener("input", schedulePreview);
+
+  pasteBtn.addEventListener("click", () => {
+    pasteForm.hidden = !pasteForm.hidden;
+    if (!pasteForm.hidden) {
+      updatePasteHint();
+      pasteInput.focus();
+    }
+  });
+  pasteCancel.addEventListener("click", () => {
+    pasteForm.hidden = true;
+    pasteInput.value = "";
+    pasteError.hidden = true;
+    workingTree = null;
+    renderPreview();
+  });
+  pasteForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const text = pasteInput.value.trim();
+    if (!text) return;
+    pasteError.hidden = true;
+    pasteSubmit.disabled = true;
+    try {
+      // Prefer the edited preview tree (reflects every node the user
+      // toggled) over a fresh, unedited re-parse of the raw text -
+      // falls back to the text path only if the preview never loaded
+      // (e.g. Import clicked before the debounced fetch returned).
+      const updated = workingTree
+        ? await importProgressionForest(
+            project.goal_id,
+            applyExclusions(workingTree),
+            selectedNodeId,
+          )
+        : await importProgressionOutline(project.goal_id, text, selectedNodeId);
+      pasteInput.value = "";
+      pasteForm.hidden = true;
+      workingTree = null;
+      replaceProject(updated);
+    } catch (err) {
+      pasteError.hidden = false;
+      pasteError.textContent = `(error: ${(err as Error).message})`;
+    } finally {
+      pasteSubmit.disabled = false;
+    }
+  });
+
+  copyRow.appendChild(pasteBtn);
   body.appendChild(copyRow);
+  body.appendChild(pasteForm);
 
   // Click empty map space (not a node row) to unselect focus.
   body.addEventListener("click", (event) => {
+    // The open paste form's target node IS the current selection - an
+    // incidental click on the (now generously padded, see
+    // .project-body) empty canvas around it must not silently swap
+    // out the import target the user is mid-composing against.
+    if (!pasteForm.hidden) return;
     const target = event.target as Element | null;
     if (!target) return;
     if (target.closest(".progress-row")) return;
     if (target.closest(".progress-add-form")) return;
+    if (target.closest(".map-copy-row")) return;
+    if (target.closest(".map-paste-form")) return;
     clearNodeSelection(body);
   });
 
@@ -448,11 +702,9 @@ function renderWorkspace(): void {
 
   projectMain.appendChild(body);
 
-  // Meta controls sit at the bottom of the column (same idea as the
-  // chat compose strip) — not competing with the map.
-  const footer = document.createElement("div");
-  footer.className = "project-footer";
-
+  // Vision link + Archive live in the topbar, outside the map canvas
+  // (project-main) — not competing with the map, and not bottom-of-
+  // canvas either, since the canvas scrolls and this shouldn't.
   const visionForm = document.createElement("form");
   visionForm.className = "vision-link-form";
   const select = document.createElement("select");
@@ -487,7 +739,7 @@ function renderWorkspace(): void {
       visionForm.appendChild(error);
     }
   });
-  footer.appendChild(visionForm);
+  projectTopbar.appendChild(visionForm);
 
   const actions = document.createElement("div");
   actions.className = "card-actions";
@@ -508,15 +760,15 @@ function renderWorkspace(): void {
       const error = document.createElement("p");
       error.className = "error";
       error.textContent = `(error: ${(err as Error).message})`;
-      footer.appendChild(error);
+      projectTopbar.appendChild(error);
     }
   });
   actions.appendChild(cancelButton);
-  footer.appendChild(actions);
-  projectMain.appendChild(footer);
+  projectTopbar.appendChild(actions);
 
   fillThread(project.thread ?? [], (stepId, label) => {
     markSelected(stepId, `Looking at: ${label}`);
+    if (!pasteForm.hidden) updatePasteHint();
   });
 }
 
@@ -582,12 +834,42 @@ chatForm.addEventListener("submit", async (event) => {
   chatInput.disabled = true;
   chatError.hidden = true;
   try {
-    const updated = await sendGoalFeedback(
-      project.goal_id,
-      text,
-      selectedNodeLabel,
-      selectedNodeId,
-    );
+    // A multi-line paste while focused on a node is imported as
+    // children of that node instead of sent as an ordinary chat
+    // message - only on Send, not on paste itself (a paste is just
+    // text arriving in the compose box, same as typing it; it should
+    // not act on its own before the user chooses to send it). Falls
+    // back to an ordinary message if nothing recognizable parses out.
+    // unwrap=false (keep everything) - unlike the Paste structure
+    // form, chat has no preview to catch a wrong guess before it
+    // happens, so the safe default is an extra node the user can
+    // remove afterward (visible, reversible), never a silently
+    // discarded one they never see.
+    let updated;
+    if (selectedNodeId && text.includes("\n")) {
+      try {
+        updated = await importProgressionOutline(
+          project.goal_id,
+          text,
+          selectedNodeId,
+          false,
+        );
+      } catch {
+        updated = await sendGoalFeedback(
+          project.goal_id,
+          text,
+          selectedNodeLabel,
+          selectedNodeId,
+        );
+      }
+    } else {
+      updated = await sendGoalFeedback(
+        project.goal_id,
+        text,
+        selectedNodeLabel,
+        selectedNodeId,
+      );
+    }
     chatInput.value = "";
     replaceProject(updated);
   } catch (err) {

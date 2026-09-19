@@ -117,9 +117,11 @@ from backend.planning.chat.thread import thread_for
 from backend.planning.chat.turn import take_turn
 from backend.planning.goal.lifecycle import cancel_goal, create_goal
 from backend.planning.goal.resolver import created_at_key, get_latest_for_all_goals, get_latest_for_goal
+from backend.planning.plan.parse_outline import parse_outline
 from backend.planning.plan.planner import archive_vision, set_goal_vision
 from backend.planning.plan.progression_zoom import (
     add_progression_bead,
+    import_progression_outline,
     remove_progression_bead,
     zoom_progression_step,
 )
@@ -142,6 +144,9 @@ _CANCEL_PATH_RE = re.compile(r"^/api/goals/(\d+)/cancel$")
 _GOAL_VISION_PATH_RE = re.compile(r"^/api/goals/(\d+)/vision$")
 _GOAL_ZOOM_PATH_RE = re.compile(r"^/api/goals/(\d+)/zoom/(p\d+)$")
 _GOAL_PROGRESSION_PATH_RE = re.compile(r"^/api/goals/(\d+)/progression$")
+_GOAL_PROGRESSION_IMPORT_RE = re.compile(
+    r"^/api/goals/(\d+)/progression/import$",
+)
 _GOAL_PROGRESSION_REMOVE_RE = re.compile(
     r"^/api/goals/(\d+)/progression/(p\d+)/remove$",
 )
@@ -411,6 +416,15 @@ def _ancestor_labels(root: Step, step_id: str) -> list[str] | None:
 
 
 class Handler(BaseHTTPRequestHandler):
+    # send_error()'s default renders a full HTML page (BaseHTTPRequestHandler's
+    # own DEFAULT_ERROR_MESSAGE) with the real reason buried in a <p> tag -
+    # ui/'s error handling just shows send_error()'s raw response body, so
+    # every 4xx/5xx from this server was displaying that HTML soup instead
+    # of the actual message. Plain text here fixes every route's error
+    # display at once, not just one caller.
+    error_message_format = "%(message)s"
+    error_content_type = "text/plain;charset=utf-8"
+
     def do_GET(self) -> None:
         if self.path == "/api/goals":
             self._send_json([_goal_view(r) for r in _active_goals()])
@@ -480,6 +494,9 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/tree":
             self._handle_create_tree()
             return
+        if self.path == "/api/parse-outline-preview":
+            self._handle_parse_outline_preview()
+            return
         zoom_match = _ZOOM_PATH_RE.match(self.path)
         if zoom_match:
             self._handle_zoom_step(zoom_match.group(1))
@@ -488,6 +505,14 @@ class Handler(BaseHTTPRequestHandler):
         if goal_zoom_match:
             self._handle_goal_zoom(
                 int(goal_zoom_match.group(1)), goal_zoom_match.group(2),
+            )
+            return
+        goal_progression_import_match = _GOAL_PROGRESSION_IMPORT_RE.match(
+            self.path,
+        )
+        if goal_progression_import_match:
+            self._handle_import_progression(
+                int(goal_progression_import_match.group(1)),
             )
             return
         goal_progression_match = _GOAL_PROGRESSION_PATH_RE.match(self.path)
@@ -663,6 +688,50 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(422, str(e))
             return
         self._send_json(_goal_view(record))
+
+    def _handle_import_progression(self, goal_id: int) -> None:
+        """Parse a pasted outline/ASCII tree into new beads — no model."""
+        length = int(self.headers.get("Content-Length", 0))
+        try:
+            payload_in = json.loads(self.rfile.read(length) or b"{}")
+        except json.JSONDecodeError:
+            self.send_error(400, "invalid JSON")
+            return
+        latest = get_latest_for_goal(goal_id)
+        if latest is None:
+            self.send_error(404, "no such goal")
+            return
+        try:
+            parent_raw = payload_in.get("parent_id")
+            parent_id = str(parent_raw).strip() if parent_raw else None
+            nodes = payload_in.get("nodes")
+            record = import_progression_outline(
+                latest,
+                text=str(payload_in.get("text") or "") if nodes is None else None,
+                parent_id=parent_id or None,
+                unwrap=bool(payload_in.get("unwrap", True)),
+                forest=nodes,
+            )
+        except ValueError as e:
+            self.send_error(422, str(e))
+            return
+        self._send_json(_goal_view(record))
+
+    def _handle_parse_outline_preview(self) -> None:
+        """Dry-run parse_outline() both ways (title line dropped / kept)
+        so ui/ can show the user what Paste structure would create
+        before they commit to one - no model call, no goal needed."""
+        length = int(self.headers.get("Content-Length", 0))
+        try:
+            payload_in = json.loads(self.rfile.read(length) or b"{}")
+        except json.JSONDecodeError:
+            self.send_error(400, "invalid JSON")
+            return
+        text = str(payload_in.get("text") or "")
+        self._send_json({
+            "stripped": parse_outline(text, unwrap=True),
+            "kept": parse_outline(text, unwrap=False),
+        })
 
     def _handle_remove_progression(self, goal_id: int, step_id: str) -> None:
         """Drop one bead from plan.progression — no model."""

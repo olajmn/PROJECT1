@@ -28,7 +28,7 @@
 //      - createTree()
 //      - zoomStep()
 
-import type { AgentResponse, ChatFocusView, GoalView, HistoryEntry, SessionLogView, TreeView, VisionView } from "./types.js";
+import type { AgentResponse, ChatFocusView, GoalView, HistoryEntry, OutlineNode, OutlinePreview, SessionLogView, TreeView, VisionView } from "./types.js";
 
 // 1. Free conversation
 
@@ -137,6 +137,72 @@ export async function addProgressionStep(
     body.parent_id = parentId;
   }
   const res = await fetch(`/api/goals/${goalId}/progression`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = (await res.text()).trim();
+    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+  }
+  return (await res.json()) as GoalView;
+}
+
+export async function importProgressionOutline(
+  goalId: number,
+  text: string,
+  parentId?: string | null,
+  unwrap = true,
+): Promise<GoalView> {
+  const body: { text: string; parent_id?: string; unwrap: boolean } = {
+    text,
+    unwrap,
+  };
+  if (parentId) {
+    body.parent_id = parentId;
+  }
+  const res = await fetch(`/api/goals/${goalId}/progression/import`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = (await res.text()).trim();
+    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+  }
+  return (await res.json()) as GoalView;
+}
+
+/** Dry-run parse_outline() both ways (title line dropped / kept) so
+ * the paste form can show what would be created before committing -
+ * no goal needed, nothing saved. */
+export async function previewOutline(text: string): Promise<OutlinePreview> {
+  const res = await fetch("/api/parse-outline-preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) {
+    const detail = (await res.text()).trim();
+    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+  }
+  return (await res.json()) as OutlinePreview;
+}
+
+/** Import an already-built {"label", "children"} tree directly - no
+ * text parsing, no unwrap guess - for when the caller already has the
+ * exact shape the user chose (ui/'s preview, after toggling nodes
+ * in/out). See import_progression_outline()'s own `forest` param. */
+export async function importProgressionForest(
+  goalId: number,
+  nodes: OutlineNode[],
+  parentId?: string | null,
+): Promise<GoalView> {
+  const body: { nodes: OutlineNode[]; parent_id?: string } = { nodes };
+  if (parentId) {
+    body.parent_id = parentId;
+  }
+  const res = await fetch(`/api/goals/${goalId}/progression/import`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),

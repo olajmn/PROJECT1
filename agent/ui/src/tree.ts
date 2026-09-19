@@ -49,7 +49,7 @@ export type PlanClickHandler = (stepId: string) => void;
 /** parentId omitted/undefined = add at project root. */
 export type AddStepHandler = (label: string, parentId?: string) => void;
 export type RemoveStepHandler = (stepId: string) => void;
-export type NodeMenuActionId = "register" | "suggest" | "analyze";
+export type NodeMenuActionId = "register" | "suggest" | "analyze" | "paste";
 export type NodeMenuHandler = (action: NodeMenuActionId, stepId: string) => void;
 
 const NODE_MENU_ACTIONS: {
@@ -71,6 +71,11 @@ const NODE_MENU_ACTIONS: {
     id: "analyze",
     label: "Talk about this",
     detail: "Focus chat on this node so you can ask what it means.",
+  },
+  {
+    id: "paste",
+    label: "Paste structure",
+    detail: "Import a pasted outline or ASCII tree as children here.",
   },
 ];
 
@@ -186,7 +191,7 @@ function attachAddControl(
   row.append(add, form);
 }
 
-/** ⋯ menu: Add here / Suggest structure / Talk about this. */
+/** ⋯ menu: Add here / Suggest structure / Talk about this / Paste structure. */
 function attachNodeMenu(
   row: HTMLElement,
   stepId: string,
@@ -370,7 +375,7 @@ function appendAsciiDepth(
  * Optional endLabel is a distinct End leaf (omit when it would
  * only repeat the name). + / × steer the map; + on a node nests
  * under that parent. Click selects (no auto-zoom); ⋯ holds
- * Add here / Suggest / Talk about this.
+ * Add here / Suggest / Talk about this / Paste structure.
  */
 export function progressLineElement(
   rootLabel: string,

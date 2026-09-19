@@ -184,3 +184,22 @@ export interface SessionLogView {
   goal_events: SessionGoalEvent[];
   vision_events: SessionVisionEvent[];
 }
+
+// 7. Outline import
+
+/** One node of a pasted outline/ASCII tree, before it becomes a real
+ * Step - matches backend/planning/plan/parse_outline.py's own
+ * {"label", "children"} shape. No id yet; that's minted on import. */
+export interface OutlineNode {
+  label: string;
+  children: OutlineNode[];
+}
+
+/** POST /api/parse-outline-preview's response - both readings of the
+ * same pasted text, so the user picks rather than the parser
+ * guessing. See parse_outline()'s own docstring for why the guess
+ * can't be made reliably from content alone. */
+export interface OutlinePreview {
+  stripped: OutlineNode[];
+  kept: OutlineNode[];
+}

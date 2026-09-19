@@ -3,6 +3,8 @@ User-authored and zoom writes on a Goal's shadow plan.progression.
 
 add_progression_bead() — one Step the user named (no LLM), at the
 root or under a parent_id.
+import_progression_outline() — a whole pasted outline/ASCII tree,
+parsed by parse_outline.py (no LLM), appended the same way.
 remove_progression_bead() — drop a Step by id (no LLM).
 zoom_progression_step() — expand one Step via planning/plan/zoom.py
 (same is_too_coarse / children_of as the Steps workbench).
@@ -14,6 +16,7 @@ import copy
 import re
 
 from backend.infrastructure.data_persistence import load_history, save_plan
+from backend.planning.plan.parse_outline import parse_outline
 from backend.planning.plan.zoom import children_from_conversation, zoom_into
 
 _ID_NUM = re.compile(r"^p(\d+)$")
@@ -67,6 +70,96 @@ def add_progression_bead(
     else:
         steps.append(new_step)
         feedback = f"Added step: {text}"
+
+    return save_plan(
+        latest["goal"],
+        plan,
+        feedback=feedback,
+        duration=latest.get("duration"),
+        goal_id=latest["goal_id"],
+        frozen_duration=latest.get("frozen_duration"),
+        current_step=latest.get("current_step", 0),
+        vision_id=latest.get("vision_id"),
+        step_status=latest.get("step_status"),
+    )
+
+
+def import_progression_outline(
+    latest: dict,
+    text: str | None = None,
+    parent_id: str | None = None,
+    unwrap: bool = True,
+    forest: list[dict] | None = None,
+) -> dict:
+    """
+    Parse a pasted outline/ASCII tree (parse_outline.py — markdown
+    bullets, numbered lists, this app's own box-drawing export, or
+    plain lines) and append the whole result as new Steps — no model
+    call, same append-not-replace shape as add_progression_bead().
+    Raises ValueError if nothing recognizable parses out, or if
+    parent_id is set but not found.
+
+    `unwrap` (default True) matches parse_outline()'s own parameter -
+    the caller should offer this as a user choice (see server.py's
+    preview route) rather than always accepting the default guess.
+
+    Exactly one of `text` or `forest` is used: `text` is parsed fresh
+    (the chat-Send path, which has no preview step to edit first);
+    `forest` is an already-built {"label", "children"} tree the caller
+    supplies directly - ui/'s preview builds one of these by toggling
+    individual nodes in/out (see outlinePreviewWithToggleableRoot() /
+    applyExclusions() in projects.ts), so what gets imported matches
+    exactly what the user saw and chose, not a fresh, unedited
+    re-parse of the raw text. `unwrap`/`parse_outline()` do not apply
+    to a supplied `forest` - it's already the user's final shape.
+    """
+    if forest is None:
+        forest = parse_outline(text or "", unwrap=unwrap)
+    else:
+        forest = _validate_forest(forest)
+    if not forest:
+        raise ValueError("no steps recognized in that text")
+
+    plan = copy.deepcopy(latest.get("plan") or {})
+    progression = plan.get("progression")
+    if not isinstance(progression, dict):
+        progression = {"steps": []}
+        plan["progression"] = progression
+    steps = progression.get("steps")
+    if not isinstance(steps, list):
+        steps = []
+        progression["steps"] = steps
+
+    mint = _id_minter(progression)
+
+    def build(nodes: list[dict]) -> list[dict]:
+        return [
+            {
+                "id": mint(),
+                "label": node["label"],
+                "ordered": True,
+                "resolved": False,
+                "children": build(node["children"]),
+            }
+            for node in nodes
+        ]
+
+    new_steps = build(forest)
+
+    if parent_id:
+        found = _find_step(steps, parent_id, ancestors=[])
+        if found is None:
+            raise ValueError(f"parent step not found: {parent_id}")
+        parent, _ancestors = found
+        children = parent.get("children")
+        if not isinstance(children, list):
+            children = []
+            parent["children"] = children
+        children.extend(new_steps)
+        feedback = f"Imported {len(new_steps)} step(s) under {parent.get('label') or parent_id}"
+    else:
+        steps.extend(new_steps)
+        feedback = f"Imported {len(new_steps)} step(s)"
 
     return save_plan(
         latest["goal"],
@@ -318,3 +411,26 @@ def _id_minter(progression: dict):
         return f"p{counter['n']}"
 
     return mint
+
+
+def _validate_forest(raw: list[dict]) -> list[dict]:
+    """A caller-supplied {"label", "children"} tree (ui/'s edited
+    preview, not this module's own parse_outline() output) gets the
+    same shape check parse_outline() guarantees by construction -
+    raises ValueError with a clear reason instead of a raw KeyError/
+    TypeError from build() once nesting is already underway."""
+    if not isinstance(raw, list):
+        raise ValueError("forest must be a list of nodes")
+    checked: list[dict] = []
+    for node in raw:
+        if not isinstance(node, dict):
+            raise ValueError("each forest node must be an object")
+        label = node.get("label")
+        if not isinstance(label, str) or not label.strip():
+            raise ValueError("each forest node needs a non-empty label")
+        children = node.get("children", [])
+        checked.append({
+            "label": label,
+            "children": _validate_forest(children),
+        })
+    return checked

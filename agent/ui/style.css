@@ -599,13 +599,51 @@ body.is-resizing-sidebar {
   user-select: none;
 }
 
-.project-main {
+.project-column {
   display: flex;
   flex-direction: column;
-  padding: 0;
+  min-height: 0;
+  min-width: 0;
   overflow: hidden;
   border-right: 1px solid #e0e0e0;
   background: #fafaf8;
+}
+
+.project-topbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.project-topbar[hidden] {
+  display: none;
+}
+
+.project-topbar .vision-link-form {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.project-topbar .card-actions {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.project-topbar .error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.project-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  padding: 0;
+  overflow: hidden;
   min-height: 0;
   min-width: 0;
 }
@@ -614,22 +652,11 @@ body.is-resizing-sidebar {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 1.5rem 1.5rem 1rem;
-}
-
-.project-footer {
-  flex: 0 0 auto;
-  padding: 0.75rem 1.5rem 1rem;
-  border-top: 1px solid #eee;
-  background: #fafaf8;
-}
-
-.project-footer .vision-link-form {
-  margin: 0 0 0.5rem;
-}
-
-.project-footer .card-actions {
-  margin: 0;
+  /* Generous bottom padding, deliberately - past the Copy/Paste row,
+     there must be real empty canvas to click to clear a selection
+     (§ "Click empty map space" in projects.ts), even on a dense tree
+     that otherwise fills the whole visible area. */
+  padding: 1.5rem 1.5rem 12rem;
 }
 
 .project-chat {
@@ -887,6 +914,104 @@ body.is-resizing-sidebar {
 .map-copy-button:hover {
   color: #333;
   border-color: #bbb;
+}
+
+.map-copy-row .map-copy-button + .map-copy-button {
+  margin-left: 0.4rem;
+}
+
+.map-paste-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-width: 26rem;
+  margin: -0.25rem 0 0.75rem;
+  padding: 0.6rem;
+  border: 1px solid #ddd;
+  border-radius: 0.375rem;
+  background: #fafaf7;
+}
+
+.map-paste-form[hidden] {
+  display: none;
+}
+
+.map-paste-input {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+  font: inherit;
+  font-size: 0.82rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.map-paste-hint {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #888;
+}
+
+.map-paste-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.map-paste-actions button {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.6rem;
+}
+
+.map-paste-preview {
+  max-height: 10rem;
+  overflow-y: auto;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid #e4e2dc;
+  border-radius: 0.25rem;
+  background: #fff;
+  font-size: 0.78rem;
+}
+
+.map-paste-preview-empty {
+  margin: 0;
+  color: #999;
+  font-style: italic;
+}
+
+.outline-preview-list,
+.outline-preview-list ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.outline-preview-list {
+  padding-left: 0;
+}
+
+.outline-preview-list li {
+  line-height: 1.5;
+}
+
+.outline-preview-title-toggle {
+  color: #1a1a1a;
+  cursor: pointer;
+  border-bottom: 1px dashed #bbb;
+}
+
+.outline-preview-title-toggle:hover {
+  border-bottom-color: #888;
+}
+
+.outline-preview-title-toggle.is-excluded {
+  color: #aaa;
+  font-style: italic;
+}
+
+.outline-preview-title-toggle.is-excluded:hover {
+  color: #888;
 }
 
 .progress-pole {
@@ -1162,7 +1287,7 @@ body.is-resizing-sidebar {
     border-bottom: 1px solid #ddd;
   }
 
-  .project-main {
+  .project-column {
     border-right: none;
   }
 

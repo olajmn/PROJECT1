@@ -36,9 +36,12 @@
     title="Drag to resize project list"
   ></div>
   <div class="workspace">
-    <section id="project-main" class="project-main">
-      <p id="main-empty" class="workspace-empty">Select a project, or create one.</p>
-    </section>
+    <div class="project-column">
+      <section id="project-topbar" class="project-topbar" hidden></section>
+      <section id="project-main" class="project-main">
+        <p id="main-empty" class="workspace-empty">Select a project, or create one.</p>
+      </section>
+    </div>
     <div
       id="chat-resize"
       class="chat-resize"
