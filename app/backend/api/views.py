@@ -20,7 +20,7 @@ not domain decisions.
 #      - ancestor_labels()
 
 from backend.agent.manifestation import surface_text, to_planning_node
-from backend.store.data_persistence import load_history, load_visions
+from backend.store.data_persistence import load_history, load_visions, record_project_id
 from backend.project.panes.chat.thread import thread_for
 from backend.project.panes.create.resolver import created_at_key, get_latest_for_all_goals, get_latest_for_goal
 from backend.project.panes.canvas.bead import Step
@@ -33,39 +33,33 @@ from backend.api import state
 
 
 def goal_view(record: dict, reply: str | None = None) -> dict:
-    """The one shape every /api/goals response uses for a single goal
-    - record fields a UI actually needs (identity, display text,
-    completion) plus the same manifestation.py translation
-    /api/message already relies on, so ui/projects.ts and ui/src/main.ts
-    render from an identical shape. `thread` is
-    the goal-scoped chat reconstructed from this goal's history;
-    `reply` is Voice's wording for the turn just taken, or null on a
-    plain GET."""
+    """The one shape every /api/projects (and deprecated /api/goals)
+    response uses for a single project — identity, display text,
+    completion, plus manifestation. `project_id` is canonical;
+    `goal_id` is a deprecated mirror for one release (Phase B).
+    """
+    pid = record_project_id(record)
     try:
         node = to_planning_node(record)
     except Exception as e:
-        # A record saved before plan_structure.py's steps-with-
-        # microsteps shape (2026-09-11) still has plan.steps as flat
-        # strings, which to_planning_node() no longer understands -
-        # show the goal without a tree rather than losing the whole
-        # /api/goals list over one legacy record.
-        print(f"(debug: to_planning_node() failed for goal {record.get('goal_id')}: {e})")
+        print(f"(debug: to_planning_node() failed for project {pid}: {e})")
         node = None
     return {
-        "goal_id": record["goal_id"],
+        "project_id": pid,
+        "goal_id": pid,  # deprecated mirror — remove after alias period
         "goal": record["goal"],
         "completed": bool(record.get("completed")),
         "cancelled": bool(record.get("cancelled")),
         "vision_id": record.get("vision_id"),
         "surface": surface_text(record),
         "node": node,
-        "thread": thread_for(record["goal_id"], reply),
+        "thread": thread_for(pid, reply) if pid is not None else [],
         "reply": reply,
     }
 
 
 def active_goals() -> list[dict]:
-    """Every goal that's neither completed nor cancelled, newest-first."""
+    """Every project that's neither completed nor cancelled, newest-first."""
     latest = get_latest_for_all_goals()
     active = [r for r in latest if not r.get("completed") and not r.get("cancelled")]
     active.sort(key=created_at_key, reverse=True)
@@ -73,8 +67,7 @@ def active_goals() -> list[dict]:
 
 
 def completed_goals() -> list[dict]:
-    """Every goal marked completed — cancelled goals are deliberately
-    excluded (cancelled is its own status, not a kind of completed).
+    """Every project marked completed — cancelled are excluded.
     Oldest-first (unlike active_goals())."""
     latest = get_latest_for_all_goals()
     completed = [r for r in latest if r.get("completed")]
@@ -97,13 +90,15 @@ def history_view(record: dict) -> dict:
     """One raw history entry as a plain key:value dump — closer to the
     unfiltered log than to goal_view()'s curated, UI-ready shape.
     History shows every record ever saved (not just the latest per
-    goal — see load_history()), so it shows what was actually saved,
+    project — see load_history()), so it shows what was actually saved,
     not a live status."""
     plan = record.get("plan") or {}
     steps = plan.get("steps")
+    pid = record_project_id(record)
     return {
         "id": record["id"],
-        "goal_id": record["goal_id"],
+        "project_id": pid,
+        "goal_id": pid,  # deprecated mirror
         "goal": record["goal"],
         "duration": record.get("duration"),
         "completed": bool(record.get("completed")),
@@ -116,38 +111,28 @@ def history_view(record: dict) -> dict:
 
 
 def chat_focus_view() -> dict:
-    """{goal_id, goal} - which goal, if any, the free-conversation path
-    is currently "focused" on: goal_id mirrors cli.py's Session.
-    chat_focus.goal_id (None if the chat hasn't touched a goal yet
-    this process); goal is that record's own text, looked up fresh
-    each call rather than cached, same reasoning as every other
-    _*_view() here.
-
-    Named "chat focus" rather than "session" - added 2026-09-12,
-    renamed from _session_view() the same day - specifically to keep
-    it distinct from the persisted Session record (session_log_view()
-    below): `cli.py`'s `Session` object owns a `ChatFocus` (this) and
-    separately mirrors a persisted Session record (`id`/`started_at`,
-    that) as two structurally separate things, not one flattened onto
-    the other. This function is deliberately just the live pointer,
-    never the persisted Session record itself."""
+    """{project_id, goal_id, goal} — which project, if any, free
+    conversation is focused on. project_id is canonical; goal_id is a
+    deprecated mirror. ChatFocus attribute name remains goal_id this
+    round (Python symbol rename is a follow-up).
+    """
     goal_id = state.session.chat_focus.goal_id
     if goal_id is None:
-        return {"goal_id": None, "goal": None}
+        return {"project_id": None, "goal_id": None, "goal": None}
     latest = get_latest_for_goal(goal_id)
-    return {"goal_id": goal_id, "goal": latest["goal"] if latest else None}
+    return {
+        "project_id": goal_id,
+        "goal_id": goal_id,
+        "goal": latest["goal"] if latest else None,
+    }
 
 
 def session_goal_event(record: dict) -> dict:
-    """One line in a Session's derived log for a goal/plan record -
-    lighter than history_view()'s full shape, just enough to render a
-    timeline entry. `feedback` is None for the record that created the
-    goal (see data_persistence.save_plan()'s own docstring), otherwise
-    the feedback that produced this particular replan - the UI reads
-    that distinction to label the event "created" vs. the feedback
-    text itself."""
+    """One line in a Session's derived log for a project/plan record."""
+    pid = record_project_id(record)
     return {
-        "goal_id": record["goal_id"],
+        "project_id": pid,
+        "goal_id": pid,  # deprecated mirror
         "goal": record["goal"],
         "feedback": record.get("feedback"),
         "created_at": record["created_at"],

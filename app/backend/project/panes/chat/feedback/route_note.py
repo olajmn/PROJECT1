@@ -140,7 +140,7 @@ def route_note(latest: dict, note: str) -> dict:
         # already covered. Safe here: this branch only runs while
         # `clarification` keeps recurring, so every past `feedback` in
         # this goal's history is a prior answer.
-        prior_answers = [r["feedback"] for r in get_history_for_goal(latest["goal_id"]) if r.get("feedback")]
+        prior_answers = [r["feedback"] for r in get_history_for_goal(latest["project_id"]) if r.get("feedback")]
         combined_goal = " - ".join([latest["goal"], *prior_answers, note])
         # `duration` can still be None here specifically when this
         # clarification IS create_goal()'s missing-timeframe question -
@@ -167,7 +167,7 @@ def route_note(latest: dict, note: str) -> dict:
         # first time, the moment a real plan finally comes back.
         return save_plan(
             latest["goal"], plan, feedback=note, duration=duration,
-            goal_id=latest["goal_id"],
+            goal_id=latest["project_id"],
             frozen_duration=planner.frozen_duration_for(plan, duration),
             vision_id=latest.get("vision_id"),
         )
@@ -194,7 +194,7 @@ def route_note(latest: dict, note: str) -> dict:
             feedback_text = "Accepted the suggested action." + (f" Note: {note}" if note else "")
             return save_plan(
                 latest["goal"], new_plan, feedback=feedback_text, duration=duration,
-                goal_id=latest["goal_id"], frozen_duration=latest.get("frozen_duration"),
+                goal_id=latest["project_id"], frozen_duration=latest.get("frozen_duration"),
                 current_step=latest.get("current_step", 0), vision_id=latest.get("vision_id"),
                 step_status=latest.get("step_status"),
             )
@@ -218,7 +218,7 @@ def route_note(latest: dict, note: str) -> dict:
         # suggestion and the user's actual reply as two explicit,
         # labeled things, rather than `note` arriving as unlabeled,
         # appended goal text indistinguishable from the goal itself.
-        prior_answers = [r["feedback"] for r in get_history_for_goal(latest["goal_id"]) if r.get("feedback")]
+        prior_answers = [r["feedback"] for r in get_history_for_goal(latest["project_id"]) if r.get("feedback")]
         combined_goal = " - ".join([latest["goal"], *prior_answers])
         if duration is None:
             duration = extract_duration_phrase(note)
@@ -234,7 +234,7 @@ def route_note(latest: dict, note: str) -> dict:
             plan["progression"] = latest["plan"].get("progression")
         return save_plan(
             latest["goal"], plan, feedback=note, duration=duration,
-            goal_id=latest["goal_id"],
+            goal_id=latest["project_id"],
             frozen_duration=planner.frozen_duration_for(plan, duration),
             vision_id=latest.get("vision_id"),
         )
@@ -278,7 +278,7 @@ def route_note(latest: dict, note: str) -> dict:
         return save_plan(
             latest["goal"],
             {**latest["plan"], "pending_duration_question": "How long do you want this to run now?"},
-            feedback=note, duration=duration, goal_id=latest["goal_id"],
+            feedback=note, duration=duration, goal_id=latest["project_id"],
             frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
             vision_id=latest.get("vision_id"), step_status=latest.get("step_status"),
         )
@@ -304,7 +304,7 @@ def route_note(latest: dict, note: str) -> dict:
         feedback_text = "Marked the whole goal as complete." + (f" Note: {note}" if note else "")
         return save_plan(
             latest["goal"], latest["plan"], feedback=feedback_text,
-            duration=duration, completed=True, goal_id=latest["goal_id"],
+            duration=duration, completed=True, goal_id=latest["project_id"],
             frozen_duration=frozen, vision_id=latest.get("vision_id"),
             current_step=latest.get("current_step", 0), step_status=latest.get("step_status"),
         )
@@ -323,7 +323,7 @@ def route_note(latest: dict, note: str) -> dict:
         feedback_text = prefix + (f" Note: {note}" if note else "")
         return save_plan(
             latest["goal"], latest["plan"], feedback=feedback_text,
-            duration=duration, goal_id=latest["goal_id"], frozen_duration=frozen,
+            duration=duration, goal_id=latest["project_id"], frozen_duration=frozen,
             vision_id=latest.get("vision_id"),
             current_step=latest.get("current_step", 0), step_status=latest.get("step_status"),
         )
@@ -335,7 +335,7 @@ def route_note(latest: dict, note: str) -> dict:
     # for why: a model only shown the single previous step has no way to
     # notice it has already shrunk `now` several times in a row.
     new_plan = planner.replan(
-        latest["goal"], get_history_for_goal(latest["goal_id"]), feedback_text,
+        latest["goal"], get_history_for_goal(latest["project_id"]), feedback_text,
         duration=duration, vision_id=latest.get("vision_id"),
     )
     # replan() only ever returns PLAN_KEYS - REPLAN_SYSTEM_PROMPT never
@@ -352,6 +352,6 @@ def route_note(latest: dict, note: str) -> dict:
     # goal entry instead of continuing the existing goal's chain.
     return save_plan(
         latest["goal"], new_plan, feedback=feedback_text, duration=duration,
-        goal_id=latest["goal_id"], frozen_duration=frozen, current_step=latest.get("current_step", 0),
+        goal_id=latest["project_id"], frozen_duration=frozen, current_step=latest.get("current_step", 0),
         vision_id=latest.get("vision_id"), step_status=latest.get("step_status"),
     )

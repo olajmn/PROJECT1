@@ -161,7 +161,7 @@ def apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
     """
     plan = generate_plan(existing["goal"], duration, vision_id=existing.get("vision_id"))
     return save_plan(
-        existing["goal"], plan, feedback=feedback, duration=duration, goal_id=existing["goal_id"],
+        existing["goal"], plan, feedback=feedback, duration=duration, goal_id=existing["project_id"],
         frozen_duration=frozen_duration_for(plan, duration),
         vision_id=existing.get("vision_id"),
     )
@@ -246,7 +246,7 @@ def advance_step(latest: dict, done: bool, resolved: bool = False) -> dict:
 
     return save_plan(
         latest["goal"], latest["plan"], feedback=feedback_text,
-        duration=latest.get("duration"), goal_id=latest["goal_id"],
+        duration=latest.get("duration"), goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=next_index,
         vision_id=latest.get("vision_id"), step_status=status,
     )
@@ -323,7 +323,7 @@ def set_goal_vision(goal_id: int, vision_id: int | None) -> dict | None:
 
     return save_plan(
         latest["goal"], latest["plan"], feedback=feedback_text,
-        duration=latest.get("duration"), goal_id=latest["goal_id"],
+        duration=latest.get("duration"), goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
         completed=latest.get("completed", False), vision_id=vision_id,
         step_status=latest.get("step_status"),
@@ -365,7 +365,7 @@ def archive_vision(vision_id: int) -> dict | None:
         if (latest.get("vision_id") == vision_id
                 and not latest.get("completed")
                 and not latest.get("cancelled")):
-            set_goal_vision(latest["goal_id"], None)
+            set_goal_vision(latest["project_id"], None)
 
     return vision
 

@@ -85,7 +85,7 @@ function renderVisionCard(vision: VisionView, goals: GoalView[]): HTMLElement {
       goalText.textContent = goal.goal;
       const goalId = document.createElement("span");
       goalId.className = "entity-id";
-      goalId.textContent = `#${goal.goal_id}`;
+      goalId.textContent = `#${goal.project_id}`;
       item.append(goalText, goalId);
       group.appendChild(item);
     }

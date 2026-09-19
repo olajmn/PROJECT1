@@ -114,7 +114,7 @@ function renderGoalCard(goal: GoalView): HTMLElement {
   title.textContent = goal.goal;
   const id = document.createElement("span");
   id.className = "entity-id";
-  id.textContent = `#${goal.goal_id}`;
+  id.textContent = `#${goal.project_id}`;
   header.append(title, id);
   card.appendChild(header);
 
@@ -161,7 +161,7 @@ function renderEntry(entry: HistoryEntry): HTMLElement {
   const card = document.createElement("article");
   card.className = "history-entry";
 
-  addLine(card, "goal_id", String(entry.goal_id));
+  addLine(card, "project_id", String(entry.project_id));
   addLine(card, "goal", entry.goal);
   addLine(card, "created_at", entry.created_at);
   if (entry.duration) addLine(card, "duration", entry.duration);
@@ -201,8 +201,8 @@ function goalTimelineEntry(event: SessionGoalEvent): TimelineEntry {
     label: event.feedback === null ? "goal created" : "feedback",
     text:
       event.feedback === null
-        ? `${event.goal} (#${event.goal_id})`
-        : `#${event.goal_id}: ${event.feedback}`,
+        ? `${event.goal} (#${event.project_id})`
+        : `#${event.project_id}: ${event.feedback}`,
   };
 }
 

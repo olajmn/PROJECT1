@@ -47,7 +47,7 @@ export async function sendMessage(text: string): Promise<AgentResponse> {
 // 2. Goals
 
 export async function fetchActiveGoals(): Promise<GoalView[]> {
-  const res = await fetch("/api/goals");
+  const res = await fetch("/api/projects");
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
@@ -55,7 +55,7 @@ export async function fetchActiveGoals(): Promise<GoalView[]> {
 }
 
 export async function createGoal(text: string): Promise<GoalView> {
-  const res = await fetch("/api/goals", {
+  const res = await fetch("/api/projects", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text }),
@@ -83,7 +83,7 @@ export async function sendGoalFeedback(
   if (focusStepId) {
     body.focus_step_id = focusStepId;
   }
-  const res = await fetch(`/api/goals/${goalId}/feedback`, {
+  const res = await fetch(`/api/projects/${goalId}/feedback`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -95,7 +95,7 @@ export async function sendGoalFeedback(
 }
 
 export async function cancelGoal(goalId: number): Promise<GoalView> {
-  const res = await fetch(`/api/goals/${goalId}/cancel`, { method: "POST" });
+  const res = await fetch(`/api/projects/${goalId}/cancel`, { method: "POST" });
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
@@ -103,7 +103,7 @@ export async function cancelGoal(goalId: number): Promise<GoalView> {
 }
 
 export async function setGoalVision(goalId: number, visionId: number | null): Promise<GoalView> {
-  const res = await fetch(`/api/goals/${goalId}/vision`, {
+  const res = await fetch(`/api/projects/${goalId}/vision`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ vision_id: visionId }),
@@ -115,7 +115,7 @@ export async function setGoalVision(goalId: number, visionId: number | null): Pr
 }
 
 export async function zoomGoalStep(goalId: number, stepId: string): Promise<GoalView> {
-  const res = await fetch(`/api/goals/${goalId}/zoom/${stepId}`, { method: "POST" });
+  const res = await fetch(`/api/projects/${goalId}/zoom/${stepId}`, { method: "POST" });
   if (!res.ok) {
     const detail = (await res.text()).trim();
     // send_error() returns an HTML page; pull the plain reason if present.
@@ -136,7 +136,7 @@ export async function addProgressionStep(
   if (parentId) {
     body.parent_id = parentId;
   }
-  const res = await fetch(`/api/goals/${goalId}/progression`, {
+  const res = await fetch(`/api/projects/${goalId}/progression`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -161,7 +161,7 @@ export async function importProgressionOutline(
   if (parentId) {
     body.parent_id = parentId;
   }
-  const res = await fetch(`/api/goals/${goalId}/progression/import`, {
+  const res = await fetch(`/api/projects/${goalId}/progression/import`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -202,7 +202,7 @@ export async function importProgressionForest(
   if (parentId) {
     body.parent_id = parentId;
   }
-  const res = await fetch(`/api/goals/${goalId}/progression/import`, {
+  const res = await fetch(`/api/projects/${goalId}/progression/import`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -215,7 +215,7 @@ export async function importProgressionForest(
 }
 
 export async function removeProgressionStep(goalId: number, stepId: string): Promise<GoalView> {
-  const res = await fetch(`/api/goals/${goalId}/progression/${stepId}/remove`, {
+  const res = await fetch(`/api/projects/${goalId}/progression/${stepId}/remove`, {
     method: "POST",
   });
   if (!res.ok) {
@@ -226,7 +226,7 @@ export async function removeProgressionStep(goalId: number, stepId: string): Pro
 }
 
 export async function fetchCompletedGoals(): Promise<GoalView[]> {
-  const res = await fetch("/api/goals/completed");
+  const res = await fetch("/api/projects/completed");
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
@@ -287,7 +287,7 @@ export async function setChatFocus(goalId: number | null): Promise<ChatFocusView
   const res = await fetch("/api/chat-focus", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ goal_id: goalId }),
+    body: JSON.stringify({ project_id: goalId }),
   });
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);

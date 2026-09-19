@@ -135,7 +135,7 @@ def cancel_goal(goal_id: int) -> dict | None:
 
     return save_plan(
         latest["goal"], latest["plan"], feedback="Cancelled",
-        duration=latest.get("duration"), goal_id=latest["goal_id"],
+        duration=latest.get("duration"), goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
         vision_id=latest.get("vision_id"), cancelled=True,
         step_status=latest.get("step_status"),

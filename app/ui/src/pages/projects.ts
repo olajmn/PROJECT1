@@ -89,7 +89,7 @@ function isProgressionTree(node: { children: { id: string }[] }): boolean {
 }
 
 function selected(): ProjectView | null {
-  return projects.find((p) => p.goal_id === selectedId) ?? null;
+  return projects.find((p) => p.project_id === selectedId) ?? null;
 }
 
 function renderList(): void {
@@ -99,7 +99,7 @@ function renderList(): void {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "project-list-item";
-    if (project.goal_id === selectedId) {
+    if (project.project_id === selectedId) {
       button.classList.add("is-selected");
     }
     const title = document.createElement("span");
@@ -107,10 +107,10 @@ function renderList(): void {
     title.textContent = project.goal;
     const id = document.createElement("span");
     id.className = "entity-id";
-    id.textContent = `#${project.goal_id}`;
+    id.textContent = `#${project.project_id}`;
     button.append(title, id);
     button.addEventListener("click", () => {
-      selectedId = project.goal_id;
+      selectedId = project.project_id;
       selectedNodeId = null;
       selectedNodeLabel = null;
       isolateChat.clear();
@@ -185,7 +185,7 @@ function renderWorkspace(): void {
     line.classList.add("plan-busy");
     try {
       const updated = await addProgressionStep(
-        project.goal_id,
+        project.project_id,
         trimmed,
         parentId,
       );
@@ -201,7 +201,7 @@ function renderWorkspace(): void {
   const removeBead = async (stepId: string) => {
     line.classList.add("plan-busy");
     try {
-      const updated = await removeProgressionStep(project.goal_id, stepId);
+      const updated = await removeProgressionStep(project.project_id, stepId);
       // Removing the currently-selected node would otherwise leave
       // selectedNodeId pointing at a step that no longer exists -
       // silently stale until the next action (Paste structure, Talk
@@ -224,7 +224,7 @@ function renderWorkspace(): void {
   const paste = buildPasteTreePanel({
     getParentLabel: () => selectedNodeLabel,
     getParentId: () => selectedNodeId,
-    getGoalId: () => project.goal_id,
+    getGoalId: () => project.project_id,
     onImported: (updated) => replaceProject(updated),
   });
 
@@ -268,7 +268,7 @@ function renderWorkspace(): void {
         return walk(project.node) ?? 0;
       };
       const beforeCount = childCount(stepId);
-      const updated = await zoomGoalStep(project.goal_id, stepId);
+      const updated = await zoomGoalStep(project.project_id, stepId);
       const afterWalk = (
         n: { id: string; children: typeof n[] } | null | undefined,
       ): number | null => {
@@ -314,7 +314,7 @@ function renderWorkspace(): void {
     null,
     selectedNodeId,
     canSelect ? onMenuAction : undefined,
-    `#${project.goal_id}`,
+    `#${project.project_id}`,
   );
   body.appendChild(line);
 
@@ -329,7 +329,7 @@ function renderWorkspace(): void {
     const text = copyAsText(
       project.goal,
       middle,
-      `#${project.goal_id}`,
+      `#${project.project_id}`,
     );
     try {
       await navigator.clipboard.writeText(text);
@@ -398,7 +398,7 @@ function renderWorkspace(): void {
     const raw = select.value;
     try {
       const updated = await setGoalVision(
-        project.goal_id,
+        project.project_id,
         raw ? Number(raw) : null,
       );
       replaceProject(updated);
@@ -420,9 +420,9 @@ function renderWorkspace(): void {
   cancelButton.addEventListener("click", async () => {
     cancelButton.disabled = true;
     try {
-      await cancelGoal(project.goal_id);
-      projects = projects.filter((p) => p.goal_id !== project.goal_id);
-      selectedId = projects[0]?.goal_id ?? null;
+      await cancelGoal(project.project_id);
+      projects = projects.filter((p) => p.project_id !== project.project_id);
+      selectedId = projects[0]?.project_id ?? null;
       renderList();
       renderWorkspace();
     } catch (err) {
@@ -444,13 +444,13 @@ function renderWorkspace(): void {
 
 function replaceProject(updated: ProjectView): void {
   projects = projects.map((p) =>
-    p.goal_id === updated.goal_id ? updated : p,
+    p.project_id === updated.project_id ? updated : p,
   );
   if (updated.completed || updated.cancelled) {
-    projects = projects.filter((p) => p.goal_id !== updated.goal_id);
-    selectedId = projects[0]?.goal_id ?? null;
+    projects = projects.filter((p) => p.project_id !== updated.project_id);
+    selectedId = projects[0]?.project_id ?? null;
   } else {
-    selectedId = updated.goal_id;
+    selectedId = updated.project_id;
   }
   renderList();
   renderWorkspace();
@@ -465,10 +465,10 @@ async function load(): Promise<void> {
   visions = allVisions.filter((v) => !v.archived);
   const params = new URLSearchParams(window.location.search);
   const want = Number(params.get("id"));
-  if (want && projects.some((p) => p.goal_id === want)) {
+  if (want && projects.some((p) => p.project_id === want)) {
     selectedId = want;
   } else if (projects.length > 0 && selectedId === null) {
-    selectedId = projects[0].goal_id;
+    selectedId = projects[0].project_id;
   }
   renderList();
   renderWorkspace();
@@ -483,8 +483,8 @@ createForm.addEventListener("submit", async (event) => {
   try {
     const created = await createGoal(text);
     createInput.value = "";
-    projects = [created, ...projects.filter((p) => p.goal_id !== created.goal_id)];
-    selectedId = created.goal_id;
+    projects = [created, ...projects.filter((p) => p.project_id !== created.project_id)];
+    selectedId = created.project_id;
     renderList();
     renderWorkspace();
   } catch (err) {
@@ -519,14 +519,14 @@ chatForm.addEventListener("submit", async (event) => {
     if (selectedNodeId && text.includes("\n")) {
       try {
         updated = await importProgressionOutline(
-          project.goal_id,
+          project.project_id,
           text,
           selectedNodeId,
           false,
         );
       } catch {
         updated = await sendGoalFeedback(
-          project.goal_id,
+          project.project_id,
           text,
           selectedNodeLabel,
           selectedNodeId,
@@ -534,7 +534,7 @@ chatForm.addEventListener("submit", async (event) => {
       }
     } else {
       updated = await sendGoalFeedback(
-        project.goal_id,
+        project.project_id,
         text,
         selectedNodeLabel,
         selectedNodeId,

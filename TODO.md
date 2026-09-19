@@ -16,24 +16,16 @@ for that same principle applied to documentation, not just this file).
 
 ## Active
 
-**23. Goal → Project migration — Phase A** (~~done~~ 2026-09-20)
+**23. Goal → Project migration** (~~Phase A + B compat done~~ 2026-09-20)
 
-Product direction [[05-decisions]] #25. Phase A complete per
-[[goal-to-project-migration]]: A1 FILL/REPLAN language; A2 no auto-mint
-on PLAN; A3 `to_planning_node` = progression only (calendar `plan.steps`
-still written as WHEN, not shown as the map); A4 [[02-product]] rewritten.
-Wire still `goal_id` / `/api/goals` — **Phase B parked** until that
-doc’s gate.
+Product [[05-decisions]] #25; wire [[05-decisions]] #29 /
+[[goal-to-project-migration]]. Primary: `project_id`, `/api/projects`,
+llm3 `"project"`. Still present for one release: `/api/goals` alias,
+response `goal_id` mirror. Follow-ups (not Active): drop aliases;
+rename display field `goal`; mass-rename Python symbols
+(`create_goal`, …).
 
-**Done this slice (through 2026-09-20):** Decide/Fill/REPLAN project/map
-language; Projects map/chat/focus/paste; panes + engine layout;
-vocabulary #28; no auto-mint middle; display SoT = progression;
-[[02-product]] matches #25.
-
-Next when chosen: Phase B (wire rename) or other Queue items — not
-automatic.
-
-Facts: `docs/04-current-state.md` § 1 / § 5 / § 9; Parallel P3 / P9.
+Facts: `docs/04-current-state.md` § Vocabulary / § 1; Parallel P3 / P9.
 
 ## Queue
 

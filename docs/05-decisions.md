@@ -244,8 +244,23 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Reversible?** Yes — update or drop the 04 table; no runtime dependency.
 
+## 29. 2026-09-20 — Wire identity: `project_id` / `/api/projects`
+
+**Decision:** Persist and expose project identity as **`project_id`**. Primary HTTP surface is **`/api/projects…`**. JSONL on load promotes legacy `goal_id` → `project_id` and rewrites the file when needed. Responses emit `project_id` and a deprecated `goal_id` mirror for one release. `/api/goals…` remains a thin alias to the same handlers. llm3 returns `"project"` (accepts legacy `"planning"`). Display-text field `goal` and most Python symbol names (`create_goal`, `ChatFocus.goal_id`, …) stay for a follow-up.
+
+**Date:** 2026-09-20
+
+**Alternatives considered:** big-bang rename of every Python symbol and the `goal` text field in the same pass; permanent dual keys on disk; skip API alias and break old bookmarks.
+
+**Why this choice:** Phase A product feel was already settled (#25); wire rename was the parked Phase B in [[goal-to-project-migration]]. Compatibility layer lets UI and disk move together without a multi-day symbol sweep.
+
+**Trade-off:** `/api/goals` and response `goal_id` must be removed in a later cleanup; internal Python still says “goal” in many places.
+
+**Reversible?** Yes while the alias and JSONL normalize-on-load remain — restore writing `goal_id` and point UI at `/api/goals`.
+
 ## See also
 
 - [[03-architecture]]
 - [[06-development]]
-- [[02-product]] (still Goal-era wording until migration updates it)
+- [[02-product]]
+- [[goal-to-project-migration]]

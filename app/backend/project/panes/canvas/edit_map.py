@@ -76,7 +76,7 @@ def add_progression_bead(
         plan,
         feedback=feedback,
         duration=latest.get("duration"),
-        goal_id=latest["goal_id"],
+        goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
         vision_id=latest.get("vision_id"),
@@ -166,7 +166,7 @@ def import_progression_outline(
         plan,
         feedback=feedback,
         duration=latest.get("duration"),
-        goal_id=latest["goal_id"],
+        goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
         vision_id=latest.get("vision_id"),
@@ -199,7 +199,7 @@ def remove_progression_bead(latest: dict, step_id: str) -> dict:
         plan,
         feedback=f"Removed step: {removed_label}",
         duration=latest.get("duration"),
-        goal_id=latest["goal_id"],
+        goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
         vision_id=latest.get("vision_id"),
@@ -280,7 +280,7 @@ def zoom_progression_step(latest: dict, step_id: str) -> dict:
         new_plan,
         feedback=f"Zoomed into: {step['label']}",
         duration=latest.get("duration"),
-        goal_id=latest["goal_id"],
+        goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
         vision_id=latest.get("vision_id"),
@@ -320,7 +320,7 @@ def suggest_progression_from_chat(
         raise ValueError(f"step not found: {step_id}")
 
     step, ancestors = found
-    conversation = _recent_conversation(latest["goal_id"], note)
+    conversation = _recent_conversation(latest["project_id"], note)
     labels = children_from_conversation(
         step["label"], ancestors, duration, conversation,
     )
@@ -348,7 +348,7 @@ def suggest_progression_from_chat(
         plan,
         feedback=note,
         duration=latest.get("duration"),
-        goal_id=latest["goal_id"],
+        goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
         vision_id=latest.get("vision_id"),
@@ -361,7 +361,7 @@ def _recent_conversation(goal_id: int, latest_note: str, limit: int = 8) -> str:
     """Recent user feedback lines for this goal, plus the current note."""
     lines: list[str] = []
     for record in load_history():
-        if record.get("goal_id") != goal_id:
+        if record.get("project_id") != goal_id:
             continue
         feedback = (record.get("feedback") or "").strip()
         if feedback:

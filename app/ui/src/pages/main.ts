@@ -44,12 +44,12 @@ function renderChatFocus(view: ChatFocusView): void {
 
   const text = document.createElement("span");
   text.textContent =
-    view.goal_id === null
+    view.project_id === null
       ? "Chat focus: none - the next planning message starts a new goal."
-      : `Chat focus: ${view.goal ?? "(unknown)"} #${view.goal_id}`;
+      : `Chat focus: ${view.goal ?? "(unknown)"} #${view.project_id}`;
   chatFocus.appendChild(text);
 
-  if (view.goal_id !== null) {
+  if (view.project_id !== null) {
     const clearButton = document.createElement("button");
     clearButton.type = "button";
     clearButton.textContent = "Clear (set_chat_focus)";

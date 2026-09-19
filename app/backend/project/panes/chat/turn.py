@@ -75,7 +75,7 @@ def take_turn(
 
     if map_focus:
         stamped = stamp_map_focus(
-            record["goal_id"], map_focus, focus_step_id,
+            record["project_id"], map_focus, focus_step_id,
         )
         if stamped is not None:
             record = stamped
@@ -106,13 +106,15 @@ def take_turn(
         voice_update = surface
 
     reply = respond(note, voice_update)
+    pid = record["project_id"]
     return {
         "record": record,
         "understanding": understanding,
         "surface": surface,
         "node": node,
         "reply": reply,
-        "goal_id": record["goal_id"],
+        "project_id": pid,
+        "goal_id": pid,  # deprecated mirror
     }
 
 

@@ -69,16 +69,17 @@ def process_turn(chat_focus: ChatFocus, user_text: str) -> dict:
     understanding = describe(user_text)
     capability = select_capability(understanding)
 
-    if capability != "planning":
+    if capability != "project":
         reply = respond(user_text, None)
         return {
             "understanding": understanding, "capability": capability,
-            "surface": None, "node": None, "reply": reply, "goal_id": None,
+            "surface": None, "node": None, "reply": reply,
+            "project_id": None, "goal_id": None,
         }
 
     if chat_focus.goal_id is None:
         record = create_goal(user_text, "", "")
-        chat_focus.goal_id = record["goal_id"]
+        chat_focus.goal_id = record["project_id"]
     else:
         latest = get_latest_for_goal(chat_focus.goal_id)
         record = route_note(latest, user_text)
@@ -86,8 +87,10 @@ def process_turn(chat_focus: ChatFocus, user_text: str) -> dict:
     surface = surface_text(record)
     node = to_planning_node(record)
     reply = respond(user_text, surface)
+    pid = chat_focus.goal_id
     return {
         "understanding": understanding, "capability": capability,
         "surface": surface, "node": node, "reply": reply,
-        "goal_id": chat_focus.goal_id,
+        "project_id": pid,
+        "goal_id": pid,  # deprecated mirror
     }

@@ -21,7 +21,7 @@ the goal's text.
 
 from datetime import datetime
 
-from backend.store.data_persistence import load_history
+from backend.store.data_persistence import load_history, record_project_id
 
 
 # Timestamp handling
@@ -51,26 +51,27 @@ def created_at_key(record: dict) -> datetime:
 
 def get_history_for_goal(goal_id: int) -> list[dict]:
     """
-    Return every record for one goal_id, oldest first - the full
-    back-and-forth of feedback and replanning for this goal.
+    Return every record for one project_id, oldest first - the full
+    back-and-forth of feedback and replanning for this project.
 
-    Each record's `feedback` responds to the previous record's
-    `now`; returning the whole chain lets a template render it
-    as one conversation. See frontend/templates/_active_goal.html.
+    Parameter name goal_id kept this round; matches project_id on disk.
     """
-    return [r for r in load_history() if r["goal_id"] == goal_id]
+    return [
+        r for r in load_history()
+        if record_project_id(r) == goal_id
+    ]
 
 
 def get_latest_for_goal(goal_id: int) -> dict | None:
     """
-    Return the most recent record for one goal_id, or None.
+    Return the most recent record for one project_id, or None.
 
     Distinct from data_persistence.get_latest_plan(), which answers
-    "what was touched most recently across every goal" - not safe once
-    two goals can be active side by side (see docs/06-development.md).
+    "what was touched most recently across every project" - not safe once
+    two projects can be active side by side (see docs/06-development.md).
     """
     for record in reversed(load_history()):
-        if record["goal_id"] == goal_id:
+        if record_project_id(record) == goal_id:
             return record
     return None
 
@@ -80,23 +81,16 @@ def get_latest_for_goal(goal_id: int) -> dict | None:
 
 def get_latest_for_all_goals() -> list[dict]:
     """
-    Return the latest record for every goal_id in history - one goal,
-    one record.
-
-    Same idea as get_latest_for_goal(), applied to every goal instead
-    of one: a goal isn't its own stored entity - it's the chain of
-    records sharing one goal_id, so its current state is just its
-    latest record. Grouping by goal_id (not goal text) keeps a
-    retyped goal from fragmenting into a second entry (see
-    docs/05-decisions.md).
+    Return the latest record for every project_id in history - one
+    project, one record.
 
     Order is just whatever falls out of scanning history oldest-first
-    and keeping the last record seen per goal_id - not meaningful on
-    its own. Deciding which goals are "active" vs "completed", and how
-    to group or sort them for display, is left to the caller (see
-    frontend/view_data/goal_overview.py, where the board is built from this).
+    and keeping the last record seen per project_id - not meaningful on
+    its own.
     """
     latest_by_goal: dict[int, dict] = {}
     for record in load_history():
-        latest_by_goal[record["goal_id"]] = record
+        pid = record_project_id(record)
+        if pid is not None:
+            latest_by_goal[pid] = record
     return list(latest_by_goal.values())

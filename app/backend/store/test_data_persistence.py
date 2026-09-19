@@ -57,7 +57,8 @@ try:
     abs_goal = dp.save_plan("Get visible abs", {"now": "..."}, vision_id=vision["id"])
     cardio_goal = dp.save_plan("Improve cardio", {"now": "..."}, vision_id=vision["id"])
     assert abs_goal["vision_id"] == cardio_goal["vision_id"] == vision["id"]
-    assert abs_goal["goal_id"] != cardio_goal["goal_id"]  # still fully independent goals
+    assert abs_goal["project_id"] != cardio_goal["project_id"]
+    assert "goal_id" not in abs_goal
     assert len(dp.load_history()) == 3
 
     print("OK - vision / plans.jsonl persistence behaves as expected")
@@ -69,7 +70,7 @@ try:
     assert first_session["started_at"]
 
     # A second Session gets the next id, not a collision - same
-    # minting idiom as goal_id/vision_id above.
+    # minting idiom as project_id/vision_id above.
     second_session = session_store.start_session()
     assert second_session["id"] == first_session["id"] + 1
     assert [s["id"] for s in session_store.load_sessions()] == [
@@ -99,12 +100,43 @@ try:
     history = dp.load_history()
     assert len(history) == 1
     assert history[0]["goal"] == "Legacy goal"
+    assert history[0]["project_id"] == 1
+    assert "goal_id" not in history[0]
     assert dp.PLANS_FILE.exists()
     assert not dp.LEGACY_PLANS_FILE.exists()
     assert dp.LEGACY_PLANS_FILE.with_suffix(".json.bak").exists()
+    disk_line = dp.PLANS_FILE.read_text(encoding="utf-8").strip()
+    assert '"project_id"' in disk_line
+    assert '"goal_id"' not in disk_line
     shutil.rmtree(migrate_dir, ignore_errors=True)
 
     print("OK - plans.json → plans.jsonl migration behaves as expected")
+
+    # Existing plans.jsonl with goal_id only is rewritten to project_id.
+    promote_dir = Path(tempfile.mkdtemp(prefix="plans_promote_test_"))
+    dp.DATA_DIR = promote_dir
+    dp.PLANS_FILE = promote_dir / "plans.jsonl"
+    dp.LEGACY_PLANS_FILE = promote_dir / "plans.json"
+    dp.PLANS_FILE.write_text(
+        json.dumps({
+            "id": 1,
+            "goal_id": 7,
+            "user_id": 1,
+            "goal": "Promote me",
+            "plan": {"now": "x"},
+            "created_at": "2026-01-01T00:00:00",
+        }, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    promoted = dp.load_history()
+    assert promoted[0]["project_id"] == 7
+    assert "goal_id" not in promoted[0]
+    disk = dp.PLANS_FILE.read_text(encoding="utf-8")
+    assert '"project_id": 7' in disk
+    assert "goal_id" not in disk
+    shutil.rmtree(promote_dir, ignore_errors=True)
+
+    print("OK - goal_id → project_id JSONL promotion behaves as expected")
 finally:
     dp.DATA_DIR = _original_data_dir
     dp.PLANS_FILE = _original_plans_file

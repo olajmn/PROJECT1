@@ -47,12 +47,12 @@ there's only ever one value.
 #      - ensure_data_dir()
 #      - _LEGACY_HORIZON_KEY_RENAMES
 #      - _normalize_plan()
-#      - _backfill_goal_ids()
+#      - _backfill_goal_ids() / _normalize_project_ids() / record_project_id()
 #      - _backfill_user_ids()
 #
 #  2. Goal records (plans.jsonl)
 #      - _next_goal_id() / _load_all() / _save_all() / _append_record()
-#      - save_plan()
+#      - save_plan()  (persists project_id; param still named goal_id)
 #      - stamp_map_focus()
 #      - load_history()
 #      - get_latest_plan()
@@ -114,31 +114,61 @@ def _normalize_plan(plan) -> dict:
     return {_LEGACY_HORIZON_KEY_RENAMES.get(key, key): value for key, value in plan.items()}
 
 
+def record_project_id(record: dict) -> int | None:
+    """Canonical project identity on a history record.
+
+    Prefers project_id; falls back to legacy goal_id for un-normalized
+    callers. Returns None if neither is set.
+    """
+    pid = record.get("project_id")
+    if pid is not None:
+        return int(pid)
+    gid = record.get("goal_id")
+    if gid is not None:
+        return int(gid)
+    return None
+
+
 def _backfill_goal_ids(records: list[dict]) -> None:
     """
-    Records saved before `goal_id` existed have no identity beyond their
-    `goal` text - board grouping used to be done on that text directly
-    (fragile: "take a shower" / "take shower" / "ta en dusj" all counted
-    as different goals). Give each legacy record a goal_id, one per
-    distinct goal text, assigned in first-appearance order - this
-    reproduces exactly the grouping the board view used before goal_id
-    existed, so old history's board layout doesn't shift silently.
+    Records saved before any numeric identity existed have no identity
+    beyond their `goal` text. Assign one id per distinct goal text, in
+    first-appearance order, onto project_id (legacy files used goal_id;
+    _normalize_project_ids promotes that).
 
-    Records that already have a goal_id (created after this change) are
-    left untouched. Mutates records in place; the result is only
-    persisted once something calls save_plan() and _append_record() /
-    _save_all() writes the history back out - same pattern as
-    _normalize_plan().
+    Records that already have project_id or goal_id are left untouched.
     """
     seen: dict[str, int] = {}
     next_id = 1
     for record in records:
-        if record.get("goal_id"):
+        if record.get("project_id") or record.get("goal_id"):
             continue
         if record["goal"] not in seen:
             seen[record["goal"]] = next_id
             next_id += 1
-        record["goal_id"] = seen[record["goal"]]
+        record["project_id"] = seen[record["goal"]]
+
+
+def _normalize_project_ids(records: list[dict]) -> bool:
+    """Promote legacy goal_id → project_id; drop goal_id from memory.
+
+    Returns True if any record still had only goal_id on disk shape
+    (caller should rewrite plans.jsonl so grepping shows project_id).
+    """
+    needed_rewrite = False
+    for record in records:
+        has_project = record.get("project_id") is not None
+        has_goal = record.get("goal_id") is not None
+        if has_goal and not has_project:
+            record["project_id"] = int(record["goal_id"])
+            needed_rewrite = True
+        elif has_goal and has_project:
+            # Prefer project_id; drop the legacy key.
+            needed_rewrite = True
+        if "goal_id" in record:
+            del record["goal_id"]
+            needed_rewrite = True
+    return needed_rewrite
 
 
 def _backfill_user_ids(records: list[dict]) -> None:
@@ -159,18 +189,31 @@ def _backfill_user_ids(records: list[dict]) -> None:
 
 
 def _next_goal_id(records: list[dict]) -> int:
-    """One higher than the largest goal_id in history, or 1 if there are none yet."""
-    existing = [r["goal_id"] for r in records if r.get("goal_id")]
+    """One higher than the largest project_id in history, or 1 if none.
+
+    Name kept as _next_goal_id this round (Python symbol rename is a
+    follow-up); values are project_id.
+    """
+    existing = []
+    for r in records:
+        pid = record_project_id(r)
+        if pid is not None:
+            existing.append(pid)
     return max(existing, default=0) + 1
 
 
-def _normalize_records(records: list[dict]) -> list[dict]:
-    """Backfill ids and normalize plan shapes in place; return the list."""
+def _normalize_records(records: list[dict]) -> tuple[list[dict], bool]:
+    """Backfill ids and normalize plan shapes in place.
+
+    Returns (records, needs_disk_rewrite) — rewrite when goal_id was
+    promoted to project_id so on-disk JSONL matches the new key.
+    """
     _backfill_goal_ids(records)
     _backfill_user_ids(records)
+    needs_rewrite = _normalize_project_ids(records)
     for record in records:
         record["plan"] = _normalize_plan(record["plan"])
-    return records
+    return records, needs_rewrite
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -231,15 +274,24 @@ def _load_all() -> list[dict]:
     Prefers data/plans.jsonl. On first run after the JSONL switch, a
     leftover data/plans.json array is migrated automatically.
 
+    Promotes legacy goal_id → project_id and rewrites plans.jsonl when
+    any line still used the old key (Phase B wire rename).
+
     Returns an empty list if no history file exists yet.
     """
     migrated = _migrate_legacy_plans_array()
     if migrated is not None:
-        return _normalize_records(migrated)
+        records, needs_rewrite = _normalize_records(migrated)
+        if needs_rewrite:
+            _save_all(records)
+        return records
 
     if not PLANS_FILE.exists():
         return []
-    return _normalize_records(_read_jsonl(PLANS_FILE))
+    records, needs_rewrite = _normalize_records(_read_jsonl(PLANS_FILE))
+    if needs_rewrite:
+        _save_all(records)
+    return records
 
 
 def _save_all(records: list[dict]) -> None:
@@ -307,13 +359,14 @@ def save_plan(
     else in this file - persistence stores what it's given, decisions
     live in planner.py.
 
-    `goal_id` is the goal's real identity, separate from its display
-    text. Pass the existing goal_id to continue a goal already in
-    history; leave it None for a genuinely new goal (one is minted
-    here). Never invent a goal_id - always get it from an existing
-    record or this function's return value.
+    `goal_id` (parameter name kept this round) is the project's real
+    identity, separate from its display text. Stored on disk as
+    `project_id`. Pass the existing id to continue a project already in
+    history; leave it None for a genuinely new one (minted here).
+    Never invent an id - always get it from an existing record or this
+    function's return value.
 
-    There is no `user_id` parameter (unlike `goal_id`): every record is
+    There is no `user_id` parameter (unlike the project id): every record is
     stamped with DEFAULT_USER_ID directly, since there is exactly one
     user of this app today - see module docstring. Not exposed as a
     choice callers could get wrong, because there is nothing to choose
@@ -348,7 +401,7 @@ def save_plan(
     `vision_id` optionally links this goal to a Vision - broader,
     cross-goal context, not part of the operational goal -> plan ->
     action -> feedback loop (see docs/planning-model.md, the authority
-    on Vision). None is the normal case. Like `goal_id`, never invented by a caller
+    on Vision). None is the normal case. Like `project_id`, never invented by a caller
     - pass an id from save_vision()/load_visions(), or carry the
     existing record's own `vision_id` forward unchanged across a
     replan (same reasoning as `frozen_duration`).
@@ -359,7 +412,7 @@ def save_plan(
     record = {
         "id": len(records) + 1,
         "user_id": DEFAULT_USER_ID,
-        "goal_id": goal_id if goal_id is not None else _next_goal_id(records),
+        "project_id": goal_id if goal_id is not None else _next_goal_id(records),
         "vision_id": vision_id,
         "goal": goal,
         "plan": plan,
@@ -386,15 +439,17 @@ def stamp_map_focus(
     focus_step_id: str | None = None,
 ) -> dict | None:
     """Attach map_focus (and optional step id) to the latest history
-    record for this goal — so the chat thread can frame 'about this
+    record for this project — so the chat thread can frame 'about this
     node' and re-select it from the frame. Returns that record, or
-    None if none found."""
+    None if none found. Parameter name goal_id kept this round; matches
+    project_id on disk.
+    """
     label = (map_focus or "").strip()
     if not label:
         return None
     records = _load_all()
     for i in range(len(records) - 1, -1, -1):
-        if records[i].get("goal_id") == goal_id:
+        if record_project_id(records[i]) == goal_id:
             records[i]["map_focus"] = label
             step = (focus_step_id or "").strip()
             if step:

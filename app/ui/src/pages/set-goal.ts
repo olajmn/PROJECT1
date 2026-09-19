@@ -35,7 +35,7 @@ function renderGoalLine(goal: GoalView): HTMLElement {
   text.textContent = goal.goal;
   const id = document.createElement("span");
   id.className = "entity-id";
-  id.textContent = `#${goal.goal_id}`;
+  id.textContent = `#${goal.project_id}`;
   line.append(text, id);
   return line;
 }
@@ -64,7 +64,7 @@ form.addEventListener("submit", async (event) => {
 
   try {
     const created = await createGoal(text);
-    window.location.href = `projects.html?id=${created.goal_id}`;
+    window.location.href = `projects.html?id=${created.project_id}`;
   } catch (err) {
     input.disabled = false;
     button.disabled = false;

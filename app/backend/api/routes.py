@@ -63,16 +63,16 @@ CONTENT_TYPES = {
     ".css": "text/css; charset=utf-8",
 }
 
-_FEEDBACK_PATH_RE = re.compile(r"^/api/goals/(\d+)/feedback$")
-_CANCEL_PATH_RE = re.compile(r"^/api/goals/(\d+)/cancel$")
-_GOAL_VISION_PATH_RE = re.compile(r"^/api/goals/(\d+)/vision$")
-_GOAL_ZOOM_PATH_RE = re.compile(r"^/api/goals/(\d+)/zoom/(p\d+)$")
-_GOAL_PROGRESSION_PATH_RE = re.compile(r"^/api/goals/(\d+)/progression$")
+_FEEDBACK_PATH_RE = re.compile(r"^/api/(?:goals|projects)/(\d+)/feedback$")
+_CANCEL_PATH_RE = re.compile(r"^/api/(?:goals|projects)/(\d+)/cancel$")
+_GOAL_VISION_PATH_RE = re.compile(r"^/api/(?:goals|projects)/(\d+)/vision$")
+_GOAL_ZOOM_PATH_RE = re.compile(r"^/api/(?:goals|projects)/(\d+)/zoom/(p\d+)$")
+_GOAL_PROGRESSION_PATH_RE = re.compile(r"^/api/(?:goals|projects)/(\d+)/progression$")
 _GOAL_PROGRESSION_IMPORT_RE = re.compile(
-    r"^/api/goals/(\d+)/progression/import$",
+    r"^/api/(?:goals|projects)/(\d+)/progression/import$",
 )
 _GOAL_PROGRESSION_REMOVE_RE = re.compile(
-    r"^/api/goals/(\d+)/progression/(p\d+)/remove$",
+    r"^/api/(?:goals|projects)/(\d+)/progression/(p\d+)/remove$",
 )
 _VISION_ARCHIVE_PATH_RE = re.compile(r"^/api/visions/(\d+)/archive$")
 _ZOOM_PATH_RE = re.compile(r"^/api/tree/(s\d+)/zoom$")
@@ -113,10 +113,10 @@ class Handler(BaseHTTPRequestHandler):
     error_content_type = "text/plain;charset=utf-8"
 
     def do_GET(self) -> None:
-        if self.path == "/api/goals":
+        if self.path in ("/api/goals", "/api/projects"):
             self._send_json([goal_view(r) for r in active_goals()])
             return
-        if self.path == "/api/goals/completed":
+        if self.path in ("/api/goals/completed", "/api/projects/completed"):
             self._send_json([goal_view(r) for r in completed_goals()])
             return
         if self.path == "/api/history":
@@ -170,7 +170,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/message":
             self._handle_message()
             return
-        if self.path == "/api/goals":
+        if self.path in ("/api/goals", "/api/projects"):
             self._handle_create_goal()
             return
         if self.path == "/api/visions":
@@ -263,7 +263,7 @@ class Handler(BaseHTTPRequestHandler):
             print(f"(debug: {e})")
             result = {
                 "understanding": None, "capability": None, "surface": None,
-                "node": None, "goal_id": None,
+                "node": None, "project_id": None, "goal_id": None,
                 "reply": "That took longer than expected - try again in a moment.",
             }
         self._send_json(result)
@@ -496,26 +496,26 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json(goal_view(record))
 
     def _handle_set_chat_focus(self) -> None:
-        # Body is {"goal_id": <int>} or {"goal_id": null} to clear it -
-        # not {"text": ...} like every other POST route here, so this
-        # doesn't go through _read_text_body(). No model call, same
-        # reasoning as _handle_cancel_goal() - a pure state write onto
-        # the module-level `session` object's own chat_focus.goal_id,
-        # nothing saved to disk.
+        # Body is {"project_id": <int>} (preferred) or deprecated
+        # {"goal_id": <int>}, or null to clear. Pure state write onto
+        # chat_focus.goal_id (attribute name kept this round).
         length = int(self.headers.get("Content-Length", 0))
         try:
             payload_in = json.loads(self.rfile.read(length) or b"{}")
         except json.JSONDecodeError:
             self.send_error(400, "invalid JSON")
             return
-        raw_goal_id = payload_in.get("goal_id")
-        if raw_goal_id is None:
+        raw_id = payload_in.get("project_id", payload_in.get("goal_id", "__missing__"))
+        if raw_id is None:
             state.session.chat_focus.goal_id = None
             self._send_json(chat_focus_view())
             return
-        goal_id = int(raw_goal_id)
+        if raw_id == "__missing__":
+            self.send_error(400, "project_id (or goal_id) required")
+            return
+        goal_id = int(raw_id)
         if get_latest_for_goal(goal_id) is None:
-            self.send_error(404, "no such goal")
+            self.send_error(404, "no such project")
             return
         state.session.chat_focus.goal_id = goal_id
         self._send_json(chat_focus_view())

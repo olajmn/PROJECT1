@@ -158,7 +158,7 @@ try:
     assert accepted["plan"]["suggested_action"] is None
     assert accepted["plan"]["clarification"] is None
     assert accepted["completed"] is False
-    assert accepted["goal_id"] == pending["goal_id"]
+    assert accepted["project_id"] == pending["project_id"]
     assert accepted["current_step"] == pending.get("current_step", 0)
     assert accepted["step_status"] == pending.get("step_status")
     assert accepted["vision_id"] == pending["vision_id"]
@@ -270,9 +270,9 @@ try:
     v_pending = _pending_suggestion(vision_id=vision["id"])
     assert v_pending["vision_id"] == vision["id"]
 
-    history_before_goal = resolver.get_history_for_goal(v_pending["goal_id"])
+    history_before_goal = resolver.get_history_for_goal(v_pending["project_id"])
     v_accepted = route_note(v_pending, "Yes")
-    history_after_goal = resolver.get_history_for_goal(v_accepted["goal_id"])
+    history_after_goal = resolver.get_history_for_goal(v_accepted["project_id"])
 
     assert v_accepted["vision_id"] == vision["id"], "Vision link must survive confirmation"
     assert v_accepted["current_step"] == 0

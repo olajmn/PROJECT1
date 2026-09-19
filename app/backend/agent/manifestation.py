@@ -69,7 +69,7 @@ def _node_from_progression(record: dict) -> dict | None:
         current_index = 0
 
     children = [
-        _progression_step_node(step, i, current_index, record["goal_id"])
+        _progression_step_node(step, i, current_index, record["project_id"])
         for i, step in enumerate(steps)
         if isinstance(step, dict)
     ]
@@ -77,7 +77,7 @@ def _node_from_progression(record: dict) -> dict | None:
         return None
 
     return {
-        "id": f"goal-{record['goal_id']}",
+        "id": f"project-{record['project_id']}",
         "label": record.get("goal", ""),
         "status": "done" if record.get("completed") else "current",
         "children": children,
@@ -156,20 +156,20 @@ def _node_from_legacy_steps(record: dict) -> dict | None:
             status = "open"
         label = f"{timed[i]['start_label']}–{timed[i]['end_label']}: {step['label']}" if timed else step["label"]
         children.append({
-            "id": f"{record['goal_id']}-step-{i}",
+            "id": f"{record['project_id']}-step-{i}",
             "label": label,
             "status": status,
             # One level deep only - week-grain days are dated dicts;
             # session microsteps are plain strings. Microsteps are
             # always "open": no per-microstep completion signal today.
             "children": [
-                _microstep_child(record["goal_id"], i, j, microstep)
+                _microstep_child(record["project_id"], i, j, microstep)
                 for j, microstep in enumerate(step.get("microsteps") or [])
             ],
         })
 
     return {
-        "id": f"goal-{record['goal_id']}",
+        "id": f"project-{record['project_id']}",
         "label": record.get("goal", ""),
         "status": "done" if record.get("completed") else "current",
         "children": children,
