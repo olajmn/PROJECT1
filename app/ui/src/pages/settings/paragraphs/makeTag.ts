@@ -1,4 +1,4 @@
-// Tiny DOM helper shared by paragraph templates / layout.
+// Tiny DOM helper shared by drawLine / arrange.
 
 export function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,

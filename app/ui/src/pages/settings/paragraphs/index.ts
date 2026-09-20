@@ -1,23 +1,35 @@
-// Settings paragraph system — shared by General, Directory, Logs.
+// Settings register UI — shared by General, Directory, Logs.
 //
-//   types.ts      — Para / Block / Group
-//   templates.ts  — title | meta | fact | empty
-//   layout.ts     — block / stack / group
-//   ageClock.ts   — live Created/Started age
+//   registerTemplate.ts — visual recipe (title + facts); edit look here
+//   lineKinds.ts        — title | fact | empty, Block, Group
+//   drawLine.ts         — how each line paints
+//   arrange.ts          — block / stack / group
+//   liveAge.ts          — live age on fact.created
+//   makeTag.ts          — tiny DOM helper
 //
 // Styles: css/pages/settings/paragraphs.css
-// Edit shape per tab in that tab's spec.ts.
 
 export type {
   Block,
   EmptyPara,
   FactPara,
   Group,
-  MetaPara,
   Para,
   TitlePara,
-} from "./types.js";
+} from "./lineKinds.js";
 
-export { renderPara } from "./templates.js";
-export { renderBlock, renderGroup, renderStack } from "./layout.js";
-export { startAgeClock } from "./ageClock.js";
+export {
+  idGroup,
+  modelBlock,
+  orphanGroup,
+  projectBlock,
+  sessionBlock,
+  type IdValues,
+  type ModelValues,
+  type ProjectValues,
+  type SessionValues,
+} from "./registerTemplate.js";
+
+export { drawLine } from "./drawLine.js";
+export { arrangeBlock, arrangeGroup, arrangeStack } from "./arrange.js";
+export { startAgeClock } from "./liveAge.js";

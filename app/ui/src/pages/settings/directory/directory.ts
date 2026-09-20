@@ -1,20 +1,22 @@
 // Directory — Settings → Directory page body.
 //
-// Shape: ./spec.ts. Shared templates: ../paragraphs.ts.
+// Shape: ../paragraphs/registerTemplate.ts
 
 // Contents
 //  1. Helpers
 //  2. mountDirectory()
 
 import { fetchActiveGoals, fetchUsers } from "../../../api.js";
-import {
-  localOrdinal,
-  projectsChronologicalForUser,
-} from "../../../sidebar/projectListOrder.js";
+import { projectsChronologicalForUser } from "../../../sidebar/projectListOrder.js";
 import { getActiveUserId } from "../../../user/activeUser.js";
 import type { ProjectView, UserView } from "../../../types.js";
-import { renderGroup, startAgeClock } from "../paragraphs/index.js";
-import { idGroup, orphanGroup, type ProjectValues } from "./spec.js";
+import {
+  arrangeGroup,
+  idGroup,
+  orphanGroup,
+  startAgeClock,
+  type ProjectValues,
+} from "../paragraphs/index.js";
 
 // 1. Helpers
 
@@ -25,14 +27,10 @@ function displayLabel(user: UserView): string {
   return `id#${user.id}`;
 }
 
-function projectValues(
-  chronological: ProjectView[],
-  project: ProjectView,
-): ProjectValues {
+function projectValues(project: ProjectView): ProjectValues {
   return {
     id: project.project_id,
     goal: project.goal,
-    sidebar: localOrdinal(chronological, project.project_id),
     created: project.created_at,
   };
 }
@@ -50,7 +48,7 @@ function el<K extends keyof HTMLElementTagNameMap>(
 
 // 2. mountDirectory()
 
-/** Fill a `.settings-register` host from users/projects via spec.ts. */
+/** Fill a `.settings-register` host from users/projects via directorySpec. */
 export async function mountDirectory(host: HTMLElement): Promise<void> {
   host.replaceChildren();
 
@@ -75,22 +73,20 @@ export async function mountDirectory(host: HTMLElement): Promise<void> {
     for (const user of active) {
       const linked = projectsChronologicalForUser(projects, user.id);
       stack.appendChild(
-        renderGroup(
+        arrangeGroup(
           idGroup({
             id: user.id,
             label: displayLabel(user),
             created: user.created_at,
             active: uiActiveId === user.id,
-            projects: linked.map((p) => projectValues(linked, p)),
+            projects: linked.map(projectValues),
           }),
         ),
       );
     }
     if (orphans.length > 0) {
       stack.appendChild(
-        renderGroup(
-          orphanGroup(orphans.map((p) => projectValues(orphans, p))),
-        ),
+        arrangeGroup(orphanGroup(orphans.map(projectValues))),
       );
     }
     startAgeClock(host);

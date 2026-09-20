@@ -1,10 +1,13 @@
 // Logs — Settings → Logs page body.
 //
-// Shape: ./spec.ts. Shared templates: ../paragraphs.ts.
+// Shape: ../paragraphs/registerTemplate.ts
 
 import { fetchSessions } from "../../../api.js";
-import { renderStack, startAgeClock } from "../paragraphs/index.js";
-import { sessionBlock } from "./spec.js";
+import {
+  arrangeStack,
+  sessionBlock,
+  startAgeClock,
+} from "../paragraphs/index.js";
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -17,7 +20,7 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-/** Fill a `.settings-register` host with process sessions via spec.ts. */
+/** Fill a `.settings-register` host with process sessions via registerTemplate. */
 export async function mountLogs(host: HTMLElement): Promise<void> {
   host.replaceChildren();
 
@@ -33,7 +36,7 @@ export async function mountLogs(host: HTMLElement): Promise<void> {
     if (sessions.length === 0) return;
 
     host.appendChild(
-      renderStack(
+      arrangeStack(
         sessions.map((session, index) =>
           sessionBlock({
             id: session.id,
