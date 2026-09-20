@@ -81,6 +81,12 @@ let selectedId: number | null = null;
 /** Which map node is selected (click / Talk about this). */
 let selectedNodeId: string | null = null;
 let selectedNodeLabel: string | null = null;
+/** Notion-ish topbar tab; resets to Map when the open project changes. */
+type TopTab = "map" | "vision";
+let activeTopTab: TopTab = "map";
+let topTabProjectId: number | null = null;
+/** Apply after switching back to Map from a chat focus click. */
+let pendingMapFocus: { stepId: string; label: string } | null = null;
 
 const isolateChat = createIsolateChat({
   threadEl: chatThread,
@@ -140,6 +146,8 @@ function renderList(): void {
       selectedId = project.project_id;
       selectedNodeId = null;
       selectedNodeLabel = null;
+      activeTopTab = "map";
+      topTabProjectId = project.project_id;
       isolateChat.clear();
       renderList();
       renderWorkspace();
@@ -165,6 +173,23 @@ function renderWorkspace(): void {
   mainEmpty.hidden = true;
   projectTopbar.hidden = false;
   projectChat.hidden = false;
+
+  if (topTabProjectId !== project.project_id) {
+    topTabProjectId = project.project_id;
+    activeTopTab = "map";
+  }
+
+  renderProjectTopbar(project);
+
+  if (activeTopTab === "vision") {
+    renderVisionPane(project);
+    isolateChat.fill(project.thread ?? [], (stepId, label) => {
+      pendingMapFocus = { stepId, label };
+      activeTopTab = "map";
+      renderWorkspace();
+    });
+    return;
+  }
 
   const body = document.createElement("div");
   body.className = "project-body";
@@ -399,20 +424,94 @@ function renderWorkspace(): void {
 
   projectMain.appendChild(body);
 
-  // Vision link + Archive live in the topbar, outside the map canvas
-  // (project-main) — not competing with the map, and not bottom-of-
-  // canvas either, since the canvas scrolls and this shouldn't.
+  if (pendingMapFocus) {
+    const focus = pendingMapFocus;
+    pendingMapFocus = null;
+    markSelected(focus.stepId, `Looking at: ${focus.label}`);
+  }
+
+  isolateChat.fill(project.thread ?? [], (stepId, label) => {
+    markSelected(stepId, `Looking at: ${label}`);
+    if (paste.isOpen()) paste.updatePasteHint();
+  });
+}
+
+function renderProjectTopbar(project: ProjectView): void {
+  const tabs = document.createElement("div");
+  tabs.className = "project-tabs";
+  tabs.setAttribute("role", "tablist");
+
+  const makeTab = (id: TopTab, label: string) => {
+    const tab = document.createElement("button");
+    tab.type = "button";
+    tab.className = "project-tab";
+    tab.setAttribute("role", "tab");
+    tab.setAttribute("aria-selected", activeTopTab === id ? "true" : "false");
+    if (activeTopTab === id) tab.classList.add("is-active");
+    tab.textContent = label;
+    tab.addEventListener("click", () => {
+      if (activeTopTab === id) return;
+      activeTopTab = id;
+      renderWorkspace();
+    });
+    tabs.appendChild(tab);
+  };
+  makeTab("vision", "Vision");
+  makeTab("map", project.goal);
+
+  const actions = document.createElement("div");
+  actions.className = "card-actions";
+  const cancelButton = document.createElement("button");
+  cancelButton.type = "button";
+  cancelButton.className = "cancel-button";
+  cancelButton.textContent = "Archive project";
+  cancelButton.addEventListener("click", async () => {
+    cancelButton.disabled = true;
+    try {
+      await cancelGoal(project.project_id);
+      projects = projects.filter((p) => p.project_id !== project.project_id);
+      selectedId = projects[0]?.project_id ?? null;
+      activeTopTab = "map";
+      topTabProjectId = selectedId;
+      renderList();
+      renderWorkspace();
+    } catch (err) {
+      cancelButton.disabled = false;
+      const error = document.createElement("p");
+      error.className = "error";
+      error.textContent = `(error: ${(err as Error).message})`;
+      projectTopbar.appendChild(error);
+    }
+  });
+  actions.appendChild(cancelButton);
+
+  projectTopbar.append(tabs, actions);
+}
+
+function renderVisionPane(project: ProjectView): void {
+  const pane = document.createElement("div");
+  pane.className = "project-vision-pane";
+
+  const heading = document.createElement("h2");
+  heading.className = "project-vision-heading";
+  heading.textContent = "Vision";
+
+  const blurb = document.createElement("p");
+  blurb.className = "project-vision-blurb";
+  blurb.textContent =
+    "Link this project to a vision — loosely related, optional.";
+
   const visionForm = document.createElement("form");
   visionForm.className = "vision-link-form";
   const select = document.createElement("select");
   const noneOption = document.createElement("option");
   noneOption.value = "";
-  noneOption.textContent = "Vision: none";
+  noneOption.textContent = "None";
   select.appendChild(noneOption);
   for (const vision of visions) {
     const option = document.createElement("option");
     option.value = String(vision.id);
-    option.textContent = `Vision: ${vision.text}`;
+    option.textContent = vision.text;
     if (project.vision_id === vision.id) option.selected = true;
     select.appendChild(option);
   }
@@ -436,37 +535,9 @@ function renderWorkspace(): void {
       visionForm.appendChild(error);
     }
   });
-  projectTopbar.appendChild(visionForm);
 
-  const actions = document.createElement("div");
-  actions.className = "card-actions";
-  const cancelButton = document.createElement("button");
-  cancelButton.type = "button";
-  cancelButton.className = "cancel-button";
-  cancelButton.textContent = "Archive project";
-  cancelButton.addEventListener("click", async () => {
-    cancelButton.disabled = true;
-    try {
-      await cancelGoal(project.project_id);
-      projects = projects.filter((p) => p.project_id !== project.project_id);
-      selectedId = projects[0]?.project_id ?? null;
-      renderList();
-      renderWorkspace();
-    } catch (err) {
-      cancelButton.disabled = false;
-      const error = document.createElement("p");
-      error.className = "error";
-      error.textContent = `(error: ${(err as Error).message})`;
-      projectTopbar.appendChild(error);
-    }
-  });
-  actions.appendChild(cancelButton);
-  projectTopbar.appendChild(actions);
-
-  isolateChat.fill(project.thread ?? [], (stepId, label) => {
-    markSelected(stepId, `Looking at: ${label}`);
-    if (paste.isOpen()) paste.updatePasteHint();
-  });
+  pane.append(heading, blurb, visionForm);
+  projectMain.appendChild(pane);
 }
 
 function replaceProject(updated: ProjectView): void {

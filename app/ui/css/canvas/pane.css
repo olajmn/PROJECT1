@@ -2,8 +2,13 @@
  *
  * Contents
  *  1. Column & topbar
- *      - .project-column / .project-topbar / .project-main
- *  2. Scrollable canvas area
+ *      - .project-column / .project-topbar
+ *      - .project-tabs / .project-tab
+ *      - .card-actions / Archive
+ *  2. Main & vision pane
+ *      - .project-main
+ *      - .project-vision-pane
+ *  3. Scrollable canvas area
  *      - .project-body / .project-title / .project-surface
  *      - .project-hint / .workspace-empty
  */
@@ -23,31 +28,90 @@
 .project-topbar {
   flex: 0 0 auto;
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.6rem 1.5rem;
-  border-bottom: 1px solid #eee;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.5rem;
+  padding: 0 0.85rem 0 0.5rem;
+  border-bottom: 1px solid #e8e6e1;
+  background: #f7f6f3;
 }
 
 .project-topbar[hidden] {
   display: none;
 }
 
-.project-topbar .vision-link-form {
-  flex: 1 1 auto;
+.project-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 0.15rem;
   min-width: 0;
+  flex: 1 1 auto;
+}
+
+.project-tab {
+  appearance: none;
   margin: 0;
+  padding: 0.55rem 0.85rem;
+  border: none;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #777;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: none;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-tab:hover {
+  color: #333;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.project-tab.is-active,
+.project-tab[aria-selected="true"] {
+  color: #1a1a1a;
+  border-bottom-color: #1a1a1a;
+  background: transparent;
 }
 
 .project-topbar .card-actions {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
   margin: 0;
+  padding: 0.35rem 0;
+}
+
+.project-topbar .card-actions .cancel-button {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: transparent;
+  color: #666;
+  border: 1px solid #ddd9d0;
+  border-radius: 0.35rem;
+}
+
+.project-topbar .card-actions .cancel-button:hover {
+  color: #333;
+  border-color: #bbb;
+  background: #fff;
 }
 
 .project-topbar .error {
   flex-basis: 100%;
   margin: 0;
+  padding: 0 0.5rem 0.4rem;
 }
+
+/* 2. Main & vision pane */
 
 .project-main {
   display: flex;
@@ -59,7 +123,34 @@
   min-width: 0;
 }
 
-/* 2. Scrollable canvas area */
+.project-vision-pane {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.5rem 1.5rem 3rem;
+  max-width: 32rem;
+}
+
+.project-vision-heading {
+  margin: 0 0 0.35rem;
+  font-size: 1.25rem;
+  font-weight: 650;
+  color: #1a1a1a;
+}
+
+.project-vision-blurb {
+  margin: 0 0 1.25rem;
+  color: #777;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.project-vision-pane .vision-link-form {
+  margin: 0;
+  max-width: 100%;
+}
+
+/* 3. Scrollable canvas area */
 
 .project-body {
   flex: 1 1 auto;
