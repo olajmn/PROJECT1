@@ -9,8 +9,6 @@
  *      - .create-project-form
  *      - .project-list / .project-list-item
  *      - .sidebar-more
- *  4. Other links
- *      - .sidebar-other
  */
 
 /* 1. Sidebar frame */
@@ -330,40 +328,6 @@ body.is-resizing-id-menu {
 }
 
 .sidebar-more a:hover {
-  color: #1a1a1a;
-}
-
-/* 4. Other links */
-
-.sidebar-other {
-  margin-top: 0.5rem;
-  font-size: 0.75rem;
-  color: #999;
-}
-
-.sidebar-other summary {
-  cursor: pointer;
-  padding: 0.2rem 0.35rem;
-  list-style: none;
-}
-
-.sidebar-other summary::-webkit-details-marker {
-  display: none;
-}
-
-.sidebar-other[open] summary {
-  color: #666;
-}
-
-.sidebar-other a {
-  display: block;
-  color: #999;
-  text-decoration: none;
-  padding: 0.15rem 0.35rem 0.15rem 0.7rem;
-  font-size: 0.72rem;
-}
-
-.sidebar-other a:hover {
   color: #1a1a1a;
 }
 

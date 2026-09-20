@@ -5,26 +5,14 @@
 // to, and nothing more. See that module's docstring for why.
 
 // Contents
-//  1. Plan tree
+//  1. Plan tree (Projects map nodes)
 //  2. Goals / Projects
 //  3. Simulated users
-//  4. Session log
-//  5. Outline import / Steps tree (see below)
+//  4. Outline import
+//  5. Model boundary (Settings → General)
+//  6. Sessions (Settings → Logs)
 
-// 1. Plan tree
-
-export interface StepNode {
-  id: string;
-  label: string;
-  status: "open" | "current" | "done";
-  zoomed: boolean;
-  children: StepNode[];
-}
-
-export interface TreeView {
-  duration: string;
-  root: StepNode | null;
-}
+// 1. Plan tree (Projects map nodes)
 
 export interface PlanningNode {
   id: string;
@@ -51,6 +39,8 @@ export interface GoalView {
   completed: boolean;
   cancelled: boolean;
   sim_user_id: number | null;
+  /** Latest history record timestamp for this project. */
+  created_at?: string | null;
   /** Open planner clarification, if any. */
   clarification?: string | null;
   surface: string | null;
@@ -69,19 +59,6 @@ export function projectIdOf(view: { project_id?: number | null }): number {
   return view.project_id;
 }
 
-export interface HistoryEntry {
-  id: number;
-  project_id: number;
-  goal: string;
-  duration: string | null;
-  completed: boolean;
-  cancelled: boolean;
-  feedback: string | null;
-  created_at: string;
-  plan: Record<string, string>;
-  step_count: number;
-}
-
 // 3. Simulated users
 
 export interface UserView {
@@ -91,30 +68,7 @@ export interface UserView {
   created_at: string;
 }
 
-// 4. Session log
-
-export interface SessionGoalEvent {
-  project_id: number;
-  goal: string;
-  feedback: string | null;
-  created_at: string;
-}
-
-export interface SessionUserEvent {
-  sim_user_id: number;
-  text: string;
-  created_at: string;
-}
-
-export interface SessionLogView {
-  id: number;
-  started_at: string;
-  ended_at: string | null;
-  goal_events: SessionGoalEvent[];
-  user_events: SessionUserEvent[];
-}
-
-// 5. Outline import
+// 4. Outline import
 
 export interface OutlineNode {
   label: string;
@@ -124,4 +78,23 @@ export interface OutlineNode {
 export interface OutlinePreview {
   stripped: OutlineNode[];
   kept: OutlineNode[];
+}
+
+// 5. Model boundary (Settings → General)
+
+/** Read-only peek at llm_client's dials (GET /api/model). */
+export interface ModelView {
+  provider: string;
+  model: string;
+  temperature: number;
+}
+
+// 6. Sessions (Settings → Logs)
+
+/** One HTTP process-run record from data/sessions.json. */
+export interface SessionView {
+  id: number;
+  user_id: number;
+  started_at: string;
+  ended_at: string | null;
 }

@@ -1,0 +1,14 @@
+---
+description: Prefer new files for new capabilities; don't force splits or dump into random modules
+alwaysApply: true
+---
+
+# New code placement
+
+**Prefer** (don’t force): a **new capability** with a real boundary goes in a **new file** or small folder; existing files get a thin import/call site.
+
+Do **not** dump hundreds of lines into an unrelated open module for convenience.
+
+Do **not** invent micro-files for ceremony. Same-concern bugfixes, renames, and small extensions stay in the file that already owns them.
+
+Authority: `CONVENTIONS.md` § New code placement; `COLLABORATION.md`.

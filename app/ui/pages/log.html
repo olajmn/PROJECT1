@@ -2,37 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="0; url=settings/logs.html">
 <title>Log</title>
-<link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main>
-  <h1>Log</h1>
-  <nav>
-    <a href="projects.html">Projects</a>
-    <a href="projects.html?tab=users" data-nav="users">Users</a>
-    <a href="log.html" aria-current="page">Log</a>
-  </nav>
-  <p class="log-lead">Look back — completed projects, raw history, and sessions.</p>
-  <div class="log-tabs" role="tablist" aria-label="Log sections">
-    <button type="button" role="tab" id="tab-completed" data-panel="completed" aria-selected="true">Completed</button>
-    <button type="button" role="tab" id="tab-history" data-panel="history" aria-selected="false">History</button>
-    <button type="button" role="tab" id="tab-sessions" data-panel="sessions" aria-selected="false">Sessions</button>
-  </div>
-  <section id="panel-completed" class="log-panel" role="tabpanel" aria-labelledby="tab-completed">
-    <div id="goal-list"></div>
-    <p id="empty-completed" class="empty-state" hidden>No completed projects yet.</p>
-  </section>
-  <section id="panel-history" class="log-panel" role="tabpanel" aria-labelledby="tab-history" hidden>
-    <div id="history-list"></div>
-    <p id="empty-history" class="empty-state" hidden>No history yet.</p>
-  </section>
-  <section id="panel-sessions" class="log-panel" role="tabpanel" aria-labelledby="tab-sessions" hidden>
-    <div id="session-list"></div>
-    <p id="empty-sessions" class="empty-state" hidden>No sessions yet.</p>
-  </section>
-</main>
-<script type="module" src="dist/pages/log.js"></script>
+<p><a href="settings/logs.html">Settings → Logs</a></p>
 </body>
 </html>

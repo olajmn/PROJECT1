@@ -2,10 +2,9 @@
 Session persistence — mint and list process-run records in
 data/sessions.json.
 
-Deliberately minimal: id, user_id, started_at, ended_at. What happened
-during a Session is derived at read time (server.py's
-_session_log_view()), not written here. See docs/04-current-state.md
-§ 8.
+Deliberately minimal: id, user_id, started_at, ended_at. Surfaced
+read-only on Settings → Logs via GET /api/sessions. See
+docs/04-current-state.md.
 """
 
 # Contents
@@ -74,21 +73,11 @@ def start_session() -> dict:
     HTTP process start (`backend.api.state` imports this module and
     calls start_session()), not once per request/turn.
 
-    A Session here is deliberately minimal: just an id and when it
-    started. It does not itself log what happened during it - that's
-    derived at read time (server.py's _session_log_view()) from
-    load_history()/load_users(), both already timestamped, by
-    filtering to whatever falls inside this Session's own
-    [started_at, ended_at or now) window. See docs/04-current-state.md
-    § 8 for why a session log is a read-time derivation, not a new
-    write-path threaded through every mutating function.
+    Deliberately minimal: id + started_at. Settings → Logs reads these
+    via GET /api/sessions.
 
     `ended_at` is always None here - nothing currently sets it (no
-    graceful-shutdown hook exists yet), so a Session that is no longer
-    actually running still shows as open indefinitely. A known,
-    documented limitation (docs/04-current-state.md § 5), not an
-    oversight - "closing" a session that was simply killed rather than
-    exited cleanly isn't something this function can detect on its own.
+    graceful-shutdown hook exists yet). See docs/04-current-state.md § 5.
 
     Returns the record that was saved.
     """

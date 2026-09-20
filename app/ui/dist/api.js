@@ -159,22 +159,7 @@ export async function removeProgressionStep(goalId, stepId) {
     }
     return (await res.json());
 }
-export async function fetchCompletedGoals() {
-    const res = await fetch("/api/projects/completed");
-    if (!res.ok) {
-        throw new Error(`request failed: ${res.status}`);
-    }
-    return (await res.json());
-}
-// 2. History
-export async function fetchHistory() {
-    const res = await fetch("/api/history");
-    if (!res.ok) {
-        throw new Error(`request failed: ${res.status}`);
-    }
-    return (await res.json());
-}
-// 3. Simulated users
+// 2. Simulated users
 export async function fetchUsers() {
     const res = await fetch("/api/users");
     if (!res.ok) {
@@ -200,43 +185,19 @@ export async function archiveUser(simUserId) {
     }
     return (await res.json());
 }
-// 4. Sessions
+// 4. Model boundary (Settings → General)
+export async function fetchModel() {
+    const res = await fetch("/api/model");
+    if (!res.ok) {
+        throw new Error(`request failed: ${res.status}`);
+    }
+    return (await res.json());
+}
+// 5. Sessions (Settings → Logs)
 export async function fetchSessions() {
     const res = await fetch("/api/sessions");
     if (!res.ok) {
         throw new Error(`request failed: ${res.status}`);
     }
     return (await res.json());
-}
-// 5. Steps (scratch tree)
-/** Whatever tree the server currently holds - `root` is null if none
- * has been built yet, or if the process restarted (it is in memory
- * only). */
-export async function fetchTree() {
-    const res = await fetch("/api/tree");
-    if (!res.ok) {
-        throw new Error(`request failed: ${res.status}`);
-    }
-    return (await res.json());
-}
-/** Unlike the wrappers above, these surface the server's own reason
- * phrase instead of just the status code - the Steps routes reject
- * text with no timeframe in it (422), and that reason is the whole
- * point of the rejection, not an internal detail. */
-async function postTree(path, body) {
-    const res = await fetch(path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: body === undefined ? undefined : JSON.stringify(body),
-    });
-    if (!res.ok) {
-        throw new Error(res.statusText || `request failed: ${res.status}`);
-    }
-    return (await res.json());
-}
-export function createTree(text) {
-    return postTree("/api/tree", { text });
-}
-export function zoomStep(stepId) {
-    return postTree(`/api/tree/${stepId}/zoom`);
 }

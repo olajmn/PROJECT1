@@ -1,4 +1,4 @@
-// Active simulated user (product display: id#N). Wire: sim_user_id.
+// Active simulated user (product display: "id"). Wire: sim_user_id.
 
 const STORAGE_KEY = "activeSimUserId";
 
@@ -17,7 +17,7 @@ export function setActiveUserId(id: number | null): void {
   localStorage.setItem(STORAGE_KEY, String(id));
 }
 
-/** Display form for a sim user id: id#N (distinct from project #N). */
-export function userLabel(id: number): string {
-  return `id#${id}`;
+/** Product label for the active sim user — always "id" (wire N is not shown). */
+export function userLabel(_id: number): string {
+  return "id";
 }

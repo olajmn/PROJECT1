@@ -9,21 +9,15 @@
 //      - sendGoalFeedback()
 //      - cancelGoal()
 //      - setProjectUser()
-//      - fetchCompletedGoals()
-//  2. History
-//      - fetchHistory()
-//  3. Simulated users
+//  2. Simulated users
 //      - fetchUsers()
 //      - createUser()
 //      - archiveUser()
-//  4. Sessions
-//      - fetchSessions()
-//  5. Steps (scratch tree)
-//      - fetchTree()
-//      - createTree()
-//      - zoomStep()
+//  3. Outline import helpers (used by Projects)
+//  4. Model boundary (Settings → General)
+//  5. Sessions (Settings → Logs)
 
-import type { GoalView, HistoryEntry, OutlineNode, OutlinePreview, SessionLogView, TreeView, UserView } from "./types.js";
+import type { GoalView, ModelView, OutlineNode, OutlinePreview, SessionView, UserView } from "./types.js";
 
 async function httpErrorMessage(res: Response): Promise<string> {
   const detail = (await res.text()).trim();
@@ -222,25 +216,7 @@ export async function removeProgressionStep(goalId: number, stepId: string): Pro
   return (await res.json()) as GoalView;
 }
 
-export async function fetchCompletedGoals(): Promise<GoalView[]> {
-  const res = await fetch("/api/projects/completed");
-  if (!res.ok) {
-    throw new Error(`request failed: ${res.status}`);
-  }
-  return (await res.json()) as GoalView[];
-}
-
-// 2. History
-
-export async function fetchHistory(): Promise<HistoryEntry[]> {
-  const res = await fetch("/api/history");
-  if (!res.ok) {
-    throw new Error(`request failed: ${res.status}`);
-  }
-  return (await res.json()) as HistoryEntry[];
-}
-
-// 3. Simulated users
+// 2. Simulated users
 
 export async function fetchUsers(): Promise<UserView[]> {
   const res = await fetch("/api/users");
@@ -270,49 +246,22 @@ export async function archiveUser(simUserId: number): Promise<UserView> {
   return (await res.json()) as UserView;
 }
 
-// 4. Sessions
+// 4. Model boundary (Settings → General)
 
-export async function fetchSessions(): Promise<SessionLogView[]> {
+export async function fetchModel(): Promise<ModelView> {
+  const res = await fetch("/api/model");
+  if (!res.ok) {
+    throw new Error(`request failed: ${res.status}`);
+  }
+  return (await res.json()) as ModelView;
+}
+
+// 5. Sessions (Settings → Logs)
+
+export async function fetchSessions(): Promise<SessionView[]> {
   const res = await fetch("/api/sessions");
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
-  return (await res.json()) as SessionLogView[];
-}
-
-// 5. Steps (scratch tree)
-
-/** Whatever tree the server currently holds - `root` is null if none
- * has been built yet, or if the process restarted (it is in memory
- * only). */
-export async function fetchTree(): Promise<TreeView> {
-  const res = await fetch("/api/tree");
-  if (!res.ok) {
-    throw new Error(`request failed: ${res.status}`);
-  }
-  return (await res.json()) as TreeView;
-}
-
-/** Unlike the wrappers above, these surface the server's own reason
- * phrase instead of just the status code - the Steps routes reject
- * text with no timeframe in it (422), and that reason is the whole
- * point of the rejection, not an internal detail. */
-async function postTree(path: string, body?: unknown): Promise<TreeView> {
-  const res = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  if (!res.ok) {
-    throw new Error(res.statusText || `request failed: ${res.status}`);
-  }
-  return (await res.json()) as TreeView;
-}
-
-export function createTree(text: string): Promise<TreeView> {
-  return postTree("/api/tree", { text });
-}
-
-export function zoomStep(stepId: string): Promise<TreeView> {
-  return postTree(`/api/tree/${stepId}/zoom`);
+  return (await res.json()) as SessionView[];
 }

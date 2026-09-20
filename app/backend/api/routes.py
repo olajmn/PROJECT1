@@ -18,8 +18,7 @@ import re
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
-from backend.foundation.time import extract_duration_phrase
-from backend.store.data_persistence import load_history, load_users, save_user
+from backend.store.data_persistence import load_users, save_user
 from backend.store.session import load_sessions
 from backend.project.panes.chat.turn import take_turn
 from backend.project.panes.create.lifecycle import cancel_goal, create_goal
@@ -32,17 +31,10 @@ from backend.project.panes.canvas.edit_map import (
     remove_progression_bead,
     zoom_progression_step,
 )
-from backend.project.panes.canvas.bead import Step
-from backend.project.panes.canvas.call_suggest import zoom_into
-from backend.api import state
+from backend.llm_client import MODEL, TEMPERATURE
 from backend.api.views import (
     active_goals,
-    ancestor_labels,
-    completed_goals,
     goal_view,
-    history_view,
-    session_log_view,
-    tree_view,
     user_view,
 )
 
@@ -73,19 +65,18 @@ _GOAL_PROGRESSION_REMOVE_RE = re.compile(
     r"^/api/projects/(\d+)/progression/(p\d+)/remove$",
 )
 _USER_ARCHIVE_PATH_RE = re.compile(r"^/api/users/(\d+)/archive$")
-_ZOOM_PATH_RE = re.compile(r"^/api/tree/(s\d+)/zoom$")
 
 
 def _resolve_ui_file(requested: str) -> Path | None:
     """Map a URL path under ui/ to a real file.
 
-    Looks in order: ui/ root (style.css, dist/…), ui/pages/, ui/redirects/.
+    Looks in order: ui/ root (style.css, dist/…), then ui/pages/.
     Rejects paths that escape UI_DIR.
     """
     name = requested.lstrip("/")
     if not name or ".." in name.split("/"):
         return None
-    for base in (UI_DIR, UI_DIR / "pages", UI_DIR / "redirects"):
+    for base in (UI_DIR, UI_DIR / "pages"):
         candidate = (base / name).resolve()
         try:
             candidate.relative_to(UI_DIR.resolve())
@@ -114,41 +105,23 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/projects":
             self._send_json([goal_view(r) for r in active_goals()])
             return
-        if self.path == "/api/projects/completed":
-            self._send_json([goal_view(r) for r in completed_goals()])
-            return
-        if self.path == "/api/history":
-            self._send_json([history_view(r) for r in reversed(load_history())])
-            return
         if self.path == "/api/users":
             self._send_json([user_view(u) for u in load_users()])
             return
-        if self.path == "/api/tree":
-            # So a reload (or coming back from another page) shows the
-            # tree that's already there instead of a blank form -
-            # every zoom costs two model calls, which is far too
-            # expensive to redo just because the page was left.
-            self._send_json(tree_view())
+        if self.path == "/api/model":
+            # Same dials llm_client uses for every call — read-only inspect.
+            self._send_json({
+                "provider": "ollama",
+                "model": MODEL,
+                "temperature": TEMPERATURE,
+            })
             return
         if self.path == "/api/sessions":
-            # Oldest-first while computing each one's window_end (the
-            # next Session's started_at, see session_log_view()'s own
-            # docstring for why), reversed only for the final response
-            # so the page itself still reads newest-first, same
-            # convention as /api/history.
-            by_start = sorted(load_sessions(), key=lambda s: s["started_at"])
-            views = [
-                session_log_view(
-                    record,
-                    record.get("ended_at") or (by_start[i + 1]["started_at"] if i + 1 < len(by_start) else None),
-                )
-                for i, record in enumerate(by_start)
-            ]
-            self._send_json(list(reversed(views)))
+            # Process-run bookkeeping (data/sessions.json), newest first.
+            self._send_json(list(reversed(load_sessions())))
             return
         # Project workspace is the product home; HTML lives under
-        # ui/pages/ (and ui/redirects/ for old Log URLs); URLs stay
-        # /projects.html etc.
+        # ui/pages/. URLs stay /projects.html etc.
         requested = "projects.html" if self.path == "/" else self.path.lstrip("/")
         file_path = _resolve_ui_file(requested)
         if file_path is None:
@@ -168,15 +141,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/users":
             self._handle_create_user()
             return
-        if self.path == "/api/tree":
-            self._handle_create_tree()
-            return
         if self.path == "/api/parse-outline-preview":
             self._handle_parse_outline_preview()
-            return
-        zoom_match = _ZOOM_PATH_RE.match(self.path)
-        if zoom_match:
-            self._handle_zoom_step(zoom_match.group(1))
             return
         goal_zoom_match = _GOAL_ZOOM_PATH_RE.match(self.path)
         if goal_zoom_match:
@@ -236,58 +202,6 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return text
 
-    def _handle_create_tree(self) -> None:
-        """Start a fresh scratch tree from typed text: the text
-        becomes the root step, and the tree starts unexpanded - even
-        the root's first level is a zoom the user asks for, so the
-        page shows on-demand depth from the very first click rather
-        than pre-expanding one level for free.
-
-        Rejects text with no recognizable time phrase in it, before
-        any model call, exactly as create_goal() does - a goal
-        is not plannable from its wording alone here (see zoom.py).
-        The 422 says which half is missing; the real Set Goal flow
-        asks a clarification question instead, which this workbench
-        deliberately doesn't reimplement."""
-        text = self._read_text_body()
-        if text is None:
-            return
-        duration = extract_duration_phrase(text)
-        if duration is None:
-            self.send_error(422, "no timeframe recognized - say when, e.g. 'in 18 months'")
-            return
-        state.tree = Step(id=state.mint_step_id(), label=text)
-        state.tree_duration = duration
-        state.tree_zoomed = set()
-        self._send_json(tree_view())
-
-    def _handle_zoom_step(self, step_id: str) -> None:
-        """Raise the resolution of one step, in place, and return the
-        WHOLE tree rather than just the new children - the tree is
-        small, and one shape for every response keeps the page from
-        having to splice a subtree into what it already has.
-
-        Re-zooming a step that already has children replaces them:
-        the step keeps its identity while the understanding underneath
-        it changes, which is the point of § Decomposition / zoom."""
-        if state.tree is None:
-            self.send_error(409, "no tree yet")
-            return
-        step = state.tree.find(step_id)
-        ancestors = ancestor_labels(state.tree, step_id)
-        if step is None or ancestors is None:
-            self.send_error(404, "no such step")
-            return
-        try:
-            labels = zoom_into(step.label, ancestors, state.tree_duration)
-        except Exception as e:  # transport must not crash on one bad turn
-            print(f"(debug: {e})")
-            self.send_error(503, "that took longer than expected - try again in a moment")
-            return
-        step.children = [Step(id=state.mint_step_id(), label=label) for label in labels]
-        state.tree_zoomed.add(step_id)
-        self._send_json(tree_view())
-
     def _handle_create_goal(self) -> None:
         length = int(self.headers.get("Content-Length", 0))
         try:
@@ -313,8 +227,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _handle_goal_zoom(self, goal_id: int, step_id: str) -> None:
         """One level deeper under a Step in plan.progression — persists
-        on the Goal so Active's plan box grows. Steps workbench
-        (/api/tree) is unchanged."""
+        on the Goal so the Projects map grows."""
         latest = get_latest_for_goal(goal_id)
         if latest is None:
             self.send_error(404, "no such goal")

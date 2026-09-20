@@ -1,5 +1,5 @@
 // One chat message row: "You" / "Agent" label + text.
-// Shared by Projects (via isolateChat) and Log / other surfaces.
+// Shared by Projects (via isolateChat) and other chat surfaces.
 
 import type { ChatMessage } from "../types.js";
 

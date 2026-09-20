@@ -542,14 +542,14 @@ function renderWorkspace(): void {
 
 function renderSidebarBrand(): void {
   const active = getActiveUserId();
-  sidebarBrand.textContent = active !== null ? userLabel(active) : "ID";
+  sidebarBrand.textContent = active !== null ? userLabel(active) : "id";
   if (!idMenu.isOpen()) {
     sidebarBrand.classList.remove("is-active");
   }
   sidebarBrand.setAttribute(
     "aria-label",
     active !== null
-      ? `Active ${userLabel(active)}. Click to switch or create ids.`
+      ? "Active id. Click to switch or create ids."
       : "No active id. Click to create or pick one.",
   );
 }

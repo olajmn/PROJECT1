@@ -1,0 +1,23 @@
+/* Settings chrome shared by every Settings tab.
+ *
+ * Contents
+ *  1. Page shell
+ *  2. Content stack
+ */
+
+/* 1. Page shell */
+
+body.settings-body main {
+  /* Wide enough for Directory; General facts stay narrower inside. */
+  max-width: 72rem;
+  width: 100%;
+}
+
+/* 2. Content stack */
+
+.settings-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+}

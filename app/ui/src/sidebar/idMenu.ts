@@ -296,7 +296,7 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
 
   function renderBrandOnly(): void {
     const active = getActiveUserId();
-    opts.anchor.textContent = active !== null ? userLabel(active) : "ID";
+    opts.anchor.textContent = active !== null ? userLabel(active) : "id";
   }
 
   /** Optional cap only — default is natural height (shows everything). */
