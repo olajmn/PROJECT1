@@ -16,7 +16,8 @@ import {
   setGoalVision,
   zoomGoalStep,
 } from "../api.js";
-import { installChatResize, installSidebarResize } from "../shell/columnResize.js";
+import { installCollapseRail } from "../shell/columnRail/collapseRail.js";
+import { installSidebarResize } from "../shell/columnResize.js";
 import { createIsolateChat } from "../chat/isolateChat.js";
 import { treeWordsElement } from "../map/treeWords.js";
 import type { NodeMenuActionId } from "../map/treeWords.js";
@@ -42,8 +43,34 @@ const workspace = document.querySelector(".workspace") as HTMLElement;
 const sidebarResize = document.getElementById("sidebar-resize") as HTMLElement;
 const chatResize = document.getElementById("chat-resize") as HTMLElement;
 
+// Shell column resize + chat column rail
 installSidebarResize(appShell, sidebarResize);
-installChatResize(workspace, chatResize);
+const chatRailApi = installCollapseRail({
+  container: workspace,
+  handle: chatResize,
+  panel: projectChat,
+  cssVar: "--chat-width",
+  widthStorageKey: "projects.chatWidthPx",
+  collapsedStorageKey: "projects.chatCollapsed",
+  defaultWidth: 360,
+  minWidth: 240,
+  maxWidthCap: 720,
+  minOther: 280,
+  railWidth: 64,
+  snapThreshold: 200,
+  warnStart: 280,
+  pendingClass: "is-collapse-pending",
+  containerCollapsedClass: "is-chat-collapsed",
+  panelCollapsedClass: "is-collapsed",
+  bodyClass: "is-resizing-chat",
+  widthFromPointer: (clientX, rect) => rect.right - clientX,
+});
+const chatRailToggle = document.getElementById(
+  "chat-rail-toggle",
+) as HTMLButtonElement;
+chatRailToggle.addEventListener("click", () => {
+  chatRailApi.expand();
+});
 
 const PROGRESSION_STEP_ID = /^p\d+$/;
 const DEFAULT_CHAT_PLACEHOLDER = "Talk about this project…";

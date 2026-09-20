@@ -1,0 +1,107 @@
+/* Column rail: collapse to icon strip (chat now; sidebar later).
+ *
+ * Contents
+ *  1. Workspace rail width
+ *      - .is-chat-collapsed
+ *  2. Collapsed icon rail
+ *      - .chat-rail-toggle / .is-collapsed
+ *  3. Collapse preview (while dragging toward rail)
+ *      - .is-collapse-pending / --column-rail-progress
+ */
+
+/* 1. Workspace rail width */
+
+.workspace.is-chat-collapsed {
+  --chat-width: 64px;
+}
+
+/* 2. Collapsed icon rail */
+
+.project-chat .chat-rail-toggle {
+  display: none;
+}
+
+.project-chat.is-collapsed {
+  padding: 0;
+  border-left: 1px solid #e8e6e1;
+  background: #fafaf8;
+}
+
+.project-chat.is-collapsed .goal-thread,
+.project-chat.is-collapsed .error {
+  display: none;
+}
+
+.project-chat.is-collapsed .feedback-form {
+  margin-top: auto;
+  justify-content: center;
+  padding: 0.75rem 0.4rem 1rem;
+  border-top: none;
+  background: transparent;
+  gap: 0;
+}
+
+.project-chat.is-collapsed .feedback-form textarea,
+.project-chat.is-collapsed .feedback-form > button[type="submit"] {
+  display: none;
+}
+
+.project-chat.is-collapsed .chat-rail-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.project-chat.is-collapsed .chat-rail-toggle:focus-visible {
+  outline: 2px solid #888;
+  outline-offset: 2px;
+}
+
+/* 3. Collapse preview (while dragging toward rail) */
+
+.project-chat.is-collapse-pending {
+  --column-rail-progress: 0;
+}
+
+.project-chat.is-collapse-pending .goal-thread {
+  opacity: calc(1 - var(--column-rail-progress) * 0.92);
+  filter: saturate(calc(1 - var(--column-rail-progress) * 0.55));
+  pointer-events: none;
+}
+
+.project-chat.is-collapse-pending .feedback-form textarea,
+.project-chat.is-collapse-pending .feedback-form > button[type="submit"] {
+  opacity: calc(1 - var(--column-rail-progress) * 0.95);
+  pointer-events: none;
+}
+
+.project-chat.is-collapse-pending .chat-rail-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 0;
+  padding: 0;
+  flex: 0 0 auto;
+  opacity: var(--column-rail-progress);
+  pointer-events: none;
+}
+
+.project-chat.is-collapse-pending .error {
+  opacity: calc(1 - var(--column-rail-progress));
+}
+
+@media (max-width: 800px) {
+  .project-chat.is-collapsed {
+    height: auto;
+    min-height: 3.5rem;
+  }
+}

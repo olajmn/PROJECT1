@@ -1,5 +1,12 @@
-// Projects shell column resize (sidebar list + chat).
-// Cursor/Notion-style: never collapse to zero; widths in localStorage.
+// Projects shell column resize for the sidebar list.
+
+// Contents
+//  1. Shared column resize
+//      - installColumnResize()
+//  2. Sidebar column
+//      - installSidebarResize()
+
+// 1. Shared column resize
 
 type ColumnResizeOpts = {
   container: HTMLElement;
@@ -66,29 +73,7 @@ function installColumnResize(opts: ColumnResizeOpts): void {
   });
 }
 
-const CHAT_STORAGE_KEY = "projects.chatWidthPx";
-const CHAT_DEFAULT = 360;
-const CHAT_MIN = 240;
-const CHAT_MAX_CAP = 720;
-const CHAT_MIN_MAIN = 280;
-
-export function installChatResize(
-  workspace: HTMLElement,
-  handle: HTMLElement,
-): void {
-  installColumnResize({
-    container: workspace,
-    handle,
-    cssVar: "--chat-width",
-    storageKey: CHAT_STORAGE_KEY,
-    defaultWidth: CHAT_DEFAULT,
-    minWidth: CHAT_MIN,
-    maxWidthCap: CHAT_MAX_CAP,
-    minOther: CHAT_MIN_MAIN,
-    widthFromPointer: (clientX, rect) => rect.right - clientX,
-    bodyClass: "is-resizing-chat",
-  });
-}
+// 2. Sidebar column
 
 const SIDEBAR_STORAGE_KEY = "projects.sidebarWidthPx";
 const SIDEBAR_DEFAULT = 240;
