@@ -71,14 +71,13 @@ def _next_session_id(sessions: list[dict]) -> int:
 def start_session() -> dict:
     """
     Create a new Session record and persist it - called once per
-    process (Session.__init__ in agent/process_turn.py, constructed
-    once by cli.py's main() and once by server.py's module-level
-    `session`), not once per request/turn.
+    HTTP process start (`backend.api.state` imports this module and
+    calls start_session()), not once per request/turn.
 
     A Session here is deliberately minimal: just an id and when it
     started. It does not itself log what happened during it - that's
     derived at read time (server.py's _session_log_view()) from
-    load_history()/load_visions(), both already timestamped, by
+    load_history()/load_users(), both already timestamped, by
     filtering to whatever falls inside this Session's own
     [started_at, ended_at or now) window. See docs/04-current-state.md
     § 8 for why a session log is a read-time derivation, not a new

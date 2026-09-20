@@ -151,7 +151,7 @@ def route_note(latest: dict, note: str) -> dict:
         # different question, not a timeframe to (mis)parse.
         if duration is None:
             duration = extract_duration_phrase(note)
-        plan = planner.generate_plan(combined_goal, duration, vision_id=latest.get("vision_id"))
+        plan = planner.generate_plan(combined_goal, duration, sim_user_id=latest.get("sim_user_id"))
         # Same data-loss fix as the replan() branch below: a clarification
         # round that lands on ASK/SUGGEST again leaves generate_plan()'s
         # own steps/progression at their fresh-mint None, which would
@@ -169,7 +169,7 @@ def route_note(latest: dict, note: str) -> dict:
             latest["goal"], plan, feedback=note, duration=duration,
             goal_id=latest["project_id"],
             frozen_duration=planner.frozen_duration_for(plan, duration),
-            vision_id=latest.get("vision_id"),
+            sim_user_id=latest.get("sim_user_id"),
         )
 
     if latest["plan"].get("suggested_action"):
@@ -195,7 +195,7 @@ def route_note(latest: dict, note: str) -> dict:
             return save_plan(
                 latest["goal"], new_plan, feedback=feedback_text, duration=duration,
                 goal_id=latest["project_id"], frozen_duration=latest.get("frozen_duration"),
-                current_step=latest.get("current_step", 0), vision_id=latest.get("vision_id"),
+                current_step=latest.get("current_step", 0), sim_user_id=latest.get("sim_user_id"),
                 step_status=latest.get("step_status"),
             )
 
@@ -223,7 +223,7 @@ def route_note(latest: dict, note: str) -> dict:
         if duration is None:
             duration = extract_duration_phrase(note)
         plan = planner.generate_plan(
-            combined_goal, duration, vision_id=latest.get("vision_id"),
+            combined_goal, duration, sim_user_id=latest.get("sim_user_id"),
             prior_suggestion=suggested_action, reply=note,
         )
         # Same data-loss fix as the clarification branch above and the
@@ -236,7 +236,7 @@ def route_note(latest: dict, note: str) -> dict:
             latest["goal"], plan, feedback=note, duration=duration,
             goal_id=latest["project_id"],
             frozen_duration=planner.frozen_duration_for(plan, duration),
-            vision_id=latest.get("vision_id"),
+            sim_user_id=latest.get("sim_user_id"),
         )
 
     if latest["plan"].get("pending_duration_question"):
@@ -280,7 +280,7 @@ def route_note(latest: dict, note: str) -> dict:
             {**latest["plan"], "pending_duration_question": "How long do you want this to run now?"},
             feedback=note, duration=duration, goal_id=latest["project_id"],
             frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
-            vision_id=latest.get("vision_id"), step_status=latest.get("step_status"),
+            sim_user_id=latest.get("sim_user_id"), step_status=latest.get("step_status"),
         )
 
     # Inherited unchanged, never recomputed - a check-in isn't a new
@@ -305,7 +305,7 @@ def route_note(latest: dict, note: str) -> dict:
         return save_plan(
             latest["goal"], latest["plan"], feedback=feedback_text,
             duration=duration, completed=True, goal_id=latest["project_id"],
-            frozen_duration=frozen, vision_id=latest.get("vision_id"),
+            frozen_duration=frozen, sim_user_id=latest.get("sim_user_id"),
             current_step=latest.get("current_step", 0), step_status=latest.get("step_status"),
         )
 
@@ -324,7 +324,7 @@ def route_note(latest: dict, note: str) -> dict:
         return save_plan(
             latest["goal"], latest["plan"], feedback=feedback_text,
             duration=duration, goal_id=latest["project_id"], frozen_duration=frozen,
-            vision_id=latest.get("vision_id"),
+            sim_user_id=latest.get("sim_user_id"),
             current_step=latest.get("current_step", 0), step_status=latest.get("step_status"),
         )
 
@@ -336,7 +336,7 @@ def route_note(latest: dict, note: str) -> dict:
     # notice it has already shrunk `now` several times in a row.
     new_plan = planner.replan(
         latest["goal"], get_history_for_goal(latest["project_id"]), feedback_text,
-        duration=duration, vision_id=latest.get("vision_id"),
+        duration=duration, sim_user_id=latest.get("sim_user_id"),
     )
     # replan() only ever returns PLAN_KEYS - REPLAN_SYSTEM_PROMPT never
     # mentions steps, so `new_plan` has no "steps" key at all. Carry the
@@ -353,5 +353,5 @@ def route_note(latest: dict, note: str) -> dict:
     return save_plan(
         latest["goal"], new_plan, feedback=feedback_text, duration=duration,
         goal_id=latest["project_id"], frozen_duration=frozen, current_step=latest.get("current_step", 0),
-        vision_id=latest.get("vision_id"), step_status=latest.get("step_status"),
+        sim_user_id=latest.get("sim_user_id"), step_status=latest.get("step_status"),
     )

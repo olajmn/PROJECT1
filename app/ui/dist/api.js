@@ -1,19 +1,14 @@
 // Thin fetch wrappers around the endpoints server.py exposes. Nothing
 // here decides anything - it sends text, returns whatever the server
 // already decided.
-// 1. Free conversation
-export async function sendMessage(text) {
-    const res = await fetch("/api/message", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-    });
-    if (!res.ok) {
-        throw new Error(`request failed: ${res.status}`);
-    }
-    return (await res.json());
+async function httpErrorMessage(res) {
+    const detail = (await res.text()).trim();
+    const fromHtml = detail.match(/Error code: \d+[\s\S]*?<p>([^<]+)/i)?.[1]?.trim() ??
+        detail.match(/<p>([^<]+)<\/p>/i)?.[1]?.trim();
+    const plain = (fromHtml || detail || `request failed: ${res.status}`).replace(/\s+/g, " ");
+    return plain.slice(0, 240);
 }
-// 2. Goals
+// 1. Goals / Projects
 export async function fetchActiveGoals() {
     const res = await fetch("/api/projects");
     if (!res.ok) {
@@ -21,11 +16,15 @@ export async function fetchActiveGoals() {
     }
     return (await res.json());
 }
-export async function createGoal(text) {
+export async function createGoal(text, simUserId) {
+    const body = { text };
+    if (simUserId != null) {
+        body.sim_user_id = simUserId;
+    }
     const res = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify(body),
     });
     if (!res.ok) {
         throw new Error(`request failed: ${res.status}`);
@@ -57,14 +56,14 @@ export async function cancelGoal(goalId) {
     }
     return (await res.json());
 }
-export async function setGoalVision(goalId, visionId) {
-    const res = await fetch(`/api/projects/${goalId}/vision`, {
+export async function setProjectUser(goalId, simUserId) {
+    const res = await fetch(`/api/projects/${goalId}/user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vision_id: visionId }),
+        body: JSON.stringify({ sim_user_id: simUserId }),
     });
     if (!res.ok) {
-        throw new Error(`request failed: ${res.status}`);
+        throw new Error(await httpErrorMessage(res));
     }
     return (await res.json());
 }
@@ -167,7 +166,7 @@ export async function fetchCompletedGoals() {
     }
     return (await res.json());
 }
-// 3. History
+// 2. History
 export async function fetchHistory() {
     const res = await fetch("/api/history");
     if (!res.ok) {
@@ -175,52 +174,33 @@ export async function fetchHistory() {
     }
     return (await res.json());
 }
-// 4. Vision
-export async function fetchVisions() {
-    const res = await fetch("/api/visions");
+// 3. Simulated users
+export async function fetchUsers() {
+    const res = await fetch("/api/users");
     if (!res.ok) {
         throw new Error(`request failed: ${res.status}`);
     }
     return (await res.json());
 }
-export async function createVision(text) {
-    const res = await fetch("/api/visions", {
+export async function createUser(text) {
+    const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
     });
     if (!res.ok) {
-        throw new Error(`request failed: ${res.status}`);
+        throw new Error(await httpErrorMessage(res));
     }
     return (await res.json());
 }
-export async function archiveVision(visionId) {
-    const res = await fetch(`/api/visions/${visionId}/archive`, { method: "POST" });
+export async function archiveUser(simUserId) {
+    const res = await fetch(`/api/users/${simUserId}/archive`, { method: "POST" });
     if (!res.ok) {
         throw new Error(`request failed: ${res.status}`);
     }
     return (await res.json());
 }
-// 5. Chat focus
-export async function fetchChatFocus() {
-    const res = await fetch("/api/chat-focus");
-    if (!res.ok) {
-        throw new Error(`request failed: ${res.status}`);
-    }
-    return (await res.json());
-}
-export async function setChatFocus(goalId) {
-    const res = await fetch("/api/chat-focus", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: goalId }),
-    });
-    if (!res.ok) {
-        throw new Error(`request failed: ${res.status}`);
-    }
-    return (await res.json());
-}
-// 6. Sessions
+// 4. Sessions
 export async function fetchSessions() {
     const res = await fetch("/api/sessions");
     if (!res.ok) {
@@ -228,7 +208,7 @@ export async function fetchSessions() {
     }
     return (await res.json());
 }
-// 7. Steps (scratch tree)
+// 5. Steps (scratch tree)
 /** Whatever tree the server currently holds - `root` is null if none
  * has been built yet, or if the process restarted (it is in memory
  * only). */

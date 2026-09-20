@@ -79,7 +79,7 @@ def add_progression_bead(
         goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
-        vision_id=latest.get("vision_id"),
+        sim_user_id=latest.get("sim_user_id"),
         step_status=latest.get("step_status"),
     )
 
@@ -169,7 +169,7 @@ def import_progression_outline(
         goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
-        vision_id=latest.get("vision_id"),
+        sim_user_id=latest.get("sim_user_id"),
         step_status=latest.get("step_status"),
     )
 
@@ -202,7 +202,7 @@ def remove_progression_bead(latest: dict, step_id: str) -> dict:
         goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
-        vision_id=latest.get("vision_id"),
+        sim_user_id=latest.get("sim_user_id"),
         step_status=latest.get("step_status"),
     )
 
@@ -283,7 +283,7 @@ def zoom_progression_step(latest: dict, step_id: str) -> dict:
         goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
-        vision_id=latest.get("vision_id"),
+        sim_user_id=latest.get("sim_user_id"),
         step_status=latest.get("step_status"),
     )
 
@@ -351,7 +351,7 @@ def suggest_progression_from_chat(
         goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
-        vision_id=latest.get("vision_id"),
+        sim_user_id=latest.get("sim_user_id"),
         step_status=latest.get("step_status"),
     )
     return record, labels

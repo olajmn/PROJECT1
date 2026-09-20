@@ -19,6 +19,5 @@ flowchart LR
 | 3 Decide | Enough to plan? ASK / SUGGEST / PLAN | `engine/judgment/decide.py` |
 | 3 Fill | Horizons; optional WHEN calendar steps | `judgment/run_stage3.py` (+ `when/calendar.py`) |
 
-Active chat: Stages 1–2 in `planning/chat/turn.py`, then Planning
+Active chat: Stages 1–2 in `project/panes/chat/turn.py`, then Planning
 (`route_note` → `generate_plan` → Decide, then Fill if planable).
-Global small-talk gate (`llm3/select.py`) is **not** Stage 3.

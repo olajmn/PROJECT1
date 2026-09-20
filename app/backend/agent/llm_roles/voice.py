@@ -8,7 +8,7 @@ internal field names or data shape (see docs/v4-migration-decision.md,
 "LLM1 must not need to know... PLAN_KEYS, step_status,
 suggested_action, current_step"). Producing that plain-text string from
 a capability's raw result is the calling harness's job, not Voice's or
-the capability's - see cli.py / manifestation.surface_text().
+the capability's - see manifestation.surface_text().
 """
 
 from backend.llm_client import send_message

@@ -1,9 +1,9 @@
 // Renders a PlanningNode tree as nested <ul><li> elements, numbered
 // with the same 1. -> i. -> a. convention as
 // global-standards/_CONTENT_HIERARCHY.md, applied to the plan tree
-// instead of a document's headings. Shared by pages/main.ts (free
-// conversation) and pages/log.ts (Completed tab). Projects live map
-// uses treeWords.ts in this same folder instead.
+// instead of a document's headings. Used by pages/log.ts (Completed
+// tab). Projects live map uses treeWords.ts in this same folder
+// instead.
 
 import type { PlanningNode } from "../types.js";
 
@@ -28,7 +28,7 @@ export type PlanClickHandler = (stepId: string) => void;
 // `depth` is -1 for the root Goal node (no number - it's a title, not
 // a list item); its children (steps) start at depth 0. Optional
 // `onStepClick` makes non-root nodes buttons (Active zoom into
-// plan.progression); omit it for read-only trees (Conversation).
+// plan.progression); omit it for read-only trees (Log Completed).
 export function renderNode(
   node: PlanningNode,
   depth: number,

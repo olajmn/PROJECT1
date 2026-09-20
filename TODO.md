@@ -16,15 +16,14 @@ for that same principle applied to documentation, not just this file).
 
 ## Active
 
-**23. Goal → Project migration** (~~Phase A + B compat done~~ 2026-09-20)
+**23. Goal → Project migration** (~~Phase A + B + alias drop done~~ 2026-09-20)
 
 Product [[05-decisions]] #25; wire [[05-decisions]] #29 /
-[[goal-to-project-migration]]. Primary: `project_id`, `/api/projects`,
-llm3 `"project"`. Engine: `judgment/` + `when/` (plan folder gone).
-Still present for one release: `/api/goals` alias, response `goal_id`
-mirror; `planner.generate_plan` → `run_stage3`. Follow-ups (not Active):
-drop aliases; rename display field `goal`; mass-rename Python symbols
-(`create_goal`, …); optionally split `planner.py` facade.
+[[goal-to-project-migration]]. Primary only: `project_id`, `/api/projects`,
+llm3 `"project"`. Engine: `judgment/` + `when/`. Still open (not Active):
+rename display field `goal`; mass-rename Python symbols (`create_goal`,
+`ChatFocus.goal_id`, …); optionally split `planner.py` facade;
+`generate_plan` → `run_stage3` alias.
 
 Facts: `docs/04-current-state.md` § Vocabulary / § 1; Parallel P3 / P9.
 
@@ -50,15 +49,15 @@ stable identity (for referring back to it), not its rank.
 
 1. ~~**`clarification`+`now` leak**~~ (fixed 2026-09-16) - Stage 3 Decide/Fill split: ASK never fills horizons. § 5.
 2. **Accepting a `suggested_action` never produces a step tree** (Bug) - the acceptance branch sets `now` directly, never calls `generate_structure()`. § 5.
-3. **Topic continuity / multi-goal free conversation** (Bug) - `cli.py`'s `ChatFocus` holds one goal only, and nothing detects a mid-conversation topic switch. Largest of the Tier 1 items - discussed as roughly comparable in size to a full session's own work, not a quick fix. § 5, § 9, § 10.
+3. ~~**Topic continuity / multi-goal free conversation**~~ (removed 2026-09-20) — free conversation / `ChatFocus` / CLI / Node 3 deleted (#31). Projects chat is keyed by URL id. § 5.
 20. ~~**Opening gate is a duration proxy**~~ (narrowed 2026-09-17) - opening still refuses `suggested_action`; missing timeframe no longer blocks planable mint or progression click-zoom (soft grounding). Residual: planability_slots still unread; Steps scratch zoom still needs a span. § 5.
 21. **Week/day calendar baseline (was: session tree painted across a longer span)** (Step residual) — **Baseline established 2026-09-16:** `week_windows()` + consecutive `day_windows()`; live-verified (#26: four real weeks). Unread `plan_skeleton` recipe removed 2026-09-20 (rules live in Time + `when/calendar.py`). Still open: year face if needed; later **ambient timeline** on the visual/do edge. Session path unchanged for short spans. § 5. Related to 17.
 
 ### Tier 2
 
-4. **Vision choice at goal-creation time** (Step) - Set Goal and free conversation always create a goal unlinked; linking only happens afterward via Active. § 5, § 10.
+4. **Sim-user choice at project-creation time** (Step) - Set Goal always creates a project unlinked; linking only happens afterward via Projects sidebar id menu. § 5, § 10.
 5. **Structured step-completion signal** (Step) - `advance_step()` exists in `planner.py` but has no route or UI control. § 5, § 9, § 10.
-6. **Vision-archive timing in the Session log** (Step) - `archive_vision()` doesn't stamp when archiving happened, only creation. § 5, § 10.
+6. **User-archive timing in the Session log** (Step) - `archive_user()` doesn't stamp when archiving happened, only creation. § 5, § 10.
 7. **Session end detection** (Step) - no graceful-shutdown hook sets a Session's real `ended_at`. Lower actual impact than the others in this tier - the read-side window-bounding fix already makes the derived log accurate without it. § 5, § 10.
 12. **Decomposition / zoom, for real plans** (Step) - WHAT `plan.progression` is user-steered and is the display SoT (`to_planning_node`, A3); Projects select / Suggest / Talk / nested +/- / chat-grounded suggest under focus persist (`edit_map`). Still open: free-text step naming without map focus, zoom-ask (16), whether to stop writing calendar `plan.steps` entirely, and any remaining data-shape questions in [[planning-model.md]]. Steps page remains scratch. § 5, § 7, § 9.
 16. **Zoom cannot ask for anything** (Step) - `zoom_into()` returns children or nothing, so the third state of Minimum planability's gate (UNKNOWN and NECESSARY → ask) has no per-level equivalent; a step whose breakdown depends on something personal and unstated gets a plausible invented one instead of a question. The asking machinery already exists for goal creation (`clarification`/`suggested_action`), just not here. § 5.

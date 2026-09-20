@@ -1,11 +1,10 @@
 // The Set Goal page - starting something genuinely new. Posts to
-// /api/goals (skips Node 1/2/3, same as Projects' feedback path), then
-// sends the browser to Projects to see the result.
+// /api/projects (skips Node 1/2/3, same as Projects' feedback path),
+// then sends the browser to Projects to see the result.
 //
-// Below the form, a plain list of every active goal's text and id —
-// an overview to orient among existing goals without opening a full
-// Projects workspace. Reuses GET /api/goals (projects.ts's own data
-// source), just rendered as single lines instead of the map shell.
+// Below the form, a plain list of every active project's text and id —
+// an overview without opening the full Projects workspace. Reuses
+// GET /api/projects, rendered as single lines instead of the map shell.
 
 // Contents
 //  1. Rendering
@@ -16,7 +15,7 @@
 //  4. Initialization
 
 import { createGoal, fetchActiveGoals } from "../api.js";
-import { initVisionCount } from "../visionCount.js";
+import { initUserCount } from "../user/userCount.js";
 import type { GoalView } from "../types.js";
 
 const form = document.getElementById("form") as HTMLFormElement;
@@ -80,4 +79,4 @@ loadGoals().catch((err) => {
   empty.hidden = false;
   empty.textContent = `(error loading goals: ${(err as Error).message})`;
 });
-initVisionCount();
+initUserCount();

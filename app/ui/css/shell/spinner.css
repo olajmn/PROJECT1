@@ -1,0 +1,47 @@
+/* Loading spinner for busy buttons / inline waits.
+ *
+ * Contents
+ *  1. Keyframes
+ *  2. Button busy state
+ *      - button.is-loading::before
+ */
+
+/* 1. Keyframes */
+
+@keyframes ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 2. Button busy state */
+
+button.is-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  cursor: wait;
+}
+
+button.is-loading::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.75rem;
+  height: 0.75rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ui-spin 0.55s linear infinite;
+}
+
+.spinner {
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid #ccc;
+  border-top-color: #1a1a1a;
+  border-radius: 50%;
+  animation: ui-spin 0.55s linear infinite;
+  vertical-align: -0.15em;
+}

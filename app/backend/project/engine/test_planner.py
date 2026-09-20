@@ -29,16 +29,16 @@ from backend.project.engine.judgment import run_stage3 as run_mod
 from backend.project.engine import planner
 
 
-def _pending_suggestion(vision_id=None):
+def _pending_suggestion(sim_user_id=None):
     """A saved record with suggested_action, via generate_plan() not
     create_goal() - opening mints refuse that field."""
     plan = planner.generate_plan(GOAL_TEXT)
-    return dp.save_plan(GOAL_TEXT, plan, duration=None, frozen_duration=None, vision_id=vision_id)
+    return dp.save_plan(GOAL_TEXT, plan, duration=None, frozen_duration=None, sim_user_id=sim_user_id)
 
 _original_data_dir = dp.DATA_DIR
 _original_plans_file = dp.PLANS_FILE
 _original_legacy_plans = dp.LEGACY_PLANS_FILE
-_original_visions_file = dp.VISIONS_FILE
+_original_users_file = dp.USERS_FILE
 _original_decide_ask = decide_mod.ask
 _original_fill_ask = run_mod.ask
 _original_generate_structure = run_mod.generate_structure
@@ -48,7 +48,7 @@ _tmp_dir = Path(tempfile.mkdtemp(prefix="planner_test_"))
 dp.DATA_DIR = _tmp_dir
 dp.PLANS_FILE = _tmp_dir / "plans.jsonl"
 dp.LEGACY_PLANS_FILE = _tmp_dir / "plans.json"
-dp.VISIONS_FILE = _tmp_dir / "visions.json"
+dp.USERS_FILE = _tmp_dir / "users.json"
 # Never hit Ollama for calendar step trees in these wiring checks.
 run_mod.generate_structure = lambda *args, **kwargs: None
 
@@ -161,7 +161,7 @@ try:
     assert accepted["project_id"] == pending["project_id"]
     assert accepted["current_step"] == pending.get("current_step", 0)
     assert accepted["step_status"] == pending.get("step_status")
-    assert accepted["vision_id"] == pending["vision_id"]
+    assert accepted["sim_user_id"] == pending["sim_user_id"]
     assert len(dp.load_history()) == history_before + 1, "confirmation must append, not overwrite"
 
     print("OK - Test 1: SUGGEST -> Yes accepts the suggestion as the current Action")
@@ -170,7 +170,7 @@ try:
     # Test 4 - SUGGEST -> Yes -> Action -> "Done" -> existing completion flow
     # ------------------------------------------------------------------
 
-    planner.replan = lambda goal, history, feedback, duration=None, vision_id=None: {
+    planner.replan = lambda goal, history, feedback, duration=None, sim_user_id=None: {
         **_BLANK_PLAN, "now": "Send one application",
     }
     done = route_note(accepted, "Done.")
@@ -219,7 +219,7 @@ try:
     assert ordinary["plan"]["now"] == "Send four applications"
     assert ordinary["plan"]["suggested_action"] is None
 
-    planner.replan = lambda goal, history, feedback, duration=None, vision_id=None: {
+    planner.replan = lambda goal, history, feedback, duration=None, sim_user_id=None: {
         **_BLANK_PLAN, "now": "Send the next application",
     }
     completed = route_note(ordinary, "Yes.")
@@ -265,16 +265,16 @@ try:
     # step_status, Vision, append-only history
     # ------------------------------------------------------------------
 
-    vision = dp.save_vision("Grow as a professional")
+    vision = dp.save_user("Grow as a professional")
     _set_stage3({**_BLANK_PLAN, "suggested_action": "Take stock of your current applications."})
-    v_pending = _pending_suggestion(vision_id=vision["id"])
-    assert v_pending["vision_id"] == vision["id"]
+    v_pending = _pending_suggestion(sim_user_id=vision["id"])
+    assert v_pending["sim_user_id"] == vision["id"]
 
     history_before_goal = resolver.get_history_for_goal(v_pending["project_id"])
     v_accepted = route_note(v_pending, "Yes")
     history_after_goal = resolver.get_history_for_goal(v_accepted["project_id"])
 
-    assert v_accepted["vision_id"] == vision["id"], "Vision link must survive confirmation"
+    assert v_accepted["sim_user_id"] == vision["id"], "Vision link must survive confirmation"
     assert v_accepted["current_step"] == 0
     assert v_accepted["step_status"] == v_pending.get("step_status")
     assert len(history_after_goal) == len(history_before_goal) + 1, "confirmation must append exactly one record"
@@ -294,5 +294,5 @@ finally:
     dp.DATA_DIR = _original_data_dir
     dp.PLANS_FILE = _original_plans_file
     dp.LEGACY_PLANS_FILE = _original_legacy_plans
-    dp.VISIONS_FILE = _original_visions_file
+    dp.USERS_FILE = _original_users_file
     shutil.rmtree(_tmp_dir, ignore_errors=True)

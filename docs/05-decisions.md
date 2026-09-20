@@ -246,17 +246,49 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 ## 29. 2026-09-20 — Wire identity: `project_id` / `/api/projects`
 
-**Decision:** Persist and expose project identity as **`project_id`**. Primary HTTP surface is **`/api/projects…`**. JSONL on load promotes legacy `goal_id` → `project_id` and rewrites the file when needed. Responses emit `project_id` and a deprecated `goal_id` mirror for one release. `/api/goals…` remains a thin alias to the same handlers. llm3 returns `"project"` (accepts legacy `"planning"`). Display-text field `goal` and most Python symbol names (`create_goal`, `ChatFocus.goal_id`, …) stay for a follow-up.
+**Decision:** Persist and expose project identity as **`project_id`**. Primary HTTP surface is **`/api/projects…`**. JSONL on load promotes legacy `goal_id` → `project_id` and rewrites the file when needed. llm3 returns `"project"` (accepts legacy `"planning"`). Display-text field `goal` and most Python symbol names (`create_goal`, `ChatFocus.goal_id`, …) stay for a follow-up.
 
 **Date:** 2026-09-20
 
 **Alternatives considered:** big-bang rename of every Python symbol and the `goal` text field in the same pass; permanent dual keys on disk; skip API alias and break old bookmarks.
 
-**Why this choice:** Phase A product feel was already settled (#25); wire rename was the parked Phase B in [[goal-to-project-migration]]. Compatibility layer lets UI and disk move together without a multi-day symbol sweep.
+**Why this choice:** Phase A product feel was already settled (#25); wire rename was the parked Phase B in [[goal-to-project-migration]]. Compatibility layer let UI and disk move together without a multi-day symbol sweep.
 
-**Trade-off:** `/api/goals` and response `goal_id` must be removed in a later cleanup; internal Python still says “goal” in many places.
+**Trade-off:** Internal Python still says “goal” in many places; display field `goal` is still the title string.
 
-**Reversible?** Yes while the alias and JSONL normalize-on-load remain — restore writing `goal_id` and point UI at `/api/goals`.
+**Follow-up (same day):** `/api/goals…` handlers and the response `goal_id` mirror were removed — wire is `project_id` / `/api/projects` only. Disk still promotes legacy `goal_id` on load.
+
+**Reversible?** Disk normalize-on-load remains; restoring `/api/goals` would be a deliberate re-add, not a flip of a switch.
+
+## 30. 2026-09-20 — Simulated users as `id#N` (Vision → User wire)
+
+**Decision:** Treat the former Vision store as **simulated users** for multi-user prototyping. Product label: **`id#N`** (N = simulated user id). Active user is chosen from the Projects **sidebar** (`idMenu` / `activeUser`) and remembered in `localStorage`. The sidebar project list is filtered to `sim_user_id === active user`; new projects from Projects are created with that `sim_user_id`; creating a user can claim unassigned projects. Global `project_id` minting is unchanged (sidebar shows local `#1…n` as display only). Chat stays in the same workspace shell.
+
+**Date:** 2026-09-20
+
+**Alternatives considered:** rename the link to stub `user_id` immediately (collides with `DEFAULT_USER_ID` on every plan record); wallet/client product names; scoped project ids in the same pass; keep `vision_id` forever.
+
+**Why this choice:** Same optional FK pattern as before, but named for the multi-user simulation. `sim_user_id` avoids colliding with the existing stub operator `user_id` (= `DEFAULT_USER_ID`). Hard cut in `app/` (UI is the only client); one-shot disk promote `visions.json` → `users.json` and `vision_id` → `sim_user_id`.
+
+**Trade-off:** Stub `user_id` still always `DEFAULT_USER_ID` (auth deferred). Unassigned projects (`sim_user_id` null) are hidden from the sidebar until claimed under a user. Per-user local project numbers are not implemented yet.
+
+**Follow-up (same day):** Backend + UI hard cut done — store `users.json`, API `/api/users`, `POST /api/projects/<id>/user` body `{sim_user_id}`, planner `set_project_user` / `archive_user`. Stub `user_id` unchanged. UI display label shortened to `id#N`. Later same day: ID management moved from a center topbar tab/panel to the Projects **sidebar brand + in-flow menu** (`sidebar/idMenu.ts`); local list ordinals `#1…n (#project_id)` via `projectListOrder.ts` (display only).
+
+**Reversible?** Promote is one-way on disk once rewritten; restoring Vision copy would be a deliberate rename, not a flip of a switch.
+
+## 31. 2026-09-20 — Remove free conversation (Conversation / CLI / Node 3)
+
+**Decision:** Delete the free-conversation product path. Projects-scoped chat (`POST /api/projects/<id>/feedback` → `take_turn`) is the only chat. Removed: Conversation page (`index.html` / `main.ts`), `/api/message`, `/api/chat-focus`, `cli.py`, `agent/process_turn.py`, `agent/llm3/`. Keep Voice, Describe, manifestation. Mint `start_session()` once from `backend.api.state` on HTTP process start (Log → Sessions).
+
+**Date:** 2026-09-20
+
+**Alternatives considered:** keep CLI + `process_turn` as a lab; keep `/api/message` without the UI.
+
+**Why this choice:** Product home is already Projects with a known `project_id`. A parallel “guess which project” path (Node 3 stub + ChatFocus) duplicated entry and made topic-continuity a standing defect. Removing it clarifies what the app is.
+
+**Trade-off:** No stdin CLI for small-talk→plan experiments; no capability-routing stub for a second capability until one is real.
+
+**Reversible?** Would require restoring deleted modules and routes from git history.
 
 ## See also
 

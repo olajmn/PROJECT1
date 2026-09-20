@@ -18,15 +18,14 @@ import re
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
-from backend.agent.process_turn import process_turn
 from backend.foundation.time import extract_duration_phrase
-from backend.store.data_persistence import load_history, load_visions, save_vision
+from backend.store.data_persistence import load_history, load_users, save_user
 from backend.store.session import load_sessions
 from backend.project.panes.chat.turn import take_turn
 from backend.project.panes.create.lifecycle import cancel_goal, create_goal
 from backend.project.panes.create.resolver import get_latest_for_goal
 from backend.project.panes.canvas.text_to_tree import parse_outline
-from backend.project.engine.planner import archive_vision, set_goal_vision
+from backend.project.engine.planner import archive_user, set_project_user
 from backend.project.panes.canvas.edit_map import (
     add_progression_bead,
     import_progression_outline,
@@ -39,13 +38,12 @@ from backend.api import state
 from backend.api.views import (
     active_goals,
     ancestor_labels,
-    chat_focus_view,
     completed_goals,
     goal_view,
     history_view,
     session_log_view,
     tree_view,
-    vision_view,
+    user_view,
 )
 
 
@@ -63,18 +61,18 @@ CONTENT_TYPES = {
     ".css": "text/css; charset=utf-8",
 }
 
-_FEEDBACK_PATH_RE = re.compile(r"^/api/(?:goals|projects)/(\d+)/feedback$")
-_CANCEL_PATH_RE = re.compile(r"^/api/(?:goals|projects)/(\d+)/cancel$")
-_GOAL_VISION_PATH_RE = re.compile(r"^/api/(?:goals|projects)/(\d+)/vision$")
-_GOAL_ZOOM_PATH_RE = re.compile(r"^/api/(?:goals|projects)/(\d+)/zoom/(p\d+)$")
-_GOAL_PROGRESSION_PATH_RE = re.compile(r"^/api/(?:goals|projects)/(\d+)/progression$")
+_FEEDBACK_PATH_RE = re.compile(r"^/api/projects/(\d+)/feedback$")
+_CANCEL_PATH_RE = re.compile(r"^/api/projects/(\d+)/cancel$")
+_PROJECT_USER_PATH_RE = re.compile(r"^/api/projects/(\d+)/user$")
+_GOAL_ZOOM_PATH_RE = re.compile(r"^/api/projects/(\d+)/zoom/(p\d+)$")
+_GOAL_PROGRESSION_PATH_RE = re.compile(r"^/api/projects/(\d+)/progression$")
 _GOAL_PROGRESSION_IMPORT_RE = re.compile(
-    r"^/api/(?:goals|projects)/(\d+)/progression/import$",
+    r"^/api/projects/(\d+)/progression/import$",
 )
 _GOAL_PROGRESSION_REMOVE_RE = re.compile(
-    r"^/api/(?:goals|projects)/(\d+)/progression/(p\d+)/remove$",
+    r"^/api/projects/(\d+)/progression/(p\d+)/remove$",
 )
-_VISION_ARCHIVE_PATH_RE = re.compile(r"^/api/visions/(\d+)/archive$")
+_USER_ARCHIVE_PATH_RE = re.compile(r"^/api/users/(\d+)/archive$")
 _ZOOM_PATH_RE = re.compile(r"^/api/tree/(s\d+)/zoom$")
 
 
@@ -113,20 +111,17 @@ class Handler(BaseHTTPRequestHandler):
     error_content_type = "text/plain;charset=utf-8"
 
     def do_GET(self) -> None:
-        if self.path in ("/api/goals", "/api/projects"):
+        if self.path == "/api/projects":
             self._send_json([goal_view(r) for r in active_goals()])
             return
-        if self.path in ("/api/goals/completed", "/api/projects/completed"):
+        if self.path == "/api/projects/completed":
             self._send_json([goal_view(r) for r in completed_goals()])
             return
         if self.path == "/api/history":
             self._send_json([history_view(r) for r in reversed(load_history())])
             return
-        if self.path == "/api/visions":
-            self._send_json([vision_view(v) for v in load_visions()])
-            return
-        if self.path == "/api/chat-focus":
-            self._send_json(chat_focus_view())
+        if self.path == "/api/users":
+            self._send_json([user_view(u) for u in load_users()])
             return
         if self.path == "/api/tree":
             # So a reload (or coming back from another page) shows the
@@ -151,9 +146,9 @@ class Handler(BaseHTTPRequestHandler):
             ]
             self._send_json(list(reversed(views)))
             return
-        # Project workspace is the product home (prototype); free chat
-        # remains at /index.html. HTML lives under ui/pages/ (and
-        # ui/redirects/ for old Log URLs); URLs stay /projects.html etc.
+        # Project workspace is the product home; HTML lives under
+        # ui/pages/ (and ui/redirects/ for old Log URLs); URLs stay
+        # /projects.html etc.
         requested = "projects.html" if self.path == "/" else self.path.lstrip("/")
         file_path = _resolve_ui_file(requested)
         if file_path is None:
@@ -167,17 +162,11 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_POST(self) -> None:
-        if self.path == "/api/message":
-            self._handle_message()
-            return
-        if self.path in ("/api/goals", "/api/projects"):
+        if self.path == "/api/projects":
             self._handle_create_goal()
             return
-        if self.path == "/api/visions":
-            self._handle_create_vision()
-            return
-        if self.path == "/api/chat-focus":
-            self._handle_set_chat_focus()
+        if self.path == "/api/users":
+            self._handle_create_user()
             return
         if self.path == "/api/tree":
             self._handle_create_tree()
@@ -221,13 +210,13 @@ class Handler(BaseHTTPRequestHandler):
         if cancel_match:
             self._handle_cancel_goal(int(cancel_match.group(1)))
             return
-        goal_vision_match = _GOAL_VISION_PATH_RE.match(self.path)
-        if goal_vision_match:
-            self._handle_set_goal_vision(int(goal_vision_match.group(1)))
+        project_user_match = _PROJECT_USER_PATH_RE.match(self.path)
+        if project_user_match:
+            self._handle_set_project_user(int(project_user_match.group(1)))
             return
-        archive_match = _VISION_ARCHIVE_PATH_RE.match(self.path)
+        archive_match = _USER_ARCHIVE_PATH_RE.match(self.path)
         if archive_match:
-            self._handle_archive_vision(int(archive_match.group(1)))
+            self._handle_archive_user(int(archive_match.group(1)))
             return
         self.send_error(404)
 
@@ -246,27 +235,6 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(400, "empty text")
             return None
         return text
-
-    def _handle_message(self) -> None:
-        user_text = self._read_text_body()
-        if user_text is None:
-            return
-        try:
-            result = process_turn(state.session.chat_focus, user_text)
-        except Exception as e:  # transport must not crash on one bad turn
-            # Same reasoning as cli.py's own fallback: a friendly,
-            # deterministic line, not the raw exception text, standing
-            # in as "the agent's reply" - model.client.call_with_retry
-            # already absorbs the model-shape hiccups
-            # this is most likely to be. Printed server-side (not to
-            # the client) for whoever is actually debugging this run.
-            print(f"(debug: {e})")
-            result = {
-                "understanding": None, "capability": None, "surface": None,
-                "node": None, "project_id": None, "goal_id": None,
-                "reply": "That took longer than expected - try again in a moment.",
-            }
-        self._send_json(result)
 
     def _handle_create_tree(self) -> None:
         """Start a fresh scratch tree from typed text: the text
@@ -312,7 +280,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         try:
             labels = zoom_into(step.label, ancestors, state.tree_duration)
-        except Exception as e:  # same reasoning as _handle_message()
+        except Exception as e:  # transport must not crash on one bad turn
             print(f"(debug: {e})")
             self.send_error(503, "that took longer than expected - try again in a moment")
             return
@@ -321,12 +289,23 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json(tree_view())
 
     def _handle_create_goal(self) -> None:
-        text = self._read_text_body()
-        if text is None:
-            return
+        length = int(self.headers.get("Content-Length", 0))
         try:
-            record = create_goal(text, "", "")
-        except Exception as e:  # same reasoning as _handle_message()
+            payload_in = json.loads(self.rfile.read(length) or b"{}")
+        except json.JSONDecodeError:
+            self.send_error(400, "invalid JSON")
+            return
+        text = (payload_in.get("text") or "").strip()
+        if not text:
+            self.send_error(400, "empty text")
+            return
+        raw_sim = payload_in.get("sim_user_id")
+        sim_user_id_value = (
+            str(int(raw_sim)) if raw_sim is not None else ""
+        )
+        try:
+            record = create_goal(text, "", sim_user_id_value)
+        except Exception as e:  # transport must not crash on one bad turn
             print(f"(debug: {e})")
             self.send_error(503, "that took longer than expected - try again in a moment")
             return
@@ -459,14 +438,14 @@ class Handler(BaseHTTPRequestHandler):
                 map_focus=map_focus or None,
                 focus_step_id=focus_step_id or None,
             )
-        except Exception as e:  # same reasoning as _handle_message()
+        except Exception as e:  # transport must not crash on one bad turn
             print(f"(debug: {e})")
             self.send_error(503, "that took longer than expected - try again in a moment")
             return
         self._send_json(goal_view(result["record"], reply=result["reply"]))
 
     def _handle_cancel_goal(self, goal_id: int) -> None:
-        # No request body - same reasoning as _handle_archive_vision():
+        # No request body - same reasoning as _handle_archive_user():
         # the goal is already named by id in the path. planner.
         # cancel_goal() is a pure state transition (no model call), so
         # there's nothing to retry here, unlike _handle_goal_feedback().
@@ -476,65 +455,40 @@ class Handler(BaseHTTPRequestHandler):
             return
         self._send_json(goal_view(record))
 
-    def _handle_set_goal_vision(self, goal_id: int) -> None:
-        # Body is {"vision_id": <int>} or {"vision_id": null} to remove
-        # the link - not {"text": ...} like every other POST route
-        # here, so this doesn't go through _read_text_body(). No model
-        # call, same as _handle_cancel_goal() - a pure state transition.
+    def _handle_set_project_user(self, goal_id: int) -> None:
+        # Body is {"sim_user_id": <int>} or {"sim_user_id": null} to
+        # remove the link - not {"text": ...} like every other POST
+        # route here, so this doesn't go through _read_text_body(). No
+        # model call, same as _handle_cancel_goal() - a pure state
+        # transition.
         length = int(self.headers.get("Content-Length", 0))
         try:
             payload_in = json.loads(self.rfile.read(length) or b"{}")
         except json.JSONDecodeError:
             self.send_error(400, "invalid JSON")
             return
-        raw_vision_id = payload_in.get("vision_id")
-        vision_id = int(raw_vision_id) if raw_vision_id is not None else None
-        record = set_goal_vision(goal_id, vision_id)
+        raw_sim = payload_in.get("sim_user_id")
+        sim_user_id = int(raw_sim) if raw_sim is not None else None
+        record = set_project_user(goal_id, sim_user_id)
         if record is None:
-            self.send_error(404, "no such goal or vision, or an unanswered clarification blocks this")
+            self.send_error(404, "no such project or user")
             return
         self._send_json(goal_view(record))
 
-    def _handle_set_chat_focus(self) -> None:
-        # Body is {"project_id": <int>} (preferred) or deprecated
-        # {"goal_id": <int>}, or null to clear. Pure state write onto
-        # chat_focus.goal_id (attribute name kept this round).
-        length = int(self.headers.get("Content-Length", 0))
-        try:
-            payload_in = json.loads(self.rfile.read(length) or b"{}")
-        except json.JSONDecodeError:
-            self.send_error(400, "invalid JSON")
-            return
-        raw_id = payload_in.get("project_id", payload_in.get("goal_id", "__missing__"))
-        if raw_id is None:
-            state.session.chat_focus.goal_id = None
-            self._send_json(chat_focus_view())
-            return
-        if raw_id == "__missing__":
-            self.send_error(400, "project_id (or goal_id) required")
-            return
-        goal_id = int(raw_id)
-        if get_latest_for_goal(goal_id) is None:
-            self.send_error(404, "no such project")
-            return
-        state.session.chat_focus.goal_id = goal_id
-        self._send_json(chat_focus_view())
-
-    def _handle_create_vision(self) -> None:
+    def _handle_create_user(self) -> None:
         text = self._read_text_body()
         if text is None:
             return
-        vision = save_vision(text)  # pure append, no model call - nothing to retry
-        self._send_json(vision_view(vision))
+        user = save_user(text)  # pure append, no model call - nothing to retry
+        self._send_json(user_view(user))
 
-    def _handle_archive_vision(self, vision_id: int) -> None:
-        # No request body to read - archiving names the Vision by id
-        # in the path, same as feedback names the Goal by id.
-        vision = archive_vision(vision_id)
-        if vision is None:
-            self.send_error(404, "no such vision")
+    def _handle_archive_user(self, sim_user_id: int) -> None:
+        # No request body - archiving names the user by id in the path.
+        user = archive_user(sim_user_id)
+        if user is None:
+            self.send_error(404, "no such user")
             return
-        self._send_json(vision_view(vision))
+        self._send_json(user_view(user))
 
     def _send_json(self, payload) -> None:
         body = json.dumps(payload).encode("utf-8")

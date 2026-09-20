@@ -1,8 +1,18 @@
 // About-frame isolation for the Projects chat thread: "Show only this"
 // filters to one focus label; leaving isolation restores scroll.
-// Framing (About "…") and filter live here — not in backend.
+// Framing (About "…") and filter live here — message rows in messageRow.ts.
 
+// Contents
+//  1. Types
+//      - IsolateChat
+//      - IsolateChatOptions
+//  2. Public API
+//      - createIsolateChat()
+
+import { messageRow } from "./messageRow.js";
 import type { ChatMessage } from "../types.js";
+
+// 1. Types
 
 export type IsolateChat = {
   /** Drop isolation (full thread again). */
@@ -22,23 +32,12 @@ export type IsolateChatOptions = {
   onChange: () => void;
 };
 
+// 2. Public API
+
 export function createIsolateChat(options: IsolateChatOptions): IsolateChat {
   const { threadEl, resolveStepId, onChange } = options;
   let isolatedFocus: string | null = null;
   let preIsolationScrollTop: number | null = null;
-
-  function messageRow(message: ChatMessage): HTMLDivElement {
-    const row = document.createElement("div");
-    row.className = `message message-${message.role === "user" ? "you" : "agent"}`;
-    const label = document.createElement("span");
-    label.className = "who";
-    label.textContent = message.role === "user" ? "You" : "Agent";
-    const body = document.createElement("span");
-    body.className = "text";
-    body.textContent = message.text;
-    row.append(label, body);
-    return row;
-  }
 
   function isolationBanner(): HTMLDivElement {
     const banner = document.createElement("div");

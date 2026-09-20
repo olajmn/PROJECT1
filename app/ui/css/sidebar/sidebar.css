@@ -1,0 +1,375 @@
+/* Left pane (sidebar): id menu + create project + project list.
+ *
+ * Contents
+ *  1. Sidebar frame
+ *      - .sidebar / .sidebar-brand / .sidebar-id
+ *  2. Id menu
+ *      - .sidebar-id-menu* / .sidebar-id-card* / resize
+ *  3. Create form & list
+ *      - .create-project-form
+ *      - .project-list / .project-list-item
+ *      - .sidebar-more
+ *  4. Other links
+ *      - .sidebar-other
+ */
+
+/* 1. Sidebar frame */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 0.75rem;
+  background: #ebeae6;
+  border-right: 1px solid #ddd;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar-id {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.sidebar-brand {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: left;
+  color: #1a1a1a;
+  background: transparent;
+  border: none;
+  border-radius: 0.35rem;
+  padding: 0.35rem 0.45rem;
+  cursor: pointer;
+}
+
+.sidebar-brand:hover {
+  background: #e0dfda;
+}
+
+.sidebar-brand.is-active {
+  background: #d8d6d0;
+}
+
+/* 2. Id menu (in-flow; pushes Create + list down) */
+
+.sidebar-id-menu {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+  padding: 0.45rem 0.45rem 0.7rem;
+  background: #f3f1ec;
+  border: 1px solid #ddd9d0;
+  border-radius: 0.4rem;
+}
+
+.sidebar-id-menu[hidden] {
+  display: none;
+}
+
+.sidebar-id-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.sidebar-id-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.4rem 0.45rem;
+  border: 1px solid #e8e6e1;
+  border-radius: 0.35rem;
+  background: #fff;
+}
+
+.sidebar-id-card.is-active {
+  border-color: #e8e6e1;
+}
+
+.sidebar-id-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.sidebar-id-card-title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.sidebar-id-card-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.sidebar-id-card-use {
+  flex: 0 0 auto;
+  padding: 0.2rem 0.45rem;
+  font: inherit;
+  font-size: 0.75rem;
+}
+
+.sidebar-id-card-projects {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.sidebar-id-card-project {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.3rem 0.35rem;
+  border: none;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-id-card-project:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-id-card-project-goal {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.25;
+}
+
+.sidebar-id-menu-hint {
+  color: #888;
+  font-size: 0.72rem;
+  font-weight: 400;
+}
+
+.sidebar-id-menu-empty {
+  margin: 0;
+  padding: 0.2rem 0.25rem;
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.sidebar-id-menu-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+}
+
+.sidebar-id-menu-claim {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.sidebar-id-menu-create {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid #e8e6e1;
+}
+
+.sidebar-id-menu-create input {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 0.3rem;
+  background: #fff;
+}
+
+.sidebar-id-menu-create button {
+  padding: 0.3rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.sidebar-id-menu-resize {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0.55rem;
+  cursor: ns-resize;
+  background: linear-gradient(
+    to bottom,
+    transparent 35%,
+    #ccc 36%,
+    #ccc 45%,
+    transparent 46%,
+    transparent 55%,
+    #ccc 56%,
+    #ccc 65%,
+    transparent 66%
+  );
+  border-radius: 0 0 0.35rem 0.35rem;
+}
+
+body.is-resizing-id-menu {
+  cursor: ns-resize;
+  user-select: none;
+}
+
+/* 3. Create form & list */
+
+.create-project-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.create-project-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 0.35rem;
+  resize: vertical;
+  background: #fff;
+}
+
+.create-project-form button {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.project-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.project-list-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.5rem;
+  border: none;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.project-list-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.project-list-item.is-selected {
+  background: #fff;
+  box-shadow: 0 0 0 1px #ddd;
+}
+
+.project-list-title {
+  font-size: 0.9rem;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sidebar-empty {
+  margin: 0;
+  padding: 0 0.35rem;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.sidebar-more {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #ddd;
+  flex: 0 0 auto;
+}
+
+.sidebar-more a {
+  color: #777;
+  text-decoration: none;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.35rem;
+}
+
+.sidebar-more a:hover {
+  color: #1a1a1a;
+}
+
+/* 4. Other links */
+
+.sidebar-other {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #999;
+}
+
+.sidebar-other summary {
+  cursor: pointer;
+  padding: 0.2rem 0.35rem;
+  list-style: none;
+}
+
+.sidebar-other summary::-webkit-details-marker {
+  display: none;
+}
+
+.sidebar-other[open] summary {
+  color: #666;
+}
+
+.sidebar-other a {
+  display: block;
+  color: #999;
+  text-decoration: none;
+  padding: 0.15rem 0.35rem 0.15rem 0.7rem;
+  font-size: 0.72rem;
+}
+
+.sidebar-other a:hover {
+  color: #1a1a1a;
+}
+
+@media (max-width: 800px) {
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+  }
+}

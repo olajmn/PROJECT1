@@ -15,7 +15,7 @@ one possible outcome of decide().
 """
 
 from backend.foundation.time import resolve_duration
-from backend.store.data_persistence import get_vision
+from backend.store.data_persistence import get_user
 from backend.project.engine.judgment.decide import decide
 from backend.project.engine.judgment.ask import ask
 from backend.project.engine.judgment.prompts import FILL_SYSTEM_PROMPT
@@ -65,15 +65,15 @@ def _reject_opening_action(plan: dict) -> dict:
 def _fill_user_content(
     goal: str,
     duration: str | None,
-    vision_id: int | None,
+    sim_user_id: int | None,
     prior_suggestion: str | None,
     reply: str | None,
 ) -> str:
     """Grounding lines for the fill call - same context as Decide, plus
     which horizons to fill. No opening/decide instructions."""
     user_content = f"The current date and time is: {current_time()}\n\nMy goal is: {goal}"
-    if vision_id is not None:
-        vision = get_vision(vision_id)
+    if sim_user_id is not None:
+        vision = get_user(sim_user_id)
         if vision is not None:
             user_content += (
                 f"\n\nThis project is part of a broader direction: "
@@ -100,7 +100,7 @@ def _fill_user_content(
 
 
 def run_stage3(
-    goal: str, duration: str | None = None, vision_id: int | None = None,
+    goal: str, duration: str | None = None, sim_user_id: int | None = None,
     prior_suggestion: str | None = None, reply: str | None = None,
     opening: bool = False,
 ) -> dict:
@@ -120,14 +120,14 @@ def run_stage3(
     § Minimum planability / ASK vs. SUGGEST). Mutual exclusion is
     enforced here in code after Decide returns.
 
-    `vision_id`, `prior_suggestion`/`reply`, and `opening` match the
+    `sim_user_id`, `prior_suggestion`/`reply`, and `opening` match the
     previous combined-call contract - see decide.py for opening text
     and route_note() for how prior suggestion + reply are used.
     """
     decision = decide(
         goal,
         duration=duration,
-        vision_id=vision_id,
+        sim_user_id=sim_user_id,
         prior_suggestion=prior_suggestion,
         reply=reply,
         opening=opening,
@@ -165,7 +165,7 @@ def run_stage3(
     # PLAN — second call fills horizons only.
     filled = ask(
         FILL_SYSTEM_PROMPT,
-        _fill_user_content(goal, duration, vision_id, prior_suggestion, reply),
+        _fill_user_content(goal, duration, sim_user_id, prior_suggestion, reply),
         PLAN_KEYS,
     )
     for key in PLAN_KEYS:

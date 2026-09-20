@@ -3,48 +3,38 @@
 // already decided.
 
 // Contents
-//  1. Free conversation
-//      - sendMessage()
-//  2. Goals
+//  1. Goals / Projects
 //      - fetchActiveGoals()
 //      - createGoal()
 //      - sendGoalFeedback()
 //      - cancelGoal()
-//      - setGoalVision()
+//      - setProjectUser()
 //      - fetchCompletedGoals()
-//  3. History
+//  2. History
 //      - fetchHistory()
-//  4. Vision
-//      - fetchVisions()
-//      - createVision()
-//      - archiveVision()
-//  5. Chat focus
-//      - fetchChatFocus()
-//      - setChatFocus()
-//  6. Sessions
+//  3. Simulated users
+//      - fetchUsers()
+//      - createUser()
+//      - archiveUser()
+//  4. Sessions
 //      - fetchSessions()
-//  7. Steps (scratch tree)
+//  5. Steps (scratch tree)
 //      - fetchTree()
 //      - createTree()
 //      - zoomStep()
 
-import type { AgentResponse, ChatFocusView, GoalView, HistoryEntry, OutlineNode, OutlinePreview, SessionLogView, TreeView, VisionView } from "./types.js";
+import type { GoalView, HistoryEntry, OutlineNode, OutlinePreview, SessionLogView, TreeView, UserView } from "./types.js";
 
-// 1. Free conversation
-
-export async function sendMessage(text: string): Promise<AgentResponse> {
-  const res = await fetch("/api/message", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
-  });
-  if (!res.ok) {
-    throw new Error(`request failed: ${res.status}`);
-  }
-  return (await res.json()) as AgentResponse;
+async function httpErrorMessage(res: Response): Promise<string> {
+  const detail = (await res.text()).trim();
+  const fromHtml =
+    detail.match(/Error code: \d+[\s\S]*?<p>([^<]+)/i)?.[1]?.trim() ??
+    detail.match(/<p>([^<]+)<\/p>/i)?.[1]?.trim();
+  const plain = (fromHtml || detail || `request failed: ${res.status}`).replace(/\s+/g, " ");
+  return plain.slice(0, 240);
 }
 
-// 2. Goals
+// 1. Goals / Projects
 
 export async function fetchActiveGoals(): Promise<GoalView[]> {
   const res = await fetch("/api/projects");
@@ -54,11 +44,18 @@ export async function fetchActiveGoals(): Promise<GoalView[]> {
   return (await res.json()) as GoalView[];
 }
 
-export async function createGoal(text: string): Promise<GoalView> {
+export async function createGoal(
+  text: string,
+  simUserId?: number | null,
+): Promise<GoalView> {
+  const body: { text: string; sim_user_id?: number } = { text };
+  if (simUserId != null) {
+    body.sim_user_id = simUserId;
+  }
   const res = await fetch("/api/projects", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
@@ -102,14 +99,14 @@ export async function cancelGoal(goalId: number): Promise<GoalView> {
   return (await res.json()) as GoalView;
 }
 
-export async function setGoalVision(goalId: number, visionId: number | null): Promise<GoalView> {
-  const res = await fetch(`/api/projects/${goalId}/vision`, {
+export async function setProjectUser(goalId: number, simUserId: number | null): Promise<GoalView> {
+  const res = await fetch(`/api/projects/${goalId}/user`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ vision_id: visionId }),
+    body: JSON.stringify({ sim_user_id: simUserId }),
   });
   if (!res.ok) {
-    throw new Error(`request failed: ${res.status}`);
+    throw new Error(await httpErrorMessage(res));
   }
   return (await res.json()) as GoalView;
 }
@@ -233,7 +230,7 @@ export async function fetchCompletedGoals(): Promise<GoalView[]> {
   return (await res.json()) as GoalView[];
 }
 
-// 3. History
+// 2. History
 
 export async function fetchHistory(): Promise<HistoryEntry[]> {
   const res = await fetch("/api/history");
@@ -243,59 +240,37 @@ export async function fetchHistory(): Promise<HistoryEntry[]> {
   return (await res.json()) as HistoryEntry[];
 }
 
-// 4. Vision
+// 3. Simulated users
 
-export async function fetchVisions(): Promise<VisionView[]> {
-  const res = await fetch("/api/visions");
+export async function fetchUsers(): Promise<UserView[]> {
+  const res = await fetch("/api/users");
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
-  return (await res.json()) as VisionView[];
+  return (await res.json()) as UserView[];
 }
 
-export async function createVision(text: string): Promise<VisionView> {
-  const res = await fetch("/api/visions", {
+export async function createUser(text: string): Promise<UserView> {
+  const res = await fetch("/api/users", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text }),
   });
   if (!res.ok) {
-    throw new Error(`request failed: ${res.status}`);
+    throw new Error(await httpErrorMessage(res));
   }
-  return (await res.json()) as VisionView;
+  return (await res.json()) as UserView;
 }
 
-export async function archiveVision(visionId: number): Promise<VisionView> {
-  const res = await fetch(`/api/visions/${visionId}/archive`, { method: "POST" });
+export async function archiveUser(simUserId: number): Promise<UserView> {
+  const res = await fetch(`/api/users/${simUserId}/archive`, { method: "POST" });
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
-  return (await res.json()) as VisionView;
+  return (await res.json()) as UserView;
 }
 
-// 5. Chat focus
-
-export async function fetchChatFocus(): Promise<ChatFocusView> {
-  const res = await fetch("/api/chat-focus");
-  if (!res.ok) {
-    throw new Error(`request failed: ${res.status}`);
-  }
-  return (await res.json()) as ChatFocusView;
-}
-
-export async function setChatFocus(goalId: number | null): Promise<ChatFocusView> {
-  const res = await fetch("/api/chat-focus", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ project_id: goalId }),
-  });
-  if (!res.ok) {
-    throw new Error(`request failed: ${res.status}`);
-  }
-  return (await res.json()) as ChatFocusView;
-}
-
-// 6. Sessions
+// 4. Sessions
 
 export async function fetchSessions(): Promise<SessionLogView[]> {
   const res = await fetch("/api/sessions");
@@ -305,7 +280,7 @@ export async function fetchSessions(): Promise<SessionLogView[]> {
   return (await res.json()) as SessionLogView[];
 }
 
-// 7. Steps (scratch tree)
+// 5. Steps (scratch tree)
 
 /** Whatever tree the server currently holds - `root` is null if none
  * has been built yet, or if the process restarted (it is in memory

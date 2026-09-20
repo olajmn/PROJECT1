@@ -28,7 +28,7 @@
 //  4. Initialization
 
 import { createTree, fetchTree, zoomStep } from "../api.js";
-import { initVisionCount } from "../visionCount.js";
+import { initUserCount } from "../user/userCount.js";
 import { treeLabel } from "../map/tree.js";
 import type { StepNode, TreeView } from "../types.js";
 
@@ -161,4 +161,4 @@ fetchTree()
     // error worth showing.
   });
 
-initVisionCount();
+initUserCount();

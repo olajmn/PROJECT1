@@ -9,6 +9,7 @@ This is the project-specific instance of `global-standards/AI_COLLABORATION_GUID
 - Docs
 - Tools
 - Before finishing
+- New code placement
 - Documentation tooling
 - Meta-coherence
 
@@ -65,6 +66,14 @@ If the session added or leaned on a **second path** beside an old one
 root `TODO.md` § Parallel paths — dual code is fine; unnamed dual
 code is how the base turns into a mess. See that section's anti-mess
 rule and [[05-decisions]] #25.
+
+## New code placement
+
+When implementing something new in a session, **prefer** a new file
+(or small folder) for a real new capability, then wire it with a thin
+import — see `CONVENTIONS.md` § New code placement. Prefer, don’t force:
+same-concern fixes and small extensions stay put; don’t invent micro-files
+for ceremony or park a large new feature in an unrelated open module.
 
 ## Documentation tooling
 

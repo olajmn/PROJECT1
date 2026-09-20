@@ -5,7 +5,7 @@ Identity and current state stay in resolver.py - this module only
 writes. Creating a goal still asks plan/planner.py to produce the
 first plan (generate_plan); cancelling never does. Vision is accepted
 here as an optional link at birth, but linking/unlinking later stays
-on planner.set_goal_vision() until Vision's own shape is decided.
+on planner.set_project_user() until Vision's own shape is decided.
 """
 
 # Contents
@@ -16,7 +16,7 @@ on planner.set_goal_vision() until Vision's own shape is decided.
 #      - cancel_goal()
 
 from backend.foundation.time import extract_duration_phrase
-from backend.store.data_persistence import save_plan, save_vision
+from backend.store.data_persistence import save_plan, save_user
 from backend.project.panes.create.resolver import get_latest_for_goal
 from backend.project.engine import planner
 
@@ -26,10 +26,10 @@ from backend.project.engine import planner
 # ============================================================
 
 
-def create_goal(typed_text: str, new_vision_text: str, vision_id_value: str) -> dict:
+def create_goal(typed_text: str, new_vision_text: str, sim_user_id_value: str) -> dict:
     """
     Generate a fresh plan for a new goal and save it. `typed_text`,
-    `new_vision_text`, and `vision_id_value` are already read/stripped
+    `new_vision_text`, and `sim_user_id_value` are already read/stripped
     by the caller.
 
     One text field, not a separate goal/duration pair -
@@ -63,30 +63,30 @@ def create_goal(typed_text: str, new_vision_text: str, vision_id_value: str) -> 
     route_note() resolves either into a real plan. Frozen for real
     only once that happens.
 
-    `new_vision_text` is checked before `vision_id_value` - typing a
+    `new_vision_text` is checked before `sim_user_id_value` - typing a
     new Vision always wins over whatever the select had chosen.
     Neither is required; carried forward unchanged on every later
     replan for this goal (a goal's vision doesn't change just because
     its plan does).
     """
     if new_vision_text:
-        vision_id = save_vision(new_vision_text)["id"]
-    elif vision_id_value:
-        vision_id = int(vision_id_value)
+        sim_user_id = save_user(new_vision_text)["id"]
+    elif sim_user_id_value:
+        sim_user_id = int(sim_user_id_value)
     else:
-        vision_id = None
+        sim_user_id = None
 
     duration = extract_duration_phrase(typed_text)
-    plan = planner.generate_plan(typed_text, duration, vision_id=vision_id, opening=True)
+    plan = planner.generate_plan(typed_text, duration, sim_user_id=sim_user_id, opening=True)
     if planner._planability(plan) != "planable":
         # ask or suggest - nothing else in `plan` is real yet; duration
         # stays unrecorded until the next round resolves it (see
         # route_note()'s clarification/suggested_duration branches).
-        return save_plan(typed_text, plan, duration=None, frozen_duration=None, vision_id=vision_id)
+        return save_plan(typed_text, plan, duration=None, frozen_duration=None, sim_user_id=sim_user_id)
     return save_plan(
         typed_text, plan, duration=duration,
         frozen_duration=planner.frozen_duration_for(plan, duration),
-        vision_id=vision_id,
+        sim_user_id=sim_user_id,
     )
 
 
@@ -100,13 +100,13 @@ def cancel_goal(goal_id: int) -> dict | None:
     Mark a goal as cancelled (abandoned) - a distinct terminal status
     from `completed`, not a UI-level relabeling of it and not a third
     planning decision. Preserves `plan`, `duration`, `frozen_duration`,
-    `current_step`, and `vision_id` from the latest record exactly as
+    `current_step`, and `sim_user_id` from the latest record exactly as
     they were, so the goal's own data/history is never lost, only
     marked as no longer being pursued (still visible in full on
     /history, same as any other goal).
 
-    Unlike set_goal_vision(), an unanswered `clarification` does NOT
-    block this. set_goal_vision() refuses specifically because the
+    Unlike set_project_user(), an unanswered `clarification` does NOT
+    block this. set_project_user() refuses specifically because the
     NEXT record saved for this goal_id is expected to answer that
     clarification (see its docstring) - cancelling doesn't create that
     expectation, since nothing further will ever be asked about a
@@ -123,7 +123,7 @@ def cancel_goal(goal_id: int) -> dict | None:
 
     Requesting cancellation on an already-cancelled goal is a genuine
     no-op - returns `latest` unchanged rather than appending an
-    identical record (same idiom as set_goal_vision()).
+    identical record (same idiom as set_project_user()).
     """
     latest = get_latest_for_goal(goal_id)
     if latest is None:
@@ -137,6 +137,6 @@ def cancel_goal(goal_id: int) -> dict | None:
         latest["goal"], latest["plan"], feedback="Cancelled",
         duration=latest.get("duration"), goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
-        vision_id=latest.get("vision_id"), cancelled=True,
+        sim_user_id=latest.get("sim_user_id"), cancelled=True,
         step_status=latest.get("step_status"),
     )

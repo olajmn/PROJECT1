@@ -39,6 +39,14 @@
   border: none;
 }
 
+.project-chat .chat-placeholder {
+  margin: 0;
+  color: #999;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  font-style: italic;
+}
+
 /* 2. Messages */
 
 .project-chat .message {

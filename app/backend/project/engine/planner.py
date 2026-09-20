@@ -31,15 +31,15 @@ concrete model name.
 #      - advance_step()
 #
 #  5. Vision management
-#      - set_goal_vision()
-#      - archive_vision()
+#      - set_project_user()
+#      - archive_user()
 #
 #  6. CLI entry point
 #      (module execution block; no named function)
 
 from backend.foundation.time import freeze_duration, resolve_duration
 from backend.project.panes.create.resolver import get_latest_for_all_goals, get_latest_for_goal
-from backend.store.data_persistence import archive_vision as archive_vision_record, get_vision, save_plan
+from backend.store.data_persistence import archive_user as archive_user_record, get_user, save_plan
 from backend.project.engine.judgment import run_stage3 as run_mod
 from backend.project.engine.judgment.shape import (
     PLAN_KEYS,
@@ -85,7 +85,7 @@ def frozen_duration_for(plan: dict, duration: str | None) -> dict | None:
 # ============================================================
 
 
-def replan(goal: str, history: list[dict], feedback: str, duration: str | None = None, vision_id: int | None = None) -> dict:
+def replan(goal: str, history: list[dict], feedback: str, duration: str | None = None, sim_user_id: int | None = None) -> dict:
     """
     Takes the goal, its full history (oldest first), and feedback on
     the most recent "now" action, and asks the model for an
@@ -97,7 +97,7 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
     already made the same task smaller several times in a row (see
     docs/06-development.md, 2026-08-20, for the drift this fixed).
 
-    `vision_id` - same optional, separately-sectioned background
+    `sim_user_id` - same optional, separately-sectioned background
     context as generate_plan()'s (added 2026-09-06): a Goal's linked
     Vision is meant to follow it for the goal's whole lifetime, not
     just its first plan, so every replan gets the same context the
@@ -123,8 +123,8 @@ def replan(goal: str, history: list[dict], feedback: str, duration: str | None =
         f"This goal's full history so far, oldest first:\n{history_text}\n\n"
         f"My feedback on the most recent 'now' action: {feedback}"
     )
-    if vision_id is not None:
-        vision = get_vision(vision_id)
+    if sim_user_id is not None:
+        vision = get_user(sim_user_id)
         if vision is not None:
             user_content += (
                 f"\n\nThis project is part of a broader direction: "
@@ -145,15 +145,15 @@ def apply_new_duration(existing: dict, duration: str, feedback: str) -> dict:
     Always calls generate_plan() again rather than patching
     duration/frozen_duration onto the existing record: changing the
     timeframe is a real new planning decision (new horizons, a new
-    step list), not a countdown edit. `existing["vision_id"]` is
+    step list), not a countdown edit. `existing["sim_user_id"]` is
     carried forward unchanged, same as `goal_id` - a changed duration
     doesn't change which Vision the goal belongs to.
     """
-    plan = generate_plan(existing["goal"], duration, vision_id=existing.get("vision_id"))
+    plan = generate_plan(existing["goal"], duration, sim_user_id=existing.get("sim_user_id"))
     return save_plan(
         existing["goal"], plan, feedback=feedback, duration=duration, goal_id=existing["project_id"],
         frozen_duration=frozen_duration_for(plan, duration),
-        vision_id=existing.get("vision_id"),
+        sim_user_id=existing.get("sim_user_id"),
     )
 
 
@@ -238,7 +238,7 @@ def advance_step(latest: dict, done: bool, resolved: bool = False) -> dict:
         latest["goal"], latest["plan"], feedback=feedback_text,
         duration=latest.get("duration"), goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=next_index,
-        vision_id=latest.get("vision_id"), step_status=status,
+        sim_user_id=latest.get("sim_user_id"), step_status=status,
     )
 
 
@@ -247,12 +247,12 @@ def advance_step(latest: dict, done: bool, resolved: bool = False) -> dict:
 # ============================================================
 
 
-def set_goal_vision(goal_id: int, vision_id: int | None) -> dict | None:
+def set_project_user(goal_id: int, sim_user_id: int | None) -> dict | None:
     """
     Add, move, or remove a goal's Vision link - the manual counterpart
     to `create_goal()`'s one-time choice, letting it be changed later
     (see docs/planning-model.md, the authority on Vision).
-    `vision_id=None` removes
+    `sim_user_id=None` removes
     the goal from whichever Vision it currently has.
 
     Unlike advance_step()/route_note() (which take an
@@ -265,20 +265,19 @@ def set_goal_vision(goal_id: int, vision_id: int | None) -> dict | None:
     rejected - never partially applied, and never raises for an
     ordinary bad input:
     - `goal_id` doesn't resolve to any goal.
-    - `vision_id` is given but no such Vision exists (a stale/tampered
-      value - the real UI always offers ids from `load_visions()`, so
+    - `sim_user_id` is given but no such Vision exists (a stale/tampered
+      value - the real UI always offers ids from `load_users()`, so
       this is a defensive check, not the normal path).
-    - the goal's latest record has an unanswered `clarification` -
-      the next thing saved for this goal_id needs to be the answer to
-      that question (see `route_note()`'s clarification branch,
-      which reads the newest `feedback` in this goal's history as
-      exactly that answer). A Vision-change record saved in between
-      would be misread as the answer instead, corrupting the next
-      `generate_plan()` call's goal text - rejecting outright avoids
-      that rather than trying to special-case it later.
+
+    An unanswered `clarification` no longer blocks this: the Vision
+    link is stored with `feedback=None` so `route_note()`'s
+    clarification branch (which joins every prior `feedback` into the
+    next `generate_plan()` goal text) cannot treat a Vision change as
+    the user's answer. The pending clarification itself is preserved
+    on the plan until chat answers it.
 
     Requesting the Vision the goal is already linked to (or already
-    has none, for `vision_id=None`) is a genuine no-op - returns
+    has none, for `sim_user_id=None`) is a genuine no-op - returns
     `latest` unchanged rather than appending an identical record. A
     cancelled goal (see cancel_goal()) is also a no-op here, same
     reasoning as route_note()/advance_step() - never a save_plan()
@@ -293,36 +292,38 @@ def set_goal_vision(goal_id: int, vision_id: int | None) -> dict | None:
     latest = get_latest_for_goal(goal_id)
     if latest is None:
         return None
-    if latest["plan"].get("clarification"):
-        return None
     if latest.get("cancelled"):
         return latest
 
-    previous_vision_id = latest.get("vision_id")
-    if vision_id == previous_vision_id:
+    previous_sim_user_id = latest.get("sim_user_id")
+    if sim_user_id == previous_sim_user_id:
         return latest
 
-    if vision_id is None:
-        feedback_text = "Removed from Vision"
+    pending_clarification = bool(latest["plan"].get("clarification"))
+    if sim_user_id is None:
+        feedback_text = None if pending_clarification else "Removed from Vision"
     else:
-        vision = get_vision(vision_id)
+        vision = get_user(sim_user_id)
         if vision is None:
             return None
-        verb = "Moved to" if previous_vision_id is not None else "Added to"
-        feedback_text = f"{verb} Vision: {vision['text']}"
+        if pending_clarification:
+            feedback_text = None
+        else:
+            verb = "Moved to" if previous_sim_user_id is not None else "Added to"
+            feedback_text = f"{verb} Vision: {vision['text']}"
 
     return save_plan(
         latest["goal"], latest["plan"], feedback=feedback_text,
         duration=latest.get("duration"), goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
-        completed=latest.get("completed", False), vision_id=vision_id,
+        completed=latest.get("completed", False), sim_user_id=sim_user_id,
         step_status=latest.get("step_status"),
     )
 
 
-def archive_vision(vision_id: int) -> dict | None:
+def archive_user(sim_user_id: int) -> dict | None:
     """
-    Archive a Vision (data_persistence.archive_vision()) and detach it
+    Archive a Vision (data_persistence.archive_user()) and detach it
     from every currently-active Goal that references it - an archived
     Vision is no longer an active direction, so an active Goal
     shouldn't keep showing a current tie to it. Vision and Goal have
@@ -330,32 +331,28 @@ def archive_vision(vision_id: int) -> dict | None:
     current_step, or completed/cancelled status - only which Vision (if
     any) it currently points to.
 
-    Completed/cancelled Goals keep their vision_id unchanged - already
+    Completed/cancelled Goals keep their sim_user_id unchanged - already
     a closed, historical record, not a claim that the Vision is still
     active, so there's nothing to detach.
 
-    Detaching reuses set_goal_vision(goal_id, None) per Goal rather
+    Detaching reuses set_project_user(goal_id, None) per Goal rather
     than writing a second way to change a Goal's Vision link, so it
-    inherits that function's exact safety checks - in particular, a
-    Goal with an unanswered `clarification` is left untouched (never
-    revived or corrupted, see set_goal_vision()'s docstring) rather
-    than forced; it simply keeps its stale vision_id until it's next
-    touched. Like set_goal_vision(), this appends a new record per
-    affected Goal (goal_id carried forward) - no existing record is
-    ever mutated or removed.
+    inherits that function's safety checks. Like set_project_user(),
+    this appends a new record per affected Goal (goal_id carried
+    forward) - no existing record is ever mutated or removed.
 
     Returns the archived Vision record (or the already-archived one,
-    unchanged, on a repeat call), or None if vision_id doesn't exist.
+    unchanged, on a repeat call), or None if sim_user_id doesn't exist.
     """
-    vision = archive_vision_record(vision_id)
+    vision = archive_user_record(sim_user_id)
     if vision is None:
         return None
 
     for latest in get_latest_for_all_goals():
-        if (latest.get("vision_id") == vision_id
+        if (latest.get("sim_user_id") == sim_user_id
                 and not latest.get("completed")
                 and not latest.get("cancelled")):
-            set_goal_vision(latest["project_id"], None)
+            set_project_user(latest["project_id"], None)
 
     return vision
 

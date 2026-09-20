@@ -1,27 +1,29 @@
 """
-Process-wide API state — free-conversation Session and Steps workbench tree.
+Process-wide API state — Session mint on boot and Steps workbench tree.
 
 Owned by backend.api (not agent/ or project/): HTTP adapters need a
 place for request-spanning pointers that are not domain logic.
 """
 
 # Contents
-#  1. Free-conversation session
-#      - session
+#  1. Session mint (Log → Sessions)
+#      - start_session() once at import
 #
 #  2. Steps workbench tree
 #      - tree / tree_duration / tree_zoomed
 #      - mint_step_id()
 
-from backend.agent.process_turn import Session
+from backend.store.session import start_session
 from backend.project.panes.canvas.bead import Step
 
 
 # ============================================================
-# 1. Free-conversation session
+# 1. Session mint (Log → Sessions)
 # ============================================================
 
-session = Session()  # process-wide - /api/message only
+# One Session record per HTTP process start — same timing as the old
+# free-conversation Session() side effect, without ChatFocus.
+start_session()
 
 
 # ============================================================

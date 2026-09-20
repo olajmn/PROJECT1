@@ -1,68 +1,60 @@
 """
-Local storage for goals, plans, and Visions. Goal history is one JSON
-object per line in data/plans.jsonl (JSONL); Visions stay as a JSON
-array in data/visions.json. Both git-ignored (see .gitignore) - this
-is personal information, never committed. Session records live in
-session.py (data/sessions.json). A legacy data/plans.json array, if
-still present, is migrated to plans.jsonl on first load.
+Local storage for goals, plans, and simulated users (id#N). Goal
+history is one JSON object per line in data/plans.jsonl (JSONL);
+simulated users are a JSON array in data/users.json (legacy
+data/visions.json is promoted on first load). Both git-ignored (see
+.gitignore) - this is personal information, never committed. Session
+records live in session.py (data/sessions.json). A legacy
+data/plans.json array, if still present, is migrated to plans.jsonl on
+first load.
 
 Goal identity/grouping lives in goal/resolver.py, not here - see
 that module's docstring for why goal_id minting/backfill stays in this
 file regardless.
 
-Vision is a second, much smaller store of the same shape as a goal's
-identity - a plain list of {id, text, created_at} records, no history,
-no normalization, no backfill (nothing predates it). A Goal record MAY
-carry an optional `vision_id` into this list; most won't, and that's
-normal, not a gap. Not its own module the way resolver.py is - there's
-no grouping/derivation logic here, just create/list/get/archive, so a
-separate file would be structure without a use for it yet (see
-docs/05-decisions.md for the fuller reasoning).
+Simulated users are a second, much smaller store of the same shape as
+a project's identity - a plain list of {id, text, created_at} records,
+no history, no normalization beyond disk promote from visions.json. A
+plan record MAY carry an optional `sim_user_id` into this list (legacy
+`vision_id` is promoted on load); most won't until Projects assigns
+one. Not its own module the way resolver.py is - there's no
+grouping/derivation logic here, just create/list/get/archive.
 
-A Vision can be archived (`archived: True` on its record) once it no
-longer represents an active direction - a lifecycle distinct from a
-Goal's completed/cancelled, since a Vision isn't something that gets
-"finished" (see docs/planning-model.md, the authority on Vision).
-Archiving mutates
-the one existing record in place - the only case where a Vision record
-changes after creation - rather than appending, matching the "single
-mutable fact, not a chain" reasoning above. This function itself never
-touches Goal records - detaching an active Goal from an archived
-Vision (planner.archive_vision(), which calls this) is a separate,
-higher-level decision, not something this plain persistence function
-does on its own.
+A simulated user can be archived (`archived: True`) - mutates the one
+existing record in place. Detaching projects from an archived user
+(planner.archive_user()) is a higher-level decision, not done here.
 
-Every record also carries a `user_id`, always DEFAULT_USER_ID for now -
-there is exactly one person using this app (real multi-user support is
-explicitly deferred past MVP, needs proper auth + encryption first; see
-docs/05-decisions.md). Not the start of an accounts system - a stable
-field so existing history won't need a migration if multi-user support
-is ever built. Unlike goal_id, there is no minting/counter for it:
-there's only ever one value.
+Every record also carries a stub `user_id`, always DEFAULT_USER_ID for
+now - there is exactly one *operator* of this app (auth deferred). That
+field is NOT the simulated multi-user filter; that is `sim_user_id`.
+Unlike project_id, there is no minting/counter for the stub: there's
+only ever one value.
 """
 
 # Contents
 #  1. Setup & legacy normalization
-#      - DATA_DIR / PLANS_FILE / LEGACY_PLANS_FILE / VISIONS_FILE / DEFAULT_USER_ID
+#      - DATA_DIR / PLANS_FILE / LEGACY_PLANS_FILE / USERS_FILE /
+#        LEGACY_VISIONS_FILE / DEFAULT_USER_ID
 #      - ensure_data_dir()
 #      - _LEGACY_HORIZON_KEY_RENAMES
 #      - _normalize_plan()
 #      - _backfill_goal_ids() / _normalize_project_ids() / record_project_id()
+#      - _normalize_sim_user_ids()
 #      - _backfill_user_ids()
 #
 #  2. Goal records (plans.jsonl)
 #      - _next_goal_id() / _load_all() / _save_all() / _append_record()
-#      - save_plan()  (persists project_id; param still named goal_id)
+#      - save_plan()  (persists project_id + sim_user_id)
 #      - stamp_map_focus()
 #      - load_history()
 #      - get_latest_plan()
 #
-#  3. Vision
-#      - _load_all_visions() / _save_all_visions() / _next_vision_id()
-#      - save_vision()
-#      - load_visions()
-#      - get_vision()
-#      - archive_vision()
+#  3. Simulated users (users.json)
+#      - _load_all_users() / _save_all_users() / _next_user_id()
+#      - save_user()
+#      - load_users()
+#      - get_user()
+#      - archive_user()
 
 import json
 from datetime import datetime
@@ -71,9 +63,10 @@ from pathlib import Path
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 PLANS_FILE = DATA_DIR / "plans.jsonl"
 LEGACY_PLANS_FILE = DATA_DIR / "plans.json"
-VISIONS_FILE = DATA_DIR / "visions.json"
+USERS_FILE = DATA_DIR / "users.json"
+LEGACY_VISIONS_FILE = DATA_DIR / "visions.json"
 
-# The only user_id that exists today - see module docstring.
+# The only stub operator user_id that exists today - see module docstring.
 DEFAULT_USER_ID = 1
 
 
@@ -171,12 +164,36 @@ def _normalize_project_ids(records: list[dict]) -> bool:
     return needed_rewrite
 
 
+def _normalize_sim_user_ids(records: list[dict]) -> bool:
+    """Promote legacy vision_id → sim_user_id; drop vision_id from memory.
+
+    Ensures every record has sim_user_id (None when unset). Returns True
+    if a disk rewrite is needed so grepping shows sim_user_id.
+    """
+    needed_rewrite = False
+    for record in records:
+        has_sim = "sim_user_id" in record
+        has_vision = "vision_id" in record
+        if has_vision and not has_sim:
+            record["sim_user_id"] = record["vision_id"]
+            needed_rewrite = True
+        elif has_vision and has_sim:
+            needed_rewrite = True
+        elif not has_sim:
+            record["sim_user_id"] = None
+            needed_rewrite = True
+        if "vision_id" in record:
+            del record["vision_id"]
+            needed_rewrite = True
+    return needed_rewrite
+
+
 def _backfill_user_ids(records: list[dict]) -> None:
     """
-    Records saved before `user_id` existed get DEFAULT_USER_ID - unlike
-    _backfill_goal_ids(), there's no grouping/counting to do: every
-    record belongs to the same single user, so there's only one value
-    to fill in. Mutates records in place, same as _backfill_goal_ids().
+    Records saved before stub `user_id` existed get DEFAULT_USER_ID -
+    unlike _backfill_goal_ids(), there's no grouping/counting to do:
+    every record belongs to the same operator, so there's only one
+    value to fill in. Mutates records in place.
     """
     for record in records:
         if not record.get("user_id"):
@@ -206,11 +223,12 @@ def _normalize_records(records: list[dict]) -> tuple[list[dict], bool]:
     """Backfill ids and normalize plan shapes in place.
 
     Returns (records, needs_disk_rewrite) — rewrite when goal_id was
-    promoted to project_id so on-disk JSONL matches the new key.
+    promoted to project_id or vision_id to sim_user_id.
     """
     _backfill_goal_ids(records)
     _backfill_user_ids(records)
     needs_rewrite = _normalize_project_ids(records)
+    needs_rewrite = _normalize_sim_user_ids(records) or needs_rewrite
     for record in records:
         record["plan"] = _normalize_plan(record["plan"])
     return records, needs_rewrite
@@ -331,7 +349,7 @@ def save_plan(
     goal_id: int | None = None,
     frozen_duration: dict | None = None,
     current_step: int = 0,
-    vision_id: int | None = None,
+    sim_user_id: int | None = None,
     step_status: list[str] | None = None,
 ) -> dict:
     """
@@ -394,17 +412,17 @@ def save_plan(
     saved before this field existed; planner.advance_step() treats a
     missing/mismatched-length list as "every step still open" rather
     than requiring a migration. Callers that carry `current_step`
-    forward unchanged across a replan/Vision-change/cancellation must
+    forward unchanged across a replan/user-change/cancellation must
     carry this forward the same way, or a Step's resolved status would
     be silently lost.
 
-    `vision_id` optionally links this goal to a Vision - broader,
-    cross-goal context, not part of the operational goal -> plan ->
-    action -> feedback loop (see docs/planning-model.md, the authority
-    on Vision). None is the normal case. Like `project_id`, never invented by a caller
-    - pass an id from save_vision()/load_visions(), or carry the
-    existing record's own `vision_id` forward unchanged across a
-    replan (same reasoning as `frozen_duration`).
+    `sim_user_id` optionally links this project to a simulated user
+    (id#N in the UI). None is the normal case until Projects
+    assigns one. Like `project_id`, never invented by a caller - pass
+    an id from save_user()/load_users(), or carry the existing
+    record's own `sim_user_id` forward unchanged across a replan
+    (same reasoning as `frozen_duration`). Distinct from stub
+    `user_id` (= DEFAULT_USER_ID).
 
     Returns the record that was saved (useful for confirming to the user).
     """
@@ -413,7 +431,7 @@ def save_plan(
         "id": len(records) + 1,
         "user_id": DEFAULT_USER_ID,
         "project_id": goal_id if goal_id is not None else _next_goal_id(records),
-        "vision_id": vision_id,
+        "sim_user_id": sim_user_id,
         "goal": goal,
         "plan": plan,
         "feedback": feedback,
@@ -473,108 +491,101 @@ def get_latest_plan() -> dict | None:
 
 
 # ============================================================
-# 3. Vision
+# 3. Simulated users (users.json)
 # ============================================================
 
 
-def _load_all_visions() -> list[dict]:
-    """Read every saved vision from disk. Empty list if the file doesn't exist yet."""
-    if not VISIONS_FILE.exists():
+def _load_all_users() -> list[dict]:
+    """Read every saved simulated user. Empty list if neither users.json
+    nor legacy visions.json exists. When only visions.json is present,
+    load it and rewrite as users.json (one-shot promote).
+    """
+    if USERS_FILE.exists():
+        path = USERS_FILE
+    elif LEGACY_VISIONS_FILE.exists():
+        path = LEGACY_VISIONS_FILE
+    else:
         return []
     try:
-        with open(VISIONS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+        with open(path, "r", encoding="utf-8") as f:
+            users = json.load(f)
     except json.JSONDecodeError as e:
         raise RuntimeError(
-            f"{VISIONS_FILE} is corrupted and can't be read as JSON ({e}). "
+            f"{path} is corrupted and can't be read as JSON ({e}). "
             "It may have been interrupted mid-write. Restore it from a "
             "backup or fix it by hand before continuing."
         ) from e
+    if path is LEGACY_VISIONS_FILE:
+        _save_all_users(users)
+    return users
 
 
-def _save_all_visions(visions: list[dict]) -> None:
-    """Write the full list of visions back to disk - same atomic-rename approach as _save_all()."""
+def _save_all_users(users: list[dict]) -> None:
+    """Write the full list of simulated users - same atomic-rename as
+    _save_all()."""
     ensure_data_dir()
-    tmp_file = VISIONS_FILE.with_suffix(".json.tmp")
+    tmp_file = USERS_FILE.with_suffix(".json.tmp")
     with open(tmp_file, "w", encoding="utf-8") as f:
-        json.dump(visions, f, indent=2, ensure_ascii=False)
-    tmp_file.replace(VISIONS_FILE)
+        json.dump(users, f, indent=2, ensure_ascii=False)
+    tmp_file.replace(USERS_FILE)
 
 
-def _next_vision_id(visions: list[dict]) -> int:
-    """One higher than the largest vision id in history, or 1 if there are none yet."""
-    existing = [v["id"] for v in visions]
+def _next_user_id(users: list[dict]) -> int:
+    """One higher than the largest user id, or 1 if none yet."""
+    existing = [u["id"] for u in users]
     return max(existing, default=0) + 1
 
 
-def save_vision(text: str) -> dict:
+def save_user(text: str) -> dict:
     """
-    Create a new Vision and persist it - broader, cross-goal context a
-    Goal can optionally reference (see save_plan()'s `vision_id`
-    parameter and docs/planning-model.md, the authority on Vision).
+    Create a simulated user and persist it - a tenant slot projects can
+    optionally reference via sim_user_id (see save_plan()).
 
-    No history, no revisions: unlike a goal/plan record, a vision is a
-    single mutable fact ("this is what the text currently says"), not
-    a chain - there's nothing here yet that needs to look back at how
-    a vision's wording changed over time. Editing/deleting an existing
-    vision is intentionally not built yet (see docs/05-decisions.md) -
-    this only ever appends a new one.
+    No history, no revisions: a single mutable fact, not a chain.
+    Editing/deleting is intentionally not built yet - this only ever
+    appends a new one.
 
     Returns the record that was saved.
     """
-    visions = _load_all_visions()
+    users = _load_all_users()
     record = {
-        "id": _next_vision_id(visions),
+        "id": _next_user_id(users),
         "user_id": DEFAULT_USER_ID,
         "text": text,
         "created_at": datetime.now().isoformat(),
     }
-    visions.append(record)
-    _save_all_visions(visions)
+    users.append(record)
+    _save_all_users(users)
     return record
 
 
-def load_visions() -> list[dict]:
-    """Return every saved Vision, oldest first."""
-    return _load_all_visions()
+def load_users() -> list[dict]:
+    """Return every saved simulated user, oldest first."""
+    return _load_all_users()
 
 
-def get_vision(vision_id: int) -> dict | None:
-    """Return the Vision with this id, or None if it doesn't exist (e.g. a stale reference)."""
-    for vision in _load_all_visions():
-        if vision["id"] == vision_id:
-            return vision
+def get_user(sim_user_id: int) -> dict | None:
+    """Return the simulated user with this id, or None if missing."""
+    for user in _load_all_users():
+        if user["id"] == sim_user_id:
+            return user
     return None
 
 
-def archive_vision(vision_id: int) -> dict | None:
+def archive_user(sim_user_id: int) -> dict | None:
     """
-    Mark a Vision as archived - no longer an active direction, but kept
-    in full (see module docstring). Mutates the existing record in
-    place, unlike save_vision()'s append-only create.
+    Mark a simulated user as archived. Mutates the existing record in
+    place. Returns the record, or None if id doesn't resolve. Archiving
+    an already-archived user is a no-op.
 
-    Returns the (possibly already-archived) record, or None if
-    `vision_id` doesn't resolve to any Vision. Archiving an
-    already-archived Vision is a genuine no-op - returns it unchanged
-    rather than rewriting the file, same idiom as
-    cancel_goal().
-
-    Never touches `data/plans.jsonl` - a Goal's `vision_id` reference is
-    left exactly as it was.
-
-    Note: this does not stamp when the archiving itself happened -
-    only `created_at` (when the Vision was made) is recorded, so a
-    Session's derived log (see session.py / docs/04-current-state.md
-    § 8) can currently only ever show an archived Vision under the
-    session that *created* it, not the one that archived it. Flagged,
-    not fixed - see docs/04-current-state.md § 5.
+    Never touches plans.jsonl - a project's sim_user_id is left as-is.
     """
-    visions = _load_all_visions()
-    for vision in visions:
-        if vision["id"] == vision_id:
-            if vision.get("archived"):
-                return vision
-            vision["archived"] = True
-            _save_all_visions(visions)
-            return vision
+    users = _load_all_users()
+    for user in users:
+        if user["id"] == sim_user_id:
+            if user.get("archived"):
+                return user
+            user["archived"] = True
+            _save_all_users(users)
+            return user
     return None

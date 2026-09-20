@@ -96,7 +96,6 @@ REFERENCE_SCAN_TARGETS = [
     "current/SESSION-TODO.md",
     "current/README.md",
     "app/backend",
-    "app/cli.py",
     "app/server.py",
     "app/ui/src",
     "app/README.md",

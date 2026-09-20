@@ -56,7 +56,6 @@ DEFAULT_TARGETS = [
     "current/frontend",
     "current/SESSION-TODO.md",
     "app/backend",
-    "app/cli.py",
     "app/server.py",
     "app/ui/src",
 ]

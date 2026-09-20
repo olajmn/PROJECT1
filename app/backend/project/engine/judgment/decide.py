@@ -9,7 +9,7 @@ planable. Parameter `goal` is still the stored project text
 """
 
 from backend.foundation.time import resolve_duration
-from backend.store.data_persistence import get_vision
+from backend.store.data_persistence import get_user
 from backend.project.engine.judgment.ask import ask
 from backend.project.engine.judgment.prompts import DECIDE_SYSTEM_PROMPT
 from backend.project.engine.judgment.current_time import current_time
@@ -20,7 +20,7 @@ DECIDE_KEYS = ("clarification", "suggested_action", "suggested_duration")
 def decide(
     goal: str,
     duration: str | None = None,
-    vision_id: int | None = None,
+    sim_user_id: int | None = None,
     prior_suggestion: str | None = None,
     reply: str | None = None,
     opening: bool = False,
@@ -36,8 +36,8 @@ def decide(
         f"The current date and time is: {current_time()}\n\n"
         f"My project is: {goal}"
     )
-    if vision_id is not None:
-        vision = get_vision(vision_id)
+    if sim_user_id is not None:
+        vision = get_user(sim_user_id)
         if vision is not None:
             user_content += (
                 f"\n\nThis project is part of a broader direction: "

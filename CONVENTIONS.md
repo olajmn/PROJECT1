@@ -8,6 +8,7 @@ Technical standards for this codebase. Applies going forward.
 - Interface style
 - Documentation neutrality
 - Code documentation
+- New code placement
 - Project structure
 - Environment
 - Security & privacy
@@ -31,6 +32,17 @@ Technical standards for this codebase. Applies going forward.
 ## Code documentation
 
 Source-code Contents (what a file's navigation block should contain, and when one is warranted) is defined in `global-standards/CODE_STYLE_GUIDE.md` §1-§2, not restated here. Document-oriented Contents is `global-standards/DOCUMENTATION_STYLE_GUIDE.md`'s job; `global-standards/_CONTENT_HIERARCHY.md` covers heading-hierarchy notation where that level of detail is needed. This project has no Contents rule of its own beyond those.
+
+## New code placement
+
+**Prefer** giving a **new capability** (feature, helper, pane behavior, policy with its own surface) its **own file** — or a small folder when several closely related files belong together — rather than appending the bulk of it into an existing “nearby” module. This is a default bias for reviewability, not a mandate to split every change.
+
+- Existing files may gain a short import and a thin call site; they should not absorb a large new concern by default.
+- Prefer a named home that matches the concern (`columnRail/collapseRail.ts`, `engine/judgment/…`) when the boundary is real.
+- Stay in the existing file when the change is clearly the same concern (bugfix, rename, small extension) or would only create a micro-file without a clear boundary.
+- Goal: avoid +500-line dumps into a random open file; do not invent files for ceremony.
+
+This is this project's concrete application of `global-standards/CODE_STYLE_GUIDE.md` §2 (distinct concerns) and §6 (avoid unprompted layers — new files for real boundaries, not ceremony).
 
 ## Project structure
 

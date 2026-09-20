@@ -6,11 +6,10 @@
 
 // Contents
 //  1. Plan tree
-//  2. Free conversation
-//  3. Goals / Projects
-//  4. Vision
-//  5. Chat focus
-//  6. Session log
+//  2. Goals / Projects
+//  3. Simulated users
+//  4. Session log
+//  5. Outline import / Steps tree (see below)
 
 // 1. Plan tree
 
@@ -34,24 +33,10 @@ export interface PlanningNode {
   children: PlanningNode[];
 }
 
-// 2. Free conversation
-
-/** POST /api/message — process_turn() return shape. project_id is
- * canonical; goal_id is a deprecated mirror (Phase B). */
-export interface AgentResponse {
-  reply: string;
-  capability: string | null;
-  surface: string | null;
-  node: PlanningNode | null;
-  project_id: number | null;
-  /** @deprecated use project_id */
-  goal_id?: number | null;
-}
-
-// 3. Goals / Projects
+// 2. Goals / Projects
 //
-// Wire identity is project_id / /api/projects (Phase B). Display text
-// field remains `goal` until a later rename.
+// Wire identity is project_id / /api/projects. Display text field
+// remains `goal` until a later rename.
 
 export interface ChatMessage {
   role: "user" | "agent";
@@ -62,12 +47,12 @@ export interface ChatMessage {
 
 export interface GoalView {
   project_id: number;
-  /** @deprecated use project_id */
-  goal_id?: number;
   goal: string;
   completed: boolean;
   cancelled: boolean;
-  vision_id: number | null;
+  sim_user_id: number | null;
+  /** Open planner clarification, if any. */
+  clarification?: string | null;
   surface: string | null;
   node: PlanningNode | null;
   thread: ChatMessage[];
@@ -77,23 +62,16 @@ export interface GoalView {
 /** Same record as GoalView — product name for the Projects surface. */
 export type ProjectView = GoalView;
 
-/** Resolve identity from a view that may still carry the deprecated mirror. */
-export function projectIdOf(view: {
-  project_id?: number | null;
-  goal_id?: number | null;
-}): number {
-  const id = view.project_id ?? view.goal_id;
-  if (id == null) {
+export function projectIdOf(view: { project_id?: number | null }): number {
+  if (view.project_id == null) {
     throw new Error("missing project_id");
   }
-  return id;
+  return view.project_id;
 }
 
 export interface HistoryEntry {
   id: number;
   project_id: number;
-  /** @deprecated use project_id */
-  goal_id?: number;
   goal: string;
   duration: string | null;
   completed: boolean;
@@ -104,37 +82,26 @@ export interface HistoryEntry {
   step_count: number;
 }
 
-// 4. Vision
+// 3. Simulated users
 
-export interface VisionView {
+export interface UserView {
   id: number;
   text: string;
   archived: boolean;
   created_at: string;
 }
 
-// 5. Chat focus
-
-export interface ChatFocusView {
-  project_id: number | null;
-  /** @deprecated use project_id */
-  goal_id?: number | null;
-  goal: string | null;
-}
-
-// 6. Session log
+// 4. Session log
 
 export interface SessionGoalEvent {
   project_id: number;
-  /** @deprecated use project_id */
-  goal_id?: number;
   goal: string;
   feedback: string | null;
   created_at: string;
 }
 
-export interface SessionVisionEvent {
-  vision_id: number;
+export interface SessionUserEvent {
+  sim_user_id: number;
   text: string;
   created_at: string;
 }
@@ -144,10 +111,10 @@ export interface SessionLogView {
   started_at: string;
   ended_at: string | null;
   goal_events: SessionGoalEvent[];
-  vision_events: SessionVisionEvent[];
+  user_events: SessionUserEvent[];
 }
 
-// 7. Outline import
+// 5. Outline import
 
 export interface OutlineNode {
   label: string;

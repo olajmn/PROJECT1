@@ -43,7 +43,8 @@ def take_turn(
     map_focus: str | None = None,
     focus_step_id: str | None = None,
 ) -> dict:
-    """One message in → reply out. Same result keys as process_turn(),
+    """One message in → reply out. Result keys match Projects chat
+    responses (reply, surface, node, project_id).
     minus capability (always Planning here).
 
     map_focus / focus_step_id: project-map node the user is looking at.
@@ -114,7 +115,6 @@ def take_turn(
         "node": node,
         "reply": reply,
         "project_id": pid,
-        "goal_id": pid,  # deprecated mirror
     }
 
 

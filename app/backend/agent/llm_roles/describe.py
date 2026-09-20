@@ -5,8 +5,8 @@ Formerly LLM2 / `backend/llm2/parser.py` ("Parser / Compiler" /
 Understand). One LLM call: a short neutral sentence, capability-
 agnostic. No judgment about whether action is needed, no capability
 name (see docs/v4-migration-decision.md, "LLM2 must not produce
-capability-specific concepts"). Gate/Focus (today llm3) decides what
-runs next; Planning owns domain fields.
+capability-specific concepts"). Project chat (`take_turn`) uses the
+in-context variant; Planning owns domain fields.
 """
 
 import json
@@ -26,7 +26,7 @@ SYSTEM_PROMPT = (
 
 def describe(message: str) -> dict:
     """{"about": <neutral description of what `message` concerns>} -
-    what intake / llm3 sees of this turn. Falls back to the raw
+    what callers see of this turn. Falls back to the raw
     message itself if the model's response doesn't have the expected
     shape - the turn is never silently dropped."""
     return _about(SYSTEM_PROMPT, message, fallback=message)

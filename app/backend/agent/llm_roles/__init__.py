@@ -1,8 +1,8 @@
 """
 Shared conversation roles - Voice and Describe.
 
-Lives under `backend.agent` with manifestation and llm3. Not a domain
-and not an entry orchestrator: reusable LLM *roles* any caller may invoke.
+Lives under `backend.agent` with manifestation. Not a domain and not
+an entry orchestrator: reusable LLM *roles* any caller may invoke.
 
 - Voice (`voice.py`) - talk to the user (was `llm1/`)
 - Describe (`describe.py`) - one neutral sentence about the message
@@ -10,8 +10,7 @@ and not an entry orchestrator: reusable LLM *roles* any caller may invoke.
 
 Decide / Stage 3 is documented in `decide.md`. Stage 3 Decide lives in
 `project/engine/judgment/decide.py`; Fill orchestration in
-`judgment/run_stage3.py` (not this package). The `backend.agent.llm3`
-gate is only global small-talk vs Project - not Stage 3.
+`judgment/run_stage3.py` (not this package).
 """
 
 from backend.agent.llm_roles.describe import describe, describe_in_context

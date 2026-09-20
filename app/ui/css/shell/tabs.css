@@ -1,0 +1,89 @@
+/* Closable topbar tabs (shell chrome).
+ *
+ * Contents
+ *  1. Tablist
+ *      - .project-tabs
+ *  2. Tab chip
+ *      - .project-tab / .project-tab-label / .project-tab-close
+ */
+
+/* 1. Tablist */
+
+.project-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1 1 auto;
+  padding: 0.35rem 0;
+}
+
+/* 2. Tab chip */
+
+.project-tab {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.3rem 0.35rem 0.3rem 0.65rem;
+  border: 1px solid #ddd9d0;
+  border-radius: 0.4rem 0.4rem 0 0;
+  background: #efece6;
+  color: #777;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: none;
+  max-width: 14rem;
+  min-height: 1.85rem;
+}
+
+.project-tab:hover {
+  color: #333;
+  background: #f5f3ef;
+  border-color: #ccc7bc;
+}
+
+.project-tab.is-active,
+.project-tab[aria-selected="true"] {
+  color: #1a1a1a;
+  background: #fafaf8;
+  border-color: #d5d0c6;
+  border-bottom-color: #fafaf8;
+  font-weight: 600;
+  z-index: 1;
+}
+
+.project-tab-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 11rem;
+}
+
+.project-tab-close {
+  appearance: none;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0.25rem;
+  background: transparent;
+  color: #999;
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.project-tab-close:hover {
+  color: #1a1a1a;
+  background: rgba(0, 0, 0, 0.08);
+}

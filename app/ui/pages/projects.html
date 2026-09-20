@@ -9,7 +9,9 @@
 <body class="workspace-body">
 <div class="app-shell">
   <aside class="sidebar">
-    <div class="sidebar-brand">Projects</div>
+    <div class="sidebar-id" id="sidebar-id">
+      <button type="button" id="sidebar-brand" class="sidebar-brand" title="Switch or create id">ID</button>
+    </div>
     <form id="create-form" class="create-project-form">
       <textarea id="create-input" rows="2" placeholder="New project…" required></textarea>
       <button type="submit">Create</button>
@@ -18,11 +20,9 @@
     <div id="project-list" class="project-list"></div>
     <p id="list-empty" class="sidebar-empty" hidden>No projects yet.</p>
     <nav class="sidebar-more">
-      <a href="vision.html">Vision</a>
       <a href="log.html">Log</a>
       <details class="sidebar-other">
         <summary>Other</summary>
-        <a href="index.html">Conversation</a>
         <a href="set-goal.html">Set Goal</a>
         <a href="steps.html">Steps (lab)</a>
       </details>

@@ -4,25 +4,24 @@ not domain decisions.
 """
 
 # Contents
-#  1. Goal / history / chat-focus
+#  1. Goal / history
 #      - goal_view()
 #      - active_goals() / completed_goals()
 #      - HISTORY_PLAN_FIELDS / history_view()
-#      - chat_focus_view()
 #
 #  2. Session log
-#      - session_goal_event() / session_vision_event()
+#      - session_goal_event() / session_user_event()
 #      - session_log_view()
 #
-#  3. Vision / Steps tree
-#      - vision_view()
+#  3. Simulated user / Steps tree
+#      - user_view()
 #      - step_view() / tree_view()
 #      - ancestor_labels()
 
 from backend.agent.manifestation import surface_text, to_planning_node
-from backend.store.data_persistence import load_history, load_visions, record_project_id
+from backend.store.data_persistence import load_history, load_users, record_project_id
 from backend.project.panes.chat.thread import thread_for
-from backend.project.panes.create.resolver import created_at_key, get_latest_for_all_goals, get_latest_for_goal
+from backend.project.panes.create.resolver import created_at_key, get_latest_for_all_goals
 from backend.project.panes.canvas.bead import Step
 from backend.api import state
 
@@ -33,10 +32,9 @@ from backend.api import state
 
 
 def goal_view(record: dict, reply: str | None = None) -> dict:
-    """The one shape every /api/projects (and deprecated /api/goals)
-    response uses for a single project — identity, display text,
-    completion, plus manifestation. `project_id` is canonical;
-    `goal_id` is a deprecated mirror for one release (Phase B).
+    """The one shape every /api/projects response uses for a single
+    project — identity, display text, completion, plus manifestation.
+    `project_id` is canonical.
     """
     pid = record_project_id(record)
     try:
@@ -46,11 +44,11 @@ def goal_view(record: dict, reply: str | None = None) -> dict:
         node = None
     return {
         "project_id": pid,
-        "goal_id": pid,  # deprecated mirror — remove after alias period
         "goal": record["goal"],
         "completed": bool(record.get("completed")),
         "cancelled": bool(record.get("cancelled")),
-        "vision_id": record.get("vision_id"),
+        "sim_user_id": record.get("sim_user_id"),
+        "clarification": record["plan"].get("clarification"),
         "surface": surface_text(record),
         "node": node,
         "thread": thread_for(pid, reply) if pid is not None else [],
@@ -98,7 +96,6 @@ def history_view(record: dict) -> dict:
     return {
         "id": record["id"],
         "project_id": pid,
-        "goal_id": pid,  # deprecated mirror
         "goal": record["goal"],
         "duration": record.get("duration"),
         "completed": bool(record.get("completed")),
@@ -110,50 +107,31 @@ def history_view(record: dict) -> dict:
     }
 
 
-def chat_focus_view() -> dict:
-    """{project_id, goal_id, goal} — which project, if any, free
-    conversation is focused on. project_id is canonical; goal_id is a
-    deprecated mirror. ChatFocus attribute name remains goal_id this
-    round (Python symbol rename is a follow-up).
-    """
-    goal_id = state.session.chat_focus.goal_id
-    if goal_id is None:
-        return {"project_id": None, "goal_id": None, "goal": None}
-    latest = get_latest_for_goal(goal_id)
-    return {
-        "project_id": goal_id,
-        "goal_id": goal_id,
-        "goal": latest["goal"] if latest else None,
-    }
-
-
 def session_goal_event(record: dict) -> dict:
     """One line in a Session's derived log for a project/plan record."""
     pid = record_project_id(record)
     return {
         "project_id": pid,
-        "goal_id": pid,  # deprecated mirror
         "goal": record["goal"],
         "feedback": record.get("feedback"),
         "created_at": record["created_at"],
     }
 
 
-def session_vision_event(vision: dict) -> dict:
-    """One line in a Session's derived log for a Vision - only ever a
-    creation event, since archiving isn't timestamped yet (see
-    data_persistence.archive_vision()'s own docstring)."""
+def session_user_event(user: dict) -> dict:
+    """One line in a Session's derived log for a simulated user —
+    creation only (archiving isn't timestamped yet)."""
     return {
-        "vision_id": vision["id"],
-        "text": vision["text"],
-        "created_at": vision["created_at"],
+        "sim_user_id": user["id"],
+        "text": user["text"],
+        "created_at": user["created_at"],
     }
 
 
 def session_log_view(record: dict, window_end: str | None) -> dict:
     """A persisted Session record plus everything that happened during
     it - derived at read time, not logged by any mutating route: every
-    load_history()/load_visions() entry whose `created_at` falls
+    load_history()/load_users() entry whose `created_at` falls
     inside [started_at, window_end or now) belongs to this Session,
     because nothing else currently could have created it.
 
@@ -182,10 +160,10 @@ def session_log_view(record: dict, window_end: str | None) -> dict:
         ),
         key=lambda e: e["created_at"],
     )
-    vision_events = sorted(
+    user_events = sorted(
         (
-            session_vision_event(v) for v in load_visions()
-            if start <= v["created_at"] and (end is None or v["created_at"] < end)
+            session_user_event(u) for u in load_users()
+            if start <= u["created_at"] and (end is None or u["created_at"] < end)
         ),
         key=lambda e: e["created_at"],
     )
@@ -194,21 +172,20 @@ def session_log_view(record: dict, window_end: str | None) -> dict:
         "started_at": start,
         "ended_at": end,
         "goal_events": goal_events,
-        "vision_events": vision_events,
+        "user_events": user_events,
     }
 
 
-def vision_view(vision: dict) -> dict:
-    """{id, text, archived, created_at} - load_visions()'s own record
-    shape already has exactly these fields, `archived` just isn't
-    guaranteed present (see data_persistence.archive_vision(), only
-    ever set once true) - normalized to always-present here so the UI
-    doesn't need to know that."""
+def user_view(user: dict) -> dict:
+    """{id, text, archived, created_at} - load_users()'s own record
+    shape already has exactly these fields; `archived` just isn't
+    guaranteed present (only set once true) - normalized here so the
+    UI doesn't need to know that."""
     return {
-        "id": vision["id"],
-        "text": vision["text"],
-        "archived": bool(vision.get("archived")),
-        "created_at": vision["created_at"],
+        "id": user["id"],
+        "text": user["text"],
+        "archived": bool(user.get("archived")),
+        "created_at": user["created_at"],
     }
 
 
@@ -243,5 +220,3 @@ def ancestor_labels(root: Step, step_id: str) -> list[str] | None:
         if below is not None:
             return [root.label, *below]
     return None
-
-

@@ -23,13 +23,11 @@ architecture is largely already built; leave that file as history.
 
 ## Status
 
-**Phase A + Phase B (compat) complete** (2026-09-20). Primary wire is
-`project_id` / `/api/projects`; `/api/goals` and response `goal_id` are
-deprecated aliases for one release ([[05-decisions]] #29). Engine layout
-the same day: `engine/plan/` flattened to `engine/judgment/` +
-`engine/when/`; `planner.generate_plan` aliases `run_stage3`. Follow-ups:
-drop aliases; rename display field `goal` and Python symbols; optionally
-split `planner.py` facade / stop writing unused horizon keys.
+**Phase A + Phase B complete**; wire aliases removed 2026-09-20 (afternoon).
+Primary wire is `project_id` / `/api/projects` only. Disk still promotes
+legacy `goal_id` → `project_id` on load. Follow-ups: rename display
+field `goal` and Python symbols; optionally split `planner.py` /
+stop writing unused horizon keys.
 
 | Phase | Goal | Status |
 |---|---|---|
@@ -37,7 +35,8 @@ split `planner.py` facade / stop writing unused horizon keys.
 | A2 | Stop auto-minting 2–4 middle beads on PLAN (P9) | **Done** 2026-09-19 |
 | A3 | Name `plan.progression` as display SoT; keep calendar `plan.steps` as legacy WHEN (P3) | **Done** 2026-09-20 |
 | A4 | Bring [[02-product]] in line with #25 + Projects home | **Done** 2026-09-20 |
-| B | `project_id` / `/api/projects` / JSONL / llm3 `"project"` | **Done** 2026-09-20 (alias period) |
+| B | `project_id` / `/api/projects` / JSONL / llm3 `"project"` | **Done** 2026-09-20 |
+| B cleanup | Drop `/api/goals` + response `goal_id` mirror | **Done** 2026-09-20 |
 
 ## Phase A — product (wire unchanged)
 
@@ -106,17 +105,17 @@ Start B only when:
 
 ## Phase B — wire / storage
 
-**Status: Done (compat release) 2026-09-20** — see [[05-decisions]] #29.
+**Status: Done 2026-09-20** — see [[05-decisions]] #29; aliases dropped
+the same day (afternoon cleanup).
 
-Primary paths are `project_id` and `/api/projects`. Exit criterion for
-*removing* aliases: no `/api/goals` handlers and no `goal_id` in API
-JSON (separate cleanup). Display field `goal` and Python symbols like
-`create_goal` remain until a follow-up.
+Primary paths are `project_id` and `/api/projects`. Display field `goal`
+and Python symbols like `create_goal` remain until a follow-up.
 
 ### B1 — Inventory + strategy
 
-Done: compatibility layer — read both on load; write `project_id`;
-alias `/api/goals` → same handlers.
+Done: compatibility layer — read both on load; write `project_id`.
+Temporary `/api/goals` alias + response `goal_id` mirror existed for
+one day, then dropped (B cleanup).
 
 ### B2 — Data
 

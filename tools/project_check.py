@@ -66,13 +66,10 @@ PYTHON = APP_ROOT / ".venv" / "bin" / "python3"
 RELEVANT_AREAS = [APP_ROOT / "backend", DOCS_ROOT]
 
 # .py corpus for stale-path and orphan-import scanning: backend/
-# recursively, plus the top-level entry points that import from it -
-# cli.py/server.py aren't under backend/, but are exactly where
-# backend.agent / planning are actually wired together (see
-# docs/04-current-state.md § 3.ii), so excluding them would make every
-# one of those modules look orphaned.
+# recursively, plus the top-level HTTP entry that imports from it.
+# (cli.py removed 2026-09-20 with free conversation — #31.)
 PY_SCAN_AREAS = ["backend"]
-PY_SCAN_FILES = ["cli.py", "server.py"]
+PY_SCAN_FILES = ["server.py"]
 
 # Real entry points worth confirming still import - not dynamically
 # discovered.
@@ -82,10 +79,8 @@ SMOKE_IMPORT_MODULES = [
     "backend.store.data_persistence",
     "backend.agent.llm_roles.voice",
     "backend.agent.llm_roles.describe",
-    "backend.agent.llm3.select",
     "backend.agent.manifestation",
     "backend.module_library.modules",
-    "cli",
     "server",
 ]
 
@@ -175,7 +170,7 @@ def run_tool(module: str) -> tuple[int, str]:
 def run_pyflakes() -> tuple[int, str]:
     """Run pyflakes (see app/requirements.txt) against app/'s
     backend/ and its top-level entry points."""
-    return _run([str(PYTHON), "-m", "pyflakes", "backend", "cli.py", "server.py"])
+    return _run([str(PYTHON), "-m", "pyflakes", "backend", "server.py"])
 
 
 # A backend/...-looking .py path mentioned in a comment, docstring, or
@@ -194,7 +189,6 @@ CODE_PATH_RE = re.compile(r"\b(?:backend/|goals/)[A-Za-z0-9_/().-]+\.py\b")
 # its top-level entry points, .md under the shared docs/.
 STALE_PATH_SCAN_TARGETS: list[tuple[Path, str]] = [
     (APP_ROOT / "backend", "*.py"),
-    (APP_ROOT, "cli.py"),
     (APP_ROOT, "server.py"),
     (DOCS_ROOT, "*.md"),
 ]
@@ -203,7 +197,7 @@ STALE_PATH_SCAN_TARGETS: list[tuple[Path, str]] = [
 def stale_code_path_mentions() -> list[str]:
     """Every backend/...-looking (or bare goals/...-looking - see
     CODE_PATH_RE) .py path mentioned anywhere under app/backend/,
-    app/cli.py, app/server.py, or the shared docs/ that doesn't
+    app/server.py, or the shared docs/ that doesn't
     resolve to a real file under app/backend/ (a docs/ mention of
     `backend/...` or `goals/...` means app/backend/... specifically -
     current/backend/ uses the same relative shape but a different tree
@@ -310,7 +304,7 @@ def main() -> int:
         print("  all modules import cleanly")
 
     print()
-    print("=== pyflakes (app/backend/, app/cli.py, app/server.py) ===")
+    print("=== pyflakes (app/backend/, app/server.py) ===")
     code, output = run_pyflakes()
     print(output if output else "  no issues found")
     if code != 0:

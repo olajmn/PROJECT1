@@ -1,5 +1,5 @@
 // Log — one page for looking back: Completed, History, Sessions.
-// Primary work stays on Projects; Vision stays its own page.
+// Primary work stays on Projects; id#N is the Projects sidebar brand/menu.
 // Tab from ?tab= / #hash so old completed/history/sessions URLs can land here.
 
 // Contents
@@ -14,14 +14,14 @@ import {
   fetchHistory,
   fetchSessions,
 } from "../api.js";
-import { initVisionCount } from "../visionCount.js";
+import { initUserCount } from "../user/userCount.js";
 import { planElement } from "../map/tree.js";
 import type {
   GoalView,
   HistoryEntry,
   SessionGoalEvent,
   SessionLogView,
-  SessionVisionEvent,
+  SessionUserEvent,
 } from "../types.js";
 
 type PanelId = "completed" | "history" | "sessions";
@@ -206,11 +206,11 @@ function goalTimelineEntry(event: SessionGoalEvent): TimelineEntry {
   };
 }
 
-function visionTimelineEntry(event: SessionVisionEvent): TimelineEntry {
+function userTimelineEntry(event: SessionUserEvent): TimelineEntry {
   return {
     created_at: event.created_at,
-    label: "vision created",
-    text: `${event.text} (#${event.vision_id})`,
+    label: "user created",
+    text: `${event.text} (#${event.sim_user_id})`,
   };
 }
 
@@ -230,7 +230,7 @@ function renderSession(session: SessionLogView): HTMLElement {
 
   const timeline = [
     ...session.goal_events.map(goalTimelineEntry),
-    ...session.vision_events.map(visionTimelineEntry),
+    ...session.user_events.map(userTimelineEntry),
   ].sort((a, b) => a.created_at.localeCompare(b.created_at));
 
   if (timeline.length === 0) {
@@ -262,4 +262,4 @@ async function loadSessions(): Promise<void> {
 
 wireTabs();
 showPanel(resolveInitialPanel());
-initVisionCount();
+initUserCount();

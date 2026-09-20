@@ -1,35 +1,70 @@
-// Project workspace prototype — Notion-ish shell over the existing
-// goal_id backend. Left: project list + create. Center: open project
-// (intent + structure). Right/bottom: conversation for that project.
-// No new persistence model; ProjectView is the project record
-// (alias of GoalView — same /api/goals wire shape).
+// Project workspace — Notion-ish shell over Project records.
+// Left (sidebar): id#N menu + create + project list.
+// Center: open project map (topbar tabs).
+// Right: conversation for that project. Wire: project_id / /api/projects.
+
+// Contents
+//  1. Shell
+//  2. Selection helpers
+//      - clearNodeSelection()
+//      - isProgressionTree()
+//      - selected()
+//      - projectsForActiveUser()
+//      - ensureSelectionInActiveUser()
+//      - fillChatPlaceholder()
+//  3. Rendering
+//      - renderSidebarBrand()
+//      - renderList()
+//      - renderWorkspace()
+//      - renderProjectTopbar()
+//  4. Data
+//      - applyUsers()
+//      - replaceProject()
+//      - load()
+//  5. Event listeners
+//  6. Initialization
 
 import {
   addProgressionStep,
   cancelGoal,
   createGoal,
   fetchActiveGoals,
-  fetchVisions,
+  fetchUsers,
   importProgressionOutline,
   removeProgressionStep,
   sendGoalFeedback,
-  setGoalVision,
   zoomGoalStep,
 } from "../api.js";
 import { installCollapseRail } from "../shell/columnRail/collapseRail.js";
 import { installSidebarResize } from "../shell/columnResize.js";
+import { setButtonBusy } from "../shell/busy.js";
+import { renderTabStrip } from "../shell/tabs/tabStrip.js";
+import type { TabStripItem } from "../shell/tabs/tabStrip.js";
+import { installIdMenu } from "../sidebar/idMenu.js";
+import {
+  projectListIdLabel,
+  projectsChronologicalForUser,
+  projectsNewestFirst,
+} from "../sidebar/projectListOrder.js";
 import { createIsolateChat } from "../chat/isolateChat.js";
 import { treeWordsElement } from "../map/treeWords.js";
 import type { NodeMenuActionId } from "../map/treeWords.js";
 import { copyAsText } from "../map/copyAsText.js";
 import { buildPasteTreePanel } from "../map/pasteTree.js";
-import type { ProjectView, VisionView } from "../types.js";
+import {
+  getActiveUserId,
+  setActiveUserId,
+  userLabel,
+} from "../user/activeUser.js";
+import type { ProjectView, UserView } from "../types.js";
 
 const createForm = document.getElementById("create-form") as HTMLFormElement;
 const createInput = document.getElementById("create-input") as HTMLTextAreaElement;
 const createError = document.getElementById("create-error") as HTMLParagraphElement;
 const projectList = document.getElementById("project-list") as HTMLDivElement;
 const listEmpty = document.getElementById("list-empty") as HTMLParagraphElement;
+const sidebarBrand = document.getElementById("sidebar-brand") as HTMLButtonElement;
+const sidebarIdHost = document.getElementById("sidebar-id") as HTMLElement;
 const projectTopbar = document.getElementById("project-topbar") as HTMLElement;
 const projectMain = document.getElementById("project-main") as HTMLElement;
 const mainEmpty = document.getElementById("main-empty") as HTMLParagraphElement;
@@ -43,7 +78,21 @@ const workspace = document.querySelector(".workspace") as HTMLElement;
 const sidebarResize = document.getElementById("sidebar-resize") as HTMLElement;
 const chatResize = document.getElementById("chat-resize") as HTMLElement;
 
-// Shell column resize + chat column rail
+const PROGRESSION_STEP_ID = /^p\d+$/;
+const DEFAULT_CHAT_PLACEHOLDER = "Talk about this project…";
+
+let projects: ProjectView[] = [];
+let users: UserView[] = [];
+let selectedId: number | null = null;
+/** Which map node is selected (click / Talk about this). */
+let selectedNodeId: string | null = null;
+let selectedNodeLabel: string | null = null;
+let topTabProjectId: number | null = null;
+/** Apply after switching back to Map from a chat focus click. */
+let pendingMapFocus: { stepId: string; label: string } | null = null;
+
+// 1. Shell
+
 installSidebarResize(appShell, sidebarResize);
 const chatRailApi = installCollapseRail({
   container: workspace,
@@ -72,21 +121,47 @@ chatRailToggle.addEventListener("click", () => {
   chatRailApi.expand();
 });
 
-const PROGRESSION_STEP_ID = /^p\d+$/;
-const DEFAULT_CHAT_PLACEHOLDER = "Talk about this project…";
+const idMenu = installIdMenu({
+  anchor: sidebarBrand,
+  host: sidebarIdHost,
+  getUsers: () => users,
+  getProjects: () => projects,
+  onUsersChanged: (next) => {
+    applyUsers(next);
+  },
+  onProjectsUpdated: (updated) => {
+    for (const u of updated) {
+      projects = projects.map((p) =>
+        p.project_id === u.project_id ? u : p,
+      );
+    }
+    ensureSelectionInActiveUser();
+    renderList();
+    renderWorkspace();
+  },
+  onActiveUserChanged: () => {
+    ensureSelectionInActiveUser();
+    isolateChat.clear();
+    renderList();
+    renderWorkspace();
+    renderSidebarBrand();
+  },
+  onSelectProject: (projectId) => {
+    const target = projects.find((p) => p.project_id === projectId);
+    if (target?.sim_user_id != null) {
+      setActiveUserId(target.sim_user_id);
+    }
+    selectedId = projectId;
+    selectedNodeId = null;
+    selectedNodeLabel = null;
+    topTabProjectId = projectId;
+    isolateChat.clear();
+    renderList();
+    renderWorkspace();
+    renderSidebarBrand();
+  },
+});
 
-let projects: ProjectView[] = [];
-let visions: VisionView[] = [];
-let selectedId: number | null = null;
-/** Which map node is selected (click / Talk about this). */
-let selectedNodeId: string | null = null;
-let selectedNodeLabel: string | null = null;
-/** Notion-ish topbar tab; resets to Map when the open project changes. */
-type TopTab = "map" | "vision";
-let activeTopTab: TopTab = "map";
-let topTabProjectId: number | null = null;
-/** Apply after switching back to Map from a chat focus click. */
-let pendingMapFocus: { stepId: string; label: string } | null = null;
 
 const isolateChat = createIsolateChat({
   threadEl: chatThread,
@@ -105,6 +180,8 @@ const isolateChat = createIsolateChat({
   },
   onChange: () => renderWorkspace(),
 });
+
+// 2. Selection helpers
 
 /** Drop map focus — next chat is project-wide again. */
 function clearNodeSelection(scope: ParentNode = projectMain): void {
@@ -125,10 +202,45 @@ function selected(): ProjectView | null {
   return projects.find((p) => p.project_id === selectedId) ?? null;
 }
 
+/** Projects owned by the active simulated user (sim_user_id). */
+function projectsForActiveUser(): ProjectView[] {
+  return projectsChronologicalForUser(projects, getActiveUserId());
+}
+
+function ensureSelectionInActiveUser(): void {
+  const visible = projectsForActiveUser();
+  if (selectedId !== null && visible.some((p) => p.project_id === selectedId)) {
+    return;
+  }
+  // Newest under this id when nothing is selected yet.
+  selectedId = visible.length > 0 ? visible[visible.length - 1].project_id : null;
+  selectedNodeId = null;
+  selectedNodeLabel = null;
+}
+
+function fillChatPlaceholder(text: string): void {
+  chatThread.innerHTML = "";
+  const note = document.createElement("p");
+  note.className = "chat-placeholder";
+  note.textContent = text;
+  chatThread.appendChild(note);
+}
+
+// 3. Rendering
+
 function renderList(): void {
+  const visible = projectsForActiveUser();
   projectList.innerHTML = "";
-  listEmpty.hidden = projects.length > 0;
-  for (const project of projects) {
+  const userId = getActiveUserId();
+  if (userId === null) {
+    listEmpty.hidden = false;
+    listEmpty.textContent = "Pick or create an id (click the label above) first.";
+  } else {
+    listEmpty.hidden = visible.length > 0;
+    listEmpty.textContent =
+      visible.length > 0 ? "" : "No projects for this id yet.";
+  }
+  for (const project of projectsNewestFirst(visible)) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "project-list-item";
@@ -140,13 +252,12 @@ function renderList(): void {
     title.textContent = project.goal;
     const id = document.createElement("span");
     id.className = "entity-id";
-    id.textContent = `#${project.project_id}`;
+    id.textContent = projectListIdLabel(visible, project);
     button.append(title, id);
     button.addEventListener("click", () => {
       selectedId = project.project_id;
       selectedNodeId = null;
       selectedNodeLabel = null;
-      activeTopTab = "map";
       topTabProjectId = project.project_id;
       isolateChat.clear();
       renderList();
@@ -162,33 +273,26 @@ function renderWorkspace(): void {
   projectTopbar.innerHTML = "";
   chatError.hidden = true;
 
+  renderSidebarBrand();
+  renderProjectTopbar(project);
+
   if (!project) {
     projectMain.appendChild(mainEmpty);
     mainEmpty.hidden = false;
-    projectTopbar.hidden = true;
-    projectChat.hidden = true;
+    mainEmpty.textContent =
+      getActiveUserId() === null
+        ? "Pick or create an id (sidebar label above Create), then add a project."
+        : "No project selected — create one in the sidebar.";
+    projectChat.hidden = false;
+    fillChatPlaceholder("Select a project to open its chat.");
     return;
   }
 
   mainEmpty.hidden = true;
-  projectTopbar.hidden = false;
   projectChat.hidden = false;
 
   if (topTabProjectId !== project.project_id) {
     topTabProjectId = project.project_id;
-    activeTopTab = "map";
-  }
-
-  renderProjectTopbar(project);
-
-  if (activeTopTab === "vision") {
-    renderVisionPane(project);
-    isolateChat.fill(project.thread ?? [], (stepId, label) => {
-      pendingMapFocus = { stepId, label };
-      activeTopTab = "map";
-      renderWorkspace();
-    });
-    return;
   }
 
   const body = document.createElement("div");
@@ -436,42 +540,62 @@ function renderWorkspace(): void {
   });
 }
 
-function renderProjectTopbar(project: ProjectView): void {
-  const tabs = document.createElement("div");
-  tabs.className = "project-tabs";
-  tabs.setAttribute("role", "tablist");
+function renderSidebarBrand(): void {
+  const active = getActiveUserId();
+  sidebarBrand.textContent = active !== null ? userLabel(active) : "ID";
+  if (!idMenu.isOpen()) {
+    sidebarBrand.classList.remove("is-active");
+  }
+  sidebarBrand.setAttribute(
+    "aria-label",
+    active !== null
+      ? `Active ${userLabel(active)}. Click to switch or create ids.`
+      : "No active id. Click to create or pick one.",
+  );
+}
 
-  const makeTab = (id: TopTab, label: string) => {
-    const tab = document.createElement("button");
-    tab.type = "button";
-    tab.className = "project-tab";
-    tab.setAttribute("role", "tab");
-    tab.setAttribute("aria-selected", activeTopTab === id ? "true" : "false");
-    if (activeTopTab === id) tab.classList.add("is-active");
-    tab.textContent = label;
-    tab.addEventListener("click", () => {
-      if (activeTopTab === id) return;
-      activeTopTab = id;
-      renderWorkspace();
-    });
-    tabs.appendChild(tab);
-  };
-  makeTab("vision", "Vision");
-  makeTab("map", project.goal);
+function renderProjectTopbar(project: ProjectView | null): void {
+  if (!project) {
+    projectTopbar.hidden = true;
+    return;
+  }
+
+  projectTopbar.hidden = false;
+
+  const items: TabStripItem[] = [
+    {
+      id: "map",
+      label: project.goal,
+      selected: true,
+      onSelect: () => {
+        renderWorkspace();
+      },
+      onClose: () => {
+        selectedId = null;
+        selectedNodeId = null;
+        selectedNodeLabel = null;
+        topTabProjectId = null;
+        isolateChat.clear();
+        renderList();
+        renderWorkspace();
+      },
+    },
+  ];
+
+  projectTopbar.appendChild(renderTabStrip(items));
 
   const actions = document.createElement("div");
   actions.className = "card-actions";
   const cancelButton = document.createElement("button");
   cancelButton.type = "button";
   cancelButton.className = "cancel-button";
-  cancelButton.textContent = "Archive project";
+  cancelButton.textContent = `Archive “${project.goal}”`;
   cancelButton.addEventListener("click", async () => {
     cancelButton.disabled = true;
     try {
       await cancelGoal(project.project_id);
       projects = projects.filter((p) => p.project_id !== project.project_id);
-      selectedId = projects[0]?.project_id ?? null;
-      activeTopTab = "map";
+      ensureSelectionInActiveUser();
       topTabProjectId = selectedId;
       renderList();
       renderWorkspace();
@@ -484,60 +608,24 @@ function renderProjectTopbar(project: ProjectView): void {
     }
   });
   actions.appendChild(cancelButton);
-
-  projectTopbar.append(tabs, actions);
+  projectTopbar.appendChild(actions);
 }
 
-function renderVisionPane(project: ProjectView): void {
-  const pane = document.createElement("div");
-  pane.className = "project-vision-pane";
+// 4. Data
 
-  const heading = document.createElement("h2");
-  heading.className = "project-vision-heading";
-  heading.textContent = "Vision";
-
-  const blurb = document.createElement("p");
-  blurb.className = "project-vision-blurb";
-  blurb.textContent =
-    "Link this project to a vision — loosely related, optional.";
-
-  const visionForm = document.createElement("form");
-  visionForm.className = "vision-link-form";
-  const select = document.createElement("select");
-  const noneOption = document.createElement("option");
-  noneOption.value = "";
-  noneOption.textContent = "None";
-  select.appendChild(noneOption);
-  for (const vision of visions) {
-    const option = document.createElement("option");
-    option.value = String(vision.id);
-    option.textContent = vision.text;
-    if (project.vision_id === vision.id) option.selected = true;
-    select.appendChild(option);
-  }
-  const visionButton = document.createElement("button");
-  visionButton.type = "submit";
-  visionButton.textContent = "Update vision";
-  visionForm.append(select, visionButton);
-  visionForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const raw = select.value;
-    try {
-      const updated = await setGoalVision(
-        project.project_id,
-        raw ? Number(raw) : null,
-      );
-      replaceProject(updated);
-    } catch (err) {
-      const error = document.createElement("p");
-      error.className = "error";
-      error.textContent = `(error: ${(err as Error).message})`;
-      visionForm.appendChild(error);
-    }
-  });
-
-  pane.append(heading, blurb, visionForm);
-  projectMain.appendChild(pane);
+function applyUsers(next: UserView[]): void {
+  users = next;
+  const activeIds = new Set(
+    next.filter((v) => !v.archived).map((v) => v.id),
+  );
+  projects = projects.map((p) =>
+    p.sim_user_id != null && !activeIds.has(p.sim_user_id)
+      ? { ...p, sim_user_id: null }
+      : p,
+  );
+  renderList();
+  renderWorkspace();
+  idMenu.refresh();
 }
 
 function replaceProject(updated: ProjectView): void {
@@ -546,7 +634,7 @@ function replaceProject(updated: ProjectView): void {
   );
   if (updated.completed || updated.cancelled) {
     projects = projects.filter((p) => p.project_id !== updated.project_id);
-    selectedId = projects[0]?.project_id ?? null;
+    ensureSelectionInActiveUser();
   } else {
     selectedId = updated.project_id;
   }
@@ -555,34 +643,73 @@ function replaceProject(updated: ProjectView): void {
 }
 
 async function load(): Promise<void> {
-  const [goals, allVisions] = await Promise.all([
+  const [goals, allUsers] = await Promise.all([
     fetchActiveGoals(),
-    fetchVisions(),
+    fetchUsers(),
   ]);
   projects = goals;
-  visions = allVisions.filter((v) => !v.archived);
+  users = allUsers;
+
+  const activeUsers = users.filter((v) => !v.archived);
+  let active = getActiveUserId();
+  if (active !== null && !activeUsers.some((u) => u.id === active)) {
+    setActiveUserId(null);
+    active = null;
+  }
+  if (active === null && activeUsers.length === 1) {
+    setActiveUserId(activeUsers[0].id);
+  }
   const params = new URLSearchParams(window.location.search);
   const want = Number(params.get("id"));
   if (want && projects.some((p) => p.project_id === want)) {
+    const wanted = projects.find((p) => p.project_id === want)!;
+    if (wanted.sim_user_id != null) {
+      setActiveUserId(wanted.sim_user_id);
+    }
     selectedId = want;
-  } else if (projects.length > 0 && selectedId === null) {
-    selectedId = projects[0].project_id;
+  } else {
+    ensureSelectionInActiveUser();
   }
   renderList();
   renderWorkspace();
+  if (
+    getActiveUserId() === null
+    || params.get("tab") === "users"
+    || params.get("tab") === "vision"
+  ) {
+    idMenu.open();
+  }
 }
+
+// 5. Event listeners
 
 createForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const text = createInput.value.trim();
   if (!text) return;
+  const userId = getActiveUserId();
+  if (userId === null) {
+    createError.hidden = false;
+    createError.textContent =
+      "(pick or create an id — click the label above Create)";
+    idMenu.open();
+    return;
+  }
+  const createButton = createForm.querySelector(
+    'button[type="submit"]',
+  ) as HTMLButtonElement;
   createInput.disabled = true;
+  setButtonBusy(createButton, true);
   createError.hidden = true;
   try {
-    const created = await createGoal(text);
+    const created = await createGoal(text, userId);
     createInput.value = "";
-    projects = [created, ...projects.filter((p) => p.project_id !== created.project_id)];
+    projects = [
+      created,
+      ...projects.filter((p) => p.project_id !== created.project_id),
+    ];
     selectedId = created.project_id;
+    topTabProjectId = created.project_id;
     renderList();
     renderWorkspace();
   } catch (err) {
@@ -590,6 +717,7 @@ createForm.addEventListener("submit", async (event) => {
     createError.textContent = `(error: ${(err as Error).message})`;
   } finally {
     createInput.disabled = false;
+    setButtonBusy(createButton, false);
   }
 });
 
@@ -599,7 +727,11 @@ chatForm.addEventListener("submit", async (event) => {
   if (!project) return;
   const text = chatInput.value.trim();
   if (!text) return;
+  const sendButton = chatForm.querySelector(
+    'button[type="submit"]',
+  ) as HTMLButtonElement;
   chatInput.disabled = true;
+  setButtonBusy(sendButton, true);
   chatError.hidden = true;
   try {
     // A multi-line paste while focused on a node is imported as
@@ -645,8 +777,11 @@ chatForm.addEventListener("submit", async (event) => {
     chatError.textContent = `(error: ${(err as Error).message})`;
   } finally {
     chatInput.disabled = false;
+    setButtonBusy(sendButton, false);
   }
 });
+
+// 6. Initialization
 
 load().catch((err) => {
   listEmpty.hidden = false;
