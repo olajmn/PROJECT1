@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Projects</title>
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem("ui.theme");
+    if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="workspace-body">
@@ -49,6 +57,15 @@
     <section id="project-chat" class="project-chat" hidden>
       <div id="chat-thread" class="goal-thread"></div>
       <p id="chat-error" class="error" hidden></p>
+      <button
+        type="button"
+        id="chat-rail-grip"
+        class="chat-rail-grip"
+        aria-label="Open chat"
+        title="Open chat"
+      >
+        <span class="chat-rail-grip-mark" aria-hidden="true"></span>
+      </button>
       <form id="chat-form" class="feedback-form">
         <textarea id="chat-input" rows="2" placeholder="Talk about this project…" required></textarea>
         <button type="submit">Send</button>

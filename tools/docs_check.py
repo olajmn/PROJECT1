@@ -78,6 +78,9 @@ EXPECTED_DOCS = [
     # Deliberately unnumbered - UI visual-reset plan + css/src mirror
     # ownership (tokens vs area CSS). Cited from docs/04-current-state.md.
     "visual-reset.md",
+    # Deliberately unnumbered - UI design principles draft (hierarchy,
+    # frosted depth, complexity budget). Pairs with visual-reset.md.
+    "visual-principles.md",
 ]
 
 # Files/directories outside docs/ scanned for docs/<name>.md-style

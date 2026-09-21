@@ -55,7 +55,10 @@ import {
   setActiveUserId,
   ID_BRAND,
 } from "../user/activeUser.js";
+import { applyStoredTheme } from "../user/theme.js";
 import type { ProjectView, UserView } from "../types.js";
+
+applyStoredTheme();
 
 const createForm = document.getElementById("create-form") as HTMLFormElement;
 const createInput = document.getElementById("create-input") as HTMLTextAreaElement;
@@ -94,12 +97,11 @@ let pendingMapFocus: { stepId: string; label: string } | null = null;
 
 installSidebarResize(appShell, sidebarResize);
 const chatRailApi = installChatResize(workspace, chatResize, projectChat);
-const chatRailToggle = document.getElementById(
-  "chat-rail-toggle",
-) as HTMLButtonElement;
-chatRailToggle.addEventListener("click", () => {
-  chatRailApi.expand();
-});
+for (const id of ["chat-rail-toggle", "chat-rail-grip"]) {
+  document.getElementById(id)?.addEventListener("click", () => {
+    chatRailApi.expand();
+  });
+}
 
 const idMenu = installIdMenu({
   anchor: sidebarBrand,

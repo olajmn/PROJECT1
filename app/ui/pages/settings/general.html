@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Settings</title>
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem("ui.theme");
+    if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
 <link rel="stylesheet" href="/style.css">
 </head>
 <body class="settings-body">
@@ -17,6 +25,7 @@
   </nav>
 
   <div class="settings-stack">
+    <section class="settings-register" id="appearance" aria-label="Appearance"></section>
     <section class="settings-register" id="model-facts" aria-label="Model"></section>
   </div>
 </main>

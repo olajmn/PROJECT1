@@ -1,6 +1,8 @@
 /* Visual identity tokens — single source for color, type, space, radius.
  *
  * Direction: “ink on stone” — plain studio tool, sparse accent.
+ * Themes: light (default) and dark via html[data-theme]. Same roles;
+ * only values change. Frosted later sits on top of either plane.
  *
  * Ownership
  *  - General look → change HERE (and css/base.css for body/forms/buttons).
@@ -8,14 +10,15 @@
  *  - Map has the most unique UI; extra files there are OK. Not “3 files per pane”.
  *
  * Contents
- *  1. Color
+ *  1. Color (light + dark)
  *  2. Type
  *  3. Space
  *  4. Radius / border
  */
 
-:root {
-  /* 1. Color */
+:root,
+[data-theme="light"] {
+  /* 1. Color — light (ink on stone) */
   --color-bg: #e9e6e0;
   --color-bg-workspace: #e4e0d8;
   --color-bg-sidebar: #ddd8cf;
@@ -50,4 +53,23 @@
   /* 4. Radius / border — near-square, not pill */
   --radius: 0.15rem;
   --border: 1px solid var(--color-border);
+}
+
+[data-theme="dark"] {
+  /* 1. Color — dark (stone on ink); same roles as light */
+  --color-bg: #1c1a18;
+  --color-bg-workspace: #141210;
+  --color-bg-sidebar: #221f1c;
+  --color-bg-panel: #1c1a18;
+  --color-text: #f0ece6;
+  --color-text-muted: #9a948c;
+  --color-text-soft: #c4bfb6;
+  --color-border: #3d3934;
+  --color-border-input: #4a4640;
+  --color-surface: transparent;
+  --color-button: #f0ece6;
+  --color-button-text: #141210;
+  --color-accent: #6aab8a;
+  --color-error: #e07068;
+  --color-register: #f0ece6;
 }

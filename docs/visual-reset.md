@@ -1,5 +1,7 @@
 # Visual reset — plan + mirrored UI folders
 
+Principles (hierarchy, glass, complexity budget): [[visual-principles]].
+
 Checkpoint before this work: `architecture-v5` @ `e9c6bda` (full-check clean).
 
 **Goal:** One deliberate visual identity over the existing product shell — not a new architecture. CSS and TS share the same map so “where does this live?” has one answer.

@@ -1,10 +1,11 @@
 /* Agent-chat pane (right column; layout grids in shell/layout.css).
- * Tokens from css/tokens.css.
+ * Tokens + hierarchy ([[visual-principles]]): who = muted meta column,
+ * text = primary; About frames stay area-local.
  *
  * Contents
  *  1. Panel & thread
- *  2. Messages
- *  3. Chat focus & isolate
+ *  2. Messages (who | text)
+ *  3. About frames (focus sections + isolate)
  *  4. Input
  */
 
@@ -25,67 +26,71 @@
 .project-chat .goal-thread {
   flex: 1 1 auto;
   min-height: 0;
-  max-height: none;
   overflow-y: auto;
   margin: 0;
-  padding: 1.1rem var(--space-4) 0.85rem;
-  gap: 0.85rem;
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  gap: var(--space-4);
   border: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .project-chat .chat-placeholder {
   margin: 0;
   color: var(--color-text-muted);
-  font-size: 0.88rem;
+  font-size: var(--font-size-sm);
   line-height: var(--line-height);
-  font-style: italic;
+  font-style: normal;
 }
 
-/* 2. Messages */
+/* 2. Messages — side-by-side: role (meta) | body (primary)
+ * Hierarchy: who is muted chrome; text carries the turn. */
 
 .project-chat .message {
-  gap: 0.55rem;
-  align-items: flex-start;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0;
 }
 
 .project-chat .message .who {
-  font-size: 0.7rem;
+  flex: 0 0 3rem;
+  font-size: 0.6875rem;
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--color-text-muted);
-  min-width: 3rem;
-  padding-top: 0.15rem;
+  padding: 0;
+  line-height: 1.55;
 }
 
 .project-chat .message .text {
-  font-size: 0.9rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--font-size-sm);
   line-height: 1.55;
   color: var(--color-text);
   font-weight: 400;
-}
-
-.project-chat .message-agent .text {
-  color: var(--color-text);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .project-chat .message-you .text {
   color: var(--color-text-soft);
 }
 
-/* 3. Chat focus & isolate */
+/* 3. About frames — one module: subtle bordered box around a focus group */
 
-.project-chat .chat-focus-section,
-.goal-thread .chat-focus-section {
+.project-chat .chat-focus-section {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: var(--space-3);
   align-self: stretch;
-  margin: var(--space-1) 0;
-  padding: var(--space-2) 0 var(--space-3);
-  border: none;
-  border-left: 2px solid var(--color-accent);
-  border-radius: 0;
+  margin: var(--space-2) 0;
+  padding: var(--space-3);
+  border: var(--border);
+  border-radius: 0.4rem;
   background: transparent;
 }
 
@@ -94,26 +99,25 @@
 }
 
 .project-chat .chat-focus-section.is-clickable:hover {
-  border-left-color: var(--color-text);
+  border-color: var(--color-text);
 }
 
-.project-chat .chat-focus-marker,
-.goal-thread .chat-focus-marker {
+.project-chat .chat-focus-marker {
   align-self: flex-start;
-  margin: 0 0 0.1rem;
+  margin: 0;
   padding: 0;
-  border-radius: 0;
   background: transparent;
-  color: var(--color-text-muted);
-  font-size: 0.72rem;
-  font-weight: 500;
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
   letter-spacing: 0.02em;
   line-height: 1.3;
 }
 
 .project-chat .chat-focus-header {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  justify-content: space-between;
   gap: var(--space-2);
 }
 
@@ -121,9 +125,10 @@
   background: transparent;
   border: none;
   color: var(--color-text-muted);
-  font-size: 0.7rem;
-  padding: 0.1rem 0.2rem;
+  font-size: var(--font-size-xs);
+  padding: 0;
   cursor: pointer;
+  flex: 0 0 auto;
 }
 
 .project-chat .thread-isolate-button:hover {
@@ -136,11 +141,10 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
-  padding: var(--space-2) 0;
-  margin-bottom: var(--space-2);
+  padding: 0 0 var(--space-3);
+  margin: 0 0 var(--space-2);
   background: transparent;
   border-bottom: var(--border);
-  border-radius: 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-soft);
 }
@@ -150,14 +154,24 @@
   color: var(--color-text-muted);
   border: var(--border);
   border-radius: var(--radius);
-  font-size: 0.72rem;
-  padding: 0.15rem var(--space-2);
+  font-size: var(--font-size-xs);
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
 }
 
-/* 4. Input */
+.project-chat .thread-isolation-back:hover {
+  color: var(--color-text);
+  border-color: var(--color-text);
+}
+
+/* 4. Input — column: full-width field, then Send */
 
 .project-chat .feedback-form {
   flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
   margin: 0;
   padding: var(--space-3) var(--space-4) var(--space-4);
   border-top: var(--border);
@@ -165,12 +179,28 @@
 }
 
 .project-chat .feedback-form textarea {
-  font-size: 0.9rem;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 4.5rem;
+  font-size: var(--font-size-sm);
   line-height: var(--line-height);
   background: transparent;
-  border-color: var(--color-border-input);
+  border: 1px solid var(--color-border-input);
   border-radius: var(--radius);
   color: var(--color-text);
+  padding: var(--space-2) var(--space-3);
+  resize: vertical;
+}
+
+.project-chat .feedback-form textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.project-chat .feedback-form > button[type="submit"] {
+  align-self: flex-end;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
 }
 
 .project-chat .error {

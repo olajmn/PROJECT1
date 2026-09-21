@@ -44,19 +44,19 @@ const CHAT = {
   widthStorageKey: "projects.chatWidthPx",
   collapsedStorageKey: "projects.chatCollapsed",
   cssVar: "--chat-width",
-  defaultPx: 360,
-  minPx: 240,
+  /** Hard min while open; click opens here. Snap = half of this. */
+  minPx: 320,
   /** Of .workspace — same three-way feel as sidebar. */
   maxFraction: 1 / 2,
   /** Leave at least this much for the map. */
   minOtherPx: MAP.minPx,
+  /** Collapsed strip — keep in sync with css/shell/columnRail.css */
   railWidthPx: 64,
-  snapThresholdPx: 200,
-  warnStartPx: 280,
+  /** Rising across this while collapsed → open (nearer rail than snap). */
+  expandThresholdPx: 100,
   bodyClass: "is-resizing-chat",
   containerCollapsedClass: "is-chat-collapsed",
   panelCollapsedClass: "is-collapsed",
-  pendingClass: "is-collapse-pending",
 };
 
 // 2. Shared column resize
@@ -111,19 +111,9 @@ function installColumnResize(opts: ColumnResizeOpts): void {
   apply(Number.isFinite(stored) && stored > 0 ? stored : opts.defaultWidth);
 
   let dragging = false;
+  let activePointerId: number | null = null;
 
-  const onMove = (event: PointerEvent) => {
-    if (!dragging) return;
-    apply(
-      opts.widthFromPointer(event.clientX, opts.container.getBoundingClientRect()),
-    );
-  };
-
-  const onUp = (event: PointerEvent) => {
-    if (!dragging) return;
-    dragging = false;
-    opts.handle.releasePointerCapture(event.pointerId);
-    document.body.classList.remove(opts.bodyClass);
+  const persist = (): void => {
     const raw = getComputedStyle(opts.container).getPropertyValue(opts.cssVar);
     const px = Number.parseFloat(raw);
     if (Number.isFinite(px)) {
@@ -131,15 +121,71 @@ function installColumnResize(opts: ColumnResizeOpts): void {
     }
   };
 
+  const endDrag = (): void => {
+    if (!dragging) return;
+    dragging = false;
+    document.body.classList.remove(opts.bodyClass);
+    window.removeEventListener("pointerup", onWindowUp);
+    window.removeEventListener("pointercancel", onWindowUp);
+    window.removeEventListener("blur", onWindowBlur);
+    if (activePointerId != null) {
+      try {
+        opts.handle.releasePointerCapture(activePointerId);
+      } catch {
+        /* already released */
+      }
+      activePointerId = null;
+    }
+  };
+
+  const finishDrag = (): void => {
+    if (!dragging) return;
+    endDrag();
+    persist();
+  };
+
+  const onMove = (event: PointerEvent) => {
+    if (!dragging) return;
+    if (activePointerId != null && event.pointerId !== activePointerId) return;
+    apply(
+      opts.widthFromPointer(event.clientX, opts.container.getBoundingClientRect()),
+    );
+  };
+
+  const onUp = (event: PointerEvent) => {
+    if (activePointerId != null && event.pointerId !== activePointerId) return;
+    finishDrag();
+  };
+
+  const onWindowUp = (event: PointerEvent) => {
+    if (activePointerId != null && event.pointerId !== activePointerId) return;
+    finishDrag();
+  };
+
+  const onWindowBlur = (): void => {
+    finishDrag();
+  };
+
+  const onLostCapture = (event: PointerEvent) => {
+    if (activePointerId != null && event.pointerId !== activePointerId) return;
+    finishDrag();
+  };
+
   opts.handle.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
     event.preventDefault();
     dragging = true;
+    activePointerId = event.pointerId;
     opts.handle.setPointerCapture(event.pointerId);
     document.body.classList.add(opts.bodyClass);
+    window.addEventListener("pointerup", onWindowUp);
+    window.addEventListener("pointercancel", onWindowUp);
+    window.addEventListener("blur", onWindowBlur);
   });
   opts.handle.addEventListener("pointermove", onMove);
   opts.handle.addEventListener("pointerup", onUp);
   opts.handle.addEventListener("pointercancel", onUp);
+  opts.handle.addEventListener("lostpointercapture", onLostCapture);
 
   window.addEventListener("resize", () => {
     const raw = getComputedStyle(opts.container).getPropertyValue(opts.cssVar);
@@ -180,15 +226,12 @@ export function installChatResize(
     cssVar: CHAT.cssVar,
     widthStorageKey: CHAT.widthStorageKey,
     collapsedStorageKey: CHAT.collapsedStorageKey,
-    defaultWidth: CHAT.defaultPx,
     minWidth: CHAT.minPx,
-    maxWidthCap: Number.POSITIVE_INFINITY,
     maxFraction: CHAT.maxFraction,
     minOther: CHAT.minOtherPx,
     railWidth: CHAT.railWidthPx,
-    snapThreshold: CHAT.snapThresholdPx,
-    warnStart: CHAT.warnStartPx,
-    pendingClass: CHAT.pendingClass,
+    snapThreshold: Math.round(CHAT.minPx / 2),
+    expandThreshold: CHAT.expandThresholdPx,
     containerCollapsedClass: CHAT.containerCollapsedClass,
     panelCollapsedClass: CHAT.panelCollapsedClass,
     bodyClass: CHAT.bodyClass,
