@@ -1,14 +1,21 @@
 /**
  * Write the words on the live project map (DOM rows + controls).
- * Who-under-who from mapFamily; lines from mapLines.
+ * Layout: [[surfaces]] § 4 — `#N` → title → spine beads; depth under beads.
+ * Who-under-who from mapFamily; lines from mapLines; indent from mapGeom.
  */
-import { installMapLines } from "./mapLines.js";
+import { indentRem, NEST_INSET_REM } from "./mapGeom.js";
+import { installMapLines } from "./lines/install.js";
 import { applyFamilyAttrs, familyById, layoutFamily, } from "./mapFamily.js";
 const NODE_MENU_ACTIONS = [
     {
         id: "register",
         label: "Add here",
         detail: "You name a child under this node — no AI, just record it.",
+    },
+    {
+        id: "remove",
+        label: "Remove",
+        detail: "Delete this node from the map.",
     },
     {
         id: "suggest",
@@ -32,11 +39,12 @@ function childGuide(_parentContinues) {
     return "    ";
 }
 function indentWidth(depth) {
-    // Each depth steps right — "dimensions" like the classic ASCII map.
-    return `${0.55 + depth * 1.15}rem`;
+    return indentRem(depth);
 }
-/** Inline + form that calls onAddStep(label, parentId). */
-function attachAddControl(row, onAddStep, parentId) {
+/** Inline + form that calls onAddStep(label, parentId).
+ *  `showButton: false` keeps only the hidden form (opened via ⋯ Add here). */
+function attachAddControl(host, onAddStep, parentId, opts) {
+    const showButton = opts?.showButton !== false;
     const add = document.createElement("button");
     add.type = "button";
     add.className = "progress-add progress-add-inline";
@@ -44,6 +52,8 @@ function attachAddControl(row, onAddStep, parentId) {
     add.title = parentId
         ? "Add a node under this one"
         : "Add a node under the project";
+    if (!showButton)
+        add.hidden = true;
     const form = document.createElement("form");
     form.className = "progress-add-form";
     form.hidden = true;
@@ -56,11 +66,14 @@ function attachAddControl(row, onAddStep, parentId) {
     save.type = "submit";
     save.textContent = "Add";
     form.append(input, save);
-    add.addEventListener("click", (event) => {
-        event.stopPropagation();
+    const openForm = () => {
         form.hidden = false;
         add.hidden = true;
         input.focus();
+    };
+    add.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openForm();
     });
     form.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -70,13 +83,44 @@ function attachAddControl(row, onAddStep, parentId) {
             return;
         }
         form.hidden = true;
-        add.hidden = false;
+        if (showButton)
+            add.hidden = false;
         input.value = "";
         onAddStep(label, parentId);
     });
-    row.append(add, form);
+    // Menu “Add here” finds this to open the form without a visible +.
+    form.dataset.addForm = "1";
+    host.append(add, form);
 }
-/** ⋯ menu: Add here / Suggest structure / Talk about this / Paste structure. */
+/** Square around label + ⋯ (indent stays outside). + / × live in the menu. */
+function fillBeadUnit(row, node, onStepClick, onAddStep, _onRemoveStep, onMenuAction) {
+    const unit = document.createElement("div");
+    unit.className = "progress-bead-unit";
+    const canEdit = PROGRESSION_LIKE.test(node.id);
+    if (onStepClick && canEdit) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "progress-bead-btn";
+        button.textContent = node.label;
+        button.title = "Select this node";
+        button.addEventListener("click", () => onStepClick(node.id));
+        unit.appendChild(button);
+    }
+    else {
+        const label = document.createElement("span");
+        label.className = "progress-bead-label";
+        label.textContent = node.label;
+        unit.appendChild(label);
+    }
+    if (onAddStep && canEdit) {
+        attachAddControl(unit, onAddStep, node.id, { showButton: false });
+    }
+    if (canEdit) {
+        attachNodeMenu(unit, node.id, onMenuAction);
+    }
+    row.appendChild(unit);
+}
+/** ⋯ menu: Add here / Remove / Suggest / Talk / Paste. */
 function attachNodeMenu(row, stepId, onMenuAction) {
     const wrap = document.createElement("div");
     wrap.className = "progress-menu-wrap";
@@ -128,7 +172,6 @@ function attachNodeMenu(row, stepId, onMenuAction) {
             el.setAttribute("aria-expanded", "false");
         });
         if (opening) {
-            // Fixed to the viewport so overflow on the map cannot clip it.
             const rect = toggle.getBoundingClientRect();
             menu.style.position = "fixed";
             menu.style.left = `${Math.round(rect.left)}px`;
@@ -175,40 +218,7 @@ function appendAsciiDepth(spine, children, stem, byId, onStepClick, onAddStep, o
         const depth = layout?.depth ?? Math.floor(stem.length / 4) + 1;
         prefix.style.width = indentWidth(depth);
         row.appendChild(prefix);
-        const canEdit = PROGRESSION_LIKE.test(child.id);
-        if (onStepClick && canEdit) {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "progress-bead-btn";
-            button.textContent = child.label;
-            button.title = "Select this node";
-            button.addEventListener("click", () => onStepClick(child.id));
-            row.appendChild(button);
-        }
-        else {
-            const label = document.createElement("span");
-            label.className = "progress-bead-label";
-            label.textContent = child.label;
-            row.appendChild(label);
-        }
-        if (onRemoveStep && canEdit) {
-            const remove = document.createElement("button");
-            remove.type = "button";
-            remove.className = "progress-remove";
-            remove.textContent = "×";
-            remove.title = "Remove this node";
-            remove.addEventListener("click", (event) => {
-                event.stopPropagation();
-                onRemoveStep(child.id);
-            });
-            row.appendChild(remove);
-        }
-        if (onAddStep && canEdit) {
-            attachAddControl(row, onAddStep, child.id);
-        }
-        if (canEdit) {
-            attachNodeMenu(row, child.id, onMenuAction);
-        }
+        fillBeadUnit(row, child, onStepClick, onAddStep, onRemoveStep, onMenuAction);
         spine.appendChild(row);
         if (child.children.length > 0) {
             appendAsciiDepth(spine, child.children, `${stem}${childGuide(!isLast)}`, byId, onStepClick, onAddStep, onRemoveStep, selectedId, onMenuAction);
@@ -216,16 +226,11 @@ function appendAsciiDepth(spine, children, stem, byId, onStepClick, onAddStep, o
     });
 }
 /**
- * Project map as a simple ASCII outline.
- * Optional `identityLabel` (e.g. "#40") sits as the top pole;
- * `rootLabel` is the project name under it — identity ≠ name.
- * Middle nodes nest under the name; nested lines are children.
- * Optional endLabel is a distinct End leaf (omit when it would
- * only repeat the name). + / × steer the map; + on a node nests
- * under that parent. Click selects (no auto-zoom); ⋯ holds
- * Add here / Suggest / Talk about this / Paste structure.
+ * Project map: `#N` → title → waypoints ([[surfaces]] § 4).
+ * Id and title are header beads (same box language as tree beads, but
+ * not progression nodes — no ⋯). Middle = root children; nested = depth.
  */
-export function treeWordsElement(rootLabel, middle, onStepClick, onAddStep, onRemoveStep, endLabel, selectedId, onMenuAction, identityLabel) {
+export function treeWordsElement(nameLabel, middle, onStepClick, onAddStep, onRemoveStep, selectedId, onMenuAction, identityLabel) {
     const wrap = document.createElement("div");
     wrap.className = "progress-line";
     const spine = document.createElement("div");
@@ -234,41 +239,53 @@ export function treeWordsElement(rootLabel, middle, onStepClick, onAddStep, onRe
     if (identity) {
         const idRow = document.createElement("div");
         idRow.className = "progress-row progress-pole progress-pole-identity";
+        const idUnit = document.createElement("div");
+        idUnit.className = "progress-bead-unit progress-header-unit";
         const idText = document.createElement("span");
         idText.className = "entity-id";
         idText.textContent = identity;
         idText.title = identity;
-        idRow.appendChild(idText);
+        idUnit.appendChild(idText);
+        idRow.appendChild(idUnit);
         spine.appendChild(idRow);
-        const nameRow = document.createElement("div");
-        nameRow.className = "progress-row progress-pole progress-pole-name";
+    }
+    const nameRow = document.createElement("div");
+    nameRow.className = "progress-row progress-pole progress-pole-name";
+    if (identity) {
         const namePrefix = document.createElement("span");
         namePrefix.className = "progress-branch";
-        namePrefix.style.width = "1.1rem";
-        const nameText = document.createElement("span");
-        nameText.textContent = rootLabel;
-        nameText.title = rootLabel;
-        nameRow.append(namePrefix, nameText);
-        spine.appendChild(nameRow);
+        // Sit on the nest spine under #N (inset), then a short tick into the box.
+        namePrefix.style.width = `${NEST_INSET_REM}rem`;
+        nameRow.appendChild(namePrefix);
     }
-    else {
-        const root = document.createElement("div");
-        root.className = "progress-row progress-pole progress-pole-root";
-        const rootText = document.createElement("span");
-        rootText.textContent = rootLabel;
-        rootText.title = rootLabel;
-        root.appendChild(rootText);
-        spine.appendChild(root);
-    }
-    const showEnd = Boolean(endLabel) &&
-        endLabel.trim().toLowerCase() !== rootLabel.trim().toLowerCase();
-    // Live lines from mapLines. Family facts from layoutFamily.
+    const nameUnit = document.createElement("div");
+    nameUnit.className = "progress-bead-unit progress-header-unit";
+    const nameText = document.createElement("span");
+    nameText.className = "progress-name-label";
+    nameText.textContent = nameLabel;
+    nameText.title = nameLabel;
+    nameUnit.appendChild(nameText);
+    nameRow.appendChild(nameUnit);
+    spine.appendChild(nameRow);
     const layout = layoutFamily(middle);
     const byId = familyById(layout);
     const trunk = document.createElement("div");
+    // Under the title nest: 2× inset so spine + tick land on bead left edges.
     trunk.className = identity
         ? "progress-trunk progress-trunk-under-name"
         : "progress-trunk";
+    if (identity) {
+        trunk.style.marginLeft = `${2 * NEST_INSET_REM}rem`;
+    }
+    if (middle.length === 0) {
+        const gap = document.createElement("div");
+        gap.className = "progress-row progress-empty-gap";
+        const hint = document.createElement("span");
+        hint.className = "progress-empty-hint";
+        hint.textContent = "Talk or + to place a waypoint";
+        gap.appendChild(hint);
+        trunk.appendChild(gap);
+    }
     for (const step of middle) {
         const block = document.createElement("div");
         block.className = "progress-trunk-block";
@@ -289,40 +306,7 @@ export function treeWordsElement(rootLabel, middle, onStepClick, onAddStep, onRe
         prefix.className = "progress-branch";
         prefix.style.width = indentWidth(0);
         row.appendChild(prefix);
-        const canEdit = PROGRESSION_LIKE.test(step.id);
-        if (onStepClick && canEdit) {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "progress-bead-btn";
-            button.textContent = step.label;
-            button.title = "Select this node";
-            button.addEventListener("click", () => onStepClick(step.id));
-            row.appendChild(button);
-        }
-        else {
-            const label = document.createElement("span");
-            label.className = "progress-bead-label";
-            label.textContent = step.label;
-            row.appendChild(label);
-        }
-        if (onRemoveStep && canEdit) {
-            const remove = document.createElement("button");
-            remove.type = "button";
-            remove.className = "progress-remove";
-            remove.textContent = "×";
-            remove.title = "Remove this node";
-            remove.addEventListener("click", (event) => {
-                event.stopPropagation();
-                onRemoveStep(step.id);
-            });
-            row.appendChild(remove);
-        }
-        if (onAddStep && canEdit) {
-            attachAddControl(row, onAddStep, step.id);
-        }
-        if (canEdit) {
-            attachNodeMenu(row, step.id, onMenuAction);
-        }
+        fillBeadUnit(row, step, onStepClick, onAddStep, onRemoveStep, onMenuAction);
         block.appendChild(row);
         if (step.children.length > 0) {
             appendAsciiDepth(block, step.children, childGuide(false), byId, onStepClick, onAddStep, onRemoveStep, selectedId, onMenuAction);
@@ -334,23 +318,10 @@ export function treeWordsElement(rootLabel, middle, onStepClick, onAddStep, onRe
         addWrap.className = "progress-row progress-add-wrap";
         const prefix = document.createElement("span");
         prefix.className = "progress-branch";
-        prefix.style.width = "0.35rem";
+        prefix.style.width = indentWidth(0);
         addWrap.appendChild(prefix);
         attachAddControl(addWrap, onAddStep);
         trunk.appendChild(addWrap);
-    }
-    if (showEnd && endLabel) {
-        const end = document.createElement("div");
-        end.className = "progress-row progress-pole progress-pole-end";
-        const endPrefix = document.createElement("span");
-        endPrefix.className = "progress-branch";
-        endPrefix.style.width = "0.35rem";
-        const endText = document.createElement("span");
-        endText.className = "progress-end-label";
-        endText.textContent = endLabel;
-        endText.title = endLabel;
-        end.append(endPrefix, endText);
-        trunk.appendChild(end);
     }
     spine.appendChild(trunk);
     wrap.appendChild(spine);

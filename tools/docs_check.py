@@ -81,6 +81,9 @@ EXPECTED_DOCS = [
     # Deliberately unnumbered - UI design principles draft (hierarchy,
     # frosted depth, complexity budget). Pairs with visual-reset.md.
     "visual-principles.md",
+    # Deliberately unnumbered - Projects column roles (sidebar / canvas /
+    # chat): what each surface is for vs parked file-folder vision.
+    "surfaces.md",
 ]
 
 # Files/directories outside docs/ scanned for docs/<name>.md-style

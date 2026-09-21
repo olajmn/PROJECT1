@@ -18,11 +18,13 @@
 
 :root,
 [data-theme="light"] {
-  /* 1. Color — light (ink on stone) */
-  --color-bg: #e9e6e0;
+  /* 1. Color — light (ink on stone)
+   * Three columns share one plane (--color-bg-workspace) so frosted
+   * depth can sit on top later without fighting three paints. */
+  --color-bg: #e4e0d8;
   --color-bg-workspace: #e4e0d8;
-  --color-bg-sidebar: #ddd8cf;
-  --color-bg-panel: #e9e6e0;
+  --color-bg-sidebar: #e4e0d8;
+  --color-bg-panel: #e4e0d8;
   --color-text: #141210;
   --color-text-muted: #6a6560;
   --color-text-soft: #524e49;
@@ -56,11 +58,12 @@
 }
 
 [data-theme="dark"] {
-  /* 1. Color — dark (stone on ink); same roles as light */
-  --color-bg: #1c1a18;
+  /* 1. Color — dark (stone on ink); same roles as light.
+   * Columns share workspace plane (canvas base) for frosted later. */
+  --color-bg: #141210;
   --color-bg-workspace: #141210;
-  --color-bg-sidebar: #221f1c;
-  --color-bg-panel: #1c1a18;
+  --color-bg-sidebar: #141210;
+  --color-bg-panel: #141210;
   --color-text: #f0ece6;
   --color-text-muted: #9a948c;
   --color-text-soft: #c4bfb6;

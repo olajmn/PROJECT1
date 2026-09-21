@@ -17,7 +17,7 @@ Aim: layers that feel slightly open so you sense **contrast of what sits behind*
 
 - Prefer soft translucency / shared stone grounds over heavy backdrop-filter everywhere (readability first).
 - Glass must not fight type hierarchy or make map spines unreadable.
-- Light / dark are the two *base planes* (token sets); frosted is optional depth on top of either. No purple glow or multi-layer shadow stacks — keep ink-on-stone honesty ([[visual-reset]] Phase B). Toggle: Settings → General.
+- Light / dark are the two *base planes* (token sets); frosted is optional depth on top of either. The three Projects columns (sidebar / canvas / chat) share one base fill (`--color-bg-workspace`) so frost can read as layering, not three painted slabs. No purple glow or multi-layer shadow stacks — keep ink-on-stone honesty ([[visual-reset]] Phase B). Toggle: Settings → General.
 
 ## 3. Visual complexity is budgeted
 
@@ -28,13 +28,13 @@ Aim: layers that feel slightly open so you sense **contrast of what sits behind*
 | **shell** | Low — glue only (columns, tabs, busy) |
 | **sidebar** | Low–medium — list + Manager |
 | **chat** | Low–medium — transcript rhythm; About frames ok |
-| **map** | **High allowed** — tree, menus, spines are the product’s unique UI |
+| **map** (canvas) | **High allowed** — tree, menus, spines are the product’s unique UI; column roles + spine layout: [[surfaces]] |
 
 Add chrome only when it earns a hierarchy slot. Prefer removing a signal over adding a style.
 
 ## 4. How we work
 
-1. Name the hierarchy levels for the surface you’re touching (what is loud / quiet / invisible).
+1. Name the hierarchy levels for the surface you’re touching (what is loud / quiet / invisible). Canvas sort is locked in [[surfaces]] § 4.
 2. Change tokens or area CSS — same `src/<area>/` ↔ `css/<area>/` mirror.
 3. If it should look the same everywhere → token. If only here → area file.
 4. Screenshot; ask whether the *sort* got clearer, not whether it got “prettier.”

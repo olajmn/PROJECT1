@@ -18,7 +18,7 @@
 
 .progress-line {
   position: relative;
-  margin: 1.25rem 0 0.5rem;
+  margin: 0.35rem 0 0.5rem;
   overflow: visible;
   padding: 0.35rem 0 0.5rem;
 }
@@ -27,8 +27,8 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 100%;
-  height: 100%;
+  /* Size comes from width/height attributes (= viewBox) so user units
+   * match local layout px from getBoundingClientRect / mapScale. */
   pointer-events: none;
   overflow: visible;
   z-index: 0;
@@ -65,6 +65,12 @@
   min-width: min-content;
 }
 
+/* Bead rows: enough air that boxes don't kiss; still one continuous spine. */
+.progress-bead,
+.progress-depth-row {
+  margin: 0.28rem 0;
+}
+
 .progress-branch {
   flex: 0 0 auto;
   display: inline-block;
@@ -76,18 +82,13 @@
 
 /* Indent spacer only — spine drawn in SVG. */
 .progress-trunk {
-  margin: 0.45rem 0 0;
-  padding: 0.05rem 0 0.05rem 0.2rem;
+  margin: 0.35rem 0;
+  padding: 0.05rem 0;
   border-left: none;
 }
 
-.progress-trunk-under-name {
-  /* Step under the project name — same idea as "    ├──" under └── name */
-  margin-left: 1.25rem;
-}
-
 .progress-trunk-block + .progress-trunk-block {
-  margin-top: 0.45rem;
+  margin-top: 0.55rem;
 }
 
 /* 3. Copy / paste outline */
@@ -213,44 +214,68 @@
 
 /* 4. Poles, beads, menus */
 
-.progress-pole {
-  font-weight: 500;
-}
-
-.progress-pole-identity {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
-  letter-spacing: 0.02em;
+/* Header beads: same box language as tree beads, not progression nodes. */
+.progress-header-unit {
+  pointer-events: none;
 }
 
 .progress-pole-identity .entity-id {
   font-weight: 500;
   font-size: 0.75rem;
   color: var(--color-text-muted);
+  letter-spacing: 0.02em;
 }
 
-.progress-pole-name {
-  font-size: 0.95rem;
+.progress-pole-name .progress-name-label {
   font-weight: 500;
+  font-size: 0.95rem;
   color: var(--color-text);
 }
 
-.progress-pole-root {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--color-text);
+.progress-empty-gap {
+  min-height: 2.25rem;
+  padding: 0.5rem 0 0.35rem;
 }
 
-.progress-pole-root .entity-id {
-  font-weight: 400;
-  font-size: 0.75rem;
+.progress-empty-hint {
+  font-size: 0.9rem;
+  font-style: italic;
   color: var(--color-text-muted);
 }
 
-.progress-pole-end .progress-end-label {
-  font-weight: 500;
-  color: var(--color-text);
+/* One square around label + tools (indent spacer stays outside). */
+.progress-bead-unit {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.2rem 0.35rem;
+  box-sizing: border-box;
+  min-height: 1.6rem;
+  padding: 0.15rem 0.4rem 0.15rem 0.5rem;
+  border: var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+}
+
+.progress-row.is-selected > .progress-bead-unit {
+  border-color: var(--color-accent);
+}
+
+/* Hidden by mapScale grain (overview); still in DOM for + to reveal. */
+.progress-row.is-grain-hidden {
+  display: none !important;
+}
+
+/* Parent with deeper nodes tucked under current grain. */
+.progress-row.has-grain-more > .progress-bead-unit::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.35rem;
+  height: 0.35rem;
+  margin-left: 0.15rem;
+  border-radius: 1px;
+  background: var(--color-text-muted);
+  opacity: 0.55;
 }
 
 .progress-bead-btn,
@@ -281,14 +306,36 @@
   text-decoration-thickness: 1px;
 }
 
-.progress-row.is-selected > .progress-bead-btn,
-.progress-row.is-selected > .progress-bead-label {
+/* Selected: accent underline on the label + accent unit border. */
+.progress-row.is-selected .progress-bead-btn,
+.progress-row.is-selected .progress-bead-label {
   color: var(--color-text);
   font-weight: 500;
-  background: var(--color-bg-workspace);
-  border-radius: var(--radius);
-  padding: 0 0.2rem;
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent);
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 2px;
+  background: transparent;
+  padding: 0;
 }
+
+/* Depth quieter than spine ([[surfaces]] § 4). */
+.progress-depth-row {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.progress-depth-row .progress-bead-btn,
+.progress-depth-row .progress-bead-label {
+  color: var(--color-text-muted);
+}
+
+.progress-depth-row.is-selected .progress-bead-btn,
+.progress-depth-row.is-selected .progress-bead-label {
+  color: var(--color-text);
+}
+
+/* Tools stay visible while node layout is still in flux — hover-hide later. */
 
 .progress-menu-wrap {
   position: relative;
@@ -448,8 +495,4 @@
   padding: 0.2rem 0.45rem;
   font-family: inherit;
   font-size: 0.75rem;
-}
-
-.progress-depth-row {
-  color: var(--color-text-soft);
 }

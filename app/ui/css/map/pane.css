@@ -4,7 +4,8 @@
  * Contents
  *  1. Column & topbar
  *  2. Main
- *  3. Scrollable map area
+ *  3. Scrollable map area + fit/zoom chrome
+ *      - .project-body / .map-scale-*
  */
 
 /* 1. Column & topbar */
@@ -94,11 +95,116 @@
 /* 3. Scrollable map area */
 
 .project-body {
+  display: flex;
+  flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
-  /* Generous bottom padding — empty canvas to clear selection. */
-  padding: var(--space-5) var(--space-5) 12rem;
+  overflow: hidden;
+  padding: var(--space-3) var(--space-5) var(--space-4);
+}
+
+.map-scale-toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 var(--space-2);
+}
+
+.map-scale-btn {
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1;
+  min-width: 1.6rem;
+  padding: 0.25rem 0.45rem;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.map-scale-btn:hover:not(:disabled) {
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.map-scale-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.map-scale-view {
+  display: inline-flex;
+  align-items: stretch;
+  margin-left: 0.25rem;
+}
+
+.map-scale-view .map-scale-btn {
+  min-width: 2.4rem;
+}
+
+.map-scale-view .map-scale-btn + .map-scale-btn {
+  margin-left: -1px;
+}
+
+.map-scale-view .map-scale-btn:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.map-scale-view .map-scale-btn:last-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.map-scale-btn.is-active {
+  color: var(--color-text);
+  border-color: var(--color-border);
+  background: var(--color-surface-raised, transparent);
+}
+
+.map-scale-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.75rem;
+}
+
+/*
+ * Canvas frame — tree lives here. −/+ = grain; wheel/drag = camera.
+ */
+.map-frame {
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  outline: 1px dashed var(--color-text-muted);
+  outline-offset: -4px;
+  background: transparent;
+}
+
+.map-scale-viewport.is-camera-on {
+  cursor: grab;
+  touch-action: none;
+}
+
+.map-scale-viewport.is-camera-on.is-panning {
+  cursor: grabbing;
+}
+
+.map-scale-slot {
+  position: relative;
+  overflow: visible;
+  width: 100%;
+  height: 100%;
+}
+
+.map-scale-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: top left;
 }
 
 .project-title {

@@ -57,15 +57,15 @@
     <section id="project-chat" class="project-chat" hidden>
       <div id="chat-thread" class="goal-thread"></div>
       <p id="chat-error" class="error" hidden></p>
-      <button
-        type="button"
-        id="chat-rail-grip"
-        class="chat-rail-grip"
-        aria-label="Open chat"
-        title="Open chat"
-      >
-        <span class="chat-rail-grip-mark" aria-hidden="true"></span>
-      </button>
+      <div class="chat-rail-grip">
+        <button
+          type="button"
+          id="chat-rail-grip"
+          class="chat-rail-grip-mark"
+          aria-label="Open chat"
+          title="Open chat"
+        ></button>
+      </div>
       <form id="chat-form" class="feedback-form">
         <textarea id="chat-input" rows="2" placeholder="Talk about this project…" required></textarea>
         <button type="submit">Send</button>

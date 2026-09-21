@@ -33,8 +33,9 @@ The first user is the project owner, testing on themselves.
 ## 2. Primary surface and loop
 
 **Home:** Projects (`/` → Projects page) — list | canvas (map) | chat
-for the open project. Vision and Log (Completed / History / Sessions)
-sit beside it. Free Conversation, Set Goal, and Steps are secondary
+for the open project. Column roles (what each pane is / is not):
+[[surfaces]]. Vision and Log (Completed / History / Sessions) sit
+beside it. Free Conversation, Set Goal, and Steps are secondary
 (“Other”).
 
 ### Co-build loop (current product)
@@ -96,6 +97,7 @@ more ideation.
 ## See also
 
 - [[00-project-brief]]
+- [[surfaces]] — sidebar / canvas / chat roles
 - [[05-decisions]] #25
 - [[goal-to-project-migration]]
 - [[04-current-state]]

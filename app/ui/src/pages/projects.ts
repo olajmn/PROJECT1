@@ -48,6 +48,7 @@ import {
 import { createIsolateChat } from "../chat/isolateChat.js";
 import { treeWordsElement } from "../map/treeWords.js";
 import type { NodeMenuActionId } from "../map/treeWords.js";
+import { installMapScale } from "../map/frame/index.js";
 import { copyAsText } from "../map/copyAsText.js";
 import { buildPasteTreePanel } from "../map/pasteTree.js";
 import {
@@ -306,7 +307,9 @@ function renderWorkspace(): void {
     if (!focus) {
       focus = document.createElement("p");
       focus.className = "node-focus-note";
-      line.insertAdjacentElement("afterend", focus);
+      const scaleHost =
+        (line.closest(".map-scale-viewport") as HTMLElement | null) ?? line;
+      scaleHost.insertAdjacentElement("afterend", focus);
     }
     focus.textContent = note;
   };
@@ -371,10 +374,20 @@ function renderWorkspace(): void {
     if (action === "register") {
       markSelected(stepId, `Add under: ${label}`);
       const row = line.querySelector(`[data-step-id="${CSS.escape(stepId)}"]`);
-      const addBtn = row?.querySelector(
-        ".progress-add-inline",
-      ) as HTMLButtonElement | null;
-      addBtn?.click();
+      const form = row?.querySelector(
+        ".progress-add-form",
+      ) as HTMLFormElement | null;
+      if (form) {
+        form.hidden = false;
+        const input = form.querySelector(
+          ".progress-add-input",
+        ) as HTMLInputElement | null;
+        input?.focus();
+      }
+      return;
+    }
+    if (action === "remove") {
+      await removeBead(stepId);
       return;
     }
     if (action === "analyze") {
@@ -426,7 +439,7 @@ function renderWorkspace(): void {
         note.textContent =
           "Nothing more to suggest under that node — already fine enough.";
         projectMain
-          .querySelector(".progress-line")
+          .querySelector(".map-scale-viewport, .progress-line")
           ?.insertAdjacentElement("afterend", note);
       }
     } catch (err) {
@@ -449,12 +462,12 @@ function renderWorkspace(): void {
       : undefined,
     addBead,
     removeBead,
-    null,
     selectedNodeId,
     canSelect ? onMenuAction : undefined,
     `#${project.project_id}`,
   );
   body.appendChild(line);
+  installMapScale(body, line, project.project_id);
 
   const copyRow = document.createElement("div");
   copyRow.className = "map-copy-row";
