@@ -1,16 +1,20 @@
 /* App UI styles — split under css/; this file only pulls them in.
-   Pages keep href="style.css" (URL /style.css). */
+   Pages keep href="style.css" (URL /style.css).
+   Order: type → tokens → base → areas (shell / sidebar / map / chat / pages). */
 
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+
+@import url("css/tokens.css");
 @import url("css/base.css");
-@import url("css/pages/pages.css");
-@import url("css/pages/settings/chrome.css");
-@import url("css/pages/settings/paragraphs.css");
-@import url("css/chat/conversation.css");
-@import url("css/chat/agent-chat.css");
 @import url("css/shell/layout.css");
 @import url("css/shell/columnRail.css");
 @import url("css/shell/tabs.css");
 @import url("css/shell/spinner.css");
 @import url("css/sidebar/sidebar.css");
-@import url("css/canvas/pane.css");
-@import url("css/canvas/canvas.css");
+@import url("css/map/pane.css");
+@import url("css/map/map.css");
+@import url("css/chat/conversation.css");
+@import url("css/chat/agent-chat.css");
+@import url("css/pages/pages.css");
+@import url("css/pages/settings/chrome.css");
+@import url("css/pages/settings/paragraphs.css");

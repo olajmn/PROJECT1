@@ -95,11 +95,12 @@ Product chat is **Projects-only**: `POST /api/projects/<id>/feedback` → `proje
   - `pages/settings/directory.html` / `src/pages/settings/directory/` — **Settings → Directory**: Id left / projects right. Flat `directory.html` redirects here.
   - `pages/settings/logs.html` / `src/pages/settings/logs/` — **Settings → Logs**: process sessions. Flat `log.html` redirects here.
   - Shared register UI: `src/pages/settings/paragraphs/` — `registerTemplate.ts` (visual recipe: title + facts for all three tabs) + `lineKinds` / `drawLine` / `arrange` / `liveAge`; styles in `css/pages/settings/paragraphs.css`.
-  - `src/map/` — Projects live map visual stack: `treeWords.ts` (labels/rows, +/×, ⋯), `mapFamily.ts` (who-under-who), `mapLines.ts` (SVG spines), `copyAsText.ts` (Copy as ASCII), `pasteTree.ts` (Paste structure preview).
+  - `src/map/` — Projects live map visual stack: `treeWords.ts` (labels/rows, +/×, ⋯), `mapFamily.ts` (who-under-who), `mapLines.ts` (SVG spines), `copyAsText.ts` (Copy as ASCII), `pasteTree.ts` (Paste structure preview). Styles: `css/map/` (mirrors `src/map/`).
   - `src/shell/` — `columnResize.ts` (three-column rules sidebar|map|chat; `maxFraction` caps; chat via `installChatResize` → collapse rail); `tabs/tabStrip.ts`; `columnRail/`; `busy.ts` + `css/shell/spinner.css`.
   - `src/sidebar/` — `idMenu.ts` (switch/create/delete `id#N`, projects-per-id overview; column resize does not dismiss open menu); `projectListOrder.ts` (local `#1…n` labels).
   - `src/user/` — `activeUser.ts` (`ID_BRAND`, active `id#N` in `localStorage`).
   - `css/sidebar/sidebar.css` — left rail + id menu styles (was `css/create/`).
+  - UI look tokens: `css/tokens.css` (imported first from `style.css`); areas mirror `src/` (`shell/`, `sidebar/`, `map/`, `chat/`, `pages/settings/`). Identity direction “ink on stone”; general vs area ownership — [[visual-reset]].
   - `src/chat/messageRow.ts` — shared You/Agent message DOM row (Projects).
   - `src/chat/isolateChat.ts` — About-frames and "Show only this" filter for the Projects chat thread (uses `messageRow`).
 

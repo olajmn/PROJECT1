@@ -39,8 +39,8 @@ button.is-loading::before {
   display: inline-block;
   width: 0.85rem;
   height: 0.85rem;
-  border: 2px solid #ccc;
-  border-top-color: #1a1a1a;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-text);
   border-radius: 50%;
   animation: ui-spin 0.55s linear infinite;
   vertical-align: -0.15em;

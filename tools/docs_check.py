@@ -75,6 +75,9 @@ EXPECTED_DOCS = [
     # growing conceptual/speculative document, not one of the seven
     # numbered vault roles (see COLLABORATION.md's doc-role table).
     "concepts.md",
+    # Deliberately unnumbered - UI visual-reset plan + css/src mirror
+    # ownership (tokens vs area CSS). Cited from docs/04-current-state.md.
+    "visual-reset.md",
 ]
 
 # Files/directories outside docs/ scanned for docs/<name>.md-style

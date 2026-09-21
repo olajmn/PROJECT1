@@ -1,18 +1,19 @@
 /* Shared page chrome leftovers (entity ids, errors). */
 
 .entity-id {
-  color: #999;
-  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
   font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
 }
 
 .error {
-  margin: 0.25rem 0 0;
-  color: #b42318;
-  font-size: 0.85rem;
+  margin: var(--space-1) 0 0;
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
 }
 
 .empty-state {
-  color: #888;
+  color: var(--color-text-muted);
   font-size: 0.9rem;
 }

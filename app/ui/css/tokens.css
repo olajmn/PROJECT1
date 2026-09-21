@@ -1,0 +1,53 @@
+/* Visual identity tokens — single source for color, type, space, radius.
+ *
+ * Direction: “ink on stone” — plain studio tool, sparse accent.
+ *
+ * Ownership
+ *  - General look → change HERE (and css/base.css for body/forms/buttons).
+ *  - Area-only look → css/{shell,sidebar,map,chat,pages}/… using var(--…).
+ *  - Map has the most unique UI; extra files there are OK. Not “3 files per pane”.
+ *
+ * Contents
+ *  1. Color
+ *  2. Type
+ *  3. Space
+ *  4. Radius / border
+ */
+
+:root {
+  /* 1. Color */
+  --color-bg: #e9e6e0;
+  --color-bg-workspace: #e4e0d8;
+  --color-bg-sidebar: #ddd8cf;
+  --color-bg-panel: #e9e6e0;
+  --color-text: #141210;
+  --color-text-muted: #6a6560;
+  --color-text-soft: #524e49;
+  --color-border: #c4bfb6;
+  --color-border-input: #b5b0a6;
+  --color-surface: transparent;
+  --color-button: #141210;
+  --color-button-text: #f3f1ec;
+  --color-accent: #1f4d3a;
+  --color-error: #8f1e18;
+  --color-register: #141210;
+
+  /* 2. Type */
+  --font-sans: "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-size-body: 0.9375rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-xs: 0.75rem;
+  --line-height: 1.45;
+
+  /* 3. Space */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+
+  /* 4. Radius / border — near-square, not pill */
+  --radius: 0.15rem;
+  --border: 1px solid var(--color-border);
+}

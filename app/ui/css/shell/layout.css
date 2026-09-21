@@ -12,7 +12,7 @@
 /* 1. Outer shell */
 
 .workspace-body {
-  background: #f3f2ef;
+  background: var(--color-bg-workspace);
 }
 
 .app-shell {
@@ -66,11 +66,16 @@
   background: transparent;
 }
 
-.chat-resize:hover::before,
-.sidebar-resize:hover::before,
 body.is-resizing-chat .chat-resize::before,
 body.is-resizing-sidebar .sidebar-resize::before {
-  background: rgba(0, 0, 0, 0.12);
+  background: var(--color-accent);
+  opacity: 0.45;
+}
+
+.chat-resize:hover::before,
+.sidebar-resize:hover::before {
+  background: var(--color-accent);
+  opacity: 0.35;
 }
 
 body.is-resizing-chat,
