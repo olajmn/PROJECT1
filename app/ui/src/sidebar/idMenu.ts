@@ -10,14 +10,14 @@
 //      - claimUnassigned()
 //      - showError()
 
-import { createUser, setProjectUser } from "../api.js";
+import { archiveUser, createUser, setProjectUser } from "../api.js";
 import { setButtonBusy } from "../shell/busy.js";
 import {
   projectListIdLabel,
   projectsChronologicalForUser,
   projectsNewestFirst,
 } from "./projectListOrder.js";
-import { getActiveUserId, setActiveUserId, userLabel } from "../user/activeUser.js";
+import { getActiveUserId, setActiveUserId, userLabel, ID_BRAND } from "../user/activeUser.js";
 import type { ProjectView, UserView } from "../types.js";
 
 // 1. Types
@@ -107,10 +107,39 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
     api.toggle();
   });
 
+  // Column-width drag uses `#sidebar-resize` outside the menu. Treat that
+  // gesture as not an outside click, including when pointerup lands elsewhere.
+  let ignoreOutsideClick = false;
+  document.addEventListener(
+    "pointerdown",
+    (event) => {
+      const target = event.target;
+      if (target instanceof Element && target.closest(".sidebar-resize")) {
+        ignoreOutsideClick = true;
+      }
+    },
+    true,
+  );
+  document.addEventListener(
+    "pointerup",
+    () => {
+      if (!ignoreOutsideClick) return;
+      // Survive the click that follows this pointerup in the same gesture.
+      setTimeout(() => {
+        ignoreOutsideClick = false;
+      }, 0);
+    },
+    true,
+  );
+
   document.addEventListener("click", (event) => {
     if (!open) return;
+    if (ignoreOutsideClick) return;
     const target = event.target as Node | null;
     if (target && (menu.contains(target) || opts.anchor.contains(target))) {
+      return;
+    }
+    if (target instanceof Element && target.closest(".sidebar-resize")) {
       return;
     }
     api.close();
@@ -150,7 +179,9 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
       const claim = document.createElement("button");
       claim.type = "button";
       claim.className = "sidebar-id-menu-claim";
-      claim.textContent = `Assign ${orphans.length} unowned → ${userLabel(activeId)}`;
+      claim.textContent = `Assign ${orphans.length} unowned → ${userLabel(
+        users.find((u) => u.id === activeId) ?? { id: activeId },
+      )}`;
       claim.addEventListener("click", async (event) => {
         event.stopPropagation();
         setButtonBusy(claim, true);
@@ -189,22 +220,19 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
     const titleWrap = document.createElement("div");
     titleWrap.className = "sidebar-id-card-title";
     const name = document.createElement("span");
-    name.className = "sidebar-id-card-name";
-    name.textContent = userLabel(user.id);
+    name.className = "sidebar-id-menu-hint";
+    name.textContent = userLabel(user);
     titleWrap.appendChild(name);
-    if (user.text && user.text !== "user") {
-      const hint = document.createElement("span");
-      hint.className = "sidebar-id-menu-hint";
-      hint.textContent = user.text;
-      titleWrap.appendChild(hint);
-    }
     top.appendChild(titleWrap);
+
+    const actions = document.createElement("div");
+    actions.className = "sidebar-id-card-actions";
 
     if (isActive) {
       const mark = document.createElement("span");
       mark.className = "sidebar-id-menu-hint";
       mark.textContent = "active";
-      top.appendChild(mark);
+      actions.appendChild(mark);
     } else {
       const use = document.createElement("button");
       use.type = "button";
@@ -217,8 +245,44 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
         rebuild();
         renderBrandOnly();
       });
-      top.appendChild(use);
+      actions.appendChild(use);
     }
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "sidebar-id-card-delete";
+    del.textContent = "Delete";
+    del.title = "Remove this id (projects stay, unlinked)";
+    del.addEventListener("click", async (event) => {
+      event.stopPropagation();
+      const label = userLabel(user);
+      if (
+        !window.confirm(
+          `Delete ${label}?\n\nProjects stay; they just lose this id link.`,
+        )
+      ) {
+        return;
+      }
+      setButtonBusy(del, true);
+      try {
+        const archived = await archiveUser(user.id);
+        const next = opts.getUsers().map((u) =>
+          u.id === archived.id ? archived : u,
+        );
+        if (getActiveUserId() === user.id) {
+          setActiveUserId(null);
+          opts.onActiveUserChanged(null);
+        }
+        opts.onUsersChanged(next);
+        rebuild();
+        renderBrandOnly();
+      } catch (err) {
+        setButtonBusy(del, false);
+        showError(card, err);
+      }
+    });
+    actions.appendChild(del);
+    top.appendChild(actions);
     card.appendChild(top);
 
     const linked = projectsChronologicalForUser(projects, user.id);
@@ -295,8 +359,7 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
   }
 
   function renderBrandOnly(): void {
-    const active = getActiveUserId();
-    opts.anchor.textContent = active !== null ? userLabel(active) : "id";
+    opts.anchor.textContent = ID_BRAND;
   }
 
   /** Optional cap only — default is natural height (shows everything). */

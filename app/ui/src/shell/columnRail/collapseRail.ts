@@ -21,6 +21,8 @@ export type CollapseRailOpts = {
   defaultWidth: number;
   minWidth: number;
   maxWidthCap: number;
+  /** Fraction of container width (e.g. 1/2). Optional. */
+  maxFraction?: number;
   /** Leave at least this much for the rest of the container. */
   minOther: number;
   /** Width when snapped to the icon rail. */
@@ -61,11 +63,17 @@ export function installCollapseRail(opts: CollapseRailOpts): CollapseRailApi {
       : opts.defaultWidth;
   })();
 
-  const maxOpen = () =>
-    Math.min(
-      opts.maxWidthCap,
-      Math.max(opts.minWidth, opts.container.clientWidth - opts.minOther),
+  const maxOpen = () => {
+    const byRest = Math.max(
+      opts.minWidth,
+      opts.container.clientWidth - opts.minOther,
     );
+    const byFraction =
+      opts.maxFraction != null
+        ? opts.container.clientWidth * opts.maxFraction
+        : Infinity;
+    return Math.min(opts.maxWidthCap, byFraction, byRest);
+  };
 
   const clampOpen = (px: number) =>
     Math.min(maxOpen(), Math.max(opts.minWidth, Math.round(px)));

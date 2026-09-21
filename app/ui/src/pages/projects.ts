@@ -35,8 +35,7 @@ import {
   sendGoalFeedback,
   zoomGoalStep,
 } from "../api.js";
-import { installCollapseRail } from "../shell/columnRail/collapseRail.js";
-import { installSidebarResize } from "../shell/columnResize.js";
+import { installChatResize, installSidebarResize } from "../shell/columnResize.js";
 import { setButtonBusy } from "../shell/busy.js";
 import { renderTabStrip } from "../shell/tabs/tabStrip.js";
 import type { TabStripItem } from "../shell/tabs/tabStrip.js";
@@ -54,7 +53,7 @@ import { buildPasteTreePanel } from "../map/pasteTree.js";
 import {
   getActiveUserId,
   setActiveUserId,
-  userLabel,
+  ID_BRAND,
 } from "../user/activeUser.js";
 import type { ProjectView, UserView } from "../types.js";
 
@@ -94,26 +93,7 @@ let pendingMapFocus: { stepId: string; label: string } | null = null;
 // 1. Shell
 
 installSidebarResize(appShell, sidebarResize);
-const chatRailApi = installCollapseRail({
-  container: workspace,
-  handle: chatResize,
-  panel: projectChat,
-  cssVar: "--chat-width",
-  widthStorageKey: "projects.chatWidthPx",
-  collapsedStorageKey: "projects.chatCollapsed",
-  defaultWidth: 360,
-  minWidth: 240,
-  maxWidthCap: 720,
-  minOther: 280,
-  railWidth: 64,
-  snapThreshold: 200,
-  warnStart: 280,
-  pendingClass: "is-collapse-pending",
-  containerCollapsedClass: "is-chat-collapsed",
-  panelCollapsedClass: "is-collapsed",
-  bodyClass: "is-resizing-chat",
-  widthFromPointer: (clientX, rect) => rect.right - clientX,
-});
+const chatRailApi = installChatResize(workspace, chatResize, projectChat);
 const chatRailToggle = document.getElementById(
   "chat-rail-toggle",
 ) as HTMLButtonElement;
@@ -542,7 +522,7 @@ function renderWorkspace(): void {
 
 function renderSidebarBrand(): void {
   const active = getActiveUserId();
-  sidebarBrand.textContent = active !== null ? userLabel(active) : "id";
+  sidebarBrand.textContent = ID_BRAND;
   if (!idMenu.isOpen()) {
     sidebarBrand.classList.remove("is-active");
   }

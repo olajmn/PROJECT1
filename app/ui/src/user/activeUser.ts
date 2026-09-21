@@ -2,6 +2,9 @@
 
 const STORAGE_KEY = "activeSimUserId";
 
+/** Top sidebar brand — opens the id overview. */
+export const ID_BRAND = "Manager";
+
 export function getActiveUserId(): number | null {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw == null || raw === "") return null;
@@ -17,7 +20,9 @@ export function setActiveUserId(id: number | null): void {
   localStorage.setItem(STORAGE_KEY, String(id));
 }
 
-/** Product label for the active sim user — always "id" (wire N is not shown). */
-export function userLabel(_id: number): string {
-  return "id";
+/** Display name for one sim user — label text, or id#N if none. */
+export function userLabel(user: { id: number; text?: string | null }): string {
+  const t = user.text?.trim();
+  if (t && t !== "user") return t;
+  return `id#${user.id}`;
 }

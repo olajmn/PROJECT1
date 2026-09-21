@@ -124,6 +124,28 @@
   font-size: 0.75rem;
 }
 
+.sidebar-id-card-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sidebar-id-card-delete {
+  flex: 0 0 auto;
+  padding: 0.2rem 0.35rem;
+  border: none;
+  background: transparent;
+  color: #666;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.sidebar-id-card-delete:hover {
+  color: #111;
+}
+
 .sidebar-id-card-projects {
   display: flex;
   flex-direction: column;
