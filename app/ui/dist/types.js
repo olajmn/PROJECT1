@@ -3,9 +3,4 @@
 // step_status, current_step, ...) - this is what the manifestation
 // layer (backend/manifestation.py) already reduced a Planning result
 // to, and nothing more. See that module's docstring for why.
-export function projectIdOf(view) {
-    if (view.project_id == null) {
-        throw new Error("missing project_id");
-    }
-    return view.project_id;
-}
+export {};

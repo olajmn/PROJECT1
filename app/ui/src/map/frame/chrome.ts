@@ -93,6 +93,11 @@ export type MapScaleHandle = {
   destroy: () => void;
 };
 
+type ScaleOpts = {
+  /** Shows a close control in the top bar. Omitted = no close. */
+  onClose?: () => void;
+};
+
 /**
  * Wrap `mapEl` in the map frame + grain/view toolbar.
  * `projectId` remembers grain + view across re-renders and page refresh.
@@ -101,6 +106,7 @@ export function installMapScale(
   body: HTMLElement,
   mapEl: HTMLElement,
   projectId: number,
+  opts: ScaleOpts = {},
 ): MapScaleHandle {
   const sticky = readSticky(projectId);
   let grain: Grain = sticky?.grain ?? null;
@@ -157,9 +163,17 @@ export function installMapScale(
   const topBar = document.createElement("div");
   topBar.className = "map-top-bar";
 
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "map-scale-btn";
+  closeBtn.textContent = "×";
+  closeBtn.title = "Close project";
+  closeBtn.setAttribute("aria-label", "Close project");
+  closeBtn.hidden = opts.onClose === undefined;
+
   const topBtn = document.createElement("button");
   topBtn.type = "button";
-  topBtn.className = "map-scale-btn map-top-btn";
+  topBtn.className = "map-scale-btn";
   topBtn.textContent = "↑";
   topBtn.title = "Back to top";
   topBtn.setAttribute("aria-label", "Back to top");
@@ -170,7 +184,7 @@ export function installMapScale(
   const stage = document.createElement("div");
   stage.className = "map-scale-stage";
 
-  toolbar.prepend(topBtn);
+  toolbar.prepend(closeBtn, topBtn);
   topBar.append(toolbar, viewGroup);
 
   body.insertBefore(viewport, mapEl);
@@ -389,6 +403,8 @@ export function installMapScale(
   };
 
   // 6. Event Wiring and Public Handle
+
+  closeBtn.addEventListener("click", () => opts.onClose?.());
 
   topBtn.addEventListener("click", () => camera.panToTop());
 

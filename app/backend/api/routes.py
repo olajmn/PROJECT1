@@ -21,8 +21,13 @@ from pathlib import Path
 from backend.store.data_persistence import load_users, save_user
 from backend.store.session import load_sessions
 from backend.project.panes.chat.turn import take_turn
-from backend.project.panes.create.lifecycle import cancel_goal, create_goal
+from backend.project.panes.create.lifecycle import (
+    cancel_goal,
+    create_empty_project,
+    create_goal,
+)
 from backend.project.panes.create.resolver import get_latest_for_goal
+from backend.project.panes.canvas.call_read import read_tree
 from backend.project.panes.canvas.text_to_tree import parse_outline
 from backend.project.engine.planner import archive_user, set_project_user
 from backend.project.panes.canvas.edit_map import (
@@ -58,6 +63,7 @@ _CANCEL_PATH_RE = re.compile(r"^/api/projects/(\d+)/cancel$")
 _PROJECT_USER_PATH_RE = re.compile(r"^/api/projects/(\d+)/user$")
 _GOAL_ZOOM_PATH_RE = re.compile(r"^/api/projects/(\d+)/zoom/(p\d+)$")
 _GOAL_PROGRESSION_PATH_RE = re.compile(r"^/api/projects/(\d+)/progression$")
+_GOAL_READ_PATH_RE = re.compile(r"^/api/projects/(\d+)/read$")
 _GOAL_PROGRESSION_IMPORT_RE = re.compile(
     r"^/api/projects/(\d+)/progression/import$",
 )
@@ -158,6 +164,10 @@ class Handler(BaseHTTPRequestHandler):
                 int(goal_progression_import_match.group(1)),
             )
             return
+        goal_read_match = _GOAL_READ_PATH_RE.match(self.path)
+        if goal_read_match:
+            self._handle_read_tree(int(goal_read_match.group(1)))
+            return
         goal_progression_match = _GOAL_PROGRESSION_PATH_RE.match(self.path)
         if goal_progression_match:
             self._handle_add_progression(int(goal_progression_match.group(1)))
@@ -217,6 +227,13 @@ class Handler(BaseHTTPRequestHandler):
         sim_user_id_value = (
             str(int(raw_sim)) if raw_sim is not None else ""
         )
+        # `planned: false` mints a named project with no plan - the text
+        # is a label, not a goal for the planner to work from.
+        if payload_in.get("planned") is False:
+            self._send_json(
+                goal_view(create_empty_project(text, sim_user_id_value)),
+            )
+            return
         try:
             record = create_goal(text, "", sim_user_id_value)
         except Exception as e:  # transport must not crash on one bad turn
@@ -267,6 +284,29 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(422, str(e))
             return
         self._send_json(goal_view(record))
+
+    def _handle_read_tree(self, goal_id: int) -> None:
+        """Read the WHAT tree back into a summary + seed. Nothing is
+        written — the reading is returned and then gone, until we know
+        whether these are worth keeping."""
+        latest = get_latest_for_goal(goal_id)
+        if latest is None:
+            self.send_error(404, "no such goal")
+            return
+        steps = (latest.get("plan") or {}).get("progression", {}).get("steps")
+        if not isinstance(steps, list) or not steps:
+            self.send_error(400, "nothing to read - the map is empty")
+            return
+        try:
+            reading = read_tree(latest["goal"], steps)
+        except Exception as e:  # transport must not crash on one bad call
+            print(f"(debug: {e})")
+            self.send_error(503, "that took longer than expected - try again in a moment")
+            return
+        if reading is None:
+            self.send_error(503, "no reading came back - try again")
+            return
+        self._send_json(reading)
 
     def _handle_import_progression(self, goal_id: int) -> None:
         """Parse a pasted outline/ASCII tree into new beads — no model."""

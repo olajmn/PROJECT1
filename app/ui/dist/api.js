@@ -16,10 +16,19 @@ export async function fetchActiveGoals() {
     }
     return (await res.json());
 }
-export async function createGoal(text, simUserId) {
-    const body = { text };
+/**
+ * `planned: false` skips the planner — `text` becomes the project's
+ * name and the tree is built or pasted afterwards.
+ */
+export async function createGoal(text, simUserId, planned = true) {
+    const body = {
+        text,
+    };
     if (simUserId != null) {
         body.sim_user_id = simUserId;
+    }
+    if (!planned) {
+        body.planned = false;
     }
     const res = await fetch("/api/projects", {
         method: "POST",
@@ -108,6 +117,19 @@ export async function importProgressionOutline(goalId, text, parentId, unwrap = 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
     });
+    if (!res.ok) {
+        const detail = (await res.text()).trim();
+        throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+    }
+    return (await res.json());
+}
+/**
+ * Read an existing map back into words — what the project looks to be
+ * about, plus the goal sentence it would have grown from. Nothing is
+ * saved; the reading is gone on the next render.
+ */
+export async function readTree(goalId) {
+    const res = await fetch(`/api/projects/${goalId}/read`, { method: "POST" });
     if (!res.ok) {
         const detail = (await res.text()).trim();
         throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);

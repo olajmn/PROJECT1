@@ -11,6 +11,7 @@ on planner.set_project_user() until Vision's own shape is decided.
 # Contents
 #  1. Creation
 #      - create_goal()
+#      - create_empty_project()
 #
 #  2. Cancellation
 #      - cancel_goal()
@@ -86,6 +87,34 @@ def create_goal(typed_text: str, new_vision_text: str, sim_user_id_value: str) -
     return save_plan(
         typed_text, plan, duration=duration,
         frozen_duration=planner.frozen_duration_for(plan, duration),
+        sim_user_id=sim_user_id,
+    )
+
+
+def create_empty_project(typed_text: str, sim_user_id_value: str) -> dict:
+    """
+    Mint a project with a name but no plan - the second way in, beside
+    create_goal().
+
+    create_goal() reads the typed text as a goal and asks the planner
+    to turn it into a first plan. Here the text is only a label: no
+    model call, no duration extraction, no planability decision. The
+    tree is meant to arrive afterwards, built by hand or pasted in.
+
+    That inverts the usual direction (goal -> tree). Nothing in
+    persistence depends on the old order - save_plan() stores what it
+    is given - so the goal text for such a project can instead be read
+    back OUT of its tree later, by the Describe role.
+
+    An empty `progression` is written explicitly rather than leaving
+    `plan` bare: it says "this project has a WHAT tree and it is
+    empty", which is what is true, and is the same shape every later
+    edit appends to.
+    """
+    sim_user_id = int(sim_user_id_value) if sim_user_id_value else None
+    return save_plan(
+        typed_text,
+        {"progression": {"steps": []}},
         sim_user_id=sim_user_id,
     )
 

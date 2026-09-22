@@ -1,15 +1,14 @@
 /* Middle pane: map column chrome. The canvas frame itself is frame.css,
- * node drawing is map.css, tab chips are css/shell/tabs.css.
- * Tokens from css/tokens.css.
+ * node drawing is map.css. Tokens from css/tokens.css.
  *
  * Contents
- *  1. Column & topbar
+ *  1. Column
  *  2. Main
  *  3. Map area + grain/view buttons
  *      - .project-body / .map-scale-toolbar / .map-scale-btn
  */
 
-/* 1. Column & topbar */
+/* 1. Column */
 
 .project-column {
   display: flex;
@@ -19,36 +18,6 @@
   overflow: hidden;
   border-right: var(--border);
   background: var(--color-bg-workspace);
-}
-
-.project-topbar {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-3);
-  min-height: 0;
-  padding: 0 var(--space-3) 0 var(--space-2);
-  border-bottom: var(--border);
-  background: transparent;
-}
-
-.project-topbar[hidden] {
-  display: none;
-}
-
-.project-topbar-title {
-  flex: 1 1 auto;
-  min-width: 0;
-  margin: 0;
-  padding: 0.55rem var(--space-3) 0.55rem var(--space-2);
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--color-text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  align-self: center;
 }
 
 /* 2. Main */
@@ -71,7 +40,10 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
-  padding: var(--space-3) var(--space-5) var(--space-4);
+  /* No padding at all: the frame's rules run the full column width, and
+     the bottom bar sits flush like a status line. Insets live on the bars
+     and the viewport instead. */
+  padding: 0;
 }
 
 .map-scale-toolbar {
@@ -171,7 +143,7 @@
 
 .project-hint,
 .workspace-empty {
-  margin: var(--space-4) 0 0;
+  margin: var(--space-4) 0 0 var(--space-2);
   color: var(--color-text-muted);
   font-size: 0.95rem;
   line-height: var(--line-height);

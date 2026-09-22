@@ -251,30 +251,6 @@ body.is-resizing-id-menu {
 
 /* 3. Create form & list */
 
-.create-project-form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.create-project-form textarea {
-  width: 100%;
-  box-sizing: border-box;
-  font: inherit;
-  font-size: var(--font-size-sm);
-  padding: var(--space-2);
-  border: 1px solid var(--color-border-input);
-  border-radius: var(--radius);
-  resize: vertical;
-  background: transparent;
-  color: var(--color-text);
-}
-
-.create-project-form button {
-  padding: 0.35rem var(--space-3);
-  font-size: var(--font-size-sm);
-}
-
 .project-list {
   flex: 1;
   overflow-y: auto;

@@ -1,0 +1,68 @@
+/* Create pane — naming and minting a project. Mirrors src/create/panel.ts
+ * and backend/project/panes/create/. Tokens from css/tokens.css.
+ *
+ * Contents
+ *  1. Sidebar entry
+ *      - .create-open
+ *  2. Panel in the middle column
+ *      - .create-panel / .create-project-form
+ *      - .create-actions / .create-bare
+ */
+
+/* 1. Sidebar entry */
+
+.create-open {
+  width: 100%;
+  padding: 0.35rem var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+/* 2. Panel in the middle column */
+
+/* Where a project is made. Shown when nothing is open, or when Create is
+   pressed over an open one — the sidebar entry is the way back. */
+.create-panel {
+  max-width: 26rem;
+  margin: var(--space-3) 0 0 var(--space-2);
+}
+
+.create-panel[hidden] {
+  display: none;
+}
+
+.create-project-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.create-project-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius);
+  resize: vertical;
+  background: transparent;
+  color: var(--color-text);
+}
+
+.create-project-form button {
+  padding: 0.35rem var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.create-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Same name, no planner — the tree comes later. */
+.create-bare {
+  min-width: 2rem;
+  padding: 0.35rem var(--space-2);
+}

@@ -38,13 +38,23 @@ export async function fetchActiveGoals(): Promise<GoalView[]> {
   return (await res.json()) as GoalView[];
 }
 
+/**
+ * `planned: false` skips the planner — `text` becomes the project's
+ * name and the tree is built or pasted afterwards.
+ */
 export async function createGoal(
   text: string,
   simUserId?: number | null,
+  planned = true,
 ): Promise<GoalView> {
-  const body: { text: string; sim_user_id?: number } = { text };
+  const body: { text: string; sim_user_id?: number; planned?: boolean } = {
+    text,
+  };
   if (simUserId != null) {
     body.sim_user_id = simUserId;
+  }
+  if (!planned) {
+    body.planned = false;
   }
   const res = await fetch("/api/projects", {
     method: "POST",
@@ -162,6 +172,25 @@ export async function importProgressionOutline(
     throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
   }
   return (await res.json()) as GoalView;
+}
+
+export interface TreeReading {
+  summary: string;
+  seed: string;
+}
+
+/**
+ * Read an existing map back into words — what the project looks to be
+ * about, plus the goal sentence it would have grown from. Nothing is
+ * saved; the reading is gone on the next render.
+ */
+export async function readTree(goalId: number): Promise<TreeReading> {
+  const res = await fetch(`/api/projects/${goalId}/read`, { method: "POST" });
+  if (!res.ok) {
+    const detail = (await res.text()).trim();
+    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+  }
+  return (await res.json()) as TreeReading;
 }
 
 /** Dry-run parse_outline() both ways (title line dropped / kept) so

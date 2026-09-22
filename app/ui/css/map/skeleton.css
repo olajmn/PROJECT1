@@ -11,8 +11,7 @@
 .progress-line.is-skeleton .progress-bead-unit > *,
 .progress-line.is-skeleton .progress-header-unit > *,
 .progress-line.is-skeleton .progress-add,
-.progress-line.is-skeleton .progress-menu-wrap,
-.progress-line.is-skeleton .progress-empty-hint {
+.progress-line.is-skeleton .progress-menu-wrap {
   visibility: hidden;
 }
 

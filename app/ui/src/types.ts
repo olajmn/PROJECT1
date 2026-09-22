@@ -52,13 +52,6 @@ export interface GoalView {
 /** Same record as GoalView — product name for the Projects surface. */
 export type ProjectView = GoalView;
 
-export function projectIdOf(view: { project_id?: number | null }): number {
-  if (view.project_id == null) {
-    throw new Error("missing project_id");
-  }
-  return view.project_id;
-}
-
 // 3. Simulated users
 
 export interface UserView {

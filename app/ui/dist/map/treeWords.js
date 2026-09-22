@@ -277,15 +277,6 @@ export function treeWordsElement(nameLabel, middle, onStepClick, onAddStep, onRe
     if (identity) {
         trunk.style.marginLeft = `${2 * NEST_INSET_REM}rem`;
     }
-    if (middle.length === 0) {
-        const gap = document.createElement("div");
-        gap.className = "progress-row progress-empty-gap";
-        const hint = document.createElement("span");
-        hint.className = "progress-empty-hint";
-        hint.textContent = "Talk or + to place a waypoint";
-        gap.appendChild(hint);
-        trunk.appendChild(gap);
-    }
     for (const step of middle) {
         const block = document.createElement("div");
         block.className = "progress-trunk-block";

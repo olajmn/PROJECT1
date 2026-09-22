@@ -20,11 +20,7 @@
     <div class="sidebar-id" id="sidebar-id">
       <button type="button" id="sidebar-brand" class="sidebar-brand" title="Switch or create id">Manager</button>
     </div>
-    <form id="create-form" class="create-project-form">
-      <textarea id="create-input" rows="2" placeholder="New project…" required></textarea>
-      <button type="submit">Create</button>
-    </form>
-    <p id="create-error" class="error" hidden></p>
+    <button type="button" id="create-open" class="create-open">Create</button>
     <div id="project-list" class="project-list"></div>
     <p id="list-empty" class="sidebar-empty" hidden>No projects yet.</p>
     <nav class="sidebar-more">
@@ -41,9 +37,24 @@
   ></div>
   <div class="workspace">
     <div class="project-column">
-      <section id="project-topbar" class="project-topbar" hidden></section>
       <section id="project-main" class="project-main">
         <p id="main-empty" class="workspace-empty">Select a project, or create one.</p>
+        <div id="create-panel" class="create-panel" hidden>
+          <form id="create-form" class="create-project-form">
+            <textarea id="create-input" rows="2" placeholder="New project…" required></textarea>
+            <div class="create-actions">
+              <button type="submit">Create</button>
+              <button
+                type="button"
+                id="create-bare"
+                class="create-bare"
+                title="Create without a plan — build or paste the structure yourself"
+                aria-label="Create without a plan"
+              >+</button>
+            </div>
+          </form>
+          <p id="create-error" class="error" hidden></p>
+        </div>
       </section>
     </div>
     <div

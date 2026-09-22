@@ -8,9 +8,9 @@
 @import url("css/base.css");
 @import url("css/shell/layout.css");
 @import url("css/shell/columnRail.css");
-@import url("css/shell/tabs.css");
 @import url("css/shell/spinner.css");
 @import url("css/sidebar/sidebar.css");
+@import url("css/create/panel.css");
 @import url("css/map/pane.css");
 @import url("css/map/frame.css");
 @import url("css/map/map.css");

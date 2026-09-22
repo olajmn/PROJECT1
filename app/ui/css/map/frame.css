@@ -26,11 +26,11 @@
 
 /*
  * Canvas frame — tree lives here. −/+ = grain; wheel/drag = camera.
+ * No box: the bars above and below carry the only rules, and those run
+ * the full column width.
  */
 .map-frame {
   box-sizing: border-box;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
   background: transparent;
 }
 
@@ -59,7 +59,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.35rem;
-  padding: 0 0.35rem;
+  padding: 0 var(--space-2);
   border-bottom: 1px solid var(--color-border);
   /* Opaque on purpose: the tree pans up into this strip, and the fill is
      what makes rows disappear behind it instead of showing through. */
@@ -74,18 +74,18 @@
 
 /* 3. Bottom action bar */
 
-/* Mirrors .map-top-bar: a framed strip under the canvas, actions on the
-   left, project-level action on the right. */
+/* Mirrors .map-top-bar: one rule, full width, actions on the left and the
+   project-level action on the right. Same side padding as the top bar, so
+   the two bars' contents line up down the left edge. */
 .map-copy-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.35rem;
   min-height: 1.75rem;
-  margin: 0 0 0.75rem;
-  padding: 0 0.35rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  margin: 0;
+  padding: 0 var(--space-2);
+  border-top: 1px solid var(--color-border);
 }
 
 .map-copy-group {

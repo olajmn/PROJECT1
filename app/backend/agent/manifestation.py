@@ -45,6 +45,12 @@ def surface_text(record: dict) -> str:
         return plan["pending_duration_question"]
     if plan.get("now"):
         return plan["now"]
+    progression = plan.get("progression")
+    if isinstance(progression, dict) and not progression.get("steps"):
+        # Minted without a plan (create_empty_project) - nothing came
+        # back because nothing was ever asked for, which is a different
+        # state from a planned goal that ran dry.
+        return "No plan yet - build or paste a structure."
     return "(no next action came back - give feedback again, or mark complete)"
 
 

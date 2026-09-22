@@ -1,12 +1,12 @@
 // Project workspace — Notion-ish shell over Project records.
 // Left (sidebar): id#N menu + create + project list.
-// Center: open project map (topbar tabs).
+// Center: open project map. Close lives in the map's own top bar.
 // Right: conversation for that project. Wire: project_id / /api/projects.
 
 // Contents
 //  1. Shell
 //      - element handles + module state
-//      - chatRailApi / idMenu / isolateChat
+//      - chatRailApi / idMenu / createPanel / isolateChat
 //  2. Selection helpers
 //      - clearNodeSelection()
 //      - isProgressionTree()
@@ -18,7 +18,6 @@
 //      - renderList()
 //      - renderWorkspace()
 //      - renderSidebarBrand()
-//      - renderProjectTopbar()
 //  4. Data
 //      - applyUsers()
 //      - replaceProject()
@@ -29,18 +28,16 @@
 import {
   addProgressionStep,
   cancelGoal,
-  createGoal,
   fetchActiveGoals,
   fetchUsers,
   importProgressionOutline,
+  readTree,
   removeProgressionStep,
   sendGoalFeedback,
   zoomGoalStep,
 } from "../api.js";
 import { installChatResize, installSidebarResize } from "../shell/columnResize.js";
 import { setButtonBusy } from "../shell/busy.js";
-import { renderTabStrip } from "../shell/tabs/tabStrip.js";
-import type { TabStripItem } from "../shell/tabs/tabStrip.js";
 import { installIdMenu } from "../sidebar/idMenu.js";
 import {
   projectListIdLabel,
@@ -48,6 +45,8 @@ import {
   projectsNewestFirst,
 } from "../sidebar/projectListOrder.js";
 import { createIsolateChat } from "../chat/isolateChat.js";
+import { messageRow } from "../chat/messageRow.js";
+import { installCreatePanel } from "../create/panel.js";
 import { treeWordsElement } from "../map/treeWords.js";
 import type { NodeMenuActionId } from "../map/treeWords.js";
 import { installMapScale } from "../map/frame/index.js";
@@ -65,14 +64,10 @@ import type { ProjectView, UserView } from "../types.js";
 
 applyStoredTheme();
 
-const createForm = document.getElementById("create-form") as HTMLFormElement;
-const createInput = document.getElementById("create-input") as HTMLTextAreaElement;
-const createError = document.getElementById("create-error") as HTMLParagraphElement;
 const projectList = document.getElementById("project-list") as HTMLDivElement;
 const listEmpty = document.getElementById("list-empty") as HTMLParagraphElement;
 const sidebarBrand = document.getElementById("sidebar-brand") as HTMLButtonElement;
 const sidebarIdHost = document.getElementById("sidebar-id") as HTMLElement;
-const projectTopbar = document.getElementById("project-topbar") as HTMLElement;
 const projectMain = document.getElementById("project-main") as HTMLElement;
 const mainEmpty = document.getElementById("main-empty") as HTMLParagraphElement;
 const projectChat = document.getElementById("project-chat") as HTMLElement;
@@ -94,7 +89,6 @@ let selectedId: number | null = null;
 /** Which map node is selected (click / Talk about this). */
 let selectedNodeId: string | null = null;
 let selectedNodeLabel: string | null = null;
-let topTabProjectId: number | null = null;
 /** Apply after switching back to Map from a chat focus click. */
 let pendingMapFocus: { stepId: string; label: string } | null = null;
 
@@ -141,11 +135,25 @@ const idMenu = installIdMenu({
     selectedId = projectId;
     selectedNodeId = null;
     selectedNodeLabel = null;
-    topTabProjectId = projectId;
+    createPanel.close();
     isolateChat.clear();
     renderList();
     renderWorkspace();
     renderSidebarBrand();
+  },
+});
+
+const createPanel = installCreatePanel({
+  onNeedUser: () => idMenu.open(),
+  onChange: () => renderWorkspace(),
+  onCreated: (created) => {
+    projects = [
+      created,
+      ...projects.filter((p) => p.project_id !== created.project_id),
+    ];
+    selectedId = created.project_id;
+    renderList();
+    renderWorkspace();
   },
 });
 
@@ -253,7 +261,7 @@ function renderList(): void {
       selectedId = project.project_id;
       selectedNodeId = null;
       selectedNodeLabel = null;
-      topTabProjectId = project.project_id;
+      createPanel.close();
       isolateChat.clear();
       renderList();
       renderWorkspace();
@@ -264,24 +272,27 @@ function renderList(): void {
 
 function renderWorkspace(): void {
   const project = selected();
+  // Only ever record a real project. Writing null here would erase where
+  // you were every time the middle pane shows something else.
   const activeUserId = getActiveUserId();
-  if (activeUserId !== null) {
-    setLastProjectId(activeUserId, project?.project_id ?? null);
+  if (activeUserId !== null && project) {
+    setLastProjectId(activeUserId, project.project_id);
   }
   projectMain.innerHTML = "";
-  projectTopbar.innerHTML = "";
   chatError.hidden = true;
 
   renderSidebarBrand();
-  renderProjectTopbar(project);
 
-  if (!project) {
+  // No project, or Create pressed over one: the middle pane is where a
+  // project is made. Clicking the project in the sidebar is the way back.
+  if (!project || createPanel.isOpen()) {
     projectMain.appendChild(mainEmpty);
     mainEmpty.hidden = false;
     mainEmpty.textContent =
       getActiveUserId() === null
-        ? "Pick or create an id (sidebar label above Create), then add a project."
-        : "No project selected — create one in the sidebar.";
+        ? "Pick or create an id above, then name a project."
+        : "Name a new project.";
+    createPanel.mount(projectMain);
     projectChat.hidden = false;
     fillChatPlaceholder("Select a project to open its chat.");
     return;
@@ -289,10 +300,6 @@ function renderWorkspace(): void {
 
   mainEmpty.hidden = true;
   projectChat.hidden = false;
-
-  if (topTabProjectId !== project.project_id) {
-    topTabProjectId = project.project_id;
-  }
 
   const body = document.createElement("div");
   body.className = "project-body";
@@ -483,7 +490,16 @@ function renderWorkspace(): void {
     `#${project.project_id}`,
   );
   body.appendChild(line);
-  installMapScale(body, line, project.project_id);
+  installMapScale(body, line, project.project_id, {
+    onClose: () => {
+      selectedId = null;
+      selectedNodeId = null;
+      selectedNodeLabel = null;
+      isolateChat.clear();
+      renderList();
+      renderWorkspace();
+    },
+  });
 
   const copyRow = document.createElement("div");
   copyRow.className = "map-copy-row";
@@ -511,9 +527,32 @@ function renderWorkspace(): void {
       }, 1500);
     }
   });
+  const readBtn = document.createElement("button");
+  readBtn.type = "button";
+  readBtn.className = "map-copy-button";
+  readBtn.textContent = "Read map";
+  readBtn.title = "Ask what this map looks to be about";
+  readBtn.addEventListener("click", async () => {
+    setButtonBusy(readBtn, true);
+    try {
+      const reading = await readTree(project.project_id);
+      // Shown, never saved — gone on the next render, by design.
+      chatThread.append(
+        messageRow({ role: "agent", text: reading.summary }),
+        messageRow({ role: "agent", text: `Seed: ${reading.seed}` }),
+      );
+      chatThread.scrollTop = chatThread.scrollHeight;
+    } catch (err) {
+      chatError.hidden = false;
+      chatError.textContent = `(error: ${(err as Error).message})`;
+    } finally {
+      setButtonBusy(readBtn, false);
+    }
+  });
+
   const copyGroup = document.createElement("div");
   copyGroup.className = "map-copy-group";
-  copyGroup.append(copyBtn, paste.pasteBtn);
+  copyGroup.append(copyBtn, paste.pasteBtn, readBtn);
 
   const archiveBtn = document.createElement("button");
   archiveBtn.type = "button";
@@ -525,7 +564,6 @@ function renderWorkspace(): void {
       await cancelGoal(project.project_id);
       projects = projects.filter((p) => p.project_id !== project.project_id);
       ensureSelectionInActiveUser();
-      topTabProjectId = selectedId;
       renderList();
       renderWorkspace();
     } catch (err) {
@@ -591,36 +629,6 @@ function renderSidebarBrand(): void {
   );
 }
 
-function renderProjectTopbar(project: ProjectView | null): void {
-  if (!project) {
-    projectTopbar.hidden = true;
-    return;
-  }
-
-  projectTopbar.hidden = false;
-
-  const items: TabStripItem[] = [
-    {
-      id: "map",
-      label: project.goal,
-      selected: true,
-      onSelect: () => {
-        renderWorkspace();
-      },
-      onClose: () => {
-        selectedId = null;
-        selectedNodeId = null;
-        selectedNodeLabel = null;
-        topTabProjectId = null;
-        isolateChat.clear();
-        renderList();
-        renderWorkspace();
-      },
-    },
-  ];
-
-  projectTopbar.appendChild(renderTabStrip(items));
-}
 
 // 4. Data
 
@@ -693,44 +701,6 @@ async function load(): Promise<void> {
 }
 
 // 5. Event listeners
-
-createForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const text = createInput.value.trim();
-  if (!text) return;
-  const userId = getActiveUserId();
-  if (userId === null) {
-    createError.hidden = false;
-    createError.textContent =
-      "(pick or create an id — click the label above Create)";
-    idMenu.open();
-    return;
-  }
-  const createButton = createForm.querySelector(
-    'button[type="submit"]',
-  ) as HTMLButtonElement;
-  createInput.disabled = true;
-  setButtonBusy(createButton, true);
-  createError.hidden = true;
-  try {
-    const created = await createGoal(text, userId);
-    createInput.value = "";
-    projects = [
-      created,
-      ...projects.filter((p) => p.project_id !== created.project_id),
-    ];
-    selectedId = created.project_id;
-    topTabProjectId = created.project_id;
-    renderList();
-    renderWorkspace();
-  } catch (err) {
-    createError.hidden = false;
-    createError.textContent = `(error: ${(err as Error).message})`;
-  } finally {
-    createInput.disabled = false;
-    setButtonBusy(createButton, false);
-  }
-});
 
 chatForm.addEventListener("submit", async (event) => {
   event.preventDefault();

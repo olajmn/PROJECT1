@@ -207,17 +207,6 @@
   color: var(--color-text);
 }
 
-.progress-empty-gap {
-  min-height: 2.25rem;
-  padding: 0.5rem 0 0.35rem;
-}
-
-.progress-empty-hint {
-  font-size: 0.9rem;
-  font-style: italic;
-  color: var(--color-text-muted);
-}
-
 /* One square around label + tools (indent spacer stays outside). */
 .progress-bead-unit {
   display: inline-flex;
@@ -254,6 +243,12 @@
 }
 
 .progress-bead-btn,
+/* One node, one line — the canvas grows sideways instead of wrapping. */
+.progress-bead-label,
+.progress-name-label {
+  white-space: nowrap;
+}
+
 .progress-bead-label {
   font: inherit;
   font-size: inherit;
@@ -268,7 +263,19 @@
   cursor: default;
 }
 
+/* A <button>, so the browser's default fill has to be cleared — without
+   this, clickable nodes render lighter than plain ones. */
 .progress-bead-btn {
+  font: inherit;
+  font-size: inherit;
+  font-weight: 400;
+  line-height: inherit;
+  text-align: left;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
   cursor: pointer;
   text-decoration: none;
 }

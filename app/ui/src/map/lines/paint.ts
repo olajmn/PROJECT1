@@ -72,10 +72,6 @@ export function paintMapNest(
   const addRow = trunk.querySelector(
     ":scope > .progress-add-wrap",
   ) as HTMLElement | null;
-  const emptyGap = trunk.querySelector(
-    ":scope > .progress-empty-gap",
-  ) as HTMLElement | null;
-
   const heads: { row: HTMLElement; anchor: BeadAnchor }[] = [];
   for (const block of blocks) {
     const head = block.querySelector(
@@ -105,8 +101,6 @@ export function paintMapNest(
     yStart = heads[0].anchor.midY;
   } else if (addRow) {
     yStart = midY(addRow, origin.top, scale);
-  } else if (emptyGap) {
-    yStart = midY(emptyGap, origin.top, scale);
   } else {
     return;
   }

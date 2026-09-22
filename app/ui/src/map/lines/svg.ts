@@ -96,7 +96,7 @@ export function measureMapContent(wrap: HTMLElement): { w: number; h: number } {
   return { w, h };
 }
 
-/** Empty project: `#N` / title / hint, no waypoints yet. */
+/** Empty project: `#N` / title / add control, no waypoints yet. */
 export function isEmptyMap(wrap: HTMLElement): boolean {
-  return Boolean(wrap.querySelector(".progress-empty-gap"));
+  return !wrap.querySelector(".progress-trunk-block");
 }
