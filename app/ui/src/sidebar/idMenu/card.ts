@@ -48,7 +48,7 @@ export function buildIdCard(
 
   top.appendChild(buildOptionsMenu(user, isActive, card, cb));
   card.appendChild(top);
-  card.appendChild(buildProjectGroup(user, isActive, projects, cb));
+  card.appendChild(buildProjectGroup(user, projects, cb));
   return card;
 }
 
@@ -142,7 +142,6 @@ function buildOptionsMenu(
 
 function buildProjectGroup(
   user: UserView,
-  isActive: boolean,
   projects: ProjectView[],
   cb: IdCardCallbacks,
 ): HTMLElement {
@@ -169,10 +168,9 @@ function buildProjectGroup(
     row.append(goal, id);
     row.addEventListener("click", (event) => {
       event.stopPropagation();
-      if (!isActive) {
-        setActiveUserId(user.id);
-        cb.onActiveUserChanged(user.id);
-      }
+      // onSelectProject sets the active id from the project — don't call
+      // onActiveUserChanged first (that runs ensureSelection + render while
+      // Create may still be open, and can flash or stick on the create pane).
       cb.onSelectProject(project.project_id);
     });
     group.appendChild(row);

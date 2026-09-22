@@ -141,6 +141,8 @@ const idMenu = installIdMenu({
   },
   onActiveUserChanged: () => {
     ensureSelectionInActiveUser();
+    // Switching id should reveal that id's project — don't keep Create over it.
+    if (selected()) createPanel.close();
     isolateChat.clear();
     renderList();
     renderWorkspace();
@@ -148,7 +150,8 @@ const idMenu = installIdMenu({
   },
   onSelectProject: (projectId) => {
     const target = projects.find((p) => p.project_id === projectId);
-    if (target?.sim_user_id != null) {
+    if (!target) return;
+    if (target.sim_user_id != null) {
       setActiveUserId(target.sim_user_id);
     }
     selectedId = projectId;
