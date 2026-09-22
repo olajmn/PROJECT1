@@ -102,7 +102,7 @@ function fillBeadUnit(row, node, onStepClick, onAddStep, _onRemoveStep, onMenuAc
         button.type = "button";
         button.className = "progress-bead-btn";
         button.textContent = node.label;
-        button.title = "Select this node";
+        button.title = "Talk about this";
         button.addEventListener("click", () => onStepClick(node.id));
         unit.appendChild(button);
     }

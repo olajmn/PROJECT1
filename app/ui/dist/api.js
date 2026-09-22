@@ -125,8 +125,7 @@ export async function importProgressionOutline(goalId, text, parentId, unwrap = 
 }
 /**
  * Read an existing map back into words — what the project looks to be
- * about, plus the goal sentence it would have grown from. Nothing is
- * saved; the reading is gone on the next render.
+ * about. Nothing is saved; the reading is gone on the next render.
  */
 export async function readTree(goalId) {
     const res = await fetch(`/api/projects/${goalId}/read`, { method: "POST" });

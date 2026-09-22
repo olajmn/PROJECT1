@@ -103,8 +103,7 @@ def create_empty_project(typed_text: str, sim_user_id_value: str) -> dict:
 
     That inverts the usual direction (goal -> tree). Nothing in
     persistence depends on the old order - save_plan() stores what it
-    is given - so the goal text for such a project can instead be read
-    back OUT of its tree later, by the Describe role.
+    is given.
 
     An empty `progression` is written explicitly rather than leaving
     `plan` bare: it says "this project has a WHAT tree and it is

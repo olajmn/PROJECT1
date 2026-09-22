@@ -539,7 +539,6 @@ function renderWorkspace(): void {
       // Shown, never saved — gone on the next render, by design.
       chatThread.append(
         messageRow({ role: "agent", text: reading.summary }),
-        messageRow({ role: "agent", text: `Seed: ${reading.seed}` }),
       );
       chatThread.scrollTop = chatThread.scrollHeight;
     } catch (err) {

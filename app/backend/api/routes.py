@@ -286,7 +286,7 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json(goal_view(record))
 
     def _handle_read_tree(self, goal_id: int) -> None:
-        """Read the WHAT tree back into a summary + seed. Nothing is
+        """Read the WHAT tree back into a summary. Nothing is
         written — the reading is returned and then gone, until we know
         whether these are worth keeping."""
         latest = get_latest_for_goal(goal_id)
