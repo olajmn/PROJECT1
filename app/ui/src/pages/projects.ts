@@ -67,6 +67,9 @@ applyStoredTheme();
 
 const projectList = document.getElementById("project-list") as HTMLDivElement;
 const listEmpty = document.getElementById("list-empty") as HTMLParagraphElement;
+const projectListToggle = document.getElementById(
+  "project-list-toggle",
+) as HTMLButtonElement;
 const sidebarBrand = document.getElementById("sidebar-brand") as HTMLButtonElement;
 const sidebarIdHost = document.getElementById("sidebar-id") as HTMLElement;
 const projectMain = document.getElementById("project-main") as HTMLElement;
@@ -83,6 +86,18 @@ const chatResize = document.getElementById("chat-resize") as HTMLElement;
 
 const PROGRESSION_STEP_ID = /^p\d+$/;
 const DEFAULT_CHAT_PLACEHOLDER = "Talk about this project…";
+/** Manual show/hide for #project-list, independent of Manager's own
+ * open state (renderList() hides it whichever is off — see § 3). */
+const PROJECT_LIST_OPEN_KEY = "projects.listOpen";
+
+function readListManuallyOpen(): boolean {
+  try {
+    const stored = localStorage.getItem(PROJECT_LIST_OPEN_KEY);
+    return stored === null ? true : stored === "1";
+  } catch {
+    return true;
+  }
+}
 
 let projects: ProjectView[] = [];
 let users: UserView[] = [];
@@ -92,6 +107,7 @@ let selectedNodeId: string | null = null;
 let selectedNodeLabel: string | null = null;
 /** Apply after switching back to Map from a chat focus click. */
 let pendingMapFocus: { stepId: string; label: string } | null = null;
+let listManuallyOpen = readListManuallyOpen();
 
 // 1. Shell
 
@@ -234,6 +250,18 @@ function fillChatPlaceholder(text: string): void {
 // 3. Rendering
 
 function renderList(): void {
+  // Visibility is manual only, via project-list-toggle — independent of
+  // whether Manager (idMenu) is open.
+  const listVisible = listManuallyOpen;
+  projectListToggle.classList.toggle("is-active", listVisible);
+  projectListToggle.setAttribute("aria-expanded", String(listVisible));
+  if (!listVisible) {
+    projectList.hidden = true;
+    projectList.innerHTML = "";
+    listEmpty.hidden = true;
+    return;
+  }
+  projectList.hidden = false;
   const visible = projectsForActiveUser();
   projectList.innerHTML = "";
   const userId = getActiveUserId();
@@ -762,6 +790,16 @@ chatForm.addEventListener("submit", async (event) => {
     chatInput.disabled = false;
     setButtonBusy(sendButton, false);
   }
+});
+
+projectListToggle.addEventListener("click", () => {
+  listManuallyOpen = !listManuallyOpen;
+  try {
+    localStorage.setItem(PROJECT_LIST_OPEN_KEY, listManuallyOpen ? "1" : "0");
+  } catch {
+    /* private mode / quota — manual toggle is best-effort */
+  }
+  renderList();
 });
 
 // 6. Initialization

@@ -62,6 +62,7 @@ stable identity (for referring back to it), not its rank.
 12. **Decomposition / zoom, for real plans** (Step) - WHAT `plan.progression` is user-steered and is the display SoT (`to_planning_node`, A3); Projects select / Suggest / Talk / nested +/- / chat-grounded suggest under focus persist (`edit_map`). Still open: free-text step naming without map focus, zoom-ask (16), whether to stop writing calendar `plan.steps` entirely, and any remaining data-shape questions in [[planning-model.md]]. Steps page remains scratch. § 5, § 7, § 9.
 16. **Zoom cannot ask for anything** (Step) - `zoom_into()` returns children or nothing, so the third state of Minimum planability's gate (UNKNOWN and NECESSARY → ask) has no per-level equivalent; a step whose breakdown depends on something personal and unstated gets a plausible invented one instead of a question. The asking machinery already exists for goal creation (`clarification`/`suggested_action`), just not here. § 5.
 24. ~~**ASCII map has no way back in**~~ (built 2026-09-19) - `parse_outline.py` parses a pasted outline/ASCII tree into `import_progression_outline()`'s append. Projects' **Paste structure** form calls it. § 1.i / § 4.
+26. **Id has no rename** (Step) - create (`buildCreateIdForm`, one-click "+" since 2026-09-22) and delete (`sidebar-id-card-menu` "Delete") both exist; there's no way to change an id's label after creation short of delete + recreate. Noted live when the create flow was simplified to drop its label input. § 1.i.
 
 ### Tier 3
 

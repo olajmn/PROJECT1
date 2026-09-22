@@ -17,7 +17,7 @@ import {
 } from "../../user/activeUser.js";
 import type { ProjectView, UserView } from "../../types.js";
 import { buildIdCard } from "./card.js";
-import { buildCreateIdForm } from "./createId.js";
+import { buildCreateIdButton } from "./createId.js";
 import {
   claimUnassigned,
   ensureIdCardMenuCloser,
@@ -198,7 +198,7 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
     }
 
     foot.appendChild(
-      buildCreateIdForm(allUsers, projects, {
+      buildCreateIdButton(allUsers, projects, {
         onUsersChanged: opts.onUsersChanged,
         onProjectsUpdated: opts.onProjectsUpdated,
         onActiveUserChanged: opts.onActiveUserChanged,

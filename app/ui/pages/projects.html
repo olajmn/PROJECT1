@@ -17,12 +17,14 @@
 <body class="workspace-body">
 <div class="app-shell">
   <aside class="sidebar">
+    <div class="column-top-bar" aria-hidden="true"></div>
     <div class="sidebar-id" id="sidebar-id">
       <button type="button" id="sidebar-brand" class="sidebar-brand" title="Switch or create id">Manager</button>
     </div>
-    <button type="button" id="create-open" class="create-open">Create</button>
+    <button type="button" id="project-list-toggle" class="sidebar-brand" title="Show or hide the project list">Projects</button>
     <div id="project-list" class="project-list"></div>
     <p id="list-empty" class="sidebar-empty" hidden>No projects yet.</p>
+    <button type="button" id="create-open" class="create-open">Create</button>
     <nav class="sidebar-more">
       <a href="settings/general.html">Settings</a>
     </nav>
@@ -43,7 +45,7 @@
           <form id="create-form" class="create-project-form">
             <textarea id="create-input" rows="2" placeholder="New project…"></textarea>
             <div class="create-actions">
-              <button type="submit">Create</button>
+              <button type="submit" title="Ask the planner for a first read on this goal — timeframe, or a clarifying question">Seed</button>
               <button
                 type="button"
                 id="create-bare"
@@ -66,6 +68,7 @@
       title="Drag to resize chat"
     ></div>
     <section id="project-chat" class="project-chat" hidden>
+      <div class="column-top-bar" aria-hidden="true"></div>
       <div id="chat-thread" class="goal-thread"></div>
       <p id="chat-error" class="error" hidden></p>
       <div class="chat-rail-grip">

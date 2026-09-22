@@ -1,4 +1,6 @@
-// Foot of the Manager menu: mint a new id#N (optional label).
+// Foot of the Manager menu: mint a new id#N — one click, no typing;
+// rename is a separate, not-yet-built feature (see userLabel()'s own
+// "user" → id#N fallback, unchanged here).
 
 import { createUser } from "../../api.js";
 import { setButtonBusy } from "../../shell/busy.js";
@@ -14,28 +16,22 @@ export type CreateIdCallbacks = {
   afterChange: () => void;
 };
 
-export function buildCreateIdForm(
+export function buildCreateIdButton(
   allUsers: UserView[],
   projects: ProjectView[],
   cb: CreateIdCallbacks,
-): HTMLFormElement {
-  const form = document.createElement("form");
-  form.className = "sidebar-id-menu-create";
-  const input = document.createElement("input");
-  input.type = "text";
-  input.placeholder = "Optional label…";
+): HTMLButtonElement {
   const button = document.createElement("button");
-  button.type = "submit";
-  button.textContent = "Create id";
-  form.append(input, button);
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
+  button.type = "button";
+  button.className = "sidebar-id-menu-create";
+  button.title = "Create id";
+  button.setAttribute("aria-label", "Create id");
+  button.textContent = "+";
+  button.addEventListener("click", async (event) => {
     event.stopPropagation();
     setButtonBusy(button, true);
-    input.disabled = true;
     try {
-      const label = input.value.trim() || "user";
-      const created = await createUser(label);
+      const created = await createUser("user");
       const claimed = await claimUnassigned(created.id, projects);
       cb.onUsersChanged([...allUsers, created]);
       if (claimed.length > 0) cb.onProjectsUpdated(claimed);
@@ -44,9 +40,8 @@ export function buildCreateIdForm(
       cb.afterChange();
     } catch (err) {
       setButtonBusy(button, false);
-      input.disabled = false;
-      showError(form, err);
+      showError(button.parentElement ?? button, err);
     }
   });
-  return form;
+  return button;
 }

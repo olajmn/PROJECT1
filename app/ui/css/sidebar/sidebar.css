@@ -86,6 +86,28 @@
   color: var(--color-accent);
 }
 
+/* Manager | Projects divider — the sidebar's three visual parts (Manager,
+ * Projects, Settings) are marked by a plain edge-to-edge rule at the top
+ * of each part's first element, not a background or a boxed frame around
+ * any of them. Same bleed technique as .sidebar-more::before below.
+ * Scoped to the id, not .sidebar-brand (shared with the Manager button
+ * itself, which must not get this line). */
+#project-list-toggle {
+  position: relative;
+}
+
+#project-list-toggle::before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: calc(-1 * var(--space-3));
+  right: calc(-1 * var(--space-3));
+  height: 0;
+  border-top: var(--border);
+  pointer-events: none;
+}
+
 .project-list {
   flex: 1 1 auto;
   min-height: 0;
@@ -142,13 +164,27 @@
 /* 3. Settings footer */
 
 .sidebar-more {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   margin-top: auto;
   padding-top: var(--space-3);
-  border-top: var(--border);
   flex: 0 0 auto;
+}
+
+/* Bleeds past .sidebar's own inline padding to reach the true sidebar
+ * edges — same technique as #project-list-toggle::before above. */
+.sidebar-more::before {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: calc(-1 * var(--space-3));
+  right: calc(-1 * var(--space-3));
+  height: 0;
+  border-top: var(--border);
+  pointer-events: none;
 }
 
 .sidebar-more a {
