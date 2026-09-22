@@ -22,13 +22,6 @@ verdict-then-decompose split, where the two calls genuinely do
 different jobs.
 """
 
-# Contents
-#  1. Reading
-#      - read_tree()
-#
-#  2. Rendering the tree for the model
-#      - outline_of()
-
 import json
 
 from backend.llm_client import send_message
@@ -71,9 +64,11 @@ def read_tree(goal_label: str, steps: list[dict]) -> dict | None:
     context only - the model is told to work from the structure, and
     an untitled or throwaway name should not steer it.
     """
-    outline = outline_of(steps)
-    if not outline:
+    lines: list[str] = []
+    _outline(steps, 0, lines)
+    if not lines:
         return None
+    outline = "\n".join(lines[:MAX_LINES])
 
     raw = send_message(
         SYSTEM_PROMPT,
@@ -91,15 +86,10 @@ def read_tree(goal_label: str, steps: list[dict]) -> dict | None:
     return {"summary": summary, "seed": seed}
 
 
-def outline_of(steps: list[dict], depth: int = 0) -> str:
-    """The tree as indented lines - the same shape text_to_tree.py
-    parses, so what the model reads is what a person would paste."""
-    lines: list[str] = []
-    _collect(steps, depth, lines)
-    return "\n".join(lines[:MAX_LINES])
-
-
-def _collect(steps: list[dict], depth: int, lines: list[str]) -> None:
+def _outline(steps: list[dict], depth: int, lines: list[str]) -> None:
+    """Collect the tree as indented lines - the same shape
+    text_to_tree.py parses, so what the model reads is what a person
+    would paste."""
     for step in steps:
         if not isinstance(step, dict):
             continue
@@ -108,4 +98,4 @@ def _collect(steps: list[dict], depth: int, lines: list[str]) -> None:
             lines.append(f"{'  ' * depth}{label}")
         children = step.get("children")
         if isinstance(children, list):
-            _collect(children, depth + 1, lines)
+            _outline(children, depth + 1, lines)
