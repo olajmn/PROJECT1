@@ -1,37 +1,13 @@
-/* Create pane — naming and minting a project. Mirrors src/create/panel.ts
- * and backend/project/panes/create/. Tokens from css/tokens.css.
+/* Create pane — naming and minting a project in the middle column.
+ * Mirrors src/create/panel.ts and backend/project/panes/create/.
+ * Sidebar Create entry styles live in css/sidebar/sidebar.css.
+ * Tokens from css/tokens.css.
  *
  * Contents
- *  1. Sidebar entry
- *      - .create-open
- *  2. Panel in the middle column
+ *  1. Panel in the middle column
  *      - .create-panel / .create-project-form
  *      - .create-actions / .create-bare
  */
-
-/* 1. Sidebar entry — same column as the project list (not a filled CTA). */
-
-.create-open {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0.4rem 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: 0.9rem;
-  text-align: left;
-  cursor: pointer;
-}
-
-.create-open:hover {
-  color: var(--color-accent);
-}
-
-/* 2. Panel in the middle column */
 
 /* Where a project is made. Shown when nothing is open, or when Create is
    pressed over an open one — the sidebar entry is the way back. */

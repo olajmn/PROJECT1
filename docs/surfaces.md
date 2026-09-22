@@ -23,7 +23,7 @@ how the canvas should *read*. Not a pixel spec. Product loop:
 
 - Canvas data / write paths: `backend/project/panes/canvas/`
 - Canvas UI (name lag): `app/ui/src/map/` + `app/ui/css/map/`
-- Sidebar: `app/ui/src/sidebar/` + `user/activeUser.ts`
+- Sidebar: `app/ui/src/sidebar/` (`idMenu/`, `projectListOrder.ts`) + `user/activeUser.ts`
 - Chat: `app/ui/src/chat/` + Projects compose in `pages/projects.ts`
 - Shell glue (resize, tabs, rail): `app/ui/src/shell/`
 

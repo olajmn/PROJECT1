@@ -38,7 +38,7 @@ import {
 } from "../api.js";
 import { installChatResize, installSidebarResize } from "../shell/columnResize.js";
 import { setButtonBusy } from "../shell/busy.js";
-import { installIdMenu } from "../sidebar/idMenu.js";
+import { installIdMenu } from "../sidebar/idMenu/index.js";
 import {
   projectListIdLabel,
   projectsChronologicalForUser,
