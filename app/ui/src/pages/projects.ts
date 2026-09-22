@@ -47,6 +47,7 @@ import {
 import { createIsolateChat } from "../chat/isolateChat.js";
 import { messageRow } from "../chat/messageRow.js";
 import { installCreatePanel } from "../create/panel.js";
+import { displayProjectTitle } from "../create/autoname.js";
 import { treeWordsElement } from "../map/treeWords.js";
 import type { NodeMenuActionId } from "../map/treeWords.js";
 import { installMapScale } from "../map/frame/index.js";
@@ -146,6 +147,7 @@ const idMenu = installIdMenu({
 const createPanel = installCreatePanel({
   onNeedUser: () => idMenu.open(),
   onChange: () => renderWorkspace(),
+  getTitles: () => projectsForActiveUser().map((p) => p.goal),
   onCreated: (created) => {
     projects = [
       created,
@@ -252,7 +254,7 @@ function renderList(): void {
     }
     const title = document.createElement("span");
     title.className = "project-list-title";
-    title.textContent = project.goal;
+    title.textContent = displayProjectTitle(project.goal);
     const id = document.createElement("span");
     id.className = "entity-id";
     id.textContent = projectListIdLabel(visible, project);
@@ -475,7 +477,7 @@ function renderWorkspace(): void {
   };
 
   line = treeWordsElement(
-    project.goal,
+    displayProjectTitle(project.goal),
     middle,
     canSelect
       ? (stepId: string) => {
@@ -556,7 +558,7 @@ function renderWorkspace(): void {
   const archiveBtn = document.createElement("button");
   archiveBtn.type = "button";
   archiveBtn.className = "map-copy-button";
-  archiveBtn.textContent = `Archive “${project.goal}”`;
+  archiveBtn.textContent = `Archive “${displayProjectTitle(project.goal)}”`;
   archiveBtn.addEventListener("click", async () => {
     archiveBtn.disabled = true;
     try {
@@ -690,6 +692,7 @@ async function load(): Promise<void> {
   }
   renderList();
   renderWorkspace();
+  idMenu.restoreIfRemembered();
   if (
     getActiveUserId() === null
     || params.get("tab") === "users"

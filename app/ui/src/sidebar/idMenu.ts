@@ -1,6 +1,7 @@
 // Sidebar id#N panel: rich overview (ids + their projects), create,
 // claim orphans. Opens in-flow under the brand so Create / project list
-// shift down; optional vertical resize caps the scroll area.
+// shift down; optional vertical resize caps the scroll area. Closes only
+// via the Manager brand (toggle) — not outside click or Escape.
 
 // Contents
 //  1. Types
@@ -18,11 +19,13 @@ import {
   projectsNewestFirst,
 } from "./projectListOrder.js";
 import { getActiveUserId, setActiveUserId, userLabel, ID_BRAND } from "../user/activeUser.js";
+import { displayProjectTitle } from "../create/autoname.js";
 import type { ProjectView, UserView } from "../types.js";
 
 // 1. Types
 
 const HEIGHT_KEY = "projects.idMenuListHeightPx";
+const OPEN_KEY = "projects.idMenuOpen";
 const MIN_LIST_HEIGHT = 120;
 const MAX_LIST_HEIGHT = 560;
 
@@ -43,6 +46,8 @@ export type IdMenuApi = {
   toggle: () => void;
   isOpen: () => boolean;
   refresh: () => void;
+  /** Call after users/projects are loaded — reopen if left open last time. */
+  restoreIfRemembered: () => void;
 };
 
 // 2. Public API
@@ -74,6 +79,14 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
 
   let open = false;
 
+  const rememberOpen = (next: boolean): void => {
+    try {
+      localStorage.setItem(OPEN_KEY, next ? "1" : "0");
+    } catch {
+      /* private mode / quota — open state is best-effort */
+    }
+  };
+
   const api: IdMenuApi = {
     open: () => {
       if (open) return;
@@ -82,6 +95,7 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
       menu.hidden = false;
       opts.anchor.setAttribute("aria-expanded", "true");
       opts.anchor.classList.add("is-active");
+      rememberOpen(true);
     },
     close: () => {
       if (!open) return;
@@ -89,6 +103,7 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
       menu.hidden = true;
       opts.anchor.setAttribute("aria-expanded", "false");
       opts.anchor.classList.remove("is-active");
+      rememberOpen(false);
     },
     toggle: () => {
       if (open) api.close();
@@ -98,6 +113,13 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
     refresh: () => {
       if (open) rebuild();
     },
+    restoreIfRemembered: () => {
+      try {
+        if (localStorage.getItem(OPEN_KEY) === "1") api.open();
+      } catch {
+        /* ignore */
+      }
+    },
   };
 
   opts.anchor.setAttribute("aria-haspopup", "true");
@@ -105,47 +127,6 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
   opts.anchor.addEventListener("click", (event) => {
     event.stopPropagation();
     api.toggle();
-  });
-
-  // Column-width drag uses `#sidebar-resize` outside the menu. Treat that
-  // gesture as not an outside click, including when pointerup lands elsewhere.
-  let ignoreOutsideClick = false;
-  document.addEventListener(
-    "pointerdown",
-    (event) => {
-      const target = event.target;
-      if (target instanceof Element && target.closest(".sidebar-resize")) {
-        ignoreOutsideClick = true;
-      }
-    },
-    true,
-  );
-  document.addEventListener(
-    "pointerup",
-    () => {
-      if (!ignoreOutsideClick) return;
-      // Survive the click that follows this pointerup in the same gesture.
-      setTimeout(() => {
-        ignoreOutsideClick = false;
-      }, 0);
-    },
-    true,
-  );
-
-  document.addEventListener("click", (event) => {
-    if (!open) return;
-    if (ignoreOutsideClick) return;
-    const target = event.target as Node | null;
-    if (target && (menu.contains(target) || opts.anchor.contains(target))) {
-      return;
-    }
-    if (target instanceof Element && target.closest(".sidebar-resize")) {
-      return;
-    }
-    api.close();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && open) api.close();
   });
 
   return api;
@@ -300,7 +281,7 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
         row.className = "sidebar-id-card-project";
         const goal = document.createElement("span");
         goal.className = "sidebar-id-card-project-goal";
-        goal.textContent = project.goal;
+        goal.textContent = displayProjectTitle(project.goal);
         const id = document.createElement("span");
         id.className = "sidebar-id-menu-hint";
         id.textContent = projectListIdLabel(linked, project);
@@ -312,7 +293,6 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
             opts.onActiveUserChanged(user.id);
           }
           opts.onSelectProject(project.project_id);
-          api.close();
         });
         group.appendChild(row);
       }

@@ -15,7 +15,7 @@ how the canvas should *read*. Not a pixel spec. Product loop:
 
 | Column | Job | Not |
 |---|---|---|
-| **sidebar** | Which Project / id — Manager brand, create, list | The WHAT tree |
+| **sidebar** | Which Project / id — Manager (remembered open; brand-only close), create entry, list | The WHAT tree |
 | **canvas** | Mental map: `#N` → title → waypoints (`plan.progression`) | Disk files; Decide/Fill engine |
 | **chat** | Agent under optional canvas focus (About frames) | The map itself |
 

@@ -5,12 +5,15 @@
  * The panel renders in the middle column, but it is not the canvas: the
  * column shows Create when there is no canvas to show, or when the
  * sidebar's Create button asks for it over an open project.
+ *
+ * Empty name → Spotify-style autoname (`New project N`) via autoname.ts.
  */
 
 import { createGoal } from "../api.js";
 import { setButtonBusy } from "../shell/busy.js";
 import { getActiveUserId } from "../user/activeUser.js";
 import type { ProjectView } from "../types.js";
+import { nextNewProjectName } from "./autoname.js";
 
 export type CreatePanelHandle = {
   /** True while the panel should take the middle pane. */
@@ -27,6 +30,8 @@ type CreatePanelOpts = {
   onCreated: (project: ProjectView) => void;
   /** Re-render the workspace after the panel opens or closes. */
   onChange: () => void;
+  /** Existing titles (active id) — used for autoname. */
+  getTitles: () => string[];
 };
 
 export function installCreatePanel(opts: CreatePanelOpts): CreatePanelHandle {
@@ -52,11 +57,8 @@ export function installCreatePanel(opts: CreatePanelOpts): CreatePanelHandle {
     busyBtn: HTMLButtonElement,
     planned: boolean,
   ): Promise<void> => {
-    const text = input.value.trim();
-    if (!text) {
-      input.focus();
-      return;
-    }
+    const typed = input.value.trim();
+    const text = typed || nextNewProjectName(opts.getTitles());
 
     const userId = getActiveUserId();
     if (userId === null) {
