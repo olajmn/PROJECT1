@@ -8,6 +8,37 @@
  *     value when grain is unbounded)
  */
 
+/*
+ * Contents
+ *
+ * 1. Module State and Types
+ *    - readSticky()
+ *    - writeSticky()
+ *
+ * 2. Toolbar and Frame DOM
+ *
+ * 3. View and Camera Sync
+ *    - syncViewChrome()
+ *    - remember()
+ *    - applyView()
+ *
+ * 4. Grain and Sizing
+ *    - treeMaxDepth()
+ *    - syncChrome()
+ *    - applyGrain()
+ *    - measureNatural()
+ *    - frameInner()
+ *    - anchorRow()
+ *    - keepAnchor()
+ *    - pickOverviewGrain()
+ *
+ * 5. Paint Orchestration
+ *    - paint()
+ *    - bumpGrain()
+ *
+ * 6. Event Wiring and Public Handle
+ */
+
 import { installMapCamera } from "./camera.js";
 import { measureMapContent } from "../lines/svg.js";
 import {
@@ -15,6 +46,8 @@ import {
   setMapView,
   type MapView,
 } from "../skeleton/mode.js";
+
+// 1. Module State and Types
 
 /** Max visible depth; `null` = every level → `data-map-grain="all"`. */
 type Grain = number | null;
@@ -24,7 +57,33 @@ const MAP_GRAIN_ALL = "all";
 
 type Sticky = { grain: Grain; view: MapView; viewPinned: boolean };
 
-const stickyByProject = new Map<number, Sticky>();
+/** A row plus the on-screen y it should keep across a relayout. */
+type RowAnchor = { row: HTMLElement; top: number };
+
+/** Per-project grain/view — `localStorage`-backed, survives page refresh. */
+function readSticky(projectId: number): Sticky | undefined {
+  const rawGrain = localStorage.getItem(`mapGrain:${projectId}`);
+  if (rawGrain === null) return undefined;
+  const grain: Grain = rawGrain === MAP_GRAIN_ALL ? null : Number(rawGrain);
+  const view: MapView =
+    localStorage.getItem(`mapView:${projectId}`) === "skeleton"
+      ? "skeleton"
+      : "text";
+  const viewPinned = localStorage.getItem(`mapViewPinned:${projectId}`) === "1";
+  return { grain, view, viewPinned };
+}
+
+function writeSticky(projectId: number, sticky: Sticky): void {
+  localStorage.setItem(
+    `mapGrain:${projectId}`,
+    sticky.grain === null ? MAP_GRAIN_ALL : String(sticky.grain),
+  );
+  localStorage.setItem(`mapView:${projectId}`, sticky.view);
+  localStorage.setItem(
+    `mapViewPinned:${projectId}`,
+    sticky.viewPinned ? "1" : "0",
+  );
+}
 
 /** Prefer this overview scale when picking initial grain. */
 const OVERVIEW_READABLE = 0.58;
@@ -36,18 +95,20 @@ export type MapScaleHandle = {
 
 /**
  * Wrap `mapEl` in the map frame + grain/view toolbar.
- * `projectId` remembers grain + view across re-renders.
+ * `projectId` remembers grain + view across re-renders and page refresh.
  */
 export function installMapScale(
   body: HTMLElement,
   mapEl: HTMLElement,
   projectId: number,
 ): MapScaleHandle {
-  const sticky = stickyByProject.get(projectId);
+  const sticky = readSticky(projectId);
   let grain: Grain = sticky?.grain ?? null;
   let grainReady = sticky !== undefined;
   let view: MapView = sticky?.view ?? "text";
   let viewPinned = sticky?.viewPinned ?? false;
+
+  // 2. Toolbar and Frame DOM
 
   const toolbar = document.createElement("div");
   toolbar.className = "map-scale-toolbar";
@@ -84,11 +145,24 @@ export function installMapScale(
   lineBtn.title = "Skeleton line view";
 
   viewGroup.append(textBtn, lineBtn);
-  toolbar.append(zoomOutBtn, zoomInBtn, viewGroup);
+  toolbar.append(zoomOutBtn, zoomInBtn);
 
   const viewport = document.createElement("div");
   viewport.className = "map-scale-viewport map-frame is-camera-on";
   viewport.setAttribute("data-map-frame", "");
+
+  // Sticky header inside the frame: the tree pans up underneath it.
+  // camera.ts skips `.map-top-bar` in its interactive check, so pressing
+  // here never starts a drag.
+  const topBar = document.createElement("div");
+  topBar.className = "map-top-bar";
+
+  const topBtn = document.createElement("button");
+  topBtn.type = "button";
+  topBtn.className = "map-scale-btn map-top-btn";
+  topBtn.textContent = "↑";
+  topBtn.title = "Back to top";
+  topBtn.setAttribute("aria-label", "Back to top");
 
   const slot = document.createElement("div");
   slot.className = "map-scale-slot";
@@ -96,11 +170,16 @@ export function installMapScale(
   const stage = document.createElement("div");
   stage.className = "map-scale-stage";
 
-  body.insertBefore(toolbar, mapEl);
+  toolbar.prepend(topBtn);
+  topBar.append(toolbar, viewGroup);
+
   body.insertBefore(viewport, mapEl);
   viewport.appendChild(slot);
+  viewport.appendChild(topBar);
   slot.appendChild(stage);
   stage.appendChild(mapEl);
+
+  // 3. View and Camera Sync
 
   const syncViewChrome = (): void => {
     const v = getMapView(mapEl);
@@ -111,7 +190,7 @@ export function installMapScale(
   };
 
   const remember = (): void => {
-    stickyByProject.set(projectId, {
+    writeSticky(projectId, {
       grain,
       view: getMapView(mapEl),
       viewPinned: mapEl.dataset.mapViewPin === "1",
@@ -128,6 +207,11 @@ export function installMapScale(
   });
   camera.setEnabled(true);
 
+  // A remembered grain means the map is deliberately not at the auto-overview,
+  // so it counts as dirty — `paint()` then keeps it instead of re-picking.
+  // Double-click clears dirty, which restores auto-pick as the reset gesture.
+  if (sticky) camera.markDirty();
+
   const applyView = (next: MapView, pinned: boolean): void => {
     view = next;
     viewPinned = pinned;
@@ -135,6 +219,8 @@ export function installMapScale(
   };
 
   applyView(view, viewPinned);
+
+  // 4. Grain and Sizing
 
   const treeMaxDepth = (): number => {
     let max = 0;
@@ -206,6 +292,48 @@ export function installMapScale(
     };
   };
 
+  /**
+   * Topmost row that starts inside the frame, with its on-screen y.
+   * A row merely straddling the top edge is a poor anchor: its own new
+   * children land between it and the frame, pushing the view down even
+   * though the anchor itself held. Only fall back to such a row when
+   * nothing starts inside the frame at all.
+   */
+  const anchorRow = (): RowAnchor | null => {
+    const frameTop = viewport.getBoundingClientRect().top;
+    const rows = Array.from(
+      mapEl.querySelectorAll(".progress-row:not(.is-grain-hidden)"),
+    ) as HTMLElement[];
+    let straddling: RowAnchor | null = null;
+    for (const row of rows) {
+      const r = row.getBoundingClientRect();
+      if (r.top >= frameTop) return { row, top: r.top };
+      if (!straddling && r.bottom >= frameTop) straddling = { row, top: r.top };
+    }
+    return straddling;
+  };
+
+  /**
+   * Hold `anchor` at the same on-screen y across a grain change, so new
+   * depth unfolds below it instead of shoving it out of view. Must run
+   * after the rows are re-hidden but before the camera paints.
+   */
+  const keepAnchor = (anchor: RowAnchor): void => {
+    // A collapse can hide the anchor itself — climb to its nearest
+    // still-visible ancestor, which occupies the same spot on screen.
+    let row: HTMLElement | null = anchor.row;
+    while (row && row.classList.contains("is-grain-hidden")) {
+      const parentId: string | undefined = row.dataset.parentId;
+      row = parentId
+        ? (mapEl.querySelector(
+            `.progress-row[data-step-id="${CSS.escape(parentId)}"]`,
+          ) as HTMLElement | null)
+        : null;
+    }
+    if (!row) return;
+    camera.nudgePan(anchor.top - row.getBoundingClientRect().top);
+  };
+
   const pickOverviewGrain = (): Grain => {
     const maxD = treeMaxDepth();
     for (let g = maxD; g >= 0; g--) {
@@ -219,7 +347,9 @@ export function installMapScale(
     return 0;
   };
 
-  const paint = (mode: "overview" | "keep"): void => {
+  // 5. Paint Orchestration
+
+  const paint = (mode: "overview" | "keep", anchor?: RowAnchor | null): void => {
     // Overview always re-picks a readable grain — sticky data-map-grain="all"
     // must not force a hairline fit. Keep uses the user's grain from −/+.
     if (mode === "overview" || !grainReady) {
@@ -231,6 +361,7 @@ export function installMapScale(
     const { w, h } = measureNatural();
     camera.setEnabled(true);
     camera.setContentSize(w, h);
+    if (anchor) keepAnchor(anchor);
     if (mode === "overview") {
       camera.resetOverview();
     } else {
@@ -250,11 +381,35 @@ export function installMapScale(
       syncChrome();
       return;
     }
+    const anchor = anchorRow();
     grain = next >= maxD ? null : next;
     grainReady = true;
     camera.markDirty();
-    paint("keep");
+    paint("keep", anchor);
   };
+
+  // 6. Event Wiring and Public Handle
+
+  topBtn.addEventListener("click", () => camera.panToTop());
+
+  topBar.addEventListener("click", (event) => {
+    // The grain/view buttons live in here too — they handle their own
+    // clicks, so only the bare strip means "to the top".
+    if ((event.target as Element).closest("button")) return;
+    camera.panToTop();
+  });
+
+  // Wheel here always means "to the top" — stop it before the camera's own
+  // wheel-zoom handler on the viewport sees it.
+  topBar.addEventListener(
+    "wheel",
+    (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      camera.panToTop();
+    },
+    { passive: false },
+  );
 
   zoomInBtn.addEventListener("click", () => bumpGrain(1));
   zoomOutBtn.addEventListener("click", () => bumpGrain(-1));
@@ -284,7 +439,7 @@ export function installMapScale(
   ro.observe(viewport);
 
   requestAnimationFrame(() => {
-    paint("overview");
+    paint(camera.isDirty() ? "keep" : "overview");
     requestAnimationFrame(() => paint(camera.isDirty() ? "keep" : "overview"));
   });
   window.setTimeout(() => paint(camera.isDirty() ? "keep" : "overview"), 50);

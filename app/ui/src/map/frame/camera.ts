@@ -2,7 +2,44 @@
  * Pan + zoom camera inside `.map-frame`.
  * Wheel zoom anchors under the cursor vertically; spine stays left-locked.
  * Pan is clamped so a top gap above the tree is not possible.
- * Furthest out = overview fit; closest in = 1× (natural bead size).
+ * Closest in = 1× (natural bead size). Overview fit is where a reset
+ * lands, not a wall — the wheel may pull back past it, so it never sits
+ * dead on a tree that already fits the frame.
+ */
+
+/*
+ * Contents
+ *
+ * 1. Constants and Types
+ *
+ * 2. Geometry and Layout Helpers
+ *    - frameInner()
+ *    - overviewFloor()
+ *    - zoomFloor()
+ *    - pointerInFrame()
+ *    - clampPan()
+ *    - layoutSlotForCamera()
+ *
+ * 3. Paint and Apply
+ *    - paintFrame()
+ *    - apply()
+ *    - applyPanOnly()
+ *    - reapplySoft()
+ *    - fitOverview()
+ *    - zoomAt()
+ *
+ * 4. Interaction Handlers
+ *    - isInteractive()
+ *    - onWheel()
+ *    - onPointerDown()
+ *    - onPointerMove()
+ *    - onPointerUp()
+ *    - onDblClick()
+ *
+ * 5. Event Wiring and Public Handle
+ *
+ * 6. Utilities
+ *    - clamp()
  */
 
 import { installMapLines } from "../lines/install.js";
@@ -13,10 +50,14 @@ import {
   syncSkeletonFromZoom,
 } from "../skeleton/mode.js";
 
+// 1. Constants and Types
+
 const ABS_MIN_ZOOM = 0.08;
 const MAX_ZOOM = 1;
 const WHEEL_STEP = 1.12;
 const LEFT_PAD = 8;
+/** How far past the overview fit the wheel may still pull back. */
+const OUT_PAST_FIT = 0.4;
 
 export type MapCameraHandle = {
   setEnabled: (on: boolean) => void;
@@ -24,6 +65,8 @@ export type MapCameraHandle = {
   resetOverview: () => void;
   isDirty: () => boolean;
   markDirty: () => void;
+  nudgePan: (dy: number) => void;
+  panToTop: () => void;
   reapply: () => void;
   destroy: () => void;
 };
@@ -49,6 +92,8 @@ export function installMapCamera(
   let dragging = false;
   let lastY = 0;
 
+  // 2. Geometry and Layout Helpers
+
   const frameInner = (): { w: number; h: number; pl: number; pt: number } => {
     const cs = getComputedStyle(viewport);
     const pl = parseFloat(cs.paddingLeft) || 0;
@@ -68,6 +113,15 @@ export function installMapCamera(
     const { w, h } = frameInner();
     return clamp(Math.min(1, w / contentW, h / contentH), ABS_MIN_ZOOM, 1);
   };
+
+  /**
+   * Wheel limit, deliberately below the overview fit. On a tree that
+   * already fits, fit == 1× == max, so a fit-as-wall leaves the wheel
+   * completely dead in both directions, which reads as broken.
+   * `fitOverview()` still lands on `overviewFloor()`.
+   */
+  const zoomFloor = (): number =>
+    clamp(overviewFloor() * OUT_PAST_FIT, ABS_MIN_ZOOM, MAX_ZOOM);
 
   const pointerInFrame = (
     clientX: number,
@@ -97,10 +151,10 @@ export function installMapCamera(
     stage.style.height = `${contentH}px`;
   };
 
-  const apply = (): void => {
-    if (!enabled) return;
-    zoom = clamp(zoom, overviewFloor(), MAX_ZOOM);
-    clampPan();
+  // 3. Paint and Apply
+
+  /** Paint the current zoom/pan onto `stage` and rebuild the line nest. */
+  const paintFrame = (): void => {
     mapEl.dataset.mapScale = String(zoom);
     syncSkeletonFromZoom(mapEl, zoom);
     stage.style.transformOrigin = "0 0";
@@ -109,20 +163,37 @@ export function installMapCamera(
     opts.onChange?.();
   };
 
+  const apply = (): void => {
+    if (!enabled) return;
+    zoom = clamp(zoom, zoomFloor(), MAX_ZOOM);
+    clampPan();
+    paintFrame();
+  };
+
+  /**
+   * Pan-only reposition during an active drag — moves `stage` as a rigid
+   * body (translate only, zoom unchanged) so the SVG nest inside it stays
+   * aligned without a repaint. Skips `installMapLines()`, which tears down
+   * and rebuilds the whole overlay; that full rebuild runs once on
+   * pointerup instead, via `apply()`.
+   */
+  const applyPanOnly = (): void => {
+    if (!enabled) return;
+    clampPan();
+    stage.style.transformOrigin = "0 0";
+    stage.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    opts.onChange?.();
+  };
+
   /** Grain keep: raise zoom if below floor; do not pull down to overview. */
   const reapplySoft = (): void => {
     if (!enabled) return;
     layoutSlotForCamera();
-    const floor = overviewFloor();
+    const floor = zoomFloor();
     if (zoom < floor) zoom = floor;
     if (zoom > MAX_ZOOM) zoom = MAX_ZOOM;
     clampPan();
-    mapEl.dataset.mapScale = String(zoom);
-    syncSkeletonFromZoom(mapEl, zoom);
-    stage.style.transformOrigin = "0 0";
-    stage.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
-    installMapLines(mapEl);
-    opts.onChange?.();
+    paintFrame();
   };
 
   const fitOverview = (): void => {
@@ -138,7 +209,7 @@ export function installMapCamera(
 
   const zoomAt = (factor: number, fy: number): void => {
     const oldZ = zoom;
-    const newZ = clamp(oldZ * factor, overviewFloor(), MAX_ZOOM);
+    const newZ = clamp(oldZ * factor, zoomFloor(), MAX_ZOOM);
     if (newZ === oldZ) return;
     const cy = (fy - panY) / oldZ;
     zoom = newZ;
@@ -148,11 +219,13 @@ export function installMapCamera(
     apply();
   };
 
+  // 4. Interaction Handlers
+
   const isInteractive = (target: EventTarget | null): boolean => {
     if (!(target instanceof Element)) return false;
     return Boolean(
       target.closest(
-        "button, a, input, textarea, select, label, .progress-menu, .progress-bead-btn, .progress-add",
+        "button, a, input, textarea, select, label, .progress-menu, .progress-bead-btn, .progress-add, .map-top-bar",
       ),
     );
   };
@@ -180,7 +253,7 @@ export function installMapCamera(
     lastY = event.clientY;
     panX = LEFT_PAD;
     dirty = true;
-    apply();
+    applyPanOnly();
   };
 
   const onPointerUp = (event: PointerEvent): void => {
@@ -192,6 +265,7 @@ export function installMapCamera(
     } catch {
       /* already released */
     }
+    apply();
   };
 
   const onDblClick = (event: MouseEvent): void => {
@@ -200,6 +274,8 @@ export function installMapCamera(
     event.preventDefault();
     fitOverview();
   };
+
+  // 5. Event Wiring and Public Handle
 
   viewport.addEventListener("wheel", onWheel, { passive: false });
   viewport.addEventListener("pointerdown", onPointerDown);
@@ -247,6 +323,22 @@ export function installMapCamera(
       dirty = true;
     },
 
+    /**
+     * Shift pan by `dy` screen px without painting, so a caller can hold a
+     * row still across a relayout. The next `reapply()` clamps and paints.
+     */
+    nudgePan: (dy: number) => {
+      panY += dy;
+    },
+
+    /** Jump to the top of the tree, keeping the current zoom and grain. */
+    panToTop: () => {
+      if (!enabled) return;
+      panY = LEFT_PAD;
+      dirty = true;
+      apply();
+    },
+
     reapply: () => {
       reapplySoft();
     },
@@ -265,6 +357,8 @@ export function installMapCamera(
     },
   };
 }
+
+// 6. Utilities
 
 function clamp(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n));

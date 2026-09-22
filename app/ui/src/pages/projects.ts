@@ -5,6 +5,8 @@
 
 // Contents
 //  1. Shell
+//      - element handles + module state
+//      - chatRailApi / idMenu / isolateChat
 //  2. Selection helpers
 //      - clearNodeSelection()
 //      - isProgressionTree()
@@ -13,9 +15,9 @@
 //      - ensureSelectionInActiveUser()
 //      - fillChatPlaceholder()
 //  3. Rendering
-//      - renderSidebarBrand()
 //      - renderList()
 //      - renderWorkspace()
+//      - renderSidebarBrand()
 //      - renderProjectTopbar()
 //  4. Data
 //      - applyUsers()
@@ -54,6 +56,8 @@ import { buildPasteTreePanel } from "../map/pasteTree.js";
 import {
   getActiveUserId,
   setActiveUserId,
+  getLastProjectId,
+  setLastProjectId,
   ID_BRAND,
 } from "../user/activeUser.js";
 import { applyStoredTheme } from "../user/theme.js";
@@ -195,8 +199,16 @@ function ensureSelectionInActiveUser(): void {
   if (selectedId !== null && visible.some((p) => p.project_id === selectedId)) {
     return;
   }
-  // Newest under this id when nothing is selected yet.
-  selectedId = visible.length > 0 ? visible[visible.length - 1].project_id : null;
+  // Nothing selected yet — resume the last project seen under this id,
+  // falling back to newest if that one's gone (deleted, wrong user, ...).
+  const activeUserId = getActiveUserId();
+  const lastId = activeUserId !== null ? getLastProjectId(activeUserId) : null;
+  const resumed = visible.find((p) => p.project_id === lastId);
+  selectedId = resumed
+    ? resumed.project_id
+    : visible.length > 0
+      ? visible[visible.length - 1].project_id
+      : null;
   selectedNodeId = null;
   selectedNodeLabel = null;
 }
@@ -252,6 +264,10 @@ function renderList(): void {
 
 function renderWorkspace(): void {
   const project = selected();
+  const activeUserId = getActiveUserId();
+  if (activeUserId !== null) {
+    setLastProjectId(activeUserId, project?.project_id ?? null);
+  }
   projectMain.innerHTML = "";
   projectTopbar.innerHTML = "";
   chatError.hidden = true;
@@ -495,7 +511,33 @@ function renderWorkspace(): void {
       }, 1500);
     }
   });
-  copyRow.append(copyBtn, paste.pasteBtn);
+  const copyGroup = document.createElement("div");
+  copyGroup.className = "map-copy-group";
+  copyGroup.append(copyBtn, paste.pasteBtn);
+
+  const archiveBtn = document.createElement("button");
+  archiveBtn.type = "button";
+  archiveBtn.className = "map-copy-button";
+  archiveBtn.textContent = `Archive “${project.goal}”`;
+  archiveBtn.addEventListener("click", async () => {
+    archiveBtn.disabled = true;
+    try {
+      await cancelGoal(project.project_id);
+      projects = projects.filter((p) => p.project_id !== project.project_id);
+      ensureSelectionInActiveUser();
+      topTabProjectId = selectedId;
+      renderList();
+      renderWorkspace();
+    } catch (err) {
+      archiveBtn.disabled = false;
+      const error = document.createElement("p");
+      error.className = "error";
+      error.textContent = `(error: ${(err as Error).message})`;
+      copyRow.appendChild(error);
+    }
+  });
+
+  copyRow.append(copyGroup, archiveBtn);
   body.appendChild(copyRow);
   body.appendChild(paste.pasteForm);
 
@@ -578,32 +620,6 @@ function renderProjectTopbar(project: ProjectView | null): void {
   ];
 
   projectTopbar.appendChild(renderTabStrip(items));
-
-  const actions = document.createElement("div");
-  actions.className = "card-actions";
-  const cancelButton = document.createElement("button");
-  cancelButton.type = "button";
-  cancelButton.className = "cancel-button";
-  cancelButton.textContent = `Archive “${project.goal}”`;
-  cancelButton.addEventListener("click", async () => {
-    cancelButton.disabled = true;
-    try {
-      await cancelGoal(project.project_id);
-      projects = projects.filter((p) => p.project_id !== project.project_id);
-      ensureSelectionInActiveUser();
-      topTabProjectId = selectedId;
-      renderList();
-      renderWorkspace();
-    } catch (err) {
-      cancelButton.disabled = false;
-      const error = document.createElement("p");
-      error.className = "error";
-      error.textContent = `(error: ${(err as Error).message})`;
-      projectTopbar.appendChild(error);
-    }
-  });
-  actions.appendChild(cancelButton);
-  projectTopbar.appendChild(actions);
 }
 
 // 4. Data

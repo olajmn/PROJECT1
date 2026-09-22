@@ -6,8 +6,8 @@
  *      - .progress-line / .progress-map-svg / .progress-spine
  *  2. Rows & indent
  *      - .progress-row / .progress-branch / .progress-trunk
- *  3. Copy / paste outline
- *      - .map-copy-* / .map-paste-* / .outline-preview-*
+ *  3. Paste outline (the bar itself is in frame.css)
+ *      - .map-paste-* / .outline-preview-*
  *  4. Poles, beads, menus
  *      - .progress-pole* / .progress-bead-* / .progress-menu-*
  *  5. Add / remove / focus
@@ -91,32 +91,7 @@
   margin-top: 0.55rem;
 }
 
-/* 3. Copy / paste outline */
-
-.map-copy-row {
-  margin: 0 0 0.75rem;
-}
-
-.map-copy-button {
-  font: inherit;
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
-  background: transparent;
-  border: var(--border);
-  border-radius: var(--radius);
-  padding: 0.2rem 0.5rem;
-  cursor: pointer;
-}
-
-.map-copy-button:hover {
-  color: var(--color-text);
-  border-color: var(--color-border);
-}
-
-.map-copy-row .map-copy-button + .map-copy-button {
-  margin-left: 0.4rem;
-}
+/* 3. Paste outline */
 
 .map-paste-form {
   display: flex;
