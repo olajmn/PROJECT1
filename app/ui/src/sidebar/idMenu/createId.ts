@@ -23,7 +23,7 @@ export function buildCreateIdButton(
 ): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "sidebar-id-menu-create";
+  button.className = "sidebar-add sidebar-id-menu-create";
   button.title = "Create id";
   button.setAttribute("aria-label", "Create id");
   button.textContent = "+";

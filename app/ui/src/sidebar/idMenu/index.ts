@@ -32,6 +32,11 @@ const OPEN_KEY = "projects.idMenuOpen";
 export type IdMenuOptions = {
   anchor: HTMLElement;
   host: HTMLElement;
+  /** The Manager | Projects separator — a sibling of `host` in the
+   * sidebar, not a child of the panel, so it can span the sidebar's
+   * full width the same way the column separators do. Shown only while
+   * the panel is open. */
+  resizeHandle: HTMLElement;
   getUsers: () => UserView[];
   getProjects: () => ProjectView[];
   onUsersChanged: (users: UserView[]) => void;
@@ -68,14 +73,8 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
   foot.className = "sidebar-id-menu-foot";
   menu.appendChild(foot);
 
-  const resize = document.createElement("div");
-  resize.className = "sidebar-id-menu-resize";
-  resize.title = "Drag to set max height";
-  resize.setAttribute("aria-hidden", "true");
-  menu.appendChild(resize);
-
   applyStoredHeight(list);
-  installResize(list, resize);
+  installResize(list, opts.resizeHandle);
   ensureIdCardMenuCloser();
 
   let open = false;
@@ -99,6 +98,7 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
       open = true;
       rebuild();
       menu.hidden = false;
+      opts.resizeHandle.hidden = false;
       opts.anchor.setAttribute("aria-expanded", "true");
       opts.anchor.classList.add("is-active");
       rememberOpen(true);
@@ -107,6 +107,7 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
       if (!open) return;
       open = false;
       menu.hidden = true;
+      opts.resizeHandle.hidden = true;
       opts.anchor.setAttribute("aria-expanded", "false");
       opts.anchor.classList.remove("is-active");
       rememberOpen(false);

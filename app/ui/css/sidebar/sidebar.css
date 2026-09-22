@@ -1,14 +1,25 @@
-/* Left pane (sidebar) chrome: Manager brand, Create entry, project list,
- * Settings footer. Id-menu look → css/sidebar/idMenu.css.
+/* Left pane (sidebar) chrome: Manager brand, the Manager | Projects
+ * separator, the add button, project list, Settings footer.
  * Values from css/tokens.css.
  *
- * Chrome vs content (same idea as chat compose): Manager / Create /
- * Settings keep their place; id menu + project list take the middle
- * and scroll when tall — Settings must not leave the frame.
+ * Split with css/sidebar/idMenu.css: that file owns the look *inside*
+ * the id panel. Anything that sits in the sidebar's own flow belongs
+ * here even when the panel drives it — .id-menu-resize is a sibling of
+ * the panel, and .sidebar-add is shared with the panel's id "+".
+ *
+ * Vertical layout: nothing grows. Every item is content-sized, and the
+ * free space goes to .sidebar-more's margin-top: auto — that, not a
+ * stretched list, is what holds Settings at the bottom of the frame.
+ * So the add button follows the last project instead of sitting at the
+ * foot. The id panel and the project list shrink and scroll (both
+ * flex-shrink with min-height: 0) once they outgrow the sidebar.
  *
  * Contents
  *  1. Sidebar frame + brand
- *  2. Create entry + project list
+ *      - .sidebar / .sidebar-id / .sidebar-brand
+ *      - .id-menu-resize (Manager | Projects separator)
+ *  2. Add button + project list
+ *      - .sidebar-add (shared with idMenu's id "+")
  *  3. Settings footer
  */
 
@@ -63,53 +74,81 @@
   color: var(--color-accent);
 }
 
-/* 2. Create entry + project list */
+/* Manager | Projects separator — the horizontal twin of .sidebar-resize
+ * / .chat-resize (css/shell/layout.css): a real separator element BETWEEN
+ * the two regions rather than a line drawn inside one of them, which is
+ * what lets it span the sidebar's full width without fighting anyone's
+ * overflow. Same idiom as those two: the element itself is the visible
+ * line, ::before only widens the drag target. Hidden with the panel
+ * (idMenu/index.ts) — it marks a live resize target, not a permanent
+ * structural divider. */
+.id-menu-resize {
+  position: relative;
+  flex: 0 0 auto;
+  height: 0;
+  margin-inline: calc(-1 * var(--space-3));
+  border-top: var(--border);
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+}
 
-.create-open {
+.id-menu-resize::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -4px;
+  height: 8px;
+}
+
+.id-menu-resize:hover,
+body.is-resizing-id-menu .id-menu-resize {
+  border-top-color: var(--color-accent);
+}
+
+body.is-resizing-id-menu {
+  cursor: ns-resize;
+  user-select: none;
+}
+
+/* 2. Add button + project list */
+
+/* The one "mint something here" control, shared by both sections that
+ * have something to mint: Projects (#create-open, opens the Create pane)
+ * and Manager (the id "+", which adds its own spacing — see
+ * .sidebar-id-menu-create in idMenu.css). Same glyph, same weight; which
+ * section it belongs to is read from where it sits, not from a label. */
+.sidebar-add {
   display: block;
   flex: 0 0 auto;
-  width: 100%;
+  width: 1.8rem;
+  height: 1.8rem;
   box-sizing: border-box;
   margin: 0;
-  padding: 0.4rem 0;
-  border: none;
-  border-radius: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius);
   background: transparent;
   color: var(--color-text-muted);
-  font: inherit;
-  font-size: 0.9rem;
-  text-align: left;
   cursor: pointer;
 }
 
-.create-open:hover {
-  color: var(--color-accent);
+.sidebar-add:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
 }
 
-/* Manager | Projects divider — the sidebar's three visual parts (Manager,
- * Projects, Settings) are marked by a plain edge-to-edge rule at the top
- * of each part's first element, not a background or a boxed frame around
- * any of them. Same bleed technique as .sidebar-more::before below.
- * Scoped to the id, not .sidebar-brand (shared with the Manager button
- * itself, which must not get this line). */
-#project-list-toggle {
-  position: relative;
-}
-
-#project-list-toggle::before {
-  content: "";
-  display: block;
-  position: absolute;
-  top: 0;
-  left: calc(-1 * var(--space-3));
-  right: calc(-1 * var(--space-3));
-  height: 0;
-  border-top: var(--border);
-  pointer-events: none;
-}
-
+/* Content-sized, not space-filling: the "+" below follows the last
+ * project instead of being pushed to the foot of the sidebar. Free
+ * space goes to .sidebar-more's margin-top: auto, which is what keeps
+ * Settings at the bottom. Still shrinks and scrolls (flex-shrink +
+ * min-height: 0) once the list outgrows the sidebar. */
 .project-list {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-height: 0;
   overflow-y: auto;
   display: flex;
@@ -131,18 +170,22 @@
   color: inherit;
   cursor: pointer;
   font: inherit;
-  border-bottom: 1px solid transparent;
 }
 
 .project-list-item:hover {
   color: var(--color-accent);
 }
 
+/* Selection is carried by the title's weight, not a rule under the row —
+ * the sidebar's only horizontal lines are the two section boundaries, so
+ * a third one here read as structure rather than state. The id line stays
+ * muted meta either way ([[visual-principles]]). */
 .project-list-item.is-selected {
   color: var(--color-text);
-  border-bottom-color: var(--color-text);
-  background: transparent;
-  box-shadow: none;
+}
+
+.project-list-item.is-selected .project-list-title {
+  font-weight: 600;
 }
 
 .project-list-title {
@@ -174,7 +217,8 @@
 }
 
 /* Bleeds past .sidebar's own inline padding to reach the true sidebar
- * edges — same technique as #project-list-toggle::before above. */
+ * edges — same span as .id-menu-resize above, which marks the other
+ * boundary; this one is a plain rule, since nothing is draggable here. */
 .sidebar-more::before {
   content: "";
   display: block;

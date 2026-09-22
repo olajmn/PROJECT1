@@ -4,7 +4,7 @@
  *
  * The panel renders in the middle column, but it is not the canvas: the
  * column shows Create when there is no canvas to show, or when the
- * sidebar's Create button asks for it over an open project.
+ * sidebar's "+" asks for it over an open project.
  *
  * Empty name → Spotify-style autoname (`New project N`) via autoname.ts.
  */

@@ -72,6 +72,7 @@ const projectListToggle = document.getElementById(
 ) as HTMLButtonElement;
 const sidebarBrand = document.getElementById("sidebar-brand") as HTMLButtonElement;
 const sidebarIdHost = document.getElementById("sidebar-id") as HTMLElement;
+const idMenuResize = document.getElementById("id-menu-resize") as HTMLElement;
 const projectMain = document.getElementById("project-main") as HTMLElement;
 const mainEmpty = document.getElementById("main-empty") as HTMLParagraphElement;
 const projectChat = document.getElementById("project-chat") as HTMLElement;
@@ -122,6 +123,7 @@ for (const id of ["chat-rail-toggle", "chat-rail-grip"]) {
 const idMenu = installIdMenu({
   anchor: sidebarBrand,
   host: sidebarIdHost,
+  resizeHandle: idMenuResize,
   getUsers: () => users,
   getProjects: () => projects,
   onUsersChanged: (next) => {
