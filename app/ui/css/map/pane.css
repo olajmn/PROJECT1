@@ -123,29 +123,15 @@
   transform-origin: top left;
 }
 
-.project-title {
-  font-size: 1.35rem;
-  margin: 0;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
-.project-surface {
-  margin: var(--space-3) 0 0;
-  padding: var(--space-3) 0;
-  background: transparent;
-  border: none;
-  border-top: var(--border);
-  border-radius: 0;
-  font-size: 0.95rem;
-  line-height: var(--line-height);
-}
-
+/* Lighter than the 400 everything else sits at: these two are guidance
+ * the reader passes over on the way to the work, not content. Weight
+ * carries that on its own, so the muted color can stay readable. */
 .project-hint,
 .workspace-empty {
   margin: var(--space-4) 0 0 var(--space-2);
   color: var(--color-text-muted);
   font-size: 0.95rem;
+  font-weight: 300;
   line-height: var(--line-height);
 }
 

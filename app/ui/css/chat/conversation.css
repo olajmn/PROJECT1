@@ -5,7 +5,6 @@
  * Contents
  *  1. Transcript / message
  *  2. Plan tree (legacy)
- *  3. Steps zoom (legacy)
  */
 
 /* 1. Transcript / message */
@@ -73,35 +72,4 @@
 .plan-busy {
   opacity: 0.6;
   pointer-events: none;
-}
-
-/* 3. Steps zoom (legacy) */
-
-.step-zoom {
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  background: none;
-  border: none;
-  padding: 0;
-  width: auto;
-  cursor: pointer;
-  text-decoration: underline;
-  text-decoration-color: var(--color-border);
-  text-underline-offset: 0.15em;
-}
-
-.step-zoom:hover {
-  text-decoration-color: var(--color-text-muted);
-}
-
-.step-zoom:disabled {
-  cursor: default;
-  opacity: 0.6;
-}
-
-.zoom-note {
-  margin: var(--space-2) 0 0;
-  font-size: 0.9rem;
-  color: var(--color-text-soft);
 }

@@ -2,7 +2,10 @@
    Pages keep href="style.css" (URL /style.css).
    Order: type → tokens → base → areas (shell / sidebar / map / chat / pages). */
 
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+/* 300 is here for the middle pane's guidance text (.project-hint /
+   .workspace-empty, css/map/pane.css). Without it that rule resolves to
+   400 and reads no lighter — browsers synthesize bold, never light. */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap");
 
 @import url("css/tokens.css");
 @import url("css/base.css");

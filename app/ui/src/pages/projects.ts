@@ -629,7 +629,12 @@ function renderWorkspace(): void {
     hint.className = "project-hint";
     hint.textContent =
       "Add steps with +, or talk — a plan from the agent is optional.";
-    body.appendChild(hint);
+    // Above the bottom bar, not below it: the bar is a status line flush
+    // with the column's bottom edge (css/map/pane.css), and the sidebar's
+    // own footer rule lines up with it. A paragraph underneath pushed the
+    // bar off that line whenever a project had no tree yet. The hint also
+    // belongs with the empty canvas it describes, not under the actions.
+    body.insertBefore(hint, copyRow);
   }
 
   projectMain.appendChild(body);

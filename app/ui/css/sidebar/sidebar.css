@@ -1,5 +1,5 @@
 /* Left pane (sidebar) chrome: Manager brand, the Manager | Projects
- * separator, the add button, project list, Settings footer.
+ * separator, the add button, project list, bottom bar.
  * Values from css/tokens.css.
  *
  * Split with css/sidebar/idMenu.css: that file owns the look *inside*
@@ -9,10 +9,16 @@
  *
  * Vertical layout: nothing grows. Every item is content-sized, and the
  * free space goes to .sidebar-more's margin-top: auto — that, not a
- * stretched list, is what holds Settings at the bottom of the frame.
- * So the add button follows the last project instead of sitting at the
- * foot. The id panel and the project list shrink and scroll (both
- * flex-shrink with min-height: 0) once they outgrow the sidebar.
+ * stretched list, is what holds it at the bottom of the frame. So the
+ * add button follows the last project instead of sitting at the foot.
+ *
+ * When the two sections can't both fit, they do NOT give way equally:
+ * .project-list has a far higher flex-shrink than .sidebar-id, so it
+ * collapses first and the id panel keeps whatever height the separator
+ * was dragged to. That asymmetry is what makes the drag reach the
+ * bottom of the frame (sidebar/idMenu/resize.ts) instead of being
+ * squeezed back. Everything below the list is flex: 0 0 auto, so a
+ * collapsed list still leaves the header, the "+" and the bottom bar.
  *
  * Contents
  *  1. Sidebar frame + brand
@@ -20,7 +26,7 @@
  *      - .id-menu-resize (Manager | Projects separator)
  *  2. Add button + project list
  *      - .sidebar-add (shared with idMenu's id "+")
- *  3. Settings footer
+ *  3. Bottom bar (Settings)
  */
 
 /* 1. Sidebar frame + brand */
@@ -145,10 +151,18 @@ body.is-resizing-id-menu {
 /* Content-sized, not space-filling: the "+" below follows the last
  * project instead of being pushed to the foot of the sidebar. Free
  * space goes to .sidebar-more's margin-top: auto, which is what keeps
- * Settings at the bottom. Still shrinks and scrolls (flex-shrink +
- * min-height: 0) once the list outgrows the sidebar. */
+ * Settings at the bottom.
+ *
+ * The high flex-shrink is what lets the Manager panel be dragged all
+ * the way down (sidebar/idMenu/resize.ts): when the two sections can't
+ * both fit, this list yields its height first instead of splitting the
+ * deficit evenly with the panel, which would have shrunk the panel back
+ * as fast as the drag grew it. Everything else down here — the Projects
+ * header, the "+", the Settings bar — is flex: 0 0 auto, so squeezing
+ * this to nothing still leaves a way back. It scrolls (min-height: 0)
+ * for as long as it has height to scroll in. */
 .project-list {
-  flex: 0 1 auto;
+  flex: 0 100 auto;
   min-height: 0;
   overflow-y: auto;
   display: flex;
@@ -204,31 +218,32 @@ body.is-resizing-id-menu {
   color: var(--color-text-muted);
 }
 
-/* 3. Settings footer */
+/* 3. Bottom bar (Settings) */
 
+/* The sidebar's bottom bar. Mirrors .map-copy-row (css/map/frame.css) in
+ * height and rule so the two columns' footer lines meet across the shell,
+ * the way .column-top-bar does at the top — which is why the box bleeds
+ * past .sidebar's own padding on three sides and sits flush in the frame,
+ * with the inline padding putting Settings back on the sidebar's text
+ * inset. Carrying the rule on the box (not a ::before) is what lets the
+ * two line up: the border is then the bar's own top edge.
+ *
+ * Also opts out of the generic `nav` bottom treatment in css/base.css —
+ * that rule dresses the Settings pages' top nav, where a rule underneath
+ * separates nav from page. Here the nav ends the frame, so that border
+ * had nothing to separate and the space it held open below itself was
+ * dead. */
 .sidebar-more {
-  position: relative;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: var(--space-1);
-  margin-top: auto;
-  padding-top: var(--space-3);
   flex: 0 0 auto;
-}
-
-/* Bleeds past .sidebar's own inline padding to reach the true sidebar
- * edges — same span as .id-menu-resize above, which marks the other
- * boundary; this one is a plain rule, since nothing is draggable here. */
-.sidebar-more::before {
-  content: "";
-  display: block;
-  position: absolute;
-  top: 0;
-  left: calc(-1 * var(--space-3));
-  right: calc(-1 * var(--space-3));
-  height: 0;
+  min-height: 1.75rem;
+  margin: auto calc(-1 * var(--space-3)) calc(-1 * var(--space-4));
+  padding: 0 var(--space-3);
   border-top: var(--border);
-  pointer-events: none;
+  border-bottom: none;
 }
 
 .sidebar-more a {
