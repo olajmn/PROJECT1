@@ -1,10 +1,9 @@
 """
-One level of decomposition, on demand: given a step and the path it
-sits under, raise the resolution of that one point in the plan -
-never a whole sub-tree. This is docs/planning-model.md §
-Decomposition / zoom; that section deliberately does NOT decide
-whether the finer content is persisted, so nothing here writes
-anything.
+One level of decomposition, on demand: given a map node and the path
+it sits under, raise the resolution of that one point — never a
+whole sub-tree. This is docs/planning-model.md § Decomposition /
+zoom; that section deliberately does NOT decide whether the finer
+content is persisted, so nothing here writes anything.
 
 Asking for one flat level is easier for the local model than asking
 for a nested one, not harder: CHILDREN_SCHEMA has no recursion in it,
@@ -13,11 +12,8 @@ valid JSON syntax the way format="json" does. Depth grows by calling
 zoom_into() again on a child, so no single response ever carries a
 tree.
 
-`duration` is required for the same reason generate_structure()
-returns None without a resolvable span: there is nothing honest to
-break a step into without the timeframe it has to fit inside. A goal
-is not plannable from its wording alone in this project - see
-create_project_via_engine()'s clarification/suggested_duration branches.
+Suggest does not read leftover project `duration`. A fixed
+grounding line is enough for the model preamble.
 
 TWO calls, deliberately - the depth verdict is asked separately from
 the decomposition, and measured to need to be. Asked to judge and
@@ -27,17 +23,7 @@ test steps including "climb Mount Everest" over 18 months. Asked to
 do nothing but judge (is_too_coarse()), it was unanimous and correct
 on five of seven cases, and when forbidden to stop it decomposed
 well. It can do either job; it collapses when one call has to do
-both. Note this is the opposite finding from calendar.py's
-one-call rule, and not a contradiction of it: what destabilized that
-module was a second call CONSUMING the first's output, where here the
-verdict only gates whether the second call happens.
-
-Known weak spot: the verdict is least reliable at the bottom, where
-it matters least in practice - "open the document and write the first
-paragraph" (§ Structural axis's own example of an Action) was called
-too coarse twice in three. A step is never force-expanded, so the
-cost of that miss is an offered zoom that should not have been
-offered, not a wrong tree.
+both.
 """
 
 import json
@@ -72,28 +58,27 @@ CHILDREN_SCHEMA = {
 # "climb Mount Everest" finished two times in three, and once that
 # was tightened it broke "drink a glass of water" into six steps.
 COARSENESS_SYSTEM_PROMPT = (
-    "You judge ONE thing about a step in a plan: is it still too "
-    "coarse to be a meaningful next unit of work, or is it already at "
-    "a resolution where a concrete next action could be projected "
+    "You judge ONE thing about a node on a project map: is it still "
+    "too coarse to be a meaningful next unit of work, or is it already "
+    "at a resolution where a concrete next action could be projected "
     "from it directly?\n\n"
-    "Set too_coarse to true if the step still needs breaking down "
+    "Set too_coarse to true if the node still needs breaking down "
     "before anyone could act on it. Set it to false if a person could "
     "already project a concrete next action straight from it.\n\n"
-    "Judge the step at the position it actually sits in - a step deep "
+    "Judge the node at the position it actually sits in - a node deep "
     "under several larger ones is usually nearer to being actionable "
-    "than the goal at the top."
+    "than the project at the top."
 )
 
 # Never offered the option to stop - see module docstring. The
 # verdict above already decided that; this call only produces.
 CHILDREN_SYSTEM_PROMPT = (
-    "You are raising the resolution of ONE step of an existing plan. "
-    "You are given the step, the path of larger steps it sits under, "
-    "and how long the whole plan spans. It has already been decided "
-    "that this step needs breaking down.\n\n"
-    "Go exactly one level down: produce the steps this one is made "
-    "of - never their sub-steps, and never a restatement of the step "
-    "itself. They must fit inside this step and together account for "
+    "You are raising the resolution of ONE node on a project map. "
+    "You are given the node and the path of larger nodes it sits under. "
+    "It has already been decided that this node needs breaking down.\n\n"
+    "Go exactly one level down: produce the nodes this one is made "
+    "of - never their sub-nodes, and never a restatement of the node "
+    "itself. They must fit inside this node and together account for "
     "it, without extending past it into its siblings' work. Produce "
     "however many actually make sense here, not a fixed count."
 )
@@ -107,38 +92,44 @@ CHAT_CHILDREN_SYSTEM_PROMPT = (
     "fixed count. Short labels only."
 )
 
-# A safety ceiling only, not a target range - same role as
-# calendar.py's MAX_SANE_STEPS.
+# A safety ceiling only, not a target range.
 MAX_SANE_CHILDREN = 20
 
+_GROUNDING = (
+    "no fixed timeframe — a few next units of work only, "
+    "not a full syllabus"
+)
 
-def _describe_position(label: str, ancestors: list[str], duration: str) -> str:
-    """The shared user-content preamble - both calls need the same
-    "where does this sit, and inside what span" framing."""
+
+def _describe_position(label: str, ancestors: list[str]) -> str:
+    """Where this node sits on the map. No leftover project span."""
     path = " > ".join([*ancestors, label]) if ancestors else label
-    return f"The whole plan spans: {duration}\n\nWhere this step sits: {path}\n\nThe step: {label}"
+    return (
+        f"{_GROUNDING}\n\n"
+        f"Where this sits on the map: {path}\n\n"
+        f"The node: {label}"
+    )
 
 
-def is_too_coarse(label: str, ancestors: list[str], duration: str) -> bool:
+def is_too_coarse(label: str, ancestors: list[str]) -> bool:
     """Named, inspectable verdict on whether `label` is still too
     coarse to project an Action from - the explicit reasoning step
-    between a step and decomposing it, in the same spirit as
-    run_stage3._planability(). Outermost ancestor first."""
+    between a step and decomposing it. Outermost ancestor first."""
     raw = send_message(
         COARSENESS_SYSTEM_PROMPT,
-        _describe_position(label, ancestors, duration),
+        _describe_position(label, ancestors),
         schema=COARSENESS_SCHEMA,
     )
     return bool(json.loads(raw)["too_coarse"])
 
 
-def children_of(label: str, ancestors: list[str], duration: str) -> list[str]:
+def children_of(label: str, ancestors: list[str]) -> list[str]:
     """The labels of `label`'s immediate children. Assumes the
     is_too_coarse() verdict already came back True - this call is
     never given the option to decline."""
     raw = send_message(
         CHILDREN_SYSTEM_PROMPT,
-        _describe_position(label, ancestors, duration),
+        _describe_position(label, ancestors),
         schema=CHILDREN_SCHEMA,
     )
     children = json.loads(raw)["children"]
@@ -150,16 +141,15 @@ def children_of(label: str, ancestors: list[str], duration: str) -> list[str]:
 def children_from_conversation(
     label: str,
     ancestors: list[str],
-    duration: str,
     conversation: str,
 ) -> list[str]:
     """Propose children under `label`, grounded in chat — used when
     a focused map node asks for structure ideas. Skips the coarseness
     gate (the request is explicit)."""
     user_content = (
-        f"{_describe_position(label, ancestors, duration)}\n\n"
+        f"{_describe_position(label, ancestors)}\n\n"
         f"Recent conversation:\n{conversation.strip() or '(none yet)'}\n\n"
-        "Propose children under the step that fit what was discussed."
+        "Propose children under the node that fit what was discussed."
     )
     raw = send_message(
         CHAT_CHILDREN_SYSTEM_PROMPT,
@@ -172,9 +162,9 @@ def children_from_conversation(
     return [child["label"] for child in children]
 
 
-def zoom_into(label: str, ancestors: list[str], duration: str) -> list[str]:
+def zoom_into(label: str, ancestors: list[str]) -> list[str]:
     """`label`'s immediate children, or an empty list if it is already
     at a resolution an Action can be projected from."""
-    if not is_too_coarse(label, ancestors, duration):
+    if not is_too_coarse(label, ancestors):
         return []
-    return children_of(label, ancestors, duration)
+    return children_of(label, ancestors)

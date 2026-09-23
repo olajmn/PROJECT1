@@ -2,6 +2,5 @@
 
 Which records share a project_id (resolver.py), minting or abandoning
 one (lifecycle.py), renaming the label (rename.py), linking an id
-(project_user.py). Ordinary mint is create_project(); the engine
-opening door is create_project_via_engine().
+(project_user.py). Mint is create_project() — name and empty canvas.
 """

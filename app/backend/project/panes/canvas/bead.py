@@ -1,20 +1,13 @@
 """
-The Plan's structural axis: one recursive Step type, used at every
-depth. Depth is data, not type - "Goal", "Step" and "substep" name
-where a step sits in a tree, not what class it is. See
-docs/planning-model.md § Structural axis, which elects "Step" as the
-general term for exactly this, in place of the fixed Stage/Micro-step
-levels earlier drafts used.
+One map bead: the recursive Step shape used at every depth.
 
-Pure shape and tree operations - no model call, no persistence. A
-step is stored inside a plan record's own dict, so every field here
-has to survive json.dumps().
+Depth is data, not type — where a step sits in the tree, not what
+class it is. See docs/planning-model.md § Structural axis.
 
-Shadow-wired from generate_plan() as plan["progression"] (WHAT
-tree beside legacy plan["steps"]). Active's to_planning_node()
-prefers progression when present; zoom into that tree from Active
-is not built yet. Legacy calendar/session records still use
-calendar.py's two-level {"label", "microsteps"} shape.
+Pure shape and tree helpers — no model call, no persistence. Stored
+inside a plan record's progression, so every field must survive
+json.dumps(). Display SoT is plan.progression; leftover plan.steps
+is not read here.
 """
 
 from collections.abc import Callable, Iterator
@@ -23,12 +16,12 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Step:
-    """One position in a plan tree - see module docstring."""
+    """One position in the project map tree."""
 
     # Minted once and never reused, so a step can change without
     # becoming a different step. Display numbering ("1.", "i.") is
     # computed from sibling position at render time and deliberately
-    # not stored here - see ui/src/map/tree.ts.
+    # not stored here.
     id: str
     label: str
     children: list["Step"] = field(default_factory=list)
@@ -37,14 +30,10 @@ class Step:
     # Absent on beads the user typed or pasted.
     path: str | None = None
 
-    # Whether the children have to happen in order. A master's year 2
-    # requires year 1; Everest's equipment does not. True matches how
-    # today's flat step list already behaves.
+    # Whether the children have to happen in order.
     ordered: bool = True
 
-    # Whether this step's claim is realized. Separate from which step
-    # currently holds attention - that is one value per goal, not a
-    # flag per step (see docs/planning-model.md § Completion).
+    # Whether this step's claim is realized.
     resolved: bool = False
 
     def add_child(self, step: "Step") -> None:
@@ -74,8 +63,7 @@ class Step:
     @classmethod
     def from_dict(cls, data: dict) -> "Step":
         """A missing `ordered`/`resolved`/`children` reads as its
-        default rather than requiring a migration - same tolerance
-        data_persistence.py already applies to older records."""
+        default rather than requiring a migration."""
         return cls(
             id=data["id"],
             label=data["label"],
@@ -86,19 +74,28 @@ class Step:
         )
 
 
+def from_labels(labels: list[str], mint_id: Callable[[], str]) -> list[Step]:
+    """One flat level of beads from label strings."""
+    return [Step(id=mint_id(), label=label) for label in labels]
+
+
 def from_nested_labels(entries: list[dict], mint_id: Callable[[], str]) -> list[Step]:
     """Build steps from a nested [{"label", "children": [...]}] list,
-    recursing to whatever depth that list actually has rather than a
-    fixed two.
+    recursing to whatever depth that list actually has. Copies `path`
+    when present (folder walk).
 
-    `mint_id` is passed in rather than generated here so that ids stay
-    unique across a whole goal, not just within one call.
+    `mint_id` is passed in so ids stay unique across a whole project,
+    not just within one call.
     """
-    return [
-        Step(
-            id=mint_id(),
-            label=entry["label"],
-            children=from_nested_labels(entry.get("children", []), mint_id),
+    steps: list[Step] = []
+    for entry in entries:
+        path = entry.get("path")
+        steps.append(
+            Step(
+                id=mint_id(),
+                label=entry["label"],
+                path=path if isinstance(path, str) and path else None,
+                children=from_nested_labels(entry.get("children", []), mint_id),
+            )
         )
-        for entry in entries
-    ]
+    return steps

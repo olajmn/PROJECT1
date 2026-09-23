@@ -21,11 +21,7 @@ from pathlib import Path
 from backend.store.data_persistence import load_users, save_user
 from backend.store.session import load_sessions
 from backend.project.panes.chat.turn import take_turn
-from backend.project.panes.create.lifecycle import (
-    cancel_goal,
-    create_project,
-    create_project_via_engine,
-)
+from backend.project.panes.create.lifecycle import cancel_goal, create_project
 from backend.project.panes.create.rename import rename_project
 from backend.project.panes.create.resolver import get_latest_for_goal
 from backend.project.panes.canvas.add_folder import choose_folder
@@ -249,17 +245,6 @@ class Handler(BaseHTTPRequestHandler):
         sim_user_id_value = (
             str(int(raw_sim)) if raw_sim is not None else ""
         )
-        # Ordinary mint: a name and an empty canvas. `via_engine: true`
-        # is the leftover opening door (tests / old clients).
-        if payload_in.get("via_engine") is True or payload_in.get("planned") is True:
-            try:
-                record = create_project_via_engine(text, "", sim_user_id_value)
-            except Exception as e:  # transport must not crash on one bad turn
-                print(f"(debug: {e})")
-                self.send_error(503, "that took longer than expected - try again in a moment")
-                return
-            self._send_json(goal_view(record))
-            return
         self._send_json(goal_view(create_project(text, sim_user_id_value)))
 
     def _handle_goal_zoom(self, goal_id: int, step_id: str) -> None:

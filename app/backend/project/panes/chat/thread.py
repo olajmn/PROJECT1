@@ -10,21 +10,19 @@ from backend.project.panes.create.resolver import get_history_for_goal
 
 def thread_messages(history: list[dict]) -> list[dict]:
     """[{role, text, focus?}] oldest first - each saved record is one
-    agent line (surface_text of its plan); its `feedback`, if any, is
-    the user line that produced it. The opening create_project_via_engine() record
-    has no feedback, so the thread starts with the agent's first
-    question or plan.
+    agent line (surface_text of its map); its `feedback`, if any, is
+    the user line that produced it. A mint record has no feedback, so
+    the thread starts with the agent's first surface.
 
     When a turn was map-focused (Talk about this / Looking at), both
     the user and agent lines carry `focus: "<node label>"` (and
     `focus_step_id` when known) so the UI can frame that stretch,
     show where it ends, and re-select the node from the frame.
 
-    Some route_note() branches store a labeled feedback string
-    ("Still working on it. Note: still working") rather than the raw
-    note. The user line is the note; a repeated surface (check-in that
-    didn't change the plan) uses the label as the agent line so the
-    thread doesn't print the same next-action twice."""
+    Talk turns store a labeled feedback string
+    ("<reply> Note: <raw>") rather than the raw note. The user line
+    is the note; a repeated surface uses the label as the agent line
+    so the thread doesn't print the same line twice."""
     messages: list[dict] = []
     previous_surface = None
     for record in history:

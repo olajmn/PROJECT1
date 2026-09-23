@@ -82,10 +82,9 @@ def ensure_data_dir() -> None:
 
 
 # one_year/one_month/this_week/this_hour/this_minute/right_now renamed
-# to year/month/week/hour/minute/now (PLAN_KEYS, judgment/shape.py) once those
-# turned out to name plan-record slots (time levels), not literal
-# durations or deictic phrases - existing saved records still have the
-# old names.
+# to year/month/week/hour/minute/now (leftover plan-record slots) once
+# those turned out to name time levels, not literal durations or
+# deictic phrases - existing saved records still have the old names.
 _LEGACY_HORIZON_KEY_RENAMES = {
     "one_year": "year", "one_month": "month", "this_week": "week",
     "this_hour": "hour", "this_minute": "minute", "right_now": "now",
@@ -361,10 +360,8 @@ def save_plan(
     "now" action, which led the agent to replan. None for a brand
     new goal that has no prior feedback yet.
 
-    `duration` is the free-text span the user asked this plan to cover
-    (e.g. "30 minutes", "this week"), if they gave one - see
-    run_stage3(). Stored so the history shows what was
-    actually asked for, not just what came back.
+    `duration` is a leftover stored span (e.g. "30 minutes"), if one
+    was ever given. Chat and Create do not write a new one.
 
     `completed` marks the whole goal (not just one "now" step) as
     done - the user said so explicitly, rather than the agent guessing

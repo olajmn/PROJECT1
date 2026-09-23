@@ -51,8 +51,6 @@ export interface GoalView {
   sim_user_id: number | null;
   /** Latest history record timestamp for this project. */
   created_at?: string | null;
-  /** Open planner clarification, if any. */
-  clarification?: string | null;
   surface: string | null;
   node: PlanningNode | null;
   thread: ChatMessage[];

@@ -16,7 +16,7 @@ how the canvas should *read*. Not a pixel spec. Product loop:
 | Column | Job | Not |
 |---|---|---|
 | **sidebar** | Which Project / id — Manager (remembered open; brand-only close; height via Manager \| Projects separator), create entry, list | The WHAT tree; shell column widths |
-| **canvas** | Mental map: `#N` → title → waypoints (`plan.progression`) | Disk files; Decide/Fill engine |
+| **canvas** | Mental map: `#N` → title → waypoints (`plan.progression`) | Disk files; leftover plan fields |
 | **chat** | Agent under optional canvas focus (About frames) | The map itself |
 
 **Code homes (today):**
@@ -32,8 +32,9 @@ how the canvas should *read*. Not a pixel spec. Product loop:
 - **Not a file browser.** A future “run this folder / work files” view
   belongs in the **sidebar**, not the middle column. Parked until that
   capability exists; do not smuggle disk trees into the canvas.
-- **Not the engine.** Decide / Fill / calendar live under
-  `project/engine/`. Canvas is the WHAT bead tree the user steers.
+- **Not leftover plan fields.** `duration` / `plan.steps` /
+  ASK/SUGGEST may still sit on old disk records. Canvas is the WHAT
+  bead tree the user steers.
 
 ## 3. Today vs aimed expression
 

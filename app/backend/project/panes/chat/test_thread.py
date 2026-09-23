@@ -4,33 +4,52 @@
 
 from backend.project.panes.chat.thread import thread_messages
 
+empty = {"progression": {"steps": []}}
+shoes = {"progression": {"steps": [{"label": "shoes"}]}}
+
 history = [
     {
         "goal": "start working out",
-        "plan": {"clarification": "How often can you train?"},
+        "plan": empty,
         "feedback": None,
     },
     {
         "goal": "start working out",
-        "plan": {"suggested_duration": "8 weeks"},
+        "plan": shoes,
         "feedback": "I weigh 90 kilograms.",
     },
 ]
 
 messages = thread_messages(history)
-assert messages[0] == {"role": "agent", "text": "How often can you train?"}
+assert messages[0] == {"role": "agent", "text": "The map is empty."}
 assert messages[1] == {"role": "user", "text": "I weigh 90 kilograms."}
-assert messages[2]["role"] == "agent"
-assert "timeframe" in messages[2]["text"].lower() or "deadline" in messages[2]["text"].lower()
+assert messages[2] == {"role": "agent", "text": "start working out: shoes."}
 assert len(messages) == 3
+
+# Leftover planner fields must not become the agent line.
+leftover = thread_messages(
+    [
+        {
+            "goal": "gym",
+            "plan": {
+                "clarification": "How often?",
+                "suggested_action": "Buy shoes",
+                "now": "Put them on",
+                "progression": {"steps": [{"label": "warmup"}]},
+            },
+            "feedback": None,
+        },
+    ],
+)
+assert leftover[0] == {"role": "agent", "text": "gym: warmup."}
 
 # A check-in stores "Still working on it. Note: <raw>" and repeats the
 # previous surface - the thread should show the raw note and the ack,
-# not the labeled blob and not the same next-action twice.
+# not the labeled blob and not the same map line twice.
 check_in = history + [
     {
         "goal": "start working out",
-        "plan": {"suggested_duration": "8 weeks"},
+        "plan": shoes,
         "feedback": "Still working on it. Note: still working",
     },
 ]
@@ -39,29 +58,30 @@ assert checked[3] == {"role": "user", "text": "still working"}
 assert checked[4] == {"role": "agent", "text": "Still working on it."}
 
 # map_focus tags each turn so the UI can frame a focused stretch.
+same = {"progression": {"steps": []}}
 focused = [
     {
         "goal": "becoming a developer",
-        "plan": {"now": "hello"},
+        "plan": same,
         "feedback": None,
     },
     {
         "goal": "becoming a developer",
-        "plan": {"now": "hello"},
+        "plan": same,
         "feedback": "what is this?",
         "map_focus": "concept 4",
         "focus_step_id": "p2",
     },
     {
         "goal": "becoming a developer",
-        "plan": {"now": "hello"},
+        "plan": same,
         "feedback": "make 3 ideas",
         "map_focus": "concept 4",
         "focus_step_id": "p2",
     },
     {
         "goal": "becoming a developer",
-        "plan": {"now": "hello"},
+        "plan": same,
         "feedback": "and now?",
     },
 ]

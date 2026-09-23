@@ -20,10 +20,9 @@ for that same principle applied to documentation, not just this file).
 
 Product [[05-decisions]] #25; wire [[05-decisions]] #29 /
 [[goal-to-project-migration]]. Primary only: `project_id`, `/api/projects`,
-llm3 `"project"`. Engine: `judgment/` + `time/`. Still open (not Active):
+llm3 `"project"`. Decide/Fill engine is gone. Still open (not Active):
 rename display field `goal`; mass-rename Python symbols (`create_goal`,
-`ChatFocus.goal_id`, …); optionally split `planner.py` facade;
-`generate_plan` → `run_stage3` alias.
+…).
 
 Facts: `docs/04-current-state.md` § Vocabulary / § 1; Parallel P3 / P9.
 
@@ -48,26 +47,26 @@ stable identity (for referring back to it), not its rank.
 ### Tier 1
 
 1. ~~**`clarification`+`now` leak**~~ (fixed 2026-09-16) - Stage 3 Decide/Fill split: ASK never fills horizons. § 5.
-2. **Accepting a `suggested_action` never produces a step tree** (Bug) - the acceptance branch sets `now` directly, never calls `generate_structure()`. § 5.
+2. ~~**Accepting a `suggested_action` never produces a step tree**~~ (removed with `route_note` / judgment). § 5.
 3. ~~**Topic continuity / multi-goal free conversation**~~ (removed 2026-09-20) — free conversation / `ChatFocus` / CLI / Node 3 deleted (#31). Projects chat is keyed by URL id. § 5.
 20. ~~**Opening gate is a duration proxy**~~ (narrowed 2026-09-17) - opening still refuses `suggested_action`; missing timeframe no longer blocks planable mint or progression click-zoom (soft grounding). Residual: planability_slots still unread; Steps scratch zoom still needs a span. § 5.
-21. **Week/day calendar baseline (was: session tree painted across a longer span)** (Step residual) — **Baseline established 2026-09-16:** `week_windows()` + consecutive `day_windows()`; live-verified (#26: four real weeks). Unread `plan_skeleton` recipe removed 2026-09-20 (rules live in Time + `time/calendar.py`). Still open: year face if needed; later **ambient timeline** on the visual/do edge. Session path unchanged for short spans. § 5. Related to 17.
+21. **Week/day calendar baseline (was: session tree painted across a longer span)** (Step residual) — Time still has `week_windows()` / `day_windows()`. Project calendar fill (`engine/time/calendar.py`) is gone. Still open: year face if needed; later **ambient timeline**. § 5. Related to 17.
 
 ### Tier 2
 
 4. **Sim-user choice at project-creation time** (Step) - Set Goal always creates a project unlinked; linking only happens afterward via Projects sidebar id menu. § 5, § 10.
-5. **Structured step-completion signal** (Step) - `advance_step()` exists in `planner.py` but has no route or UI control. § 5, § 9, § 10.
+5. **Structured step-completion signal** (Step) - `advance_step()` is gone with the planner; no live writer for step status. § 5, § 9, § 10.
 6. **User-archive timing in the Session log** (Step) - `archive_user()` doesn't stamp when archiving happened, only creation. § 5, § 10.
 7. **Session end detection** (Step) - no graceful-shutdown hook sets a Session's real `ended_at`. Lower actual impact than the others in this tier - the read-side window-bounding fix already makes the derived log accurate without it. § 5, § 10.
 12. **Decomposition / zoom, for real plans** (Step) - WHAT `plan.progression` is user-steered and is the display SoT (`to_planning_node`, A3); Projects select / Suggest / Talk / nested +/- / chat-grounded suggest under focus persist (`edit_map`). Still open: free-text step naming without map focus, zoom-ask (16), whether to stop writing calendar `plan.steps` entirely, and any remaining data-shape questions in [[planning-model.md]]. Steps page remains scratch. § 5, § 7, § 9.
-16. **Zoom cannot ask for anything** (Step) - `zoom_into()` returns children or nothing, so the third state of Minimum planability's gate (UNKNOWN and NECESSARY → ask) has no per-level equivalent; a step whose breakdown depends on something personal and unstated gets a plausible invented one instead of a question. The asking machinery already exists for goal creation (`clarification`/`suggested_action`), just not here. § 5.
+16. **Zoom cannot ask for anything** (Step) - `zoom_into()` returns children or nothing, so the third state of Minimum planability's gate (UNKNOWN and NECESSARY → ask) has no per-level equivalent; a step whose breakdown depends on something personal and unstated gets a plausible invented one instead of a question. The old asking machinery (`clarification`/`suggested_action`) is gone with Stage 3. § 5.
 24. ~~**ASCII map has no way back in**~~ (built 2026-09-19) - `parse_outline.py` parses a pasted outline/ASCII tree into `import_progression_outline()`'s append. Projects' **Paste structure** form calls it. § 1.i / § 4.
 26. **Id has no rename** (Step) - create (`buildCreateIdForm`, one-click "+" since 2026-09-22) and delete (`sidebar-id-card-menu` "Delete") both exist; there's no way to change an id's label after creation short of delete + recreate. Noted live when the create flow was simplified to drop its label input. § 1.i.
 
 ### Tier 3
 
 8. **Module Library unwired** (Step) - five working Modules, reachable from nothing. § 5.
-22. **Planability slots unread** (Step) - `goal/planability_slots.py` names CONTENT/TIME/CURRENT_STATE/CAPACITY and is imported by nothing. § 5. Related to 20.
+22. ~~**Planability slots unread**~~ (removed). § 5. Related to 20.
 
 ### Tier 4
 
@@ -121,11 +120,11 @@ Detail and reasoning: `docs/04-current-state.md` § 5 (Parallel / dual paths).
 | # | Pair | Status | Where |
 |---|---|---|---|
 | P1 | Week grain vs session grain | Intentional dual | `time/calendar.py`, `week_windows()`, `day_windows()` |
-| P2 | Even-slice `step_plan` vs dates on the step | Both live | `frozen_duration.step_plan`, manifestation |
+| P2 | Even-slice `step_plan` vs dates on the step | Time Faculty only | `frozen_duration.step_plan`; manifestation no longer maps leftover `plan.steps` |
 | P3 | `plan.progression` vs legacy `plan.steps` + zoom scratch | Intentional dual (display SoT settled) | Display = progression only (`to_planning_node`, A3 2026-09-20); calendar `plan.steps` still written when fill works (WHEN); Steps page scratch — Queue 12; [[goal-to-project-migration]] A3 |
 | P4 | `planability_slots` vs `_planability()` | Unread / unwired | `goal/planability_slots.py` — Queue 22 |
 | P5 | Opening duration-proxy vs necessity test | Proxy (narrowed) | Missing time no longer blocks PLAN/zoom; End clarity still Decide — Queue 20 |
 | P6 | `ui/` vs `frontend-legacy/` | ~~Deleted~~ | `frontend-legacy/` removed 2026-09-19 — only `ui/` remains |
 | P7 | Module Library vs callers | Unread / unwired | `module_library/` — Queue 8 |
 | P8 | Projects workspace vs Active (legacy) | ~~Deleted~~ | Active UI removed 2026-09-19; Projects is the only known-context surface |
-| P9 | Agent auto-`construct_progression` vs user-steered map | ~~Retired~~ (A2) | `generate_plan` no longer calls `construct_progression` on PLAN (2026-09-19); middle via + / Paste / Suggest — [[goal-to-project-migration]] A2 |
+| P9 | Agent auto-`construct_progression` vs user-steered map | ~~Retired~~ (A2) | Helper file deleted; middle via + / Paste / Suggest |

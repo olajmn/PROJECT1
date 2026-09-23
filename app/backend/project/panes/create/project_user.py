@@ -1,7 +1,7 @@
 """
 Link a project to an id#N, or archive an id and detach its projects.
 
-Identity writes, not reasoning. reason.py does not own this.
+Identity writes, not reasoning. Judgment does not own this.
 """
 
 from backend.project.panes.create.resolver import (
@@ -17,17 +17,14 @@ from backend.store.data_persistence import (
 
 def set_project_user(goal_id: int, sim_user_id: int | None) -> dict | None:
     """
-    Add, move, or remove a project's id link - the manual counterpart
-    to `create_project_via_engine()`'s one-time choice, letting it be
-    changed later (see docs/planning-model.md, the authority on
-    Vision). `sim_user_id=None` removes the project from whichever
-    id it currently has.
+    Add, move, or remove a project's id link after mint (see
+    docs/planning-model.md, the authority on Vision).
+    `sim_user_id=None` removes the project from whichever id it
+    currently has.
 
-    Unlike route_note() (which takes an
-    already-resolved `latest` record - the caller looks it up so a
-    route-specific "stale tab" redirect can happen around the call),
-    this resolves `goal_id` itself, since the route calling it has no
-    other reason to look the record up first.
+    Unlike take_turn() (which takes an already-resolved `latest`
+    record), this resolves `goal_id` itself, since the route calling
+    it has no other reason to look the record up first.
 
     Returns the newly saved record, or None if the change is
     rejected - never partially applied, and never raises for an
@@ -37,19 +34,11 @@ def set_project_user(goal_id: int, sim_user_id: int | None) -> dict | None:
       value - the real UI always offers ids from `load_users()`, so
       this is a defensive check, not the normal path).
 
-    An unanswered `clarification` no longer blocks this: the Vision
-    link is stored with `feedback=None` so `route_note()`'s
-    clarification branch (which joins every prior `feedback` into the
-    next `generate_plan()` goal text) cannot treat a Vision change as
-    the user's answer. The pending clarification itself is preserved
-    on the plan until chat answers it.
-
     Requesting the Vision the goal is already linked to (or already
     has none, for `sim_user_id=None`) is a genuine no-op - returns
     `latest` unchanged rather than appending an identical record. A
-    cancelled goal (see cancel_goal()) is also a no-op here, same
-    reasoning as route_note() - never a save_plan()
-    call that could silently revive it.
+    cancelled goal (see cancel_goal()) is also a no-op here — never
+    a save_plan() call that could silently revive it.
 
     Preserves `plan`, `duration`, `frozen_duration`, `current_step`,
     and `completed` from the latest record exactly as they were -
@@ -67,18 +56,14 @@ def set_project_user(goal_id: int, sim_user_id: int | None) -> dict | None:
     if sim_user_id == previous_sim_user_id:
         return latest
 
-    pending_clarification = bool(latest["plan"].get("clarification"))
     if sim_user_id is None:
-        feedback_text = None if pending_clarification else "Removed from Vision"
+        feedback_text = "Removed from Vision"
     else:
         vision = get_user(sim_user_id)
         if vision is None:
             return None
-        if pending_clarification:
-            feedback_text = None
-        else:
-            verb = "Moved to" if previous_sim_user_id is not None else "Added to"
-            feedback_text = f"{verb} Vision: {vision['text']}"
+        verb = "Moved to" if previous_sim_user_id is not None else "Added to"
+        feedback_text = f"{verb} Vision: {vision['text']}"
 
     return save_plan(
         latest["goal"], latest["plan"], feedback=feedback_text,

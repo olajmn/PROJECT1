@@ -19,6 +19,7 @@ import re
 
 from backend.store.data_persistence import load_history, save_plan
 from backend.project.panes.canvas.add_folder import folder_tree
+from backend.project.panes.canvas.bead import Step, from_labels, from_nested_labels
 from backend.project.panes.canvas.text_to_tree import parse_outline
 from backend.project.panes.canvas.call_suggest import children_from_conversation, zoom_into
 
@@ -51,13 +52,7 @@ def add_progression_bead(
         progression["steps"] = steps
 
     mint = _id_minter(progression)
-    new_step = {
-        "id": mint(),
-        "label": text,
-        "ordered": True,
-        "resolved": False,
-        "children": [],
-    }
+    new_step = Step(id=mint(), label=text).to_dict()
 
     if parent_id:
         found = _find_step(steps, parent_id, ancestors=[])
@@ -134,24 +129,9 @@ def import_progression_outline(
         progression["steps"] = steps
 
     mint = _id_minter(progression)
-
-    def build(nodes: list[dict]) -> list[dict]:
-        built = []
-        for node in nodes:
-            step = {
-                "id": mint(),
-                "label": node["label"],
-                "ordered": True,
-                "resolved": False,
-                "children": build(node["children"]),
-            }
-            path = node.get("path")
-            if isinstance(path, str) and path:
-                step["path"] = path
-            built.append(step)
-        return built
-
-    new_steps = build(forest)
+    new_steps = [
+        step.to_dict() for step in from_nested_labels(forest, mint)
+    ]
 
     if parent_id:
         found = _find_step(steps, parent_id, ancestors=[])
@@ -252,26 +232,12 @@ def zoom_progression_step(latest: dict, step_id: str) -> dict:
 
     If the step is already fine enough (zoom_into returns []), returns
     `latest` unchanged (no save). Raises ValueError if there is no
-    progression or no such step. Timeframe is optional grounding —
-    missing duration no longer blocks expand (co-build without a span).
+    progression or no such step. Leftover stored duration is not read.
     """
     plan = latest.get("plan") or {}
     progression = plan.get("progression")
     if not isinstance(progression, dict):
         raise ValueError("goal has no progression tree to zoom")
-
-    duration = latest.get("duration")
-    if not duration:
-        frozen = latest.get("frozen_duration") or {}
-        duration = frozen.get("text")
-    if not duration:
-        # Same soft context construct_progression uses: span is
-        # background, not a gate. Zoom still needs *some* string for
-        # the model preamble in zoom._describe_position.
-        duration = (
-            "no fixed timeframe — a few next units of work only, "
-            "not a full syllabus"
-        )
 
     new_plan = copy.deepcopy(plan)
     steps = (new_plan.get("progression") or {}).get("steps") or []
@@ -280,20 +246,13 @@ def zoom_progression_step(latest: dict, step_id: str) -> dict:
         raise ValueError(f"step not found: {step_id}")
 
     step, ancestors = found
-    labels = zoom_into(step["label"], ancestors, duration)
+    labels = zoom_into(step["label"], ancestors)
     if not labels:
         return latest
 
     mint = _id_minter(new_plan["progression"])
     step["children"] = [
-        {
-            "id": mint(),
-            "label": label,
-            "ordered": True,
-            "resolved": False,
-            "children": [],
-        }
-        for label in labels
+        s.to_dict() for s in from_labels(labels, mint)
     ]
 
     return save_plan(
@@ -325,16 +284,6 @@ def suggest_progression_from_chat(
     if not isinstance(progression, dict):
         raise ValueError("goal has no progression tree to suggest under")
 
-    duration = latest.get("duration")
-    if not duration:
-        frozen = latest.get("frozen_duration") or {}
-        duration = frozen.get("text")
-    if not duration:
-        duration = (
-            "no fixed timeframe — a few next units of work only, "
-            "not a full syllabus"
-        )
-
     steps = (plan.get("progression") or {}).get("steps") or []
     found = _find_step(steps, step_id, ancestors=[])
     if found is None:
@@ -343,7 +292,7 @@ def suggest_progression_from_chat(
     step, ancestors = found
     conversation = _recent_conversation(latest["project_id"], note)
     labels = children_from_conversation(
-        step["label"], ancestors, duration, conversation,
+        step["label"], ancestors, conversation,
     )
     if not labels:
         return latest, []
@@ -353,16 +302,7 @@ def suggest_progression_from_chat(
     if not isinstance(existing, list):
         existing = []
         step["children"] = existing
-    for label in labels:
-        existing.append(
-            {
-                "id": mint(),
-                "label": label,
-                "ordered": True,
-                "resolved": False,
-                "children": [],
-            }
-        )
+    existing.extend(s.to_dict() for s in from_labels(labels, mint))
 
     record = save_plan(
         latest["goal"],

@@ -1,57 +1,39 @@
 """
-UI Manifestation (docs/v4-migration-decision.md) - turning a Planning result
-into what a UI can show, without Planning knowing anything about UI
-concerns and without the UI knowing Planning's own field names
-(PLAN_KEYS, step_status, current_step, ...). This is the first
-concrete home for the "UI manifestation" layer docs/v4-migration-decision.md
-names but leaves unspecified - filled in only as far as Planning's
-actual result shape requires, not as a general framework.
+UI Manifestation — turning a project record into what a UI can show,
+without the UI knowing leftover plan-field names. Pure functions of an
+already-saved record; neither calls an LLM or persistence.
 
-Two translations, deliberately kept separate and both pure functions
-of an already-existing Planning record - neither calls Planning, an
-LLM, or persistence:
-
-- surface_text(): the ONE plain-text sentence Voice is allowed to see
-  and relay conversationally (see backend.agent.llm_roles.voice). Same
-  precedence current/'s _active_goal/_conversation.html chat thread
-  already uses.
-- to_planning_node(): an OPTIONAL, generic {id, label, status,
-  children} tree from plan["progression"] (WHAT Step tree) only.
-  Legacy plan["steps"] is WHEN / calendar fill — not shown as the
-  project map (display SoT is progression; see
-  docs/goal-to-project-migration.md A3). Callers get None when there
-  is no progression tree.
+- surface_text(): one plain-text sentence about the stored map.
+  Leftover planner fields (clarification, suggested_action, now) are
+  ignored.
+- to_planning_node(): optional {id, label, status, children} tree from
+  plan["progression"] only. Bead status is resolved → done, else open.
+  Leftover current_step is not read.
 """
-
-from backend.foundation.time import step_plan as _step_plan
 
 
 def surface_text(record: dict) -> str:
-    """The one plain-text summary of a Planning record - see module
-    docstring."""
-    plan = record.get("plan", {})
-    if plan.get("clarification"):
-        return plan["clarification"]
-    if plan.get("suggested_action"):
-        return plan["suggested_action"]
-    if plan.get("suggested_duration"):
-        # Older records may still store an invented span here; ask
-        # openly instead of confirming that guess.
-        return (
-            "Do you have a preferred date or timeframe to finish this "
-            "within? (You can also say no / no deadline.)"
-        )
-    if plan.get("pending_duration_question"):
-        return plan["pending_duration_question"]
-    if plan.get("now"):
-        return plan["now"]
-    progression = plan.get("progression")
-    if isinstance(progression, dict) and not progression.get("steps"):
-        # Minted as an empty canvas (create_project) - nothing came
-        # back because nothing was ever asked for, which is a different
-        # state from a planned goal that ran dry.
-        return "No plan yet - build or paste a structure."
-    return "(no next action came back - give feedback again, or mark complete)"
+    """One sentence about the stored map. Leftover planner outcomes
+    on the same record are not read."""
+    steps = _progression_steps(record)
+    labels = [
+        (step.get("label") or "").strip()
+        for step in steps
+        if isinstance(step, dict) and (step.get("label") or "").strip()
+    ]
+    if not labels:
+        return "The map is empty."
+    listed = ", ".join(labels)
+    name = (record.get("goal") or "").strip()
+    return f"{name}: {listed}." if name else f"{listed}."
+
+
+def _progression_steps(record: dict) -> list:
+    progression = (record.get("plan") or {}).get("progression")
+    if not isinstance(progression, dict):
+        return []
+    steps = progression.get("steps")
+    return steps if isinstance(steps, list) else []
 
 
 def to_planning_node(record: dict) -> dict | None:
@@ -70,12 +52,8 @@ def _node_from_progression(record: dict) -> dict | None:
     if not isinstance(steps, list) or not steps:
         return None
 
-    current_index = record.get("current_step", 0)
-    if not isinstance(current_index, int) or current_index < 0:
-        current_index = 0
-
     children = [
-        _progression_step_node(step, i, current_index, record["project_id"])
+        _progression_step_node(step, i, record["project_id"])
         for i, step in enumerate(steps)
         if isinstance(step, dict)
     ]
@@ -85,20 +63,13 @@ def _node_from_progression(record: dict) -> dict | None:
     return {
         "id": f"project-{record['project_id']}",
         "label": record.get("goal", ""),
-        "status": "done" if record.get("completed") else "current",
+        "status": "done" if record.get("completed") else "open",
         "children": children,
     }
 
 
-def _progression_step_node(
-    step: dict, index: int, current_index: int, goal_id: int,
-) -> dict:
-    if step.get("resolved"):
-        status = "done"
-    elif index == current_index:
-        status = "current"
-    else:
-        status = "open"
+def _progression_step_node(step: dict, index: int, goal_id: int) -> dict:
+    status = "done" if step.get("resolved") else "open"
     step_id = step.get("id") or f"{goal_id}-p-{index}"
     nested = step.get("children") or []
     return {
@@ -114,8 +85,7 @@ def _progression_step_node(
 
 
 def _progression_child_node(step: dict, parent_id: str, index: int) -> dict:
-    """Nested progression steps: status from resolved only (no
-    current_step pointer below the top level yet)."""
+    """Nested beads: status from resolved only."""
     status = "done" if step.get("resolved") else "open"
     step_id = step.get("id") or f"{parent_id}-{index}"
     nested = step.get("children") or []
@@ -128,73 +98,4 @@ def _progression_child_node(step: dict, parent_id: str, index: int) -> dict:
             for j, child in enumerate(nested)
             if isinstance(child, dict)
         ],
-    }
-
-
-def _node_from_legacy_steps(record: dict) -> dict | None:
-    """WHEN / calendar plan.steps → tree shape.
-
-    Not used by to_planning_node() (display SoT is progression only,
-    migration A3). Kept so calendar fill can still be inspected or
-    re-wired later without rewriting the mapping.
-    """
-    plan = record.get("plan", {})
-    steps = plan.get("steps")
-    if not steps:
-        return None
-
-    current_index = record.get("current_step", 0)
-    status_list = record.get("step_status")
-    if not status_list or len(status_list) != len(steps):
-        status_list = ["open"] * len(steps)
-
-    # Prefer dates already stored on week-grain steps; otherwise even-
-    # slice the frozen span across the label list (session grain).
-    timed = _step_plan(record.get("frozen_duration"), steps)
-
-    children = []
-    for i, step in enumerate(steps):
-        if status_list[i] == "resolved":
-            status = "done"
-        elif i == current_index:
-            status = "current"
-        else:
-            status = "open"
-        label = f"{timed[i]['start_label']}–{timed[i]['end_label']}: {step['label']}" if timed else step["label"]
-        children.append({
-            "id": f"{record['project_id']}-step-{i}",
-            "label": label,
-            "status": status,
-            # One level deep only - week-grain days are dated dicts;
-            # session microsteps are plain strings. Microsteps are
-            # always "open": no per-microstep completion signal today.
-            "children": [
-                _microstep_child(record["project_id"], i, j, microstep)
-                for j, microstep in enumerate(step.get("microsteps") or [])
-            ],
-        })
-
-    return {
-        "id": f"project-{record['project_id']}",
-        "label": record.get("goal", ""),
-        "status": "done" if record.get("completed") else "current",
-        "children": children,
-    }
-
-
-def _microstep_child(goal_id: int, step_i: int, micro_j: int, microstep) -> dict:
-    if isinstance(microstep, dict):
-        text = microstep.get("label") or "—"
-        sl, el = microstep.get("start_label"), microstep.get("end_label")
-        if isinstance(sl, str) and isinstance(el, str):
-            label = f"{sl}: {text}" if sl == el else f"{sl}–{el}: {text}"
-        else:
-            label = text
-    else:
-        label = microstep
-    return {
-        "id": f"{goal_id}-step-{step_i}-micro-{micro_j}",
-        "label": label,
-        "status": "open",
-        "children": [],
     }

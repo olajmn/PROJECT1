@@ -8,9 +8,7 @@ an entry orchestrator: reusable LLM *roles* any caller may invoke.
 - Describe (`describe.py`) - one neutral sentence about the message
   (was `llm2/` / Understand)
 
-Decide / Stage 3 is documented in `decide.md`. Stage 3 Decide lives in
-`project/engine/judgment/decide.py`; Fill orchestration in
-`judgment/run_stage3.py` (not this package).
+Stage 3 is gone. See `roles.md` for the Voice / Describe map.
 """
 
 from backend.agent.llm_roles.describe import describe, describe_in_context

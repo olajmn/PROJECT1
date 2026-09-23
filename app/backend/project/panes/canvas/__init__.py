@@ -1,4 +1,4 @@
-"""Canvas pane — WHAT bead tree: shape, first mint, edit/write, paste, suggest.
+"""Canvas pane — WHAT bead tree: shape, edit/write, paste, suggest.
 
 Files (see docs/04-current-state.md § 2.iv):
   bead.py                — one map bead (Step shape)
@@ -6,7 +6,6 @@ Files (see docs/04-current-state.md § 2.iv):
   read_map/prompt.py     — Read map instruction only (no call)
   read_map/read.py       — sends that instruction; tree → summary, no write
   see_map/confirm.py     — stored labels as the chat reply (no Voice)
-  construct_first_map.py — coarse middle mint (on request; not auto on PLAN)
   edit_map.py            — + / × / import / Suggest / chat-suggest
   text_to_tree.py        — pasted text → forest of labels
   add_folder/rules.py    — what a folder walk may see (no walk)

@@ -42,7 +42,6 @@ def goal_view(record: dict, reply: str | None = None) -> dict:
         "cancelled": bool(record.get("cancelled")),
         "sim_user_id": record.get("sim_user_id"),
         "created_at": record.get("created_at"),
-        "clarification": record["plan"].get("clarification"),
         "surface": surface_text(record),
         "node": node,
         "thread": thread,
