@@ -219,6 +219,33 @@
   color: var(--color-text);
 }
 
+.progress-name-label.is-renamable,
+.progress-name-input {
+  /* Header beads are pointer-events: none so the camera can pan
+     over #N / title. The rename target has to take clicks. */
+  pointer-events: auto;
+}
+
+.progress-name-label.is-renamable {
+  cursor: text;
+}
+
+.progress-name-input {
+  font: inherit;
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  min-width: 8rem;
+  width: 16rem;
+  max-width: 24rem;
+}
+
 /* One square around label + tools (indent spacer stays outside). */
 .progress-bead-unit {
   display: inline-flex;

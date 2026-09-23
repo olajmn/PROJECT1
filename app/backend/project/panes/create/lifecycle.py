@@ -1,17 +1,20 @@
 """
-A Goal's lifecycle: mint one, abandon one.
+A project's lifecycle: mint one, abandon one.
 
 Identity and current state stay in resolver.py - this module only
-writes. Creating a goal still asks plan/planner.py to produce the
-first plan (generate_plan); cancelling never does. Vision is accepted
-here as an optional link at birth, but linking/unlinking later stays
-on planner.set_project_user() until Vision's own shape is decided.
+writes. The ordinary mint is create_project() — a name and an empty
+canvas, no engine. create_project_via_engine() is the leftover
+opening door into generate_plan(); Create does not call it.
+Renaming the label is rename.py. Cancelling never does. Vision is
+accepted here as an optional link at birth, but linking/unlinking
+later stays on planner.set_project_user() until Vision's own shape
+is decided.
 """
 
 # Contents
 #  1. Creation
-#      - create_goal()
-#      - create_empty_project()
+#      - create_project()
+#      - create_project_via_engine()
 #
 #  2. Cancellation
 #      - cancel_goal()
@@ -27,11 +30,27 @@ from backend.project.engine import planner
 # ============================================================
 
 
-def create_goal(typed_text: str, new_vision_text: str, sim_user_id_value: str) -> dict:
+def create_project(typed_text: str, sim_user_id_value: str) -> dict:
     """
-    Generate a fresh plan for a new goal and save it. `typed_text`,
-    `new_vision_text`, and `sim_user_id_value` are already read/stripped
-    by the caller.
+    Mint a project: a name and an empty canvas. No engine.
+
+    The typed text is only a label. The tree arrives afterwards —
+    built by hand, pasted, or walked in from a folder.
+    """
+    sim_user_id = int(sim_user_id_value) if sim_user_id_value else None
+    return save_plan(
+        typed_text,
+        {"progression": {"steps": []}},
+        sim_user_id=sim_user_id,
+    )
+
+
+def create_project_via_engine(
+    typed_text: str, new_vision_text: str, sim_user_id_value: str,
+) -> dict:
+    """
+    Mint by running the engine on a sentence (`generate_plan`,
+    opening=True). Not the Create pane — that uses create_project().
 
     One text field, not a separate goal/duration pair -
     `extract_duration_phrase()` searches the whole typed text for a
@@ -44,18 +63,18 @@ def create_goal(typed_text: str, new_vision_text: str, sim_user_id_value: str) -
     generate_plan()'s own model call also decides whether a default can
     be proposed instead (`suggested_duration`), or, for a goal that's
     already complete without a broader duration, simply returns a plan
-    scoped to `now` alone. create_goal() passes opening=True so that
-    first mint cannot land on a suggested_action - opening is not
-    "do this now". Missing duration no longer blocks a planable mint;
-    Decide asks for a checkable End when the goal is vague. Time stays
-    optional for co-building the WHAT line. `_planability()` reads that
-    one response and gives the result an explicit, inspectable name
-    ("ask"/"suggest"/"planable") - the reasoning step between a Goal
-    and treating its plan as real, not a second model call (see
-    docs/planning-model.md § Minimum planability).
+    scoped to `now` alone. opening=True so that first mint cannot land
+    on a suggested_action - opening is not "do this now". Missing
+    duration no longer blocks a planable mint; Decide asks for a
+    checkable End when the aim is vague. Time stays optional for
+    co-building the WHAT line. `_planability()` reads that one
+    response and gives the result an explicit, inspectable name
+    ("ask"/"suggest"/"planable") - the reasoning step between a
+    sentence and treating the engine result as real, not a second
+    model call (see docs/planning-model.md § Minimum planability).
 
-    Only ever starts a NEW goal (mints its own goal_id via save_plan());
-    extending an EXISTING goal's timeframe goes through
+    Only ever starts a NEW project (mints its own project_id via
+    save_plan()); extending an existing timeframe goes through
     route_note()'s requests_duration_change() branch instead.
 
     `frozen_duration` is left None when the plan comes back with
@@ -67,8 +86,8 @@ def create_goal(typed_text: str, new_vision_text: str, sim_user_id_value: str) -
     `new_vision_text` is checked before `sim_user_id_value` - typing a
     new Vision always wins over whatever the select had chosen.
     Neither is required; carried forward unchanged on every later
-    replan for this goal (a goal's vision doesn't change just because
-    its plan does).
+    replan for this project (a project's vision doesn't change just
+    because the engine ran again).
     """
     if new_vision_text:
         sim_user_id = save_user(new_vision_text)["id"]
@@ -87,33 +106,6 @@ def create_goal(typed_text: str, new_vision_text: str, sim_user_id_value: str) -
     return save_plan(
         typed_text, plan, duration=duration,
         frozen_duration=planner.frozen_duration_for(plan, duration),
-        sim_user_id=sim_user_id,
-    )
-
-
-def create_empty_project(typed_text: str, sim_user_id_value: str) -> dict:
-    """
-    Mint a project with a name but no plan - the second way in, beside
-    create_goal().
-
-    create_goal() reads the typed text as a goal and asks the planner
-    to turn it into a first plan. Here the text is only a label: no
-    model call, no duration extraction, no planability decision. The
-    tree is meant to arrive afterwards, built by hand or pasted in.
-
-    That inverts the usual direction (goal -> tree). Nothing in
-    persistence depends on the old order - save_plan() stores what it
-    is given.
-
-    An empty `progression` is written explicitly rather than leaving
-    `plan` bare: it says "this project has a WHAT tree and it is
-    empty", which is what is true, and is the same shape every later
-    edit appends to.
-    """
-    sim_user_id = int(sim_user_id_value) if sim_user_id_value else None
-    return save_plan(
-        typed_text,
-        {"progression": {"steps": []}},
         sim_user_id=sim_user_id,
     )
 

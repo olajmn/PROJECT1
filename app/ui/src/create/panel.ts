@@ -7,12 +7,14 @@
  * sidebar's "+" asks for it over an open project.
  *
  * Empty name → Spotify-style autoname (`New project N`) via autoname.ts.
+ * Add folder mints empty, then walks the same import as the map.
  */
 
-import { createGoal } from "../api.js";
+import { createProject } from "../api.js";
 import { setButtonBusy } from "../shell/busy.js";
 import { getActiveUserId } from "../user/activeUser.js";
 import type { ProjectView } from "../types.js";
+import { mintFromFolder } from "./addFolder.js";
 import { nextNewProjectName } from "./autoname.js";
 
 export type CreatePanelHandle = {
@@ -37,13 +39,12 @@ type CreatePanelOpts = {
 export function installCreatePanel(opts: CreatePanelOpts): CreatePanelHandle {
   const openBtn = document.getElementById("create-open") as HTMLButtonElement;
   const panel = document.getElementById("create-panel") as HTMLElement;
+  const heading = document.getElementById("create-heading") as HTMLParagraphElement;
   const form = document.getElementById("create-form") as HTMLFormElement;
   const input = document.getElementById("create-input") as HTMLTextAreaElement;
   const error = document.getElementById("create-error") as HTMLParagraphElement;
-  const submit = form.querySelector(
-    'button[type="submit"]',
-  ) as HTMLButtonElement;
-  const bare = document.getElementById("create-bare") as HTMLButtonElement;
+  const submit = document.getElementById("create-bare") as HTMLButtonElement;
+  const folderBtn = document.getElementById("create-folder") as HTMLButtonElement;
 
   let open = false;
 
@@ -56,11 +57,8 @@ export function installCreatePanel(opts: CreatePanelOpts): CreatePanelHandle {
     opts.onChange();
   });
 
-  /** `planned` false mints a named project and leaves the tree empty. */
-  const mint = async (
-    busyBtn: HTMLButtonElement,
-    planned: boolean,
-  ): Promise<void> => {
+  /** Name + empty canvas. No engine. */
+  const mint = async (): Promise<void> => {
     const typed = input.value.trim();
     const text = typed || nextNewProjectName(opts.getTitles());
 
@@ -74,10 +72,10 @@ export function installCreatePanel(opts: CreatePanelOpts): CreatePanelHandle {
     }
 
     input.disabled = true;
-    setButtonBusy(busyBtn, true);
+    setButtonBusy(submit, true);
     error.hidden = true;
     try {
-      const created = await createGoal(text, userId, planned);
+      const created = await createProject(text, userId);
       input.value = "";
       open = false;
       opts.onCreated(created);
@@ -86,18 +84,47 @@ export function installCreatePanel(opts: CreatePanelOpts): CreatePanelHandle {
       error.textContent = `(error: ${(err as Error).message})`;
     } finally {
       input.disabled = false;
-      setButtonBusy(busyBtn, false);
+      setButtonBusy(submit, false);
     }
   };
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    void mint(submit, true);
+    void mint();
   });
 
-  bare.addEventListener("click", () => {
-    void mint(bare, false);
+  folderBtn.addEventListener("click", () => {
+    void addFolder();
   });
+
+  const addFolder = async (): Promise<void> => {
+    const userId = getActiveUserId();
+    if (userId === null) {
+      error.hidden = false;
+      error.textContent =
+        "(pick or create an id — click the label at the top of the sidebar)";
+      opts.onNeedUser();
+      return;
+    }
+    setButtonBusy(folderBtn, true);
+    error.hidden = true;
+    try {
+      const created = await mintFromFolder({
+        typedName: input.value,
+        titles: opts.getTitles(),
+        userId,
+      });
+      if (!created) return;
+      input.value = "";
+      open = false;
+      opts.onCreated(created);
+    } catch (err) {
+      error.hidden = false;
+      error.textContent = `(error: ${(err as Error).message})`;
+    } finally {
+      setButtonBusy(folderBtn, false);
+    }
+  };
 
   return {
     isOpen: () => open,
@@ -105,6 +132,10 @@ export function installCreatePanel(opts: CreatePanelOpts): CreatePanelHandle {
     mount: (host: HTMLElement) => {
       host.appendChild(panel);
       panel.hidden = false;
+      heading.textContent =
+        getActiveUserId() === null
+          ? "Pick or create an id above, then name a project."
+          : "Name a new project.";
       // Drop a stale "pick an id" error once an id is active again.
       if (getActiveUserId() !== null) {
         error.hidden = true;

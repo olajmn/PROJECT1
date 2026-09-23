@@ -23,7 +23,7 @@ from pathlib import Path
 from backend.store import data_persistence as dp
 from backend.project.panes.chat.feedback.route_note import route_note
 from backend.project.panes.create import resolver
-from backend.project.panes.create.lifecycle import create_goal
+from backend.project.panes.create.lifecycle import create_project_via_engine
 from backend.project.engine.judgment import decide as decide_mod
 from backend.project.engine.judgment import run_stage3 as run_mod
 from backend.project.engine import planner
@@ -31,7 +31,7 @@ from backend.project.engine import planner
 
 def _pending_suggestion(sim_user_id=None):
     """A saved record with suggested_action, via generate_plan() not
-    create_goal() - opening mints refuse that field."""
+    create_project_via_engine() - opening mints refuse that field."""
     plan = planner.generate_plan(GOAL_TEXT)
     return dp.save_plan(GOAL_TEXT, plan, duration=None, frozen_duration=None, sim_user_id=sim_user_id)
 
@@ -131,18 +131,18 @@ try:
 
     print("OK - generate_plan() suggested_action validation/priority")
 
-    # create_goal() opening cannot land on an Action (suggested_action).
+    # create_project_via_engine() opening cannot land on an Action (suggested_action).
     # Missing timeframe no longer blocks a planable mint — End clarity
     # is Decide's job; co-build does not wait on a span.
     _set_stage3({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
-    opened = create_goal("I want to start working out", "", "")
+    opened = create_project_via_engine("I want to start working out", "", "")
     assert opened["plan"]["suggested_action"] is None
     assert opened["plan"]["clarification"]
     _set_stage3({**_BLANK_PLAN, "now": "Choose any piece of equipment and begin immediately"})
-    opened_now = create_goal("start working out", "", "")
+    opened_now = create_project_via_engine("start working out", "", "")
     assert opened_now["plan"]["now"] == "Choose any piece of equipment and begin immediately"
     assert opened_now["plan"]["clarification"] is None
-    print("OK - create_goal() opening refuses Action; allows planable without duration")
+    print("OK - create_project_via_engine() opening refuses Action; allows planable without duration")
 
     # ------------------------------------------------------------------
     # Test 1 - SUGGEST -> "Yes" -> accepted as the current Action
@@ -215,7 +215,7 @@ try:
     # ------------------------------------------------------------------
 
     _set_stage3({**_BLANK_PLAN, "now": "Send four applications"})
-    ordinary = create_goal("Send four job applications this week", "", "")
+    ordinary = create_project_via_engine("Send four job applications this week", "", "")
     assert ordinary["plan"]["now"] == "Send four applications"
     assert ordinary["plan"]["suggested_action"] is None
 
@@ -234,7 +234,7 @@ try:
     # ------------------------------------------------------------------
 
     _set_stage3({**_BLANK_PLAN, "suggested_duration": "8 weeks"})
-    duration_pending = create_goal("I want to start exercising regularly", "", "")
+    duration_pending = create_project_via_engine("I want to start exercising regularly", "", "")
     assert duration_pending["plan"]["suggested_duration"] == "8 weeks"
     assert duration_pending["plan"]["suggested_action"] is None
 
@@ -250,7 +250,7 @@ try:
     # ------------------------------------------------------------------
 
     _set_stage3({**_BLANK_PLAN, "clarification": "What do you want to read?"})
-    vague = create_goal("read", "", "")
+    vague = create_project_via_engine("read", "", "")
     assert vague["plan"]["clarification"] == "What do you want to read?"
 
     _set_stage3({**_BLANK_PLAN, "now": "Open the book and read one chapter"})

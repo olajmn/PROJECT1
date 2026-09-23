@@ -250,7 +250,7 @@ def advance_step(latest: dict, done: bool, resolved: bool = False) -> dict:
 def set_project_user(goal_id: int, sim_user_id: int | None) -> dict | None:
     """
     Add, move, or remove a goal's Vision link - the manual counterpart
-    to `create_goal()`'s one-time choice, letting it be changed later
+    to `create_project_via_engine()`'s one-time choice, letting it be changed later
     (see docs/planning-model.md, the authority on Vision).
     `sim_user_id=None` removes
     the goal from whichever Vision it currently has.

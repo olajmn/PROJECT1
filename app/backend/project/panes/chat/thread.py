@@ -11,7 +11,7 @@ from backend.project.panes.create.resolver import get_history_for_goal
 def thread_messages(history: list[dict]) -> list[dict]:
     """[{role, text, focus?}] oldest first - each saved record is one
     agent line (surface_text of its plan); its `feedback`, if any, is
-    the user line that produced it. The opening create_goal() record
+    the user line that produced it. The opening create_project_via_engine() record
     has no feedback, so the thread starts with the agent's first
     question or plan.
 

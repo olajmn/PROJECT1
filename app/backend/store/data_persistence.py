@@ -46,6 +46,7 @@ only ever one value.
 #      - _next_goal_id() / _load_all() / _save_all() / _append_record()
 #      - save_plan()  (persists project_id + sim_user_id)
 #      - stamp_map_focus()
+#      - set_project_name()
 #      - load_history()
 #      - get_latest_plan()
 #
@@ -474,6 +475,26 @@ def stamp_map_focus(
                 records[i]["focus_step_id"] = step
             else:
                 records[i].pop("focus_step_id", None)
+            _save_all(records)
+            return records[i]
+    return None
+
+
+def set_project_name(goal_id: int, name: str) -> dict | None:
+    """Replace the display label on the latest record for this
+    project. Identity is `project_id`; the `goal` field is only the
+    name. Mutates in place (same as stamp_map_focus) so a rename is
+    not a new chat turn. Parameter name goal_id kept this round.
+    """
+    label = (name or "").strip()
+    if not label:
+        return None
+    records = _load_all()
+    for i in range(len(records) - 1, -1, -1):
+        if record_project_id(records[i]) == goal_id:
+            if records[i].get("goal") == label:
+                return records[i]
+            records[i]["goal"] = label
             _save_all(records)
             return records[i]
     return None

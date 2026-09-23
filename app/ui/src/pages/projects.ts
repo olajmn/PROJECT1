@@ -33,6 +33,7 @@ import {
   importProgressionOutline,
   readTree,
   removeProgressionStep,
+  renameProject,
   sendGoalFeedback,
   zoomGoalStep,
 } from "../api.js";
@@ -48,8 +49,9 @@ import { createIsolateChat } from "../chat/isolateChat.js";
 import { messageRow } from "../chat/messageRow.js";
 import { printMapText } from "../chat/printMap.js";
 import { createChatChart } from "../chat/chart/index.js";
-import { installCreatePanel } from "../create/panel.js";
 import { displayProjectTitle } from "../create/autoname.js";
+import { installCreatePanel } from "../create/panel.js";
+import { installTitleRename } from "../create/renameTitle.js";
 import { treeWordsElement } from "../map/treeWords.js";
 import type { NodeMenuActionId } from "../map/treeWords.js";
 import { installMapScale } from "../map/frame/index.js";
@@ -351,12 +353,7 @@ function renderWorkspace(): void {
   // No project, or Create pressed over one: the middle pane is where a
   // project is made. Clicking the project in the sidebar is the way back.
   if (!project || createPanel.isOpen()) {
-    projectMain.appendChild(mainEmpty);
-    mainEmpty.hidden = false;
-    mainEmpty.textContent =
-      getActiveUserId() === null
-        ? "Pick or create an id above, then name a project."
-        : "Name a new project.";
+    mainEmpty.hidden = true;
     createPanel.mount(projectMain);
     projectChat.hidden = false;
     fillChatPlaceholder("Select a project to open its chat.");
@@ -547,6 +544,18 @@ function renderWorkspace(): void {
     }
   };
 
+  const renameTitle = async (name: string): Promise<void> => {
+    try {
+      replaceProject(await renameProject(project.project_id, name));
+    } catch (err) {
+      const error = document.createElement("p");
+      error.className = "error";
+      error.textContent = `(error: ${(err as Error).message})`;
+      body.appendChild(error);
+      throw err;
+    }
+  };
+
   line = treeWordsElement(
     displayProjectTitle(project.goal),
     middle,
@@ -563,6 +572,10 @@ function renderWorkspace(): void {
     canSelect ? onMenuAction : undefined,
     `#${project.project_id}`,
   );
+  const nameText = line.querySelector(".progress-name-label");
+  if (nameText instanceof HTMLElement) {
+    installTitleRename(nameText, project.goal, renameTitle);
+  }
   body.appendChild(line);
   installMapScale(body, line, project.project_id, {
     onClose: () => {
@@ -673,7 +686,7 @@ function renderWorkspace(): void {
     const hint = document.createElement("p");
     hint.className = "project-hint";
     hint.textContent =
-      "Add steps with +, or talk — a plan from the agent is optional.";
+      "Add steps with +, or talk — the map starts empty.";
     // Above the bottom bar, not below it: the bar is a status line flush
     // with the column's bottom edge (css/map/pane.css), and the sidebar's
     // own footer rule lines up with it. A paragraph underneath pushed the
@@ -733,7 +746,7 @@ function applyUsers(next: UserView[]): void {
       : p,
   );
   // If active points at a deleted id (or was cleared), pick a live one so
-  // Create/Seed and the Projects list don't say "pick an id" while one exists.
+  // Create and the Projects list don't say "pick an id" while one exists.
   syncActiveUser(next);
   ensureSelectionInActiveUser();
   renderList();

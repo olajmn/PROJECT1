@@ -7,10 +7,11 @@ const FALLBACK_MAX_HEIGHT = 560;
 
 /**
  * Ceiling for one drag: current list height plus what can still be stolen
- * from .project-list and the Settings auto-margin. maxHeight alone cannot
- * grow past content; this pairs with applyListHeight() setting height.
- * What keeps Projects header / "+" / Settings visible is CSS — those are
- * flex: 0 0 auto; .project-list yields first (see css/sidebar/sidebar.css).
+ * from .project-list and the slack above the project "+". maxHeight alone
+ * cannot grow past content; this pairs with applyListHeight() setting
+ * height. What keeps Projects header / "+" / Settings visible is CSS —
+ * those are flex: 0 0 auto; .project-list yields first
+ * (see css/sidebar/sidebar.css).
  */
 function maxListHeight(list: HTMLElement): number {
   const sidebar = list.closest(".sidebar");
@@ -29,13 +30,23 @@ function maxListHeight(list: HTMLElement): number {
       ? projectList.getBoundingClientRect().height
       : 0;
 
-  // Slack above Settings (margin-top: auto on .sidebar-more).
+  // Slack above the project "+" (margin-top: auto on #create-open).
   const createOpen = sidebar.querySelector("#create-open");
-  const slackTop =
+  const empty = sidebar.querySelector(".sidebar-empty");
+  const toggle = sidebar.querySelector("#project-list-toggle");
+  let slackTop = list.getBoundingClientRect().bottom;
+  if (projectList instanceof HTMLElement && projectListH > 0) {
+    slackTop = projectList.getBoundingClientRect().bottom;
+  } else if (empty instanceof HTMLElement && !empty.hidden) {
+    slackTop = empty.getBoundingClientRect().bottom;
+  } else if (toggle instanceof HTMLElement) {
+    slackTop = toggle.getBoundingClientRect().bottom;
+  }
+  const slackBottom =
     createOpen instanceof HTMLElement
-      ? createOpen.getBoundingClientRect().bottom
-      : list.getBoundingClientRect().bottom;
-  const marginSlack = Math.max(0, more.getBoundingClientRect().top - slackTop);
+      ? createOpen.getBoundingClientRect().top
+      : more.getBoundingClientRect().top;
+  const marginSlack = Math.max(0, slackBottom - slackTop);
 
   const maxH = Math.floor(listH + projectListH + marginSlack);
   return Math.max(MIN_LIST_HEIGHT, maxH);

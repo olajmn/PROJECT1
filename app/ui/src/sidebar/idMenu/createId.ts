@@ -32,7 +32,7 @@ export function buildCreateIdButton(
     setButtonBusy(button, true);
     try {
       const created = await createUser("user");
-      // Activate before claim/rebuild so Create/Seed see an owner even if
+      // Activate before claim/rebuild so Create sees an owner even if
       // a later step throws.
       setActiveUserId(created.id);
       const claimed = await claimUnassigned(created.id, projects);

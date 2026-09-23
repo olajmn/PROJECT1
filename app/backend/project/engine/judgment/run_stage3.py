@@ -26,7 +26,7 @@ from backend.project.engine.judgment.shape import (
 from backend.project.engine.time.current_time import current_time
 from backend.project.engine.time.calendar import generate_structure
 
-# create_goal()'s first mint cannot land on an Action. Used when
+# create_project_via_engine()'s first mint cannot land on an Action. Used when
 # opening=True and Decide still returned suggested_action with nothing
 # else to hold the turn.
 OPENING_CLARIFICATION = (
@@ -199,7 +199,7 @@ def _planability(plan: dict) -> str:
     """
     Named verdict on a run_stage3()/generate_plan()-shaped dict: "ask", "suggest",
     or "planable". Not a fourth model call - reads fields Decide (and
-    opening enforcement) already set. create_goal() only distinguishes
+    opening enforcement) already set. create_project_via_engine() only distinguishes
     planable from everything else; route_note() tells suggest kinds apart.
     """
     if plan.get("clarification"):

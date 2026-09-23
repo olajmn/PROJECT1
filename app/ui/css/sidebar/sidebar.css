@@ -8,16 +8,16 @@
  * the panel, and .sidebar-add is shared with the panel's id "+".
  *
  * Vertical layout: nothing grows. Every item is content-sized, and the
- * free space goes to .sidebar-more's margin-top: auto — that, not a
- * stretched list, is what holds it at the bottom of the frame. So the
- * add button follows the last project instead of sitting at the foot.
+ * free space goes to #create-open's margin-top: auto — that, not a
+ * stretched list, is what parks the project "+" at the foot, just
+ * above Settings.
  *
  * When the two sections can't both fit, they do NOT give way equally:
  * .project-list has a far higher flex-shrink than .sidebar-id, so it
  * collapses first and the id panel keeps whatever height the separator
  * was dragged to. That asymmetry is what lets a height pin on the id
- * list (sidebar/idMenu/resize.ts) claim the Settings auto-margin and
- * then squeeze Projects, instead of being flexed back. Everything below
+ * list (sidebar/idMenu/resize.ts) claim the slack above the project
+ * "+" and then squeeze Projects, instead of being flexed back. Everything below
  * the list is flex: 0 0 auto, so a collapsed list still leaves the
  * header, the "+" and the bottom bar.
  *
@@ -65,7 +65,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   text-align: left;
-  color: var(--color-text);
+  color: var(--color-text-muted);
   background: transparent;
   border: none;
   border-radius: var(--radius);
@@ -73,12 +73,9 @@
   cursor: pointer;
 }
 
-.sidebar-brand:hover {
-  color: var(--color-accent);
-}
-
+.sidebar-brand:hover,
 .sidebar-brand.is-active {
-  color: var(--color-accent);
+  color: var(--color-text);
 }
 
 /* Manager | Projects separator — the horizontal twin of .sidebar-resize
@@ -149,10 +146,16 @@ body.is-resizing-id-menu {
   border-color: var(--color-text-muted);
 }
 
-/* Content-sized, not space-filling: the "+" below follows the last
- * project instead of being pushed to the foot of the sidebar. Free
- * space goes to .sidebar-more's margin-top: auto, which is what keeps
- * Settings at the bottom.
+/* Project mint only — not the Manager id "+". Parks this control at
+ * the foot so it does not hang under the Projects header when the
+ * list is closed or short. Settings stays immediately below. */
+#create-open {
+  margin-top: auto;
+}
+
+/* Content-sized, not space-filling. Free space goes to #create-open's
+ * margin-top: auto, which is what keeps the "+" (and Settings under
+ * it) at the bottom.
  *
  * The high flex-shrink is what lets a Manager list height pin claim
  * space (sidebar/idMenu/resize.ts): when the two sections can't both
@@ -241,7 +244,7 @@ body.is-resizing-id-menu {
   gap: var(--space-1);
   flex: 0 0 auto;
   min-height: 1.75rem;
-  margin: auto calc(-1 * var(--space-3)) calc(-1 * var(--space-4));
+  margin: 0 calc(-1 * var(--space-3)) calc(-1 * var(--space-4));
   padding: 0 var(--space-3);
   border-top: var(--border);
   border-bottom: none;

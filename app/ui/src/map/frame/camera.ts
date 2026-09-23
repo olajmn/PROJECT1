@@ -225,7 +225,7 @@ export function installMapCamera(
     if (!(target instanceof Element)) return false;
     return Boolean(
       target.closest(
-        "button, a, input, textarea, select, label, .progress-menu, .progress-bead-btn, .progress-add, .map-top-bar",
+        "button, a, input, textarea, select, label, .progress-menu, .progress-bead-btn, .progress-add, .progress-name-label, .progress-name-input, .map-top-bar",
       ),
     );
   };

@@ -143,9 +143,9 @@ def route_note(latest: dict, note: str) -> dict:
         prior_answers = [r["feedback"] for r in get_history_for_goal(latest["project_id"]) if r.get("feedback")]
         combined_goal = " - ".join([latest["goal"], *prior_answers, note])
         # `duration` can still be None here specifically when this
-        # clarification IS create_goal()'s missing-timeframe question -
+        # clarification IS create_project_via_engine()'s missing-timeframe question -
         # the answer is a duration phrase, not more goal content, so it
-        # needs the same extraction create_goal() does, or it stays
+        # needs the same extraction create_project_via_engine() does, or it stays
         # lost as untyped prose. Skipped when duration is already known
         # (a content-vagueness clarification) - `note` there answers a
         # different question, not a timeframe to (mis)parse.
@@ -162,7 +162,7 @@ def route_note(latest: dict, note: str) -> dict:
         if plan.get("progression") is None:
             plan["progression"] = latest["plan"].get("progression")
         # frozen_duration stays None for as long as clarification keeps
-        # coming back (same reasoning as create_goal() above: nothing
+        # coming back (same reasoning as create_project_via_engine() above: nothing
         # has actually started yet) - only frozen for real, for the
         # first time, the moment a real plan finally comes back.
         return save_plan(

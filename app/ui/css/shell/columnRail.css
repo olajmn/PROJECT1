@@ -30,7 +30,11 @@
 }
 
 .project-chat.is-collapsed .goal-thread,
-.project-chat.is-collapsed .error {
+.project-chat.is-collapsed .error,
+.project-chat.is-collapsed .chat-brand,
+.project-chat.is-collapsed .chat-chart,
+.project-chat.is-collapsed .chat-chart-resize,
+.project-chat.is-collapsed .chat-form-actions {
   display: none;
 }
 

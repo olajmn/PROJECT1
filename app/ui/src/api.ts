@@ -5,7 +5,8 @@
 // Contents
 //  1. Goals / Projects
 //      - fetchActiveGoals()
-//      - createGoal()
+//      - createProject()
+//      - renameProject()
 //      - sendGoalFeedback()
 //      - cancelGoal()
 //      - setProjectUser()
@@ -38,23 +39,16 @@ export async function fetchActiveGoals(): Promise<GoalView[]> {
   return (await res.json()) as GoalView[];
 }
 
-/**
- * `planned: false` skips the planner — `text` becomes the project's
- * name and the tree is built or pasted afterwards.
- */
-export async function createGoal(
+/** Mint a project: `text` is the name, canvas starts empty. */
+export async function createProject(
   text: string,
   simUserId?: number | null,
-  planned = true,
 ): Promise<GoalView> {
-  const body: { text: string; sim_user_id?: number; planned?: boolean } = {
+  const body: { text: string; sim_user_id?: number } = {
     text,
   };
   if (simUserId != null) {
     body.sim_user_id = simUserId;
-  }
-  if (!planned) {
-    body.planned = false;
   }
   const res = await fetch("/api/projects", {
     method: "POST",
@@ -63,6 +57,22 @@ export async function createGoal(
   });
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
+  }
+  return (await res.json()) as GoalView;
+}
+
+/** Replace the project's display name. Identity stays project_id. */
+export async function renameProject(
+  goalId: number,
+  text: string,
+): Promise<GoalView> {
+  const res = await fetch(`/api/projects/${goalId}/name`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) {
+    throw new Error(await httpErrorMessage(res));
   }
   return (await res.json()) as GoalView;
 }

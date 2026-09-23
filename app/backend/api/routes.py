@@ -23,9 +23,10 @@ from backend.store.session import load_sessions
 from backend.project.panes.chat.turn import take_turn
 from backend.project.panes.create.lifecycle import (
     cancel_goal,
-    create_empty_project,
-    create_goal,
+    create_project,
+    create_project_via_engine,
 )
+from backend.project.panes.create.rename import rename_project
 from backend.project.panes.create.resolver import get_latest_for_goal
 from backend.project.panes.canvas.add_folder import choose_folder
 from backend.project.panes.canvas.read_map import read_tree
@@ -62,6 +63,7 @@ CONTENT_TYPES = {
 
 _FEEDBACK_PATH_RE = re.compile(r"^/api/projects/(\d+)/feedback$")
 _CANCEL_PATH_RE = re.compile(r"^/api/projects/(\d+)/cancel$")
+_PROJECT_NAME_PATH_RE = re.compile(r"^/api/projects/(\d+)/name$")
 _PROJECT_USER_PATH_RE = re.compile(r"^/api/projects/(\d+)/user$")
 _GOAL_ZOOM_PATH_RE = re.compile(r"^/api/projects/(\d+)/zoom/(p\d+)$")
 _GOAL_PROGRESSION_PATH_RE = re.compile(r"^/api/projects/(\d+)/progression$")
@@ -147,7 +149,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         if self.path == "/api/projects":
-            self._handle_create_goal()
+            self._handle_create_project()
             return
         if self.path == "/api/users":
             self._handle_create_user()
@@ -202,6 +204,10 @@ class Handler(BaseHTTPRequestHandler):
         if cancel_match:
             self._handle_cancel_goal(int(cancel_match.group(1)))
             return
+        name_match = _PROJECT_NAME_PATH_RE.match(self.path)
+        if name_match:
+            self._handle_rename_project(int(name_match.group(1)))
+            return
         project_user_match = _PROJECT_USER_PATH_RE.match(self.path)
         if project_user_match:
             self._handle_set_project_user(int(project_user_match.group(1)))
@@ -228,7 +234,7 @@ class Handler(BaseHTTPRequestHandler):
             return None
         return text
 
-    def _handle_create_goal(self) -> None:
+    def _handle_create_project(self) -> None:
         length = int(self.headers.get("Content-Length", 0))
         try:
             payload_in = json.loads(self.rfile.read(length) or b"{}")
@@ -243,20 +249,18 @@ class Handler(BaseHTTPRequestHandler):
         sim_user_id_value = (
             str(int(raw_sim)) if raw_sim is not None else ""
         )
-        # `planned: false` mints a named project with no plan - the text
-        # is a label, not a goal for the planner to work from.
-        if payload_in.get("planned") is False:
-            self._send_json(
-                goal_view(create_empty_project(text, sim_user_id_value)),
-            )
+        # Ordinary mint: a name and an empty canvas. `via_engine: true`
+        # is the leftover opening door (tests / old clients).
+        if payload_in.get("via_engine") is True or payload_in.get("planned") is True:
+            try:
+                record = create_project_via_engine(text, "", sim_user_id_value)
+            except Exception as e:  # transport must not crash on one bad turn
+                print(f"(debug: {e})")
+                self.send_error(503, "that took longer than expected - try again in a moment")
+                return
+            self._send_json(goal_view(record))
             return
-        try:
-            record = create_goal(text, "", sim_user_id_value)
-        except Exception as e:  # transport must not crash on one bad turn
-            print(f"(debug: {e})")
-            self.send_error(503, "that took longer than expected - try again in a moment")
-            return
-        self._send_json(goal_view(record))
+        self._send_json(goal_view(create_project(text, sim_user_id_value)))
 
     def _handle_goal_zoom(self, goal_id: int, step_id: str) -> None:
         """One level deeper under a Step in plan.progression — persists
@@ -455,6 +459,18 @@ class Handler(BaseHTTPRequestHandler):
         record = cancel_goal(goal_id)
         if record is None:
             self.send_error(404, "no such goal, or already completed")
+            return
+        self._send_json(goal_view(record))
+
+    def _handle_rename_project(self, goal_id: int) -> None:
+        # Body is {"text": ...} — the new label. Identity is the id
+        # in the path. No model call; latest record only.
+        text = self._read_text_body()
+        if text is None:
+            return
+        record = rename_project(goal_id, text)
+        if record is None:
+            self.send_error(404, "no such project")
             return
         self._send_json(goal_view(record))
 

@@ -20,7 +20,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   text-align: left;
-  color: var(--color-text);
+  color: var(--color-text-muted);
   background: transparent;
   border: none;
   border-radius: var(--radius);
@@ -30,7 +30,7 @@
 
 .project-chat .chat-brand:hover,
 .project-chat .chat-brand.is-active {
-  color: var(--color-accent);
+  color: var(--color-text);
 }
 
 /* 2. Chart pane */
