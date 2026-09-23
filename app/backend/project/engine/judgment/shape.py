@@ -1,6 +1,6 @@
 """Which Fill/replan answer boxes exist (PLAN_KEYS) and which to fill.
 
-Does not own «what time is it» — see current_time.py.
+Does not own «what time is it» — see time/current_time.py.
 Shared by run_stage3.py and planner.py without a circular import.
 """
 

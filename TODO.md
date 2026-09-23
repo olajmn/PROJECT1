@@ -20,7 +20,7 @@ for that same principle applied to documentation, not just this file).
 
 Product [[05-decisions]] #25; wire [[05-decisions]] #29 /
 [[goal-to-project-migration]]. Primary only: `project_id`, `/api/projects`,
-llm3 `"project"`. Engine: `judgment/` + `when/`. Still open (not Active):
+llm3 `"project"`. Engine: `judgment/` + `time/`. Still open (not Active):
 rename display field `goal`; mass-rename Python symbols (`create_goal`,
 `ChatFocus.goal_id`, …); optionally split `planner.py` facade;
 `generate_plan` → `run_stage3` alias.
@@ -51,7 +51,7 @@ stable identity (for referring back to it), not its rank.
 2. **Accepting a `suggested_action` never produces a step tree** (Bug) - the acceptance branch sets `now` directly, never calls `generate_structure()`. § 5.
 3. ~~**Topic continuity / multi-goal free conversation**~~ (removed 2026-09-20) — free conversation / `ChatFocus` / CLI / Node 3 deleted (#31). Projects chat is keyed by URL id. § 5.
 20. ~~**Opening gate is a duration proxy**~~ (narrowed 2026-09-17) - opening still refuses `suggested_action`; missing timeframe no longer blocks planable mint or progression click-zoom (soft grounding). Residual: planability_slots still unread; Steps scratch zoom still needs a span. § 5.
-21. **Week/day calendar baseline (was: session tree painted across a longer span)** (Step residual) — **Baseline established 2026-09-16:** `week_windows()` + consecutive `day_windows()`; live-verified (#26: four real weeks). Unread `plan_skeleton` recipe removed 2026-09-20 (rules live in Time + `when/calendar.py`). Still open: year face if needed; later **ambient timeline** on the visual/do edge. Session path unchanged for short spans. § 5. Related to 17.
+21. **Week/day calendar baseline (was: session tree painted across a longer span)** (Step residual) — **Baseline established 2026-09-16:** `week_windows()` + consecutive `day_windows()`; live-verified (#26: four real weeks). Unread `plan_skeleton` recipe removed 2026-09-20 (rules live in Time + `time/calendar.py`). Still open: year face if needed; later **ambient timeline** on the visual/do edge. Session path unchanged for short spans. § 5. Related to 17.
 
 ### Tier 2
 
@@ -120,7 +120,7 @@ Detail and reasoning: `docs/04-current-state.md` § 5 (Parallel / dual paths).
 
 | # | Pair | Status | Where |
 |---|---|---|---|
-| P1 | Week grain vs session grain | Intentional dual | `when/calendar.py`, `week_windows()`, `day_windows()` |
+| P1 | Week grain vs session grain | Intentional dual | `time/calendar.py`, `week_windows()`, `day_windows()` |
 | P2 | Even-slice `step_plan` vs dates on the step | Both live | `frozen_duration.step_plan`, manifestation |
 | P3 | `plan.progression` vs legacy `plan.steps` + zoom scratch | Intentional dual (display SoT settled) | Display = progression only (`to_planning_node`, A3 2026-09-20); calendar `plan.steps` still written when fill works (WHEN); Steps page scratch — Queue 12; [[goal-to-project-migration]] A3 |
 | P4 | `planability_slots` vs `_planability()` | Unread / unwired | `goal/planability_slots.py` — Queue 22 |

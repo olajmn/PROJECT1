@@ -1,17 +1,27 @@
 """
-One Send on an Active / Projects goal card.
+One Send on a Project.
 
-Describe → route_note (Planning) → Voice — unless the user is focused
-on a map node and asks for structure, in which case we suggest
-children grounded in the recent chat (not a cold zoom dump).
+Describe, then Voice. route_note (the plan engine) runs only when the
+note is a plan move: a pending question, suggestion, or duration, or
+an explicit done / not-done / complete. Otherwise the reply is talk,
+and the stored plan is left as it was.
+
+A map node plus a structure request still suggests children from the
+chat, instead of calling the plan engine.
 """
 
-from backend.store.data_persistence import stamp_map_focus
+from backend.store.data_persistence import save_plan, stamp_map_focus
 from backend.agent.llm_roles.describe import describe_in_context
 from backend.agent.llm_roles.voice import respond
 from backend.agent.manifestation import surface_text, to_planning_node
+from backend.project.panes.chat.feedback.feedback_parser import (
+    parse_outcome,
+    requests_duration_change,
+)
 from backend.project.panes.chat.feedback.route_note import route_note
 from backend.project.panes.canvas.edit_map import suggest_progression_from_chat
+
+_PLAN_OUTCOMES = {"goal_completed", "action_completed", "action_not_completed"}
 
 # User is asking for ideas / structure under the focused node.
 _STRUCTURE_CUES = (
@@ -59,6 +69,7 @@ def take_turn(
         understanding = {"about": note}
 
     labels: list[str] = []
+    plan_move = _is_plan_move(latest, note)
     if (
         map_focus
         and focus_step_id
@@ -69,10 +80,34 @@ def take_turn(
                 latest, focus_step_id, note,
             )
         except Exception:
-            record = route_note(latest, note)
+            record = route_note(latest, note) if plan_move else None
             labels = []
-    else:
+    elif plan_move:
         record = route_note(latest, note)
+    else:
+        record = None
+
+    if record is None:
+        reply = respond(note, _talk_update(map_focus))
+        record = _save_talk(latest, note, reply)
+        if map_focus:
+            stamped = stamp_map_focus(
+                record["project_id"], map_focus, focus_step_id,
+            )
+            if stamped is not None:
+                record = stamped
+        try:
+            node = to_planning_node(record)
+        except Exception:
+            node = None
+        return {
+            "record": record,
+            "understanding": understanding,
+            "surface": surface_text(record),
+            "node": node,
+            "reply": reply,
+            "project_id": record["project_id"],
+        }
 
     if map_focus:
         stamped = stamp_map_focus(
@@ -116,6 +151,47 @@ def take_turn(
         "reply": reply,
         "project_id": pid,
     }
+
+
+def _is_plan_move(latest: dict, note: str) -> bool:
+    """True when this note should go through route_note. Ordinary
+    talk returns False and never calls the plan engine."""
+    plan = latest.get("plan") or {}
+    if (
+        plan.get("clarification")
+        or plan.get("suggested_action")
+        or plan.get("suggested_duration")
+        or plan.get("pending_duration_question")
+    ):
+        return True
+    if requests_duration_change(note):
+        return True
+    return parse_outcome(note) in _PLAN_OUTCOMES
+
+
+def _talk_update(map_focus: str | None) -> str | None:
+    if not map_focus:
+        return None
+    return (
+        f'The user is looking at this node on the project map: '
+        f'"{map_focus}". Answer about that node and the project '
+        f"around it. Do not push a first action or a now-step."
+    )
+
+
+def _save_talk(latest: dict, note: str, reply: str) -> dict:
+    """Keep the plan. Store the reply so a reload can show it."""
+    return save_plan(
+        latest.get("goal") or "",
+        latest.get("plan") or {},
+        feedback=f"{reply} Note: {note}",
+        duration=latest.get("duration"),
+        goal_id=latest["project_id"],
+        frozen_duration=latest.get("frozen_duration"),
+        current_step=latest.get("current_step", 0),
+        sim_user_id=latest.get("sim_user_id"),
+        step_status=latest.get("step_status"),
+    )
 
 
 def _asks_for_structure(note: str) -> bool:

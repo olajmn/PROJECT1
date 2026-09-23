@@ -3,7 +3,7 @@ run_stage3 — Stage 3: decide, then fill when planable.
 
 Stages 1–2 (Voice, Describe) live in llm_roles/. This module is the
 boss: decide() (ASK / SUGGEST / PLAN), then a fill call for horizons
-when planable, then when/calendar when a real duration span exists.
+when planable, then time/calendar when a real duration span exists.
 
 Does NOT auto-mint plan["progression"] children on PLAN — the user
 steers the WHAT map via + / Paste / Suggest (see
@@ -23,8 +23,8 @@ from backend.project.engine.judgment.shape import (
     PLAN_KEYS,
     _horizon_scope_instruction,
 )
-from backend.project.engine.judgment.current_time import current_time
-from backend.project.engine.when.calendar import generate_structure
+from backend.project.engine.time.current_time import current_time
+from backend.project.engine.time.calendar import generate_structure
 
 # create_goal()'s first mint cannot land on an Action. Used when
 # opening=True and Decide still returned suggested_action with nothing

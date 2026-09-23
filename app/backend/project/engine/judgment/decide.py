@@ -12,7 +12,7 @@ from backend.foundation.time import resolve_duration
 from backend.store.data_persistence import get_user
 from backend.project.engine.judgment.ask import ask
 from backend.project.engine.judgment.prompts import DECIDE_SYSTEM_PROMPT
-from backend.project.engine.judgment.current_time import current_time
+from backend.project.engine.time.current_time import current_time
 
 DECIDE_KEYS = ("clarification", "suggested_action", "suggested_duration")
 

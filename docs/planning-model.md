@@ -2,7 +2,7 @@
 
 > Working conceptual model for what a Goal's plan actually means in this agent — not a technical specification, a data model, or a system prompt. Concepts below are labeled **fact** (confirmed in the running prototype), **hypothesis** (a working idea, not yet decided), **limitation** (a confirmed gap in current behavior), or **open question** (deliberately unresolved) — the same taxonomy as `global-standards/DOCUMENTATION_STYLE_GUIDE.md` §5. Most of what follows is hypothesis: this document exists to give planning a shared vocabulary to reason with, not to record a settled architecture. Nothing here changes existing code, data, or prompts on its own.
 
-> **Read today:** capability name = **Project**; structural / WHAT axis = **canvas** (`project/panes/canvas/`); Stage 3 = **engine/judgment/** (`decide`, `run_stage3`, …); calendar dual = **engine/when/calendar.py**; facade = `engine/planner.py` (`generate_plan` aliases `run_stage3`). Wire identity = `project_id` (deprecated `goal_id` mirror — #29). Full label map: [[04-current-state]] § Vocabulary, [[05-decisions]] #28. This file still says Goal/Plan where that is the conceptual vocabulary.
+> **Read today:** capability name = **Project**; structural / WHAT axis = **canvas** (`project/panes/canvas/`); Stage 3 = **engine/judgment/** (`decide`, `run_stage3`, …); calendar dual = **engine/time/calendar.py**; facade = `engine/planner.py` (`generate_plan` aliases `run_stage3`). Wire identity = `project_id` (deprecated `goal_id` mirror — #29). Full label map: [[04-current-state]] § Vocabulary, [[05-decisions]] #28. This file still says Goal/Plan where that is the conceptual vocabulary.
 
 ## Contents
 

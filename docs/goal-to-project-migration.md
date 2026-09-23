@@ -135,10 +135,10 @@ table, `TODO.md` Active 23.
 
 Done the same day as Phase B compat (not a numbered Phase C):
 
-- Flattened `engine/plan/` → `engine/judgment/` + `engine/when/`
+- Flattened `engine/plan/` → `engine/judgment/` + `engine/time/`
 - Renamed Stage 3 modules to plain names (`decide`, `run_stage3`,
   `prompts`, `shape`, `ask`, `current_time`; calendar fill =
-  `when/calendar.py`)
+  `time/calendar.py`)
 - Deleted unread `plan_skeleton.py` (ambient timeline noted on Queue 21)
 - `planner.generate_plan` remains an alias for `run_stage3`
 

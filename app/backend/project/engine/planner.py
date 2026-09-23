@@ -6,7 +6,7 @@ Project engine facade: revises a plan (replan()), advances calendar
 steps, links Vision. Minting is create/lifecycle.py →
 judgment.run_stage3(); free-text notes are feedback/route_note.py
 → generate_plan()/replan() here. Never talks to the model directly
-(see judgment/ask.py / when/calendar.py).
+(see judgment/ask.py / time/calendar.py).
 
 PLAN_KEYS live in judgment/shape.py; Decide in judgment/decide.py;
 orchestration in judgment/run_stage3.py. Re-exported here so existing
@@ -45,7 +45,7 @@ from backend.project.engine.judgment.shape import (
     PLAN_KEYS,
     _horizon_scope_instruction,
 )
-from backend.project.engine.judgment.current_time import current_time
+from backend.project.engine.time.current_time import current_time
 from backend.project.engine.judgment.ask import ask
 from backend.project.engine.judgment.prompts import REPLAN_SYSTEM_PROMPT
 

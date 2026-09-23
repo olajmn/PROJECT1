@@ -212,7 +212,7 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Why this choice:** Top level already roughly matches the three buckets; the real muddle is **inside do**, especially `project/engine/` (Decide, calendar structure, WHAT progression, outline import, prompts in one folder). Naming the buckets stops “where does this go?” drift and supports later splits without a premature mass move mid-migration ([[05-decisions]] #25 / `TODO.md` Active 23). Inventory lives in [[04-current-state]] § 2.iv–v.
 
-**Trade-off:** ~~`plan/` stays mixed on disk until a later move~~ — addressed 2026-09-20: WHAT in `panes/canvas/`; Decide/Fill in `engine/judgment/`; calendar dual in `engine/when/`; redundant `engine/plan/` folder removed. `projects.ts` remains a thick visual orchestrator for shell/chat (map visual gathered under `ui/src/map/` as of 2026-09-19) — chat split still flagged for a later round.
+**Trade-off:** ~~`plan/` stays mixed on disk until a later move~~ — addressed 2026-09-20: WHAT in `panes/canvas/`; Decide/Fill in `engine/judgment/`; calendar dual in `engine/time/`; redundant `engine/plan/` folder removed. `projects.ts` remains a thick visual orchestrator for shell/chat (map visual gathered under `ui/src/map/` as of 2026-09-19) — chat split still flagged for a later round.
 
 **Reversible?** Yes — the buckets are orientation, not a new runtime layer. Drop or refine the wording in docs without touching imports.
 
@@ -232,7 +232,7 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 ## 28. 2026-09-19 — Vocabulary: Planning/Goal/map → Project/panes/engine
 
-**Decision:** Treat older **Planning / Goal / map / plan-folder** wording as labels for today's **Project** capability and its layout: capability = Project (`backend/project/`); product unit = Project (wire: `project_id` / `/api/projects`, deprecated `goal_id` / `/api/goals` — #29); WHAT progression = canvas (`project/panes/canvas/`); Decide–Fill motor = engine (`project/engine/judgment/` + `when/`, not a capability; `planner.py` is a facade); UI home = Projects. Canonical table lives in [[04-current-state]] § Vocabulary. Dated history (`06-development`, older entries here) keeps old words on purpose.
+**Decision:** Treat older **Planning / Goal / map / plan-folder** wording as labels for today's **Project** capability and its layout: capability = Project (`backend/project/`); product unit = Project (wire: `project_id` / `/api/projects`, deprecated `goal_id` / `/api/goals` — #29); WHAT progression = canvas (`project/panes/canvas/`); Decide–Fill motor = engine (`project/engine/judgment/` + `time/`, not a capability; `planner.py` is a facade); UI home = Projects. Canonical table lives in [[04-current-state]] § Vocabulary. Dated history (`06-development`, older entries here) keeps old words on purpose.
 
 **Date:** 2026-09-19
 

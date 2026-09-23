@@ -211,7 +211,7 @@ Replanning
 deterministic Planning state (persistence, Time/Math use, feedback parsing)
 ```
 
-None of this moves to Node 2 or Node 3 because of where it happens to sit in the data flow relative to them. Planning (today: **Project**) is reached *through* Node 3's routing decision, but everything that happens once Project is selected — including the engine's own use of an LLM for language judgment (Decide, Fill, calendar step labels) — remains entirely internal to `backend/project/`. `engine/judgment/ask.py`'s `ask()` / `when/calendar.py`'s `generate_structure()` / `planner.replan()` alongside deterministic logic (Time/Math Faculties, `feedback_parser.py`, persistence) does not change in kind — only in what sits in front of it.
+None of this moves to Node 2 or Node 3 because of where it happens to sit in the data flow relative to them. Planning (today: **Project**) is reached *through* Node 3's routing decision, but everything that happens once Project is selected — including the engine's own use of an LLM for language judgment (Decide, Fill, calendar step labels) — remains entirely internal to `backend/project/`. `engine/judgment/ask.py`'s `ask()` / `time/calendar.py`'s `generate_structure()` / `planner.replan()` alongside deterministic logic (Time/Math Faculties, `feedback_parser.py`, persistence) does not change in kind — only in what sits in front of it.
 
 A capability is therefore not "an LLM call." It is a bounded domain responsibility that uses both LLM reasoning and deterministic program logic internally, in whatever mix its own domain actually requires — the same "code decides, the model is told" split already established for Time and Math, generalized to a whole domain rather than one Faculty.
 

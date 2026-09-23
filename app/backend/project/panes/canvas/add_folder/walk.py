@@ -4,15 +4,12 @@ Each folder and each file is one node: label is the name, path is the
 absolute path, children are what that folder contains. The chosen
 folder is the root node, not a flat list of its contents.
 
-Hidden names, node_modules, and __pycache__ are skipped. Symlinks are
-listed and not followed. There is no depth cap. The node count is
-capped so one click cannot map the whole disk.
+What gets left out, and when the walk stops, is `rules.py`.
 """
 
 from pathlib import Path
 
-MAX_NODES = 400
-SKIP_DIR_NAMES = {"node_modules", "__pycache__"}
+from backend.project.panes.canvas.add_folder.rules import MAX_NODES, skipped
 
 
 def folder_tree(folder: str) -> list[dict]:
@@ -54,7 +51,7 @@ def _entries(path: Path) -> list[Path]:
     kept = [
         entry
         for entry in names
-        if not entry.name.startswith(".") and entry.name not in SKIP_DIR_NAMES
+        if not skipped(entry.name)
     ]
     kept.sort(key=lambda entry: (not entry.is_dir(follow_symlinks=False), entry.name.casefold()))
     return kept

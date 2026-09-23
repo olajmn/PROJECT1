@@ -28,7 +28,7 @@ from backend.project.panes.create.lifecycle import (
 )
 from backend.project.panes.create.resolver import get_latest_for_goal
 from backend.project.panes.canvas.add_folder import choose_folder
-from backend.project.panes.canvas.call_read import read_tree
+from backend.project.panes.canvas.read_map import read_tree
 from backend.project.panes.canvas.text_to_tree import parse_outline
 from backend.project.engine.planner import archive_user, set_project_user
 from backend.project.panes.canvas.edit_map import (
