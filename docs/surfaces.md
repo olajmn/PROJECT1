@@ -103,7 +103,7 @@ ASCII, not pixels. Implementation later against `src/map/` + `css/map/`
 7. **Empty project** — `#N`, title, quiet gap + hint (“talk or + to
    place a waypoint”). Lands at **natural size (1×) in Text** — not a
    zoomed-out overview of empty space.
-8. **Chrome outside spine** — Copy as ASCII / Paste below the map
+8. **Chrome outside spine** — Copy as ASCII / Paste / Add folder below the map
    (secondary). Archive stays in the project topbar.
 
 ### Hierarchy sort

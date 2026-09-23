@@ -5,6 +5,8 @@ add_progression_bead() — one Step the user named (no LLM), at the
 root or under a parent_id.
 import_progression_outline() — a whole pasted outline/ASCII tree,
 parsed by text_to_tree.py (no LLM), appended the same way.
+import_progression_folder() — one folder on disk, walked by
+add_folder/walk.py, appended the same way. Each node keeps its path.
 remove_progression_bead() — drop a Step by id (no LLM).
 zoom_progression_step() — expand one Step via call_suggest.py
 (same is_too_coarse / children_of as the Steps workbench).
@@ -16,6 +18,7 @@ import copy
 import re
 
 from backend.store.data_persistence import load_history, save_plan
+from backend.project.panes.canvas.add_folder import folder_tree
 from backend.project.panes.canvas.text_to_tree import parse_outline
 from backend.project.panes.canvas.call_suggest import children_from_conversation, zoom_into
 
@@ -133,16 +136,20 @@ def import_progression_outline(
     mint = _id_minter(progression)
 
     def build(nodes: list[dict]) -> list[dict]:
-        return [
-            {
+        built = []
+        for node in nodes:
+            step = {
                 "id": mint(),
                 "label": node["label"],
                 "ordered": True,
                 "resolved": False,
                 "children": build(node["children"]),
             }
-            for node in nodes
-        ]
+            path = node.get("path")
+            if isinstance(path, str) and path:
+                step["path"] = path
+            built.append(step)
+        return built
 
     new_steps = build(forest)
 
@@ -171,6 +178,20 @@ def import_progression_outline(
         current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
         step_status=latest.get("step_status"),
+    )
+
+
+def import_progression_folder(
+    latest: dict,
+    folder: str,
+    parent_id: str | None = None,
+) -> dict:
+    """Walk one folder into beads and append them. No model call.
+    Same append-not-replace shape as import_progression_outline()."""
+    return import_progression_outline(
+        latest,
+        parent_id=parent_id,
+        forest=folder_tree(folder),
     )
 
 
@@ -429,8 +450,12 @@ def _validate_forest(raw: list[dict]) -> list[dict]:
         if not isinstance(label, str) or not label.strip():
             raise ValueError("each forest node needs a non-empty label")
         children = node.get("children", [])
-        checked.append({
+        checked_node = {
             "label": label,
             "children": _validate_forest(children),
-        })
+        }
+        path = node.get("path")
+        if isinstance(path, str) and path.strip():
+            checked_node["path"] = path
+        checked.append(checked_node)
     return checked

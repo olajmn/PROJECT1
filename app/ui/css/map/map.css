@@ -93,7 +93,8 @@
 
 /* 3. Paste outline */
 
-.map-paste-form {
+.map-paste-form,
+.map-folder-form {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -105,8 +106,19 @@
   background: transparent;
 }
 
-.map-paste-form[hidden] {
+.map-paste-form[hidden],
+.map-folder-form[hidden] {
   display: none;
+}
+
+.map-folder-input {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 0.82rem;
+  box-sizing: border-box;
 }
 
 .map-paste-input {

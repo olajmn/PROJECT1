@@ -33,6 +33,10 @@ class Step:
     label: str
     children: list["Step"] = field(default_factory=list)
 
+    # Absolute path when this bead was minted from a file or folder.
+    # Absent on beads the user typed or pasted.
+    path: str | None = None
+
     # Whether the children have to happen in order. A master's year 2
     # requires year 1; Everest's equipment does not. True matches how
     # today's flat step list already behaves.
@@ -56,13 +60,16 @@ class Step:
         return next((step for step in self.walk() if step.id == step_id), None)
 
     def to_dict(self) -> dict:
-        return {
+        data = {
             "id": self.id,
             "label": self.label,
             "ordered": self.ordered,
             "resolved": self.resolved,
             "children": [child.to_dict() for child in self.children],
         }
+        if self.path:
+            data["path"] = self.path
+        return data
 
     @classmethod
     def from_dict(cls, data: dict) -> "Step":
@@ -74,6 +81,7 @@ class Step:
             label=data["label"],
             ordered=data.get("ordered", True),
             resolved=data.get("resolved", False),
+            path=data.get("path") or None,
             children=[cls.from_dict(child) for child in data.get("children", [])],
         )
 

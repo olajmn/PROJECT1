@@ -104,6 +104,32 @@ export async function addProgressionStep(goalId, label, parentId) {
     }
     return (await res.json());
 }
+/** macOS folder dialog. Empty string means the user cancelled. */
+export async function chooseFolder() {
+    const res = await fetch("/api/choose-folder", { method: "POST" });
+    if (!res.ok) {
+        const detail = (await res.text()).trim();
+        throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+    }
+    const body = (await res.json());
+    return body.path ?? "";
+}
+export async function importProgressionFolder(goalId, folder, parentId) {
+    const body = { path: folder };
+    if (parentId) {
+        body.parent_id = parentId;
+    }
+    const res = await fetch(`/api/projects/${goalId}/progression/folder`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+        const detail = (await res.text()).trim();
+        throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+    }
+    return (await res.json());
+}
 export async function importProgressionOutline(goalId, text, parentId, unwrap = true) {
     const body = {
         text,

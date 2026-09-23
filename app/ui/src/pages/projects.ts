@@ -52,6 +52,7 @@ import { treeWordsElement } from "../map/treeWords.js";
 import type { NodeMenuActionId } from "../map/treeWords.js";
 import { installMapScale } from "../map/frame/index.js";
 import { copyAsText } from "../map/copyAsText.js";
+import { buildAddFolderPanel } from "../map/addFolder.js";
 import { buildPasteTreePanel } from "../map/pasteTree.js";
 import {
   getActiveUserId,
@@ -426,6 +427,12 @@ function renderWorkspace(): void {
     getGoalId: () => project.project_id,
     onImported: (updated) => replaceProject(updated),
   });
+  const folder = buildAddFolderPanel({
+    getParentLabel: () => selectedNodeLabel,
+    getParentId: () => selectedNodeId,
+    getGoalId: () => project.project_id,
+    onImported: (updated) => replaceProject(updated),
+  });
 
   const onMenuAction = async (action: NodeMenuActionId, stepId: string) => {
     const label = nodeLabel(stepId);
@@ -516,6 +523,7 @@ function renderWorkspace(): void {
       ? (stepId: string) => {
           markSelected(stepId, `Looking at: ${nodeLabel(stepId)}`);
           if (paste.isOpen()) paste.updatePasteHint();
+          if (folder.isOpen()) folder.updateFolderHint();
         }
       : undefined,
     addBead,
@@ -586,7 +594,7 @@ function renderWorkspace(): void {
 
   const copyGroup = document.createElement("div");
   copyGroup.className = "map-copy-group";
-  copyGroup.append(copyBtn, paste.pasteBtn, readBtn);
+  copyGroup.append(copyBtn, paste.pasteBtn, folder.folderBtn, readBtn);
 
   const archiveBtn = document.createElement("button");
   archiveBtn.type = "button";
@@ -612,18 +620,20 @@ function renderWorkspace(): void {
   copyRow.append(copyGroup, archiveBtn);
   body.appendChild(copyRow);
   body.appendChild(paste.pasteForm);
+  body.appendChild(folder.folderForm);
 
   // Click empty map space (not a node row) to unselect focus.
   body.addEventListener("click", (event) => {
     // The open paste form's target node IS the current selection - an
     // incidental click on empty canvas must not swap the import target.
-    if (paste.isOpen()) return;
+    if (paste.isOpen() || folder.isOpen()) return;
     const target = event.target as Element | null;
     if (!target) return;
     if (target.closest(".progress-row")) return;
     if (target.closest(".progress-add-form")) return;
     if (target.closest(".map-copy-row")) return;
     if (target.closest(".map-paste-form")) return;
+    if (target.closest(".map-folder-form")) return;
     clearNodeSelection(body);
   });
 
@@ -651,6 +661,7 @@ function renderWorkspace(): void {
   isolateChat.fill(project.thread ?? [], (stepId, label) => {
     markSelected(stepId, `Looking at: ${label}`);
     if (paste.isOpen()) paste.updatePasteHint();
+    if (folder.isOpen()) folder.updateFolderHint();
   });
 }
 

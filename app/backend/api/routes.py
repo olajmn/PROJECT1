@@ -27,11 +27,13 @@ from backend.project.panes.create.lifecycle import (
     create_goal,
 )
 from backend.project.panes.create.resolver import get_latest_for_goal
+from backend.project.panes.canvas.add_folder import choose_folder
 from backend.project.panes.canvas.call_read import read_tree
 from backend.project.panes.canvas.text_to_tree import parse_outline
 from backend.project.engine.planner import archive_user, set_project_user
 from backend.project.panes.canvas.edit_map import (
     add_progression_bead,
+    import_progression_folder,
     import_progression_outline,
     remove_progression_bead,
     zoom_progression_step,
@@ -66,6 +68,9 @@ _GOAL_PROGRESSION_PATH_RE = re.compile(r"^/api/projects/(\d+)/progression$")
 _GOAL_READ_PATH_RE = re.compile(r"^/api/projects/(\d+)/read$")
 _GOAL_PROGRESSION_IMPORT_RE = re.compile(
     r"^/api/projects/(\d+)/progression/import$",
+)
+_GOAL_PROGRESSION_FOLDER_RE = re.compile(
+    r"^/api/projects/(\d+)/progression/folder$",
 )
 _GOAL_PROGRESSION_REMOVE_RE = re.compile(
     r"^/api/projects/(\d+)/progression/(p\d+)/remove$",
@@ -150,6 +155,9 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/parse-outline-preview":
             self._handle_parse_outline_preview()
             return
+        if self.path == "/api/choose-folder":
+            self._handle_choose_folder()
+            return
         goal_zoom_match = _GOAL_ZOOM_PATH_RE.match(self.path)
         if goal_zoom_match:
             self._handle_goal_zoom(
@@ -162,6 +170,14 @@ class Handler(BaseHTTPRequestHandler):
         if goal_progression_import_match:
             self._handle_import_progression(
                 int(goal_progression_import_match.group(1)),
+            )
+            return
+        goal_progression_folder_match = _GOAL_PROGRESSION_FOLDER_RE.match(
+            self.path,
+        )
+        if goal_progression_folder_match:
+            self._handle_import_folder(
+                int(goal_progression_folder_match.group(1)),
             )
             return
         goal_read_match = _GOAL_READ_PATH_RE.match(self.path)
@@ -330,6 +346,40 @@ class Handler(BaseHTTPRequestHandler):
                 parent_id=parent_id or None,
                 unwrap=bool(payload_in.get("unwrap", True)),
                 forest=nodes,
+            )
+        except ValueError as e:
+            self.send_error(422, str(e))
+            return
+        self._send_json(goal_view(record))
+
+    def _handle_choose_folder(self) -> None:
+        """Open the macOS folder dialog. Cancel returns an empty path."""
+        try:
+            path = choose_folder()
+        except ValueError as e:
+            self.send_error(422, str(e))
+            return
+        self._send_json({"path": path})
+
+    def _handle_import_folder(self, goal_id: int) -> None:
+        """Walk one folder into new beads — no model."""
+        length = int(self.headers.get("Content-Length", 0))
+        try:
+            payload_in = json.loads(self.rfile.read(length) or b"{}")
+        except json.JSONDecodeError:
+            self.send_error(400, "invalid JSON")
+            return
+        latest = get_latest_for_goal(goal_id)
+        if latest is None:
+            self.send_error(404, "no such goal")
+            return
+        try:
+            parent_raw = payload_in.get("parent_id")
+            parent_id = str(parent_raw).strip() if parent_raw else None
+            record = import_progression_folder(
+                latest,
+                str(payload_in.get("path") or ""),
+                parent_id=parent_id or None,
             )
         except ValueError as e:
             self.send_error(422, str(e))
