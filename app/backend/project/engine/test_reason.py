@@ -13,7 +13,7 @@ monkeypatched. These checks verify the WIRING
 live model wording.
 
 Run from app/:
-    .venv/bin/python -m backend.project.engine.test_planner
+    .venv/bin/python -m backend.project.engine.test_reason
 """
 
 import shutil
@@ -21,18 +21,18 @@ import tempfile
 from pathlib import Path
 
 from backend.store import data_persistence as dp
+from backend.project.panes.chat.feedback import route_note as route_note_mod
 from backend.project.panes.chat.feedback.route_note import route_note
 from backend.project.panes.create import resolver
 from backend.project.panes.create.lifecycle import create_project_via_engine
 from backend.project.engine.judgment import decide as decide_mod
 from backend.project.engine.judgment import run_stage3 as run_mod
-from backend.project.engine import planner
 
 
 def _pending_suggestion(sim_user_id=None):
     """A saved record with suggested_action, via generate_plan() not
     create_project_via_engine() - opening mints refuse that field."""
-    plan = planner.generate_plan(GOAL_TEXT)
+    plan = run_mod.run_stage3(GOAL_TEXT)
     return dp.save_plan(GOAL_TEXT, plan, duration=None, frozen_duration=None, sim_user_id=sim_user_id)
 
 _original_data_dir = dp.DATA_DIR
@@ -42,9 +42,9 @@ _original_users_file = dp.USERS_FILE
 _original_decide_ask = decide_mod.ask
 _original_fill_ask = run_mod.ask
 _original_generate_structure = run_mod.generate_structure
-_original_replan = planner.replan
+_original_replan = route_note_mod.replan
 
-_tmp_dir = Path(tempfile.mkdtemp(prefix="planner_test_"))
+_tmp_dir = Path(tempfile.mkdtemp(prefix="reason_test_"))
 dp.DATA_DIR = _tmp_dir
 dp.PLANS_FILE = _tmp_dir / "plans.jsonl"
 dp.LEGACY_PLANS_FILE = _tmp_dir / "plans.json"
@@ -97,7 +97,7 @@ try:
     # ------------------------------------------------------------------
 
     _set_stage3({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT})
-    plan = planner.generate_plan(GOAL_TEXT)
+    plan = run_mod.run_stage3(GOAL_TEXT)
     assert plan["suggested_action"] == SUGGESTION_TEXT
     assert plan["clarification"] is None
     assert plan["now"] is None
@@ -106,12 +106,12 @@ try:
     # Decide never returns horizons; a leaked `now` on a combined-shaped
     # stub must not appear on the plan when suggested_action wins.
     _set_stage3({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT, "now": "Do the thing right now"})
-    plan = planner.generate_plan(GOAL_TEXT)
+    plan = run_mod.run_stage3(GOAL_TEXT)
     assert plan["now"] is None, "suggested_action must clear a leaked `now`"
 
     # clarification wins if the model somehow sets both.
     _set_stage3({**_BLANK_PLAN, "clarification": "What does organized mean to you?", "suggested_action": SUGGESTION_TEXT})
-    plan = planner.generate_plan(GOAL_TEXT)
+    plan = run_mod.run_stage3(GOAL_TEXT)
     assert plan["clarification"] == "What does organized mean to you?"
     assert plan["suggested_action"] is None
 
@@ -119,14 +119,14 @@ try:
     # sets both - resolving what to do first matters before discussing
     # how long it should take.
     _set_stage3({**_BLANK_PLAN, "suggested_action": SUGGESTION_TEXT, "suggested_duration": "8 weeks"})
-    plan = planner.generate_plan(GOAL_TEXT)
+    plan = run_mod.run_stage3(GOAL_TEXT)
     assert plan["suggested_action"] == SUGGESTION_TEXT
     assert plan["suggested_duration"] is None
 
     # A malformed suggested_action (wrong type) is discarded; Fill then
     # runs as planable and may supply `now`.
     _set_stage3({**_BLANK_PLAN, "suggested_action": 12345, "now": "Something to do"})
-    plan = planner.generate_plan(GOAL_TEXT)
+    plan = run_mod.run_stage3(GOAL_TEXT)
     assert plan["suggested_action"] is None
 
     print("OK - generate_plan() suggested_action validation/priority")
@@ -170,13 +170,13 @@ try:
     # Test 4 - SUGGEST -> Yes -> Action -> "Done" -> existing completion flow
     # ------------------------------------------------------------------
 
-    planner.replan = lambda goal, history, feedback, duration=None, sim_user_id=None: {
+    route_note_mod.replan = lambda goal, history, feedback, duration=None, sim_user_id=None: {
         **_BLANK_PLAN, "now": "Send one application",
     }
     done = route_note(accepted, "Done.")
     assert done["plan"]["now"] == "Send one application", "an ordinary completion report must still call replan()"
     assert done["feedback"].startswith("Completed the action."), done["feedback"]
-    planner.replan = _original_replan
+    route_note_mod.replan = _original_replan
 
     print("OK - Test 4: SUGGEST -> Yes -> Done still runs the existing completion/replan flow")
 
@@ -219,13 +219,13 @@ try:
     assert ordinary["plan"]["now"] == "Send four applications"
     assert ordinary["plan"]["suggested_action"] is None
 
-    planner.replan = lambda goal, history, feedback, duration=None, sim_user_id=None: {
+    route_note_mod.replan = lambda goal, history, feedback, duration=None, sim_user_id=None: {
         **_BLANK_PLAN, "now": "Send the next application",
     }
     completed = route_note(ordinary, "Yes.")
     assert completed["feedback"].startswith("Completed the action."), completed["feedback"]
     assert completed["plan"]["now"] == "Send the next application"
-    planner.replan = _original_replan
+    route_note_mod.replan = _original_replan
 
     print("OK - Test 5: an ordinary Action's \"Yes\" is still read as completed")
 
@@ -290,7 +290,7 @@ finally:
     decide_mod.ask = _original_decide_ask
     run_mod.ask = _original_fill_ask
     run_mod.generate_structure = _original_generate_structure
-    planner.replan = _original_replan
+    route_note_mod.replan = _original_replan
     dp.DATA_DIR = _original_data_dir
     dp.PLANS_FILE = _original_plans_file
     dp.LEGACY_PLANS_FILE = _original_legacy_plans

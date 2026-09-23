@@ -67,7 +67,6 @@ function openEditor(
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      input.blur();
       finish(true);
     } else if (event.key === "Escape") {
       event.preventDefault();

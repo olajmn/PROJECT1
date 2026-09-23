@@ -8,9 +8,9 @@ runs (a pending clarification, a pending suggestion, a duration
 change). Those checks live here because they need the record's flags,
 not because they are a second parser.
 
-Calls into plan/planner.py for anything that actually produces or
-revises a plan (generate_plan, replan, apply_new_duration). This
-module does not talk to the model about planning; acknowledge() is
+Calls into judgment/run_stage3() for a first pass and
+engine/reason.py to revise (replan, apply_new_duration). This
+module does not talk to the model about that; acknowledge() is
 display text only, for notes parse_outcome() could not classify.
 
 Nothing here is a Goal identity lookup - the caller already resolved
@@ -32,7 +32,12 @@ from backend.store.data_persistence import save_plan
 from backend.project.panes.chat.feedback.acknowledger import acknowledge
 from backend.project.panes.chat.feedback.feedback_parser import parse_outcome, requests_duration_change
 from backend.project.panes.create.resolver import get_history_for_goal
-from backend.project.engine import planner
+from backend.project.engine.judgment.run_stage3 import run_stage3
+from backend.project.engine.reason import (
+    apply_new_duration,
+    frozen_duration_for,
+    replan,
+)
 
 
 # ============================================================
@@ -151,7 +156,7 @@ def route_note(latest: dict, note: str) -> dict:
         # different question, not a timeframe to (mis)parse.
         if duration is None:
             duration = extract_duration_phrase(note)
-        plan = planner.generate_plan(combined_goal, duration, sim_user_id=latest.get("sim_user_id"))
+        plan = run_stage3(combined_goal, duration, sim_user_id=latest.get("sim_user_id"))
         # Same data-loss fix as the replan() branch below: a clarification
         # round that lands on ASK/SUGGEST again leaves generate_plan()'s
         # own steps/progression at their fresh-mint None, which would
@@ -168,7 +173,7 @@ def route_note(latest: dict, note: str) -> dict:
         return save_plan(
             latest["goal"], plan, feedback=note, duration=duration,
             goal_id=latest["project_id"],
-            frozen_duration=planner.frozen_duration_for(plan, duration),
+            frozen_duration=frozen_duration_for(plan, duration),
             sim_user_id=latest.get("sim_user_id"),
         )
 
@@ -222,7 +227,7 @@ def route_note(latest: dict, note: str) -> dict:
         combined_goal = " - ".join([latest["goal"], *prior_answers])
         if duration is None:
             duration = extract_duration_phrase(note)
-        plan = planner.generate_plan(
+        plan = run_stage3(
             combined_goal, duration, sim_user_id=latest.get("sim_user_id"),
             prior_suggestion=suggested_action, reply=note,
         )
@@ -235,7 +240,7 @@ def route_note(latest: dict, note: str) -> dict:
         return save_plan(
             latest["goal"], plan, feedback=note, duration=duration,
             goal_id=latest["project_id"],
-            frozen_duration=planner.frozen_duration_for(plan, duration),
+            frozen_duration=frozen_duration_for(plan, duration),
             sim_user_id=latest.get("sim_user_id"),
         )
 
@@ -245,7 +250,7 @@ def route_note(latest: dict, note: str) -> dict:
         # back to the existing duration if nothing recognized - never
         # silently wipes a working timeframe.
         new_duration = extract_duration_phrase(note) or duration
-        return planner.apply_new_duration(latest, new_duration, feedback=note)
+        return apply_new_duration(latest, new_duration, feedback=note)
 
     if latest["plan"].get("suggested_duration"):
         # The PREVIOUS record proposed a default timeframe (see
@@ -255,7 +260,7 @@ def route_note(latest: dict, note: str) -> dict:
         # with a different one. Reuses apply_new_duration() exactly as
         # a manual duration change would - no separate confirm path.
         new_duration = extract_duration_phrase(note) or latest["plan"]["suggested_duration"]
-        return planner.apply_new_duration(latest, new_duration, feedback=note)
+        return apply_new_duration(latest, new_duration, feedback=note)
 
     if requests_duration_change(note):
         # A request to change the TIMEFRAME, not a progress report -
@@ -266,7 +271,7 @@ def route_note(latest: dict, note: str) -> dict:
         # follow-up when nothing recognized turns up.
         new_duration = extract_duration_phrase(note)
         if new_duration:
-            return planner.apply_new_duration(latest, new_duration, feedback=note)
+            return apply_new_duration(latest, new_duration, feedback=note)
 
         # Carries the current plan/duration/steps forward completely
         # unchanged (this goal isn't being replanned or checked in on
@@ -334,7 +339,7 @@ def route_note(latest: dict, note: str) -> dict:
     # The full chain, not just latest["plan"] - see replan()'s docstring
     # for why: a model only shown the single previous step has no way to
     # notice it has already shrunk `now` several times in a row.
-    new_plan = planner.replan(
+    new_plan = replan(
         latest["goal"], get_history_for_goal(latest["project_id"]), feedback_text,
         duration=duration, sim_user_id=latest.get("sim_user_id"),
     )

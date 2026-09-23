@@ -31,7 +31,7 @@ from backend.project.panes.create.resolver import get_latest_for_goal
 from backend.project.panes.canvas.add_folder import choose_folder
 from backend.project.panes.canvas.read_map import read_tree
 from backend.project.panes.canvas.text_to_tree import parse_outline
-from backend.project.engine.planner import archive_user, set_project_user
+from backend.project.panes.create.project_user import archive_user, set_project_user
 from backend.project.panes.canvas.edit_map import (
     add_progression_bead,
     import_progression_folder,
@@ -453,7 +453,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _handle_cancel_goal(self, goal_id: int) -> None:
         # No request body - same reasoning as _handle_archive_user():
-        # the goal is already named by id in the path. planner.
+        # the goal is already named by id in the path.
         # cancel_goal() is a pure state transition (no model call), so
         # there's nothing to retry here, unlike _handle_goal_feedback().
         record = cancel_goal(goal_id)

@@ -22,7 +22,7 @@ grouping/derivation logic here, just create/list/get/archive.
 
 A simulated user can be archived (`archived: True`) - mutates the one
 existing record in place. Detaching projects from an archived user
-(planner.archive_user()) is a higher-level decision, not done here.
+(project_user.archive_user()) is a higher-level decision, not done here.
 
 Every record also carries a stub `user_id`, always DEFAULT_USER_ID for
 now - there is exactly one *operator* of this app (auth deferred). That
@@ -82,7 +82,7 @@ def ensure_data_dir() -> None:
 
 
 # one_year/one_month/this_week/this_hour/this_minute/right_now renamed
-# to year/month/week/hour/minute/now (PLAN_KEYS, planner.py) once those
+# to year/month/week/hour/minute/now (PLAN_KEYS, judgment/shape.py) once those
 # turned out to name plan-record slots (time levels), not literal
 # durations or deictic phrases - existing saved records still have the
 # old names.
@@ -363,7 +363,7 @@ def save_plan(
 
     `duration` is the free-text span the user asked this plan to cover
     (e.g. "30 minutes", "this week"), if they gave one - see
-    plan.generate_plan(). Stored so the history shows what was
+    run_stage3(). Stored so the history shows what was
     actually asked for, not just what came back.
 
     `completed` marks the whole goal (not just one "now" step) as
@@ -376,7 +376,7 @@ def save_plan(
     `cancel_goal()`'s job (it refuses to cancel an already-
     completed goal), same division of responsibility as everywhere
     else in this file - persistence stores what it's given, decisions
-    live in planner.py.
+    live in the caller.
 
     `goal_id` (parameter name kept this round) is the project's real
     identity, separate from its display text. Stored on disk as
@@ -410,7 +410,7 @@ def save_plan(
     `current_step` so that an Action being reported done never, by
     itself, means the Step it was attempted for is realized (see
     docs/planning-model.md). None for goals with no steps, or steps
-    saved before this field existed; planner.advance_step() treats a
+    saved before this field existed; callers treat a
     missing/mismatched-length list as "every step still open" rather
     than requiring a migration. Callers that carry `current_step`
     forward unchanged across a replan/user-change/cancellation must

@@ -123,7 +123,7 @@ def is_too_coarse(label: str, ancestors: list[str], duration: str) -> bool:
     """Named, inspectable verdict on whether `label` is still too
     coarse to project an Action from - the explicit reasoning step
     between a step and decomposing it, in the same spirit as
-    planner.classify_planability(). Outermost ancestor first."""
+    run_stage3._planability(). Outermost ancestor first."""
     raw = send_message(
         COARSENESS_SYSTEM_PROMPT,
         _describe_position(label, ancestors, duration),

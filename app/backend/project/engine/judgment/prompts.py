@@ -1,7 +1,7 @@
 """Lappen med instruksjoner til roboten (system prompts).
 
 DECIDE / FILL / REPLAN text only — no functions, no model call.
-Orchestration: decide.py / run_stage3.py / planner.py.
+Orchestration: decide.py / run_stage3.py / reason.py.
 """
 
 DECIDE_SYSTEM_PROMPT = (

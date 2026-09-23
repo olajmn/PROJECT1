@@ -4,11 +4,11 @@ A project's lifecycle: mint one, abandon one.
 Identity and current state stay in resolver.py - this module only
 writes. The ordinary mint is create_project() — a name and an empty
 canvas, no engine. create_project_via_engine() is the leftover
-opening door into generate_plan(); Create does not call it.
+opening door into run_stage3(); Create does not call it.
 Renaming the label is rename.py. Cancelling never does. Vision is
 accepted here as an optional link at birth, but linking/unlinking
-later stays on planner.set_project_user() until Vision's own shape
-is decided.
+later stays on project_user.set_project_user() until Vision's own
+shape is decided.
 """
 
 # Contents
@@ -22,7 +22,8 @@ is decided.
 from backend.foundation.time import extract_duration_phrase
 from backend.store.data_persistence import save_plan, save_user
 from backend.project.panes.create.resolver import get_latest_for_goal
-from backend.project.engine import planner
+from backend.project.engine.judgment.run_stage3 import run_stage3, _planability
+from backend.project.engine.reason import frozen_duration_for
 
 
 # ============================================================
@@ -49,7 +50,7 @@ def create_project_via_engine(
     typed_text: str, new_vision_text: str, sim_user_id_value: str,
 ) -> dict:
     """
-    Mint by running the engine on a sentence (`generate_plan`,
+    Mint by running reasoning on a sentence (`run_stage3`,
     opening=True). Not the Create pane — that uses create_project().
 
     One text field, not a separate goal/duration pair -
@@ -58,9 +59,9 @@ def create_project_via_engine(
     If nothing recognized turns up, that's treated as "no timeframe
     given" DETERMINISTICALLY, before calling the model - same
     "code decides, model is just told" reasoning as
-    planner._horizon_scope_instruction() (see docs/05-decisions.md, 2026-08-23).
+    judgment/shape._horizon_scope_instruction() (see docs/05-decisions.md, 2026-08-23).
     A missing timeframe no longer means "always ask" by itself, though:
-    generate_plan()'s own model call also decides whether a default can
+    run_stage3()'s own model call also decides whether a default can
     be proposed instead (`suggested_duration`), or, for a goal that's
     already complete without a broader duration, simply returns a plan
     scoped to `now` alone. opening=True so that first mint cannot land
@@ -97,15 +98,15 @@ def create_project_via_engine(
         sim_user_id = None
 
     duration = extract_duration_phrase(typed_text)
-    plan = planner.generate_plan(typed_text, duration, sim_user_id=sim_user_id, opening=True)
-    if planner._planability(plan) != "planable":
+    plan = run_stage3(typed_text, duration, sim_user_id=sim_user_id, opening=True)
+    if _planability(plan) != "planable":
         # ask or suggest - nothing else in `plan` is real yet; duration
         # stays unrecorded until the next round resolves it (see
         # route_note()'s clarification/suggested_duration branches).
         return save_plan(typed_text, plan, duration=None, frozen_duration=None, sim_user_id=sim_user_id)
     return save_plan(
         typed_text, plan, duration=duration,
-        frozen_duration=planner.frozen_duration_for(plan, duration),
+        frozen_duration=frozen_duration_for(plan, duration),
         sim_user_id=sim_user_id,
     )
 

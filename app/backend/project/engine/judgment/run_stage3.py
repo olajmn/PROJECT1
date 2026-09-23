@@ -191,13 +191,9 @@ def run_stage3(
     return plan
 
 
-# Older name — same function (planner / lifecycle still say generate_plan).
-generate_plan = run_stage3
-
-
 def _planability(plan: dict) -> str:
     """
-    Named verdict on a run_stage3()/generate_plan()-shaped dict: "ask", "suggest",
+    Named verdict on a run_stage3()-shaped dict: "ask", "suggest",
     or "planable". Not a fourth model call - reads fields Decide (and
     opening enforcement) already set. create_project_via_engine() only distinguishes
     planable from everything else; route_note() tells suggest kinds apart.
