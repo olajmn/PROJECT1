@@ -97,7 +97,7 @@ function fillBeadUnit(row, node, onStepClick, onAddStep, _onRemoveStep, onMenuAc
     const unit = document.createElement("div");
     unit.className = "progress-bead-unit";
     const canEdit = PROGRESSION_LIKE.test(node.id);
-    if (onStepClick && canEdit) {
+    if (onStepClick) {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "progress-bead-btn";
@@ -115,7 +115,7 @@ function fillBeadUnit(row, node, onStepClick, onAddStep, _onRemoveStep, onMenuAc
     if (onAddStep && canEdit) {
         attachAddControl(unit, onAddStep, node.id, { showButton: false });
     }
-    if (canEdit) {
+    if (canEdit && onMenuAction) {
         attachNodeMenu(unit, node.id, onMenuAction);
     }
     row.appendChild(unit);

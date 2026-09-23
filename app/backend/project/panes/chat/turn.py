@@ -20,6 +20,8 @@ from backend.project.panes.chat.feedback.feedback_parser import (
 )
 from backend.project.panes.chat.feedback.route_note import route_note
 from backend.project.panes.canvas.edit_map import suggest_progression_from_chat
+from backend.project.panes.canvas.see_map import focus_labels, map_status
+from backend.project.panes.chat.hold import hold_text
 
 _PLAN_OUTCOMES = {"goal_completed", "action_completed", "action_not_completed"}
 
@@ -69,7 +71,7 @@ def take_turn(
         understanding = {"about": note}
 
     labels: list[str] = []
-    plan_move = _is_plan_move(latest, note)
+    plan_move = _is_plan_move(latest, note, map_focus)
     if (
         map_focus
         and focus_step_id
@@ -88,7 +90,15 @@ def take_turn(
         record = None
 
     if record is None:
-        reply = respond(note, _talk_update(map_focus))
+        reply = respond(
+            note,
+            _with_hold(
+                latest,
+                _talk_update(latest, map_focus, focus_step_id),
+                map_focus,
+                focus_step_id,
+            ),
+        )
         record = _save_talk(latest, note, reply)
         if map_focus:
             stamped = stamp_map_focus(
@@ -130,18 +140,13 @@ def take_turn(
             f"to adjust."
         )
     elif map_focus:
-        voice_update = (
-            f'The user is looking at this node on the project map: '
-            f'"{map_focus}". Answer about that node and the project '
-            f"around it. Do not push an unrelated first action or "
-            f"now-step from the plan. If they seem stuck, you may "
-            f"offer to suggest structure under this node — do not "
-            f"invent children unless they ask."
-        )
+        voice_update = _talk_update(record, map_focus, focus_step_id)
     else:
-        voice_update = surface
+        voice_update = _talk_update(record, None, None)
 
-    reply = respond(note, voice_update)
+    reply = respond(
+        note, _with_hold(latest, voice_update, map_focus, focus_step_id),
+    )
     pid = record["project_id"]
     return {
         "record": record,
@@ -153,7 +158,9 @@ def take_turn(
     }
 
 
-def _is_plan_move(latest: dict, note: str) -> bool:
+def _is_plan_move(
+    latest: dict, note: str, map_focus: str | None = None,
+) -> bool:
     """True when this note should go through route_note. Ordinary
     talk returns False and never calls the plan engine."""
     plan = latest.get("plan") or {}
@@ -166,17 +173,50 @@ def _is_plan_move(latest: dict, note: str) -> bool:
         return True
     if requests_duration_change(note):
         return True
-    return parse_outcome(note) in _PLAN_OUTCOMES
+    if map_focus:
+        return False
+    outcome = parse_outcome(note)
+    if outcome in _PLAN_OUTCOMES:
+        # "yes" / "done" is only a plan move when there is a current
+        # action to complete. Otherwise it is ordinary talk.
+        return bool(plan.get("now"))
+    return False
 
 
-def _talk_update(map_focus: str | None) -> str | None:
-    if not map_focus:
-        return None
-    return (
-        f'The user is looking at this node on the project map: '
-        f'"{map_focus}". Answer about that node and the project '
-        f"around it. Do not push a first action or a now-step."
+def _with_hold(
+    latest: dict,
+    extra: str,
+    map_focus: str | None,
+    focus_step_id: str | None,
+) -> str:
+    prior = hold_text(latest, map_focus, focus_step_id)
+    if not prior:
+        return extra
+    return f"{extra}\n\n{prior}"
+
+
+def _talk_update(
+    latest: dict,
+    map_focus: str | None,
+    focus_step_id: str | None,
+) -> str:
+    """What Voice may treat as true: the project name and the map."""
+    name = (latest.get("goal") or "").strip() or "untitled"
+    held = focus_labels(latest, map_focus, focus_step_id)
+    parts = [f'This is the open project, labeled: "{name}".']
+    if held:
+        parts.append(f"The user is looking at this node:\n{held}")
+    else:
+        parts.append("Its stored map (labels only, source of truth):")
+        parts.append(map_status(latest))
+    parts.append(
+        "You only know these labels and where they sit. "
+        "Do not say there is no project. "
+        "Do not infer what a file contains or invent a purpose. "
+        "Do not dump the whole map unless asked. "
+        "Do not push a first action or a now-step."
     )
+    return "\n\n".join(parts)
 
 
 def _save_talk(latest: dict, note: str, reply: str) -> dict:

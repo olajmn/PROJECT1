@@ -10,6 +10,7 @@ caller and is deliberately not made here.
 import json
 
 from backend.llm_client import send_message
+from backend.project.panes.canvas.read_map.outline import outline_lines
 from backend.project.panes.canvas.read_map.prompt import READ_MAP_SYSTEM_PROMPT
 
 READING_SCHEMA = {
@@ -20,11 +21,6 @@ READING_SCHEMA = {
     "required": ["summary"],
 }
 
-# A tree far past this is cheaper to truncate than to fail on, and the
-# shape is legible from the first levels anyway. A ceiling, not a target.
-MAX_LINES = 400
-
-
 def read_tree(goal_label: str, steps: list[dict]) -> dict | None:
     """{"summary"} for this tree, or None if there is nothing to read.
 
@@ -32,11 +28,10 @@ def read_tree(goal_label: str, steps: list[dict]) -> dict | None:
     context only. The model is told to work from the structure, and
     an untitled or throwaway name should not steer it.
     """
-    lines: list[str] = []
-    _outline(steps, 0, lines)
+    lines = outline_lines(steps)
     if not lines:
         return None
-    outline = "\n".join(lines[:MAX_LINES])
+    outline = "\n".join(lines)
 
     raw = send_message(
         READ_MAP_SYSTEM_PROMPT,
@@ -51,18 +46,3 @@ def read_tree(goal_label: str, steps: list[dict]) -> dict | None:
     if not summary:
         return None
     return {"summary": summary}
-
-
-def _outline(steps: list[dict], depth: int, lines: list[str]) -> None:
-    """Collect the tree as indented lines — the same shape
-    text_to_tree.py parses, so what the model reads is what a person
-    would paste."""
-    for step in steps:
-        if not isinstance(step, dict):
-            continue
-        label = (step.get("label") or "").strip()
-        if label:
-            lines.append(f"{'  ' * depth}{label}")
-        children = step.get("children")
-        if isinstance(children, list):
-            _outline(children, depth + 1, lines)

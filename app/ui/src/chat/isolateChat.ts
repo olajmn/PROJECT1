@@ -17,6 +17,8 @@ import type { ChatMessage } from "../types.js";
 export type IsolateChat = {
   /** Drop isolation (full thread again). */
   clear: () => void;
+  /** Show only one About-stretch (talk-tree node). */
+  isolateRange: (start: number, end: number, label: string) => void;
   /** Render thread into `threadEl`, applying isolation if set. */
   fill: (
     messages: ChatMessage[],
@@ -37,19 +39,23 @@ export type IsolateChatOptions = {
 export function createIsolateChat(options: IsolateChatOptions): IsolateChat {
   const { threadEl, resolveStepId, onChange } = options;
   let isolatedFocus: string | null = null;
+  let isolatedRange: { start: number; end: number; label: string } | null =
+    null;
   let preIsolationScrollTop: number | null = null;
 
   function isolationBanner(): HTMLDivElement {
     const banner = document.createElement("div");
     banner.className = "thread-isolation-banner";
     const label = document.createElement("span");
-    label.textContent = `Showing only: About “${isolatedFocus}”`;
+    const shown = isolatedRange?.label ?? isolatedFocus;
+    label.textContent = `Showing only: About “${shown}”`;
     const back = document.createElement("button");
     back.type = "button";
     back.className = "thread-isolation-back";
     back.textContent = "← Show full conversation";
     back.addEventListener("click", () => {
       isolatedFocus = null;
+      isolatedRange = null;
       onChange();
     });
     banner.append(label, back);
@@ -61,6 +67,18 @@ export function createIsolateChat(options: IsolateChatOptions): IsolateChat {
     onFocusClick?: (stepId: string, label: string) => void,
   ): void {
     threadEl.innerHTML = "";
+
+    if (isolatedRange) {
+      threadEl.appendChild(isolationBanner());
+      for (const message of messages.slice(
+        isolatedRange.start,
+        isolatedRange.end,
+      )) {
+        threadEl.appendChild(messageRow(message));
+      }
+      threadEl.scrollTop = threadEl.scrollHeight;
+      return;
+    }
 
     if (isolatedFocus) {
       threadEl.appendChild(isolationBanner());
@@ -110,6 +128,7 @@ export function createIsolateChat(options: IsolateChatOptions): IsolateChat {
             event.stopPropagation();
             preIsolationScrollTop = threadEl.scrollTop;
             isolatedFocus = focus;
+            isolatedRange = null;
             onChange();
           });
           header.append(marker, isolateBtn);
@@ -140,7 +159,13 @@ export function createIsolateChat(options: IsolateChatOptions): IsolateChat {
   return {
     clear: () => {
       isolatedFocus = null;
+      isolatedRange = null;
       preIsolationScrollTop = null;
+    },
+    isolateRange: (start, end, label) => {
+      isolatedFocus = null;
+      preIsolationScrollTop = threadEl.scrollTop;
+      isolatedRange = { start, end, label };
     },
     fill,
   };

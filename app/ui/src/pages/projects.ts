@@ -6,7 +6,7 @@
 // Contents
 //  1. Shell
 //      - element handles + module state
-//      - chatRailApi / idMenu / createPanel / isolateChat
+//      - chatRailApi / idMenu / createPanel / isolateChat / chatChart
 //  2. Selection helpers
 //      - clearNodeSelection()
 //      - isProgressionTree()
@@ -46,6 +46,8 @@ import {
 } from "../sidebar/projectListOrder.js";
 import { createIsolateChat } from "../chat/isolateChat.js";
 import { messageRow } from "../chat/messageRow.js";
+import { printMapText } from "../chat/printMap.js";
+import { createChatChart } from "../chat/chart/index.js";
 import { installCreatePanel } from "../create/panel.js";
 import { displayProjectTitle } from "../create/autoname.js";
 import { treeWordsElement } from "../map/treeWords.js";
@@ -77,9 +79,15 @@ const idMenuResize = document.getElementById("id-menu-resize") as HTMLElement;
 const projectMain = document.getElementById("project-main") as HTMLElement;
 const mainEmpty = document.getElementById("main-empty") as HTMLParagraphElement;
 const projectChat = document.getElementById("project-chat") as HTMLElement;
+const chatChartToggle = document.getElementById(
+  "chat-chart-toggle",
+) as HTMLButtonElement;
+const chatChartEl = document.getElementById("chat-chart") as HTMLElement;
+const chatChartResize = document.getElementById("chat-chart-resize") as HTMLElement;
 const chatThread = document.getElementById("chat-thread") as HTMLDivElement;
 const chatForm = document.getElementById("chat-form") as HTMLFormElement;
 const chatInput = document.getElementById("chat-input") as HTMLTextAreaElement;
+const chatPrintMap = document.getElementById("chat-print-map") as HTMLButtonElement;
 const chatError = document.getElementById("chat-error") as HTMLParagraphElement;
 const appShell = document.querySelector(".app-shell") as HTMLElement;
 const workspace = document.querySelector(".workspace") as HTMLElement;
@@ -113,6 +121,30 @@ let listManuallyOpen = readListManuallyOpen();
 
 // 1. Shell
 
+const isolateChat = createIsolateChat({
+  threadEl: chatThread,
+  resolveStepId: (label) => {
+    const rows = projectMain.querySelectorAll(".progress-row[data-step-id]");
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const text =
+        row.querySelector(".progress-bead-btn, .progress-bead-label")
+          ?.textContent ?? "";
+      if (text === label) {
+        return row.getAttribute("data-step-id");
+      }
+    }
+    return null;
+  },
+  onChange: () => renderWorkspace(),
+});
+
+const chatChart = createChatChart(
+  chatChartEl,
+  chatChartResize,
+  chatChartToggle,
+);
+
 installSidebarResize(appShell, sidebarResize);
 const chatRailApi = installChatResize(workspace, chatResize, projectChat);
 for (const id of ["chat-rail-toggle", "chat-rail-grip"]) {
@@ -144,6 +176,7 @@ const idMenu = installIdMenu({
     ensureSelectionInActiveUser();
     // Switching id should reveal that id's project — don't keep Create over it.
     if (selected()) createPanel.close();
+    chatChart.clearSelection();
     isolateChat.clear();
     renderList();
     renderWorkspace();
@@ -159,6 +192,7 @@ const idMenu = installIdMenu({
     selectedNodeId = null;
     selectedNodeLabel = null;
     createPanel.close();
+    chatChart.clearSelection();
     isolateChat.clear();
     renderList();
     renderWorkspace();
@@ -181,25 +215,6 @@ const createPanel = installCreatePanel({
   },
 });
 
-
-const isolateChat = createIsolateChat({
-  threadEl: chatThread,
-  resolveStepId: (label) => {
-    const rows = projectMain.querySelectorAll(".progress-row[data-step-id]");
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      const text =
-        row.querySelector(".progress-bead-btn, .progress-bead-label")
-          ?.textContent ?? "";
-      if (text === label) {
-        return row.getAttribute("data-step-id");
-      }
-    }
-    return null;
-  },
-  onChange: () => renderWorkspace(),
-});
-
 // 2. Selection helpers
 
 /** Drop map focus — next chat is project-wide again. */
@@ -211,6 +226,19 @@ function clearNodeSelection(scope: ParentNode = projectMain): void {
     el.classList.remove("is-selected");
   });
   scope.querySelectorAll(".node-focus-note").forEach((el) => el.remove());
+  updatePrintButton();
+}
+
+function updatePrintButton(): void {
+  const hasProject = selected() != null && !createPanel.isOpen();
+  chatPrintMap.disabled = !hasProject;
+  if (selectedNodeId) {
+    chatPrintMap.textContent = "Print path";
+    chatPrintMap.title = "Print this node's path as stored on the map";
+  } else {
+    chatPrintMap.textContent = "Print map";
+    chatPrintMap.title = "Print the stored map labels";
+  }
 }
 
 function isProgressionTree(node: { children: { id: string }[] }): boolean {
@@ -298,6 +326,7 @@ function renderList(): void {
       selectedNodeId = null;
       selectedNodeLabel = null;
       createPanel.close();
+      chatChart.clearSelection();
       isolateChat.clear();
       renderList();
       renderWorkspace();
@@ -331,6 +360,7 @@ function renderWorkspace(): void {
     createPanel.mount(projectMain);
     projectChat.hidden = false;
     fillChatPlaceholder("Select a project to open its chat.");
+    updatePrintButton();
     return;
   }
 
@@ -371,6 +401,7 @@ function renderWorkspace(): void {
       scaleHost.insertAdjacentElement("afterend", focus);
     }
     focus.textContent = note;
+    updatePrintButton();
   };
 
   const nodeLabel = (stepId: string): string => {
@@ -538,6 +569,7 @@ function renderWorkspace(): void {
       selectedId = null;
       selectedNodeId = null;
       selectedNodeLabel = null;
+      chatChart.clearSelection();
       isolateChat.clear();
       renderList();
       renderWorkspace();
@@ -663,6 +695,14 @@ function renderWorkspace(): void {
     if (paste.isOpen()) paste.updatePasteHint();
     if (folder.isOpen()) folder.updateFolderHint();
   });
+  chatChart.fill(project.talk, (sequence) => {
+    isolateChat.isolateRange(sequence.start, sequence.end, sequence.label);
+    if (sequence.focus_step_id) {
+      markSelected(sequence.focus_step_id, `Looking at: ${sequence.label}`);
+    }
+    renderWorkspace();
+  });
+  updatePrintButton();
 }
 
 function renderSidebarBrand(): void {
@@ -760,6 +800,14 @@ async function load(): Promise<void> {
 }
 
 // 5. Event listeners
+
+chatPrintMap.addEventListener("click", () => {
+  const project = selected();
+  if (!project) return;
+  const text = printMapText(project.node, selectedNodeId);
+  chatThread.append(messageRow({ role: "agent", text }));
+  chatThread.scrollTop = chatThread.scrollHeight;
+});
 
 chatForm.addEventListener("submit", async (event) => {
   event.preventDefault();

@@ -13,6 +13,7 @@ not domain decisions.
 
 from backend.agent.manifestation import surface_text, to_planning_node
 from backend.store.data_persistence import record_project_id
+from backend.project.panes.chat.chart import talk_tree
 from backend.project.panes.chat.thread import thread_for
 from backend.project.panes.create.resolver import created_at_key, get_latest_for_all_goals
 
@@ -33,6 +34,7 @@ def goal_view(record: dict, reply: str | None = None) -> dict:
     except Exception as e:
         print(f"(debug: to_planning_node() failed for project {pid}: {e})")
         node = None
+    thread = thread_for(pid, reply) if pid is not None else []
     return {
         "project_id": pid,
         "goal": record["goal"],
@@ -43,7 +45,8 @@ def goal_view(record: dict, reply: str | None = None) -> dict:
         "clarification": record["plan"].get("clarification"),
         "surface": surface_text(record),
         "node": node,
-        "thread": thread_for(pid, reply) if pid is not None else [],
+        "thread": thread,
+        "talk": talk_tree(thread),
         "reply": reply,
     }
 

@@ -84,6 +84,24 @@
     ></div>
     <section id="project-chat" class="project-chat" hidden>
       <div class="column-top-bar" aria-hidden="true"></div>
+      <button
+        type="button"
+        id="chat-chart-toggle"
+        class="chat-brand"
+        hidden
+        aria-expanded="false"
+        title="Show or hide talk"
+      >Talk</button>
+      <nav id="chat-chart" class="chat-chart" hidden></nav>
+      <div
+        id="chat-chart-resize"
+        class="chat-chart-resize"
+        hidden
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="Resize chat chart"
+        title="Drag to resize chat chart"
+      ></div>
       <div id="chat-thread" class="goal-thread"></div>
       <p id="chat-error" class="error" hidden></p>
       <div class="chat-rail-grip">
@@ -97,7 +115,12 @@
       </div>
       <form id="chat-form" class="feedback-form">
         <textarea id="chat-input" rows="2" placeholder="Talk about this project…" required></textarea>
-        <button type="submit">Send</button>
+        <div class="chat-form-actions">
+          <button type="button" id="chat-print-map" title="Print the stored map labels">
+            Print map
+          </button>
+          <button type="submit">Send</button>
+        </div>
         <button
           type="button"
           id="chat-rail-toggle"

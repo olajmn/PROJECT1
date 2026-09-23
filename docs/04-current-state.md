@@ -47,7 +47,8 @@ What the project consists of — scannable in a few seconds. See § Visual Overv
    ├── Project (capability) → backend/project/ (panes/{create,canvas,chat},
    │                       engine/{judgment,time} — panes mirror
    │                       Projects UI; judgment=Decide/Fill; time=calendar
-   │                       dual; chat/feedback/ is note routing)
+   │                       dual; chat/feedback/ is note routing;
+   │                       chat/chart/ is the talk tree)
    ├── Module Library      → backend/module_library/ (built, not wired in)
    ├── Foundation          → backend/foundation/ (time/, math.py — the two Faculties)
    ├── Model boundary      → backend/llm_client.py (the Ollama boundary)
@@ -104,6 +105,7 @@ Product chat is **Projects-only**: `POST /api/projects/<id>/feedback` → `proje
   - UI look tokens: `css/tokens.css` (imported first from `style.css`; light default + `[data-theme="dark"]`); areas mirror `src/` (`shell/`, `sidebar/`, `map/`, `chat/`, `pages/settings/`). Identity direction “ink on stone”; general vs area ownership — [[visual-reset]]. Design principles (hierarchy → glass → complexity budget) — [[visual-principles]]. Column roles + canvas layout — [[surfaces]]. Scrollbars are thin everywhere, not just the browser default (`css/base.css`, global `*` rule — `scrollbar-width`/`scrollbar-color` + `::-webkit-scrollbar*`), added 2026-09-23 once the wide OS bar stood out against every scroll container (sidebar id columns, project list, chat thread, map viewport).
   - `src/chat/messageRow.ts` — shared You/Agent message DOM row (Projects).
   - `src/chat/isolateChat.ts` — About-frames and "Show only this" filter for the Projects chat thread (uses `messageRow`).
+  - `src/chat/chart/` — chat chart in the chat column: same beads as the file map (`treeWordsElement`; from `talk` on the project view; click isolates that stretch). Not written into `progression`. Height pin via `chart/resize.ts`. Talk brand toggles the pane like Manager (remembered in `localStorage`). Styles: `css/chat/chart.css`.
 
 ### ii. Backend
 
@@ -157,9 +159,9 @@ All under `backend/project/`. WHAT-tree (canvas) lives in `panes/canvas/` (was m
 | **Create / identity** | `panes/create/lifecycle.py`, `panes/create/resolver.py` | Mint/cancel project — planned (`create_goal`) or empty map (`create_empty_project`, no model call); read history by `project_id` (Python params still named `goal_id` this round) |
 | **Judgment + fill** | `engine/judgment/` (`decide`, `run_stage3`, `prompts`, `shape`, `ask`); facade `engine/planner.py` (`generate_plan` → `run_stage3`; owns `replan` / Vision / legacy `advance_step`) | ASK/SUGGEST/PLAN; horizons; replan; ask model |
 
-| **Canvas (WHAT tree)** | `panes/canvas/bead.py`, `panes/canvas/construct_first_map.py`, `panes/canvas/edit_map.py`, `panes/canvas/text_to_tree.py`, `panes/canvas/add_folder/rules.py`, `panes/canvas/add_folder/walk.py`, `panes/canvas/call_suggest.py`, `panes/canvas/read_map/prompt.py`, `panes/canvas/read_map/read.py` | Bead shape; coarse-middle helper (not auto on PLAN); write map (+/×/import/Suggest); paste→tree; one folder on disk → beads (`path` kept on each node); LLM suggest call (Steps scratch also uses `call_suggest`); Read map — `prompt.py` is the instruction, `read.py` sends it (tree → `{summary}`, no write) |
+| **Canvas (WHAT tree)** | `panes/canvas/bead.py`, `panes/canvas/construct_first_map.py`, `panes/canvas/edit_map.py`, `panes/canvas/text_to_tree.py`, `panes/canvas/add_folder/rules.py`, `panes/canvas/add_folder/walk.py`, `panes/canvas/call_suggest.py`, `panes/canvas/read_map/outline.py`, `panes/canvas/read_map/prompt.py`, `panes/canvas/read_map/read.py`, `panes/canvas/see_map/confirm.py` | Bead shape; coarse-middle helper (not auto on PLAN); write map (+/×/import/Suggest); paste→tree; one folder on disk → beads (`path` kept on each node); LLM suggest call (Steps scratch also uses `call_suggest`); Read map — `prompt.py` is the instruction, `read.py` sends it (tree → `{summary}`, no write); See map — labels Voice may hold; Print map / Print path dumps them in the chat panel |
 | **WHEN / calendar** | `engine/time/current_time.py`, `engine/time/calendar.py` | Clock string for prompts; legacy step labels (still written; not map SoT). Ambient timeline later — Queue |
-| **Chat turn** | `panes/chat/turn.py`, `panes/chat/thread.py` | Goal-scoped Send; thread + focus framing for UI |
+| **Chat turn** | `panes/chat/turn.py`, `panes/chat/thread.py`, `panes/chat/hold.py`, `panes/chat/chart/` | Goal-scoped Send; `route_note` only on a plan move (pending question/suggestion/duration, or — unfocused only — yes/done/not-done when `plan.now` exists); Voice gets the focused path or the full stored map; last thread lines from `hold.py` (focused and unfocused holds stay apart); chat chart from About-stretches (`talk_tree`, not the file map) |
 | **Feedback** | `panes/chat/feedback/feedback_parser.py`, `panes/chat/feedback/route_note.py`, `panes/chat/feedback/acknowledger.py` | Phrase signals; act on note; display-only ack |
 | **Unread** | `panes/create/planability_slots.py` | Named dimensions; nothing imports |
 
@@ -175,7 +177,7 @@ All under `app/ui/src/` (compiled to `ui/dist/`).
 | **Map stack** | `map/treeWords.ts`, `map/mapFamily.ts`, `map/mapGeom.ts`, `map/frame/`, `map/lines/`, `map/skeleton/`, `map/copyAsText.ts`, `map/pasteTree.ts` | `#N`→title→tree; bead boxes + ⋯; camera + grain/Text\|Line; nest SVG; empty → 1× Text; text copy; paste preview |
 | **Chrome** | `shell/columnResize.ts`, `shell/busy.ts`, `sidebar/idMenu/` (incl. height pin on Manager | Projects), `sidebar/projectListOrder.ts`, `user/activeUser.ts`, `style.css` → `css/*.css` (incl. `shell/spinner.css`), `pages/settings/{general,directory,logs}.html` + `src/pages/settings/{general,directory,logs}/` | Column widths (shell); Manager list height (sidebar); busy spinner; id overview (remembered open; Manager-only close; id columns) + local ordinals; active `id#N` + last project seen per id; styles; Settings tabs under pages/ (General, Directory, Logs) |
 | **Create pane** | `create/panel.ts`, `create/autoname.ts`, `css/create/panel.css` | Middle-column mint — mirrors `backend/project/panes/create/`. Sidebar **Create** (list-aligned, not a filled CTA) opens it; empty name → `New project N`; **+** mints without the planner |
-| **Projects chat UI** | `chat/messageRow.ts`, `chat/isolateChat.ts` | Message rows; About-frames; isolate / restore scroll |
+| **Projects chat UI** | `chat/messageRow.ts`, `chat/isolateChat.ts`, `chat/printMap.ts`, `chat/chart/` | Message rows; About-frames; isolate / restore scroll; Print map / Print path (client dump of the loaded `node` tree); chat chart as the same beads as the file map (`treeWordsElement`, not written into `progression`); chart | thread height pin |
 | **Client API** | `api.ts`, `types.ts` | Fetch + shared types (visual edge of do — no plan mutation logic) |
 
 **Cleanup signal (not a dual path):** `projects.ts` still orchestrates shell + chat; map under `map/`, id under `sidebar/` + `user/activeUser.ts`, message rows under `chat/messageRow.ts`, About/isolate under `chat/isolateChat.ts`. Split further only if `projects.ts` keeps growing — still **visual**.
@@ -192,18 +194,29 @@ Free conversation (`process_turn` / Node 3 / `/api/message`) was removed 2026-09
 
 ```text
 understanding = describe_in_context(note, setting)   # Describe
-if plan move (pending question/suggestion/duration, or done/not-done/complete):
+if focused + structure request:
+    suggest children from chat
+elif plan move:
     record = route_note(...)                         # plan engine
 else:
     reply = Voice; plan saved unchanged
-reply = respond(...)                                 # Voice
+plan move = pending clarification / suggested_action /
+            suggested_duration / pending_duration_question,
+            or a duration-change request,
+            or (unfocused only) yes/done/not-done when plan.now exists
+Voice grounding (see_map): focused → project name + that path;
+                           unfocused → full stored map
+plus last chat lines (hold.py)
+Print map / Print path in the chat panel dumps labels (no Voice)
+Chat chart (`panes/chat/chart/`): focused About-stretches; a new focus
+under the last one is a child (grew out of it). Not written.
 ```
 
 `POST /api/projects/<id>/feedback` → `project/panes/chat/turn.take_turn()` — the project id is already in the URL, so nothing guesses which project the message is about.
 
 ### iii. server.py's other routes — known capability context, no Node 1/2/3
 
-Added 2026-09-11/12, alongside `ui/`'s five new pages. Each of these routes calls Project directly, keyed by an id the caller already has (from the URL or the request body) rather than by guessing which project a free-text message is about. `POST /api/projects/<id>/feedback` is the project-scoped chat: `project/panes/chat/turn.py` runs Describe in context, then `route_note()`, then Voice — unable to pick the wrong project.
+Added 2026-09-11/12, alongside `ui/`'s five new pages. Each of these routes calls Project directly, keyed by an id the caller already has (from the URL or the request body) rather than by guessing which project a free-text message is about. `POST /api/projects/<id>/feedback` is the project-scoped chat: `project/panes/chat/turn.py` runs Describe in context, then `route_note()` only on a plan move, then Voice — unable to pick the wrong project. Ordinary talk goes through Voice. Grounding is the project name plus either the focused path or the full stored map (`see_map`), so Voice cannot claim there is no project, plus the last chat lines from `hold.py` (focused turns hold only that node's lines; unfocused turns omit focused lines). A focused `yes` / `done` is talk, not a plan completion. Printing labels is only **Print map** / **Print path** in the chat panel (`ui/src/chat/printMap.ts`) — no phrase in the box dumps the tree.
 
 ```text
 GET  /api/projects              → get_latest_for_all_goals(), filtered to active
@@ -258,6 +271,7 @@ Concretely:
 | Goal → plan (first turn of a session) | `backend/project/panes/create/lifecycle.py` (`create_goal()` → `generate_plan()`) |
 | Start a project with no plan at all, and build or paste its tree afterwards | `backend/project/panes/create/lifecycle.py` (`create_empty_project()`, no model call) via `POST /api/projects` with `planned: false`; **+** beside Create in `ui/src/create/panel.ts` (empty name → `New project N` via `create/autoname.ts`) |
 | Tree → words: read an existing map back into a summary | `backend/project/panes/canvas/read_map/` — `prompt.py` is the instruction, `read.py` `read_tree()` sends it — via `POST /api/projects/<id>/read`; **Read map** in the bar under the canvas. Reads the whole stored tree, not the visible grain. Shown in the chat thread and never saved — see § 9 |
+| Tree → words: print the stored labels in chat | **Print map** / **Print path** in the chat panel (`ui/src/chat/printMap.ts`) — dumps the loaded `node` tree, never saved. No chat phrase prints. `see_map` still builds the label block Voice may hold. |
 | Feedback → replan (subsequent turns) | `backend/project/panes/chat/turn.py` (`take_turn()` → `route_note()`) |
 | WHAT progression (user-steered Step tree) | `plan.progression` via `edit_map` / Paste / Suggest; `construct_first_map.construct_progression` available on request but **not** auto-called on PLAN (A2, 2026-09-19); preferred by `to_planning_node()` when present |
 | Legacy calendar/session step fill | `backend/project/engine/time/calendar.py` (`generate_structure()`) — week/session grains; soft-fails without blocking progression — see § 5 / § 8 |
@@ -274,6 +288,7 @@ Concretely:
 | Raise one step's resolution on demand, one level at a time, to any depth | `backend/project/panes/canvas/call_suggest.py` (`zoom_into()`) + `bead.py` — callers: Projects cold Suggest (`edit_map` + `POST .../zoom/<step_id>`); Projects chat-grounded suggest under map focus (2026-09-18). Scratch Steps `/api/tree` removed 2026-09-20. |
 | Projects map focus ↔ chat framing | `stamp_map_focus` + `panes/chat/thread.py` focus tags → framed About-sections in `projects.ts`; click frame re-selects the tree node; clear selection by clicking empty map space |
 | Isolate the chat thread to one "About X" focus, and return to the full thread at the same scroll position | `ui/src/chat/isolateChat.ts` (`createIsolateChat`; rows via `messageRow.ts`) — used by Projects only (§ 1.i) |
+| Chat chart (which chat grew out of which) | `panes/chat/chart/` `talk_tree()` → `talk` on the project view → `ui/src/chat/chart/`. Derived from About-stretches; a new focus after another focus is a child. Not written; not the file map. |
 | Paste an outline/ASCII tree (markdown bullets, numbered lists, this app's own box-drawing export, or plain lines) and import it as progression steps | `backend/project/panes/canvas/text_to_tree.py` (`parse_outline()`) + `edit_map.py` (`import_progression_outline()`) via `POST /api/projects/<id>/progression/import`; three entry points in `ui/src/pages/projects.ts` — the topbar **Paste structure** form, the node **⋯** menu's own **Paste structure**, and sending multi-line text from the chat compose box while a node is focused (tried on **Send**, not on paste itself — a paste only fills the compose box, same as typing; falls back to an ordinary chat message if nothing parses) — Projects only |
 | Add one folder from this computer as map nodes | `backend/project/panes/canvas/add_folder/` — `rules.py` is what the walk may see, `walk.py` `folder_tree()` applies it — + `edit_map.py` (`import_progression_folder()`) via `POST /api/projects/<id>/progression/folder`; **Add folder** beside Paste structure in `ui/src/map/addFolder.ts`, with **Choose** (`add_folder/choose.py`, `POST /api/choose-folder`) filling the path from the macOS folder dialog. Each file and folder is one bead; `path` is stored on the bead. Hidden names, `node_modules`, and `__pycache__` are skipped. File contents are not read. No depth cap. Stops at 400 nodes. |
 

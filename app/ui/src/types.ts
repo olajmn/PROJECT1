@@ -33,6 +33,16 @@ export interface ChatMessage {
   focus_step_id?: string;
 }
 
+/** One About-stretch in the derived talk tree (not the file map). */
+export interface TalkSequence {
+  label: string;
+  start: number;
+  end: number;
+  open: boolean;
+  children: TalkSequence[];
+  focus_step_id?: string;
+}
+
 export interface GoalView {
   project_id: number;
   goal: string;
@@ -46,6 +56,7 @@ export interface GoalView {
   surface: string | null;
   node: PlanningNode | null;
   thread: ChatMessage[];
+  talk: TalkSequence[];
   reply: string | null;
 }
 

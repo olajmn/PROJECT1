@@ -2,8 +2,10 @@
 
 Files (see docs/04-current-state.md § 2.iv):
   bead.py                — one map bead (Step shape)
+  read_map/outline.py    — map as indented labels (no call)
   read_map/prompt.py     — Read map instruction only (no call)
   read_map/read.py       — sends that instruction; tree → summary, no write
+  see_map/confirm.py     — stored labels as the chat reply (no Voice)
   construct_first_map.py — coarse middle mint (on request; not auto on PLAN)
   edit_map.py            — + / × / import / Suggest / chat-suggest
   text_to_tree.py        — pasted text → forest of labels

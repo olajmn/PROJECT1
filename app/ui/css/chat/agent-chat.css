@@ -7,6 +7,7 @@
  *  2. Messages (who | text)
  *  3. About frames (focus sections + isolate)
  *  4. Input
+ * Chart pane: css/chat/chart.css
  */
 
 /* 1. Panel & thread */
@@ -197,8 +198,14 @@
   border-color: var(--color-accent);
 }
 
-.project-chat .feedback-form > button[type="submit"] {
-  align-self: flex-end;
+.project-chat .chat-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.project-chat .chat-form-actions button {
   padding: var(--space-2) var(--space-4);
   font-size: var(--font-size-sm);
 }
