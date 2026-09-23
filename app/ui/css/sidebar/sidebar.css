@@ -15,10 +15,11 @@
  * When the two sections can't both fit, they do NOT give way equally:
  * .project-list has a far higher flex-shrink than .sidebar-id, so it
  * collapses first and the id panel keeps whatever height the separator
- * was dragged to. That asymmetry is what makes the drag reach the
- * bottom of the frame (sidebar/idMenu/resize.ts) instead of being
- * squeezed back. Everything below the list is flex: 0 0 auto, so a
- * collapsed list still leaves the header, the "+" and the bottom bar.
+ * was dragged to. That asymmetry is what lets a height pin on the id
+ * list (sidebar/idMenu/resize.ts) claim the Settings auto-margin and
+ * then squeeze Projects, instead of being flexed back. Everything below
+ * the list is flex: 0 0 auto, so a collapsed list still leaves the
+ * header, the "+" and the bottom bar.
  *
  * Contents
  *  1. Sidebar frame + brand
@@ -153,14 +154,14 @@ body.is-resizing-id-menu {
  * space goes to .sidebar-more's margin-top: auto, which is what keeps
  * Settings at the bottom.
  *
- * The high flex-shrink is what lets the Manager panel be dragged all
- * the way down (sidebar/idMenu/resize.ts): when the two sections can't
- * both fit, this list yields its height first instead of splitting the
- * deficit evenly with the panel, which would have shrunk the panel back
- * as fast as the drag grew it. Everything else down here — the Projects
- * header, the "+", the Settings bar — is flex: 0 0 auto, so squeezing
- * this to nothing still leaves a way back. It scrolls (min-height: 0)
- * for as long as it has height to scroll in. */
+ * The high flex-shrink is what lets a Manager list height pin claim
+ * space (sidebar/idMenu/resize.ts): when the two sections can't both
+ * fit, this list yields first instead of splitting the deficit evenly
+ * with the panel, which would have shrunk the panel back as fast as the
+ * drag grew it. Everything else down here — the Projects header, the
+ * "+", the Settings bar — is flex: 0 0 auto, so squeezing this to
+ * nothing still leaves a way back. It scrolls (min-height: 0) for as
+ * long as it has height to scroll in. */
 .project-list {
   flex: 0 100 auto;
   min-height: 0;

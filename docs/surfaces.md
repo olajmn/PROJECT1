@@ -15,7 +15,7 @@ how the canvas should *read*. Not a pixel spec. Product loop:
 
 | Column | Job | Not |
 |---|---|---|
-| **sidebar** | Which Project / id — Manager (remembered open; brand-only close), create entry, list | The WHAT tree |
+| **sidebar** | Which Project / id — Manager (remembered open; brand-only close; height via Manager \| Projects separator), create entry, list | The WHAT tree; shell column widths |
 | **canvas** | Mental map: `#N` → title → waypoints (`plan.progression`) | Disk files; Decide/Fill engine |
 | **chat** | Agent under optional canvas focus (About frames) | The map itself |
 
@@ -23,9 +23,9 @@ how the canvas should *read*. Not a pixel spec. Product loop:
 
 - Canvas data / write paths: `backend/project/panes/canvas/`
 - Canvas UI (name lag): `app/ui/src/map/` + `app/ui/css/map/`
-- Sidebar: `app/ui/src/sidebar/` (`idMenu/`, `projectListOrder.ts`) + `user/activeUser.ts`
+- Sidebar: `app/ui/src/sidebar/` (`idMenu/` incl. list-height resize, `projectListOrder.ts`) + `user/activeUser.ts`
 - Chat: `app/ui/src/chat/` + Projects compose in `pages/projects.ts`
-- Shell glue (resize, tabs, rail): `app/ui/src/shell/`
+- Shell glue (column resize, tabs, rail): `app/ui/src/shell/` — owns sidebar\|map\|chat widths only; Manager height stays under `sidebar/idMenu/`
 
 ## 2. What canvas is not
 

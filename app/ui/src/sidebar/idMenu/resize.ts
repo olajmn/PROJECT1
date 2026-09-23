@@ -1,4 +1,4 @@
-// Optional max-height drag on the id-menu list.
+// Optional height drag on the id-menu list.
 
 const HEIGHT_KEY = "projects.idMenuListHeightPx";
 const MIN_LIST_HEIGHT = 120;
@@ -6,25 +6,54 @@ const MIN_LIST_HEIGHT = 120;
 const FALLBACK_MAX_HEIGHT = 560;
 
 /**
- * The ceiling is the sidebar's own height rather than a fixed number:
- * dragging the panel open is meant to be able to reach the bottom of the
- * frame. What keeps it from swallowing the Projects header, the "+" and
- * the Settings bar is CSS, not this number — .project-list gives up its
- * height first and those three don't shrink at all (see .project-list in
- * css/sidebar/sidebar.css). So all this has to do is keep a height
- * stored on a tall window from being restored into a short one.
+ * Ceiling for one drag: current list height plus what can still be stolen
+ * from .project-list and the Settings auto-margin. maxHeight alone cannot
+ * grow past content; this pairs with applyListHeight() setting height.
+ * What keeps Projects header / "+" / Settings visible is CSS — those are
+ * flex: 0 0 auto; .project-list yields first (see css/sidebar/sidebar.css).
  */
 function maxListHeight(list: HTMLElement): number {
-  const frame = list.closest(".sidebar")?.clientHeight ?? 0;
-  return frame > MIN_LIST_HEIGHT ? frame : FALLBACK_MAX_HEIGHT;
+  const sidebar = list.closest(".sidebar");
+  if (!(sidebar instanceof HTMLElement)) return FALLBACK_MAX_HEIGHT;
+
+  const more = sidebar.querySelector(".sidebar-more");
+  if (!(more instanceof HTMLElement)) {
+    const frame = sidebar.clientHeight;
+    return frame > MIN_LIST_HEIGHT ? frame : FALLBACK_MAX_HEIGHT;
+  }
+
+  const listH = list.getBoundingClientRect().height;
+  const projectList = sidebar.querySelector(".project-list");
+  const projectListH =
+    projectList instanceof HTMLElement
+      ? projectList.getBoundingClientRect().height
+      : 0;
+
+  // Slack above Settings (margin-top: auto on .sidebar-more).
+  const createOpen = sidebar.querySelector("#create-open");
+  const slackTop =
+    createOpen instanceof HTMLElement
+      ? createOpen.getBoundingClientRect().bottom
+      : list.getBoundingClientRect().bottom;
+  const marginSlack = Math.max(0, more.getBoundingClientRect().top - slackTop);
+
+  const maxH = Math.floor(listH + projectListH + marginSlack);
+  return Math.max(MIN_LIST_HEIGHT, maxH);
 }
 
-/** Optional cap only — default is natural height (shows everything). */
+/** Pin the list box to px — height forces growth past content; maxHeight
+ * stops flex from stretching it further. */
+function applyListHeight(list: HTMLElement, px: number): void {
+  list.style.height = `${px}px`;
+  list.style.maxHeight = `${px}px`;
+}
+
+/** Optional pin only — default is natural height (shows everything). */
 export function applyStoredHeight(list: HTMLElement): void {
   const h = Number(localStorage.getItem(HEIGHT_KEY));
   if (!Number.isFinite(h) || h < MIN_LIST_HEIGHT) return;
   const capped = Math.min(maxListHeight(list), h);
-  list.style.maxHeight = `${capped}px`;
+  applyListHeight(list, capped);
 }
 
 export function installResize(list: HTMLElement, handle: HTMLElement): void {
@@ -52,7 +81,7 @@ export function installResize(list: HTMLElement, handle: HTMLElement): void {
       maxH,
       Math.max(MIN_LIST_HEIGHT, Math.round(startH + (event.clientY - startY))),
     );
-    list.style.maxHeight = `${nextH}px`;
+    applyListHeight(list, nextH);
   });
 
   const end = (event: PointerEvent) => {

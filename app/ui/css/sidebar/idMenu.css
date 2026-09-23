@@ -36,6 +36,9 @@
      so existing columns don't grow then snap-shrink when a new one lands. */
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 12rem));
   align-items: start;
+  /* Without this, a height pin taller than the cards (idMenu/resize.ts)
+     stretches the grid rows and the next id drifts toward the handle. */
+  align-content: start;
   flex: 1 1 auto;
   min-height: 0;
   gap: var(--space-4) var(--space-5);
