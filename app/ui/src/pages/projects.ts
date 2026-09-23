@@ -681,9 +681,25 @@ function applyUsers(next: UserView[]): void {
       ? { ...p, sim_user_id: null }
       : p,
   );
+  // If active points at a deleted id (or was cleared), pick a live one so
+  // Create/Seed and the Projects list don't say "pick an id" while one exists.
+  syncActiveUser(next);
+  ensureSelectionInActiveUser();
   renderList();
   renderWorkspace();
   idMenu.refresh();
+}
+
+/** Keep localStorage active id aligned with non-archived users. */
+function syncActiveUser(nextUsers: UserView[]): void {
+  const live = nextUsers.filter((u) => !u.archived);
+  const active = getActiveUserId();
+  if (active !== null && live.some((u) => u.id === active)) return;
+  if (live.length === 0) {
+    setActiveUserId(null);
+    return;
+  }
+  setActiveUserId(live.reduce((a, b) => (a.id > b.id ? a : b)).id);
 }
 
 function replaceProject(updated: ProjectView): void {
@@ -708,15 +724,7 @@ async function load(): Promise<void> {
   projects = goals;
   users = allUsers;
 
-  const activeUsers = users.filter((v) => !v.archived);
-  let active = getActiveUserId();
-  if (active !== null && !activeUsers.some((u) => u.id === active)) {
-    setActiveUserId(null);
-    active = null;
-  }
-  if (active === null && activeUsers.length === 1) {
-    setActiveUserId(activeUsers[0].id);
-  }
+  syncActiveUser(users);
   const params = new URLSearchParams(window.location.search);
   const want = Number(params.get("id"));
   if (want && projects.some((p) => p.project_id === want)) {

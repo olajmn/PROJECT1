@@ -114,8 +114,13 @@ function buildOptionsMenu(
         u.id === archived.id ? archived : u,
       );
       if (getActiveUserId() === user.id) {
-        setActiveUserId(null);
-        cb.onActiveUserChanged(null);
+        const live = next.filter((u) => !u.archived);
+        const fallback =
+          live.length > 0
+            ? live.reduce((a, b) => (a.id > b.id ? a : b)).id
+            : null;
+        setActiveUserId(fallback);
+        cb.onActiveUserChanged(fallback);
       }
       cb.onUsersChanged(next);
       cb.afterChange();
@@ -130,10 +135,24 @@ function buildOptionsMenu(
     event.stopPropagation();
     const opening = menu.hidden;
     closeIdCardMenus();
-    if (opening) {
-      menu.hidden = false;
-      toggle.setAttribute("aria-expanded", "true");
-    }
+    if (!opening) return;
+    // Fixed — parent Manager panel clips overflow; same trick as map ⋯.
+    const rect = toggle.getBoundingClientRect();
+    menu.style.position = "fixed";
+    menu.style.left = `${Math.round(rect.left)}px`;
+    menu.style.top = `${Math.round(rect.bottom + 2)}px`;
+    menu.style.right = "auto";
+    menu.hidden = false;
+    toggle.setAttribute("aria-expanded", "true");
+    requestAnimationFrame(() => {
+      const box = menu.getBoundingClientRect();
+      if (box.bottom > window.innerHeight - 8) {
+        menu.style.top = `${Math.max(8, Math.round(rect.top - box.height - 2))}px`;
+      }
+      if (box.right > window.innerWidth - 8) {
+        menu.style.left = `${Math.max(8, Math.round(window.innerWidth - box.width - 8))}px`;
+      }
+    });
   });
 
   menuWrap.append(toggle, menu);

@@ -49,6 +49,10 @@ export function installCreatePanel(opts: CreatePanelOpts): CreatePanelHandle {
 
   openBtn.addEventListener("click", () => {
     open = true;
+    if (getActiveUserId() !== null) {
+      error.hidden = true;
+      error.textContent = "";
+    }
     opts.onChange();
   });
 
@@ -101,6 +105,11 @@ export function installCreatePanel(opts: CreatePanelOpts): CreatePanelHandle {
     mount: (host: HTMLElement) => {
       host.appendChild(panel);
       panel.hidden = false;
+      // Drop a stale "pick an id" error once an id is active again.
+      if (getActiveUserId() !== null) {
+        error.hidden = true;
+        error.textContent = "";
+      }
       input.focus();
     },
 

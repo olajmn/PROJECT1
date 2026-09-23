@@ -125,17 +125,16 @@
 }
 
 .sidebar-id-card-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  z-index: 5;
-  min-width: 6.5rem;
-  margin-top: 0.15rem;
-  padding: 0.2rem 0;
+  /* position/left/top set in card.ts on open (fixed — escapes panel clip). */
+  z-index: 40;
+  min-width: 4.5rem;
+  max-width: 7rem;
+  margin: 0;
+  padding: 0.1rem 0;
   border: var(--border);
   border-radius: var(--radius);
   background: var(--color-bg-sidebar);
-  box-shadow: 0 0.35rem 0.75rem color-mix(in srgb, #000 35%, transparent);
+  box-shadow: 0 0.25rem 0.5rem color-mix(in srgb, #000 35%, transparent);
 }
 
 .sidebar-id-card-menu[hidden] {
@@ -146,12 +145,12 @@
   display: block;
   width: 100%;
   margin: 0;
-  padding: 0.35rem var(--space-3);
+  padding: 0.25rem 0.5rem;
   border: none;
   background: transparent;
   color: var(--color-text);
   font: inherit;
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   text-align: left;
   cursor: pointer;
 }
