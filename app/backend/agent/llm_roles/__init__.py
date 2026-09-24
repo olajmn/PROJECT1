@@ -1,7 +1,7 @@
 """
 Shared conversation roles - Voice and Describe.
 
-Lives under `backend.agent` with manifestation. Not a domain and not
+Lives under `backend.agent` with translate_nodes. Not a domain and not
 an entry orchestrator: reusable LLM *roles* any caller may invoke.
 
 - Voice (`voice.py`) - talk to the user (was `llm1/`)

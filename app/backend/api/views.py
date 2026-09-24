@@ -1,5 +1,5 @@
 """
-JSON shapes the HTTP API returns to ui/ — manifestation + store reads,
+JSON shapes the HTTP API returns to ui/ — translate_nodes + store reads,
 not domain decisions.
 """
 
@@ -11,7 +11,7 @@ not domain decisions.
 #  2. Simulated user
 #      - user_view()
 
-from backend.agent.manifestation import surface_text, to_planning_node
+from backend.agent.translate_nodes import surface_text, to_planning_node
 from backend.store.data_persistence import record_project_id
 from backend.project.panes.chat.chart import talk_tree
 from backend.project.panes.chat.thread import thread_for
@@ -25,7 +25,7 @@ from backend.project.panes.create.resolver import created_at_key, get_latest_for
 
 def goal_view(record: dict, reply: str | None = None) -> dict:
     """The one shape every /api/projects response uses for a single
-    project — identity, display text, completion, plus manifestation.
+    project — identity, display text, completion, plus translate_nodes.
     `project_id` is canonical.
     """
     pid = record_project_id(record)

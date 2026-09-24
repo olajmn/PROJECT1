@@ -80,7 +80,7 @@ SMOKE_IMPORT_MODULES = [
     "backend.store.data_persistence",
     "backend.agent.llm_roles.voice",
     "backend.agent.llm_roles.describe",
-    "backend.agent.manifestation",
+    "backend.agent.translate_nodes",
     "backend.module_library.modules",
     "server",
 ]

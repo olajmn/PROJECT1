@@ -4,7 +4,7 @@ The message list on an Active goal card.
 Built from saved history - no model call.
 """
 
-from backend.agent.manifestation import surface_text
+from backend.agent.translate_nodes import surface_text
 from backend.project.panes.create.resolver import get_history_for_goal
 
 

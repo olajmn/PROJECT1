@@ -9,7 +9,7 @@ then children are suggested from the chat onto the map.
 from backend.store.data_persistence import save_plan, stamp_map_focus
 from backend.agent.llm_roles.describe import describe_in_context
 from backend.agent.llm_roles.voice import respond
-from backend.agent.manifestation import surface_text, to_planning_node
+from backend.agent.translate_nodes import surface_text, to_planning_node
 from backend.project.panes.canvas.edit_map import suggest_progression_from_chat
 from backend.project.panes.canvas.see_map import focus_labels, map_status
 from backend.project.panes.chat.hold import hold_text
