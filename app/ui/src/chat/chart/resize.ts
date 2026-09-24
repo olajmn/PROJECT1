@@ -35,15 +35,25 @@ function storedHeight(): number {
   return Number.isFinite(h) && h >= 0 ? h : NaN;
 }
 
-export function applyStoredChartHeight(map: HTMLElement): void {
+export function applyStoredChartHeight(
+  map: HTMLElement,
+  opts?: { clampToContent?: boolean },
+): void {
   const h = storedHeight();
   if (!Number.isFinite(h)) return;
   map.style.height = "";
   map.style.maxHeight = "";
+  const capped = Math.min(maxChartHeight(map), h);
+  if (opts?.clampToContent === false) {
+    // Empty pane (no talk on this project): keep the pin so the
+    // handle stays usable when switching projects.
+    applyChartHeight(map, capped);
+    return;
+  }
   const content = map.scrollHeight;
   // May be shorter than the tree (handle under Talk) but not taller
   // than the tree (empty void under the last bead).
-  applyChartHeight(map, Math.min(maxChartHeight(map), h, content));
+  applyChartHeight(map, Math.min(capped, content));
 }
 
 // 2. Drag

@@ -1,5 +1,8 @@
 // Chat chart pane — derived talk tree in the chat column.
-// The Talk brand toggles the panel, same as Manager.
+// The Talk brand toggles the panel, same as Manager: open/height are
+// shell-global (localStorage), not per project. The tree still comes
+// from the active project's `talk`; an open empty pane keeps the
+// resize handle so the pin survives project switches.
 //
 // Contents
 //  1. Types
@@ -37,6 +40,7 @@ export function createChatChart(
   let lastOnPick: ((sequence: TalkSequence) => void) | null = null;
   let open = readOpen();
 
+  toggle.hidden = false;
   toggle.addEventListener("click", () => setOpen(!open));
 
   function rememberOpen(next: boolean): void {
@@ -51,26 +55,29 @@ export function createChatChart(
     open = next;
     rememberOpen(next);
     if (lastOnPick) fill(lastSequences, lastOnPick);
+    else paintChrome([], null);
   }
 
-  function fill(
+  function paintChrome(
     sequences: TalkSequence[],
-    onPick: (sequence: TalkSequence) => void,
+    onPick: ((sequence: TalkSequence) => void) | null,
   ): void {
-    lastSequences = sequences;
-    lastOnPick = onPick;
-    const shown = open && sequences.length > 0;
-    toggle.hidden = sequences.length === 0;
-    toggle.setAttribute("aria-expanded", shown ? "true" : "false");
-    toggle.classList.toggle("is-active", shown);
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    toggle.classList.toggle("is-active", open);
     map.innerHTML = "";
-    if (!shown) {
+    if (!open) {
       map.hidden = true;
       handle.hidden = true;
       return;
     }
     map.hidden = false;
     handle.hidden = false;
+    if (sequences.length === 0 || !onPick) {
+      // Keep the stored height across projects with no talk yet, so
+      // the handle stays draggable instead of collapsing to a line.
+      applyStoredChartHeight(map, { clampToContent: false });
+      return;
+    }
     const selectedId =
       selectedStart == null ? openChartId(sequences) : chartId(selectedStart);
     map.appendChild(
@@ -80,6 +87,15 @@ export function createChatChart(
       }),
     );
     applyStoredChartHeight(map);
+  }
+
+  function fill(
+    sequences: TalkSequence[],
+    onPick: (sequence: TalkSequence) => void,
+  ): void {
+    lastSequences = sequences;
+    lastOnPick = onPick;
+    paintChrome(sequences, onPick);
   }
 
   return {
