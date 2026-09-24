@@ -16,19 +16,13 @@ export async function fetchActiveGoals() {
     }
     return (await res.json());
 }
-/**
- * `planned: false` skips the planner — `text` becomes the project's
- * name and the tree is built or pasted afterwards.
- */
-export async function createGoal(text, simUserId, planned = true) {
+/** Mint a project: `text` is the name, canvas starts empty. */
+export async function createProject(text, simUserId) {
     const body = {
         text,
     };
     if (simUserId != null) {
         body.sim_user_id = simUserId;
-    }
-    if (!planned) {
-        body.planned = false;
     }
     const res = await fetch("/api/projects", {
         method: "POST",
@@ -37,6 +31,18 @@ export async function createGoal(text, simUserId, planned = true) {
     });
     if (!res.ok) {
         throw new Error(`request failed: ${res.status}`);
+    }
+    return (await res.json());
+}
+/** Replace the project's display name. Identity stays project_id. */
+export async function renameProject(goalId, text) {
+    const res = await fetch(`/api/projects/${goalId}/name`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+    });
+    if (!res.ok) {
+        throw new Error(await httpErrorMessage(res));
     }
     return (await res.json());
 }
