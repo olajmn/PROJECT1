@@ -24,6 +24,7 @@ export type LogValues = {
   project: string;
   at: string | null;
   text: string;
+  focus?: string;
 };
 
 export type ProjectValues = {
@@ -66,6 +67,7 @@ export function logBlock(v: LogValues): Block {
     { t: "fact", label: "When", created: v.at },
   ];
   if (v.text) block.push({ t: "fact", label: "What", value: v.text });
+  if (v.focus) block.push({ t: "fact", label: "Focus", value: v.focus });
   return block;
 }
 

@@ -4,6 +4,7 @@
  *  1. Page shell
  *  2. Content stack
  *  3. Appearance (theme toggle)
+ *  4. Logs scope (All activity / one project)
  */
 
 /* 1. Page shell */
@@ -63,4 +64,37 @@ body.settings-body main {
   background: var(--color-button);
   color: var(--color-button-text);
   border-color: var(--color-button);
+}
+
+/* 4. Logs scope (All activity / one project) */
+
+.settings-logs-scope-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+}
+
+.settings-logs-scope-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.settings-logs-scope {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+  max-width: 100%;
+}
+
+.settings-logs-scope-hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: var(--line-height);
 }

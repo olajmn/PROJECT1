@@ -1,19 +1,33 @@
 """
 The list of messages shown in the chat panel.
 
-Built from saved chat - no model call. When a saved step changed the
-map instead of chatting, its line is a one-line summary of the map
-(surface_text()).
+Built from saved chat - no model call. Map edits (add / paste / folder /
+Suggest / remove), renames, and archive lines belong in Status, not here
+— same rule as model_input/past_turns(). Chat turns and chat that mint
+nodes under a focus stay in the thread.
 """
 
 from backend.project.panes.create.resolver import get_history_for_goal
+from backend.project.timeline import event_name
+
+# Saved lines that are not Talk. Status / timeline own these.
+_NOT_CHAT = frozenset({
+    "node_added",
+    "node_removed",
+    "pasted",
+    "folder_added",
+    "suggested",
+    "owner_changed",
+    "archived",
+    "renamed",
+})
 
 
 def thread_messages(history: list[dict]) -> list[dict]:
-    """[{role, text, focus?}] oldest first - each saved record is one
-    agent line (surface_text of its map); its `feedback`, if any, is
-    the user line that produced it. A mint record has no feedback, so
-    the thread starts with the agent's first surface.
+    """[{role, text, focus?}] oldest first - each saved Talk record is
+    one user line (the note) and one agent line (the reply or map
+    surface). A mint record has no feedback, so the thread starts with
+    the agent's first surface.
 
     When a turn was map-focused (Talk about this / Looking at), both
     the user and agent lines carry `focus: "<node label>"` (and
@@ -27,13 +41,14 @@ def thread_messages(history: list[dict]) -> list[dict]:
 
     Each message carries `at`, when it happened: the agent line the
     record's `created_at`, the user line `sent_at` when saved (chat turns
-    since 2026-09-25), else `created_at`. Renames are not chat and are
-    left out; they are on the project timeline (project/timeline.py)."""
+    since 2026-09-25), else `created_at`."""
     messages: list[dict] = []
     previous_surface = None
     for record in history:
-        if record.get("event") == "renamed":
-            # Still the latest map summary: the next line compares against it.
+        kind = event_name(record)
+        if kind in _NOT_CHAT:
+            # Still advance the surface baseline so the next Talk turn
+            # does not repeat an unchanged map line as the agent reply.
             previous_surface = surface_text(record)
             continue
         focus = (record.get("map_focus") or "").strip() or None

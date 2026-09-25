@@ -376,6 +376,34 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Reversible?** Yes — the talk chart is in git history.
 
+## 38. 2026-09-25 — Project history file is `projects.jsonl`
+
+**Decision:** Rename the on-disk project history from `data/plans.jsonl` to `data/projects.jsonl`. `store/data_persistence.py` reads and writes `PROJECTS_FILE`; a leftover `plans.jsonl` is renamed into place on first load; a still-older `plans.json` array migrates to `projects.jsonl` the same way as before (#27).
+
+**Date:** 2026-09-25
+
+**Alternatives considered:** keep the `plans.jsonl` filename; invent a new name unrelated to the product noun (`history.jsonl`, `timeline.jsonl`).
+
+**Why this choice:** The product unit is a project, and every line is a project snapshot — "plans" named an older Goal/Plan model that no longer matches the Map + Talk surface. Matching the file to `project_id` / Projects avoids a stale noun in the one place developers look for the data.
+
+**Trade-off:** Old backups and docs that mention `plans.jsonl` stay historically accurate; only the live path changes. Code that hard-coded the old path outside this store would break — none does.
+
+**Reversible?** Yes — rename the file back and restore the constant.
+
+## 39. 2026-09-25 — One history file per project
+
+**Decision:** Store each project's append-only history as its own JSONL file under `data/projects/{id}.jsonl`. `store/data_persistence.py` appends and rewrites per project; `load_project_history()` reads one file; `load_history()` scans the directory. A leftover combined `projects.jsonl` (or older `plans.jsonl` / `plans.json`) is split once on first load and renamed `*.bak`.
+
+**Date:** 2026-09-25
+
+**Alternatives considered:** keep one combined `projects.jsonl`; name files by project title; put each project in a subdirectory with multiple files.
+
+**Why this choice:** The product unit is a project, and the developer already wants a per-project tape in Logs. One file per id matches that intuition, avoids rewriting every project's lines when one changes, and makes `get_history_for_goal` a single-file read. `{id}.jsonl` stays stable when the display name changes.
+
+**Trade-off:** Listing every project or building the mixed activity log scans the directory. A combined backup may still sit as `projects.jsonl.bak` after migration.
+
+**Reversible?** Yes — concatenate the files back into one jsonl and restore the old constant (git history has the prior store).
+
 ## See also
 
 - [[03-architecture]]

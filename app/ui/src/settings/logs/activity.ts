@@ -1,5 +1,5 @@
-// Logs — Settings → Logs page body: every saved change, newest first.
-//
+// Logs — Settings → Logs page body: every saved change, newest first
+// (All activity scope). One-project tape: projectTimeline.ts.
 // Shape: ../paragraphs/registerTemplate.ts (logBlock)
 
 import { fetchLog } from "../../api.js";
@@ -8,17 +8,7 @@ import {
   logBlock,
   startAgeClock,
 } from "../paragraphs/index.js";
-
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  className?: string,
-  text?: string,
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
-}
+import { el } from "../paragraphs/makeTag.js";
 
 /** Fill a `.settings-register` host with the activity log. */
 export async function mountLogs(host: HTMLElement): Promise<void> {
@@ -43,6 +33,7 @@ export async function mountLogs(host: HTMLElement): Promise<void> {
             project: entry.project,
             at: entry.at,
             text: entry.text,
+            focus: entry.focus,
           }),
         ),
       ),

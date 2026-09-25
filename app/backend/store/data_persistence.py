@@ -1,11 +1,14 @@
 """
-Local storage for goals, plans, and simulated users (id#N). Goal
-history is one JSON object per line in data/plans.jsonl (JSONL);
-simulated users are a JSON array in data/users.json (legacy
-data/visions.json is promoted on first load). Both git-ignored (see
-.gitignore) - this is personal information, never committed. A legacy
-data/plans.json array, if still present, is migrated to plans.jsonl on
-first load.
+Local storage for projects and simulated users (id#N). Project
+history is one JSON object per line per project under
+data/projects/{id}.jsonl (JSONL); simulated users are a JSON array in
+data/users.json (legacy data/visions.json is promoted on first load).
+Both git-ignored (see .gitignore) - this is personal information,
+never committed.
+
+A leftover combined data/projects.jsonl (or older plans.jsonl /
+plans.json) is split into per-project files on first load; the
+combined source is renamed *.bak.
 
 Goal identity/grouping lives in goal/resolver.py, not here - see
 that module's docstring for why goal_id minting/backfill stays in this
@@ -32,9 +35,9 @@ only ever one value.
 
 # Contents
 #  1. Setup & legacy normalization
-#      - DATA_DIR / PLANS_FILE / LEGACY_PLANS_FILE / USERS_FILE /
-#        LEGACY_VISIONS_FILE / DEFAULT_USER_ID
-#      - ensure_data_dir()
+#      - DATA_DIR / PROJECTS_DIR / LEGACY_* / USERS_FILE /
+#        DEFAULT_USER_ID
+#      - ensure_data_dir() / project_path()
 #      - _LEGACY_HORIZON_KEY_RENAMES
 #      - _normalize_plan()
 #      - _backfill_goal_ids() / _normalize_project_ids() / record_project_id()
@@ -42,8 +45,9 @@ only ever one value.
 #      - _backfill_user_ids()
 #      - now_utc()
 #
-#  2. Goal records (plans.jsonl)
-#      - _next_goal_id() / _load_all() / _save_all() / _append_record()
+#  2. Project records (data/projects/{id}.jsonl)
+#      - _ensure_migrated() / _next_goal_id()
+#      - load_project_history() / _save_project() / _append_record()
 #      - save_plan()  (persists project_id + sim_user_id)
 #      - stamp_map_focus()
 #      - load_history()
@@ -61,7 +65,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
-PLANS_FILE = DATA_DIR / "plans.jsonl"
+PROJECTS_DIR = DATA_DIR / "projects"
+# Older combined files — split into PROJECTS_DIR on first load.
+LEGACY_PROJECTS_JSONL = DATA_DIR / "projects.jsonl"
+LEGACY_PLANS_JSONL = DATA_DIR / "plans.jsonl"
 LEGACY_PLANS_FILE = DATA_DIR / "plans.json"
 USERS_FILE = DATA_DIR / "users.json"
 LEGACY_VISIONS_FILE = DATA_DIR / "visions.json"
@@ -78,6 +85,16 @@ DEFAULT_USER_ID = 1
 def ensure_data_dir() -> None:
     """Create data/ if it doesn't exist yet. Safe to call repeatedly."""
     DATA_DIR.mkdir(exist_ok=True)
+
+
+def project_path(project_id: int) -> Path:
+    """data/projects/{id}.jsonl — that project's full history tape."""
+    return PROJECTS_DIR / f"{int(project_id)}.jsonl"
+
+
+def _ensure_projects_dir() -> None:
+    ensure_data_dir()
+    PROJECTS_DIR.mkdir(exist_ok=True)
 
 
 # one_year/one_month/this_week/this_hour/this_minute/right_now renamed
@@ -145,7 +162,8 @@ def _normalize_project_ids(records: list[dict]) -> bool:
     """Promote legacy goal_id → project_id; drop goal_id from memory.
 
     Returns True if any record still had only goal_id on disk shape
-    (caller should rewrite plans.jsonl so grepping shows project_id).
+    (caller should rewrite that project's file so grepping shows
+    project_id).
     """
     needed_rewrite = False
     for record in records:
@@ -199,7 +217,6 @@ def _backfill_user_ids(records: list[dict]) -> None:
             record["user_id"] = DEFAULT_USER_ID
 
 
-
 def now_utc() -> str:
     """The current time as text, in UTC with its offset
     ("2026-09-25T18:27:51.305+00:00"), so it means the same moment on any
@@ -207,23 +224,10 @@ def now_utc() -> str:
     offset; resolver.created_at_key() reads both."""
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
+
 # ============================================================
-# 2. Goal records (plans.jsonl)
+# 2. Project records (data/projects/{id}.jsonl)
 # ============================================================
-
-
-def _next_goal_id(records: list[dict]) -> int:
-    """One higher than the largest project_id in history, or 1 if none.
-
-    Name kept as _next_goal_id this round (Python symbol rename is a
-    follow-up); values are project_id.
-    """
-    existing = []
-    for r in records:
-        pid = record_project_id(r)
-        if pid is not None:
-            existing.append(pid)
-    return max(existing, default=0) + 1
 
 
 def _normalize_records(records: list[dict]) -> tuple[list[dict], bool]:
@@ -267,83 +271,144 @@ def _read_jsonl(path: Path) -> list[dict]:
     return records
 
 
-def _migrate_legacy_plans_array() -> list[dict] | None:
-    """If data/plans.json (JSON array) still exists and plans.jsonl does
-    not, load it, write plans.jsonl, and rename the array file to
-    plans.json.bak. Returns the records, or None if there was nothing
-    to migrate."""
-    if PLANS_FILE.exists() or not LEGACY_PLANS_FILE.exists():
-        return None
+def _bak_path(path: Path) -> Path:
+    """Sibling backup name: foo.jsonl → foo.jsonl.bak."""
+    return path.parent / (path.name + ".bak")
+
+
+def _project_files_exist() -> bool:
+    if not PROJECTS_DIR.exists():
+        return False
+    return any(
+        p.suffix == ".jsonl" and p.stem.isdigit()
+        for p in PROJECTS_DIR.iterdir()
+    )
+
+
+def _read_legacy_array(path: Path) -> list[dict]:
     try:
-        with open(LEGACY_PLANS_FILE, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8") as f:
             records = json.load(f)
     except json.JSONDecodeError as e:
         raise RuntimeError(
-            f"{LEGACY_PLANS_FILE} is corrupted and can't be read as JSON "
-            f"({e}). Restore it from a backup or fix it by hand before "
-            "continuing."
+            f"{path} is corrupted and can't be read as JSON ({e}). "
+            "Restore it from a backup or fix it by hand before continuing."
         ) from e
     if not isinstance(records, list):
         raise RuntimeError(
-            f"{LEGACY_PLANS_FILE} is not a JSON array of goal records."
+            f"{path} is not a JSON array of goal records."
         )
-    _save_all(records)
-    bak = LEGACY_PLANS_FILE.with_suffix(".json.bak")
-    LEGACY_PLANS_FILE.replace(bak)
+    return records
+
+
+def _write_split(records: list[dict]) -> None:
+    """Write records into data/projects/{id}.jsonl, grouped by project_id."""
+    by_id: dict[int, list[dict]] = {}
+    for record in records:
+        pid = record_project_id(record)
+        if pid is None:
+            continue
+        by_id.setdefault(pid, []).append(record)
+    for pid, lines in by_id.items():
+        _save_project(pid, lines)
+
+
+def _ensure_migrated() -> None:
+    """If per-project files already exist, do nothing. Otherwise split a
+    leftover combined projects.jsonl / plans.jsonl / plans.json once."""
+    if _project_files_exist():
+        return
+
+    source: Path | None = None
+    records: list[dict] | None = None
+    if LEGACY_PROJECTS_JSONL.exists():
+        source = LEGACY_PROJECTS_JSONL
+        records = _read_jsonl(source)
+    elif LEGACY_PLANS_JSONL.exists():
+        source = LEGACY_PLANS_JSONL
+        records = _read_jsonl(source)
+    elif LEGACY_PLANS_FILE.exists():
+        source = LEGACY_PLANS_FILE
+        records = _read_legacy_array(source)
+
+    if source is None or records is None:
+        return
+
+    records, _ = _normalize_records(records)
+    _write_split(records)
+    source.replace(_bak_path(source))
+
+
+def _existing_project_ids() -> list[int]:
+    """Numeric stems of data/projects/*.jsonl after migration."""
+    _ensure_migrated()
+    if not PROJECTS_DIR.exists():
+        return []
+    ids: list[int] = []
+    for path in PROJECTS_DIR.iterdir():
+        if path.suffix != ".jsonl" or not path.stem.isdigit():
+            continue
+        ids.append(int(path.stem))
+    return ids
+
+
+def _next_goal_id() -> int:
+    """One higher than the largest project id on disk, or 1 if none.
+
+    Name kept as _next_goal_id this round (Python symbol rename is a
+    follow-up); values are project_id.
+    """
+    return max(_existing_project_ids(), default=0) + 1
+
+
+def _save_project(project_id: int, records: list[dict]) -> None:
+    """Atomic rewrite of one project's JSONL file."""
+    _ensure_projects_dir()
+    path = project_path(project_id)
+    tmp_file = path.with_suffix(".jsonl.tmp")
+    with open(tmp_file, "w", encoding="utf-8") as f:
+        for record in records:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    tmp_file.replace(path)
+
+
+def _append_record(record: dict) -> None:
+    """Append one record to that project's JSONL file."""
+    pid = record_project_id(record)
+    if pid is None:
+        raise RuntimeError("Cannot append a history line without project_id.")
+    _ensure_projects_dir()
+    path = project_path(pid)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def load_project_history(project_id: int) -> list[dict]:
+    """Every saved line for one project, oldest first. Empty if none."""
+    _ensure_migrated()
+    path = project_path(project_id)
+    if not path.exists():
+        return []
+    records, needs_rewrite = _normalize_records(_read_jsonl(path))
+    if needs_rewrite:
+        _save_project(project_id, records)
     return records
 
 
 def _load_all() -> list[dict]:
-    """Read every saved record from disk, normalizing legacy plan shapes.
+    """Every project's lines, ordered by project_id then file order.
 
-    Prefers data/plans.jsonl. On first run after the JSONL switch, a
-    leftover data/plans.json array is migrated automatically.
-
-    Promotes legacy goal_id → project_id and rewrites plans.jsonl when
-    any line still used the old key (Phase B wire rename).
-
-    Returns an empty list if no history file exists yet.
+    Runs one-shot migration from a combined jsonl/array if needed.
+    Promotes legacy goal_id → project_id / vision_id → sim_user_id and
+    rewrites that project's file when any line still used the old key.
     """
-    migrated = _migrate_legacy_plans_array()
-    if migrated is not None:
-        records, needs_rewrite = _normalize_records(migrated)
-        if needs_rewrite:
-            _save_all(records)
-        return records
-
-    if not PLANS_FILE.exists():
+    _ensure_migrated()
+    if not PROJECTS_DIR.exists():
         return []
-    records, needs_rewrite = _normalize_records(_read_jsonl(PLANS_FILE))
-    if needs_rewrite:
-        _save_all(records)
-    return records
-
-
-def _save_all(records: list[dict]) -> None:
-    """
-    Write the full list of records back to disk as JSONL, creating
-    data/ if needed.
-
-    Writes to a temp file and renames it into place - a rename is atomic
-    on POSIX filesystems (macOS/Linux), so a crash mid-write can never
-    leave plans.jsonl half-written/corrupted; the old file stays intact
-    until the new one is fully written.
-    """
-    ensure_data_dir()
-    tmp_file = PLANS_FILE.with_suffix(".jsonl.tmp")
-    with open(tmp_file, "w", encoding="utf-8") as f:
-        for record in records:
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
-    tmp_file.replace(PLANS_FILE)
-
-
-def _append_record(record: dict) -> None:
-    """Append one record as a single JSONL line. Used by save_plan()
-    when history only grows; stamp_map_focus() still rewrites via
-    _save_all() because it mutates an existing line."""
-    ensure_data_dir()
-    with open(PLANS_FILE, "a", encoding="utf-8") as f:
-        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    all_records: list[dict] = []
+    for pid in sorted(_existing_project_ids()):
+        all_records.extend(load_project_history(pid))
+    return all_records
 
 
 def save_plan(
@@ -441,11 +506,13 @@ def save_plan(
 
     Returns the record that was saved (useful for confirming to the user).
     """
-    records = _load_all()
+    _ensure_migrated()
+    project_id = goal_id if goal_id is not None else _next_goal_id()
+    existing = load_project_history(project_id)
     record = {
-        "id": len(records) + 1,
+        "id": len(existing) + 1,
         "user_id": DEFAULT_USER_ID,
-        "project_id": goal_id if goal_id is not None else _next_goal_id(records),
+        "project_id": project_id,
         "sim_user_id": sim_user_id,
         "goal": goal,
         "plan": plan,
@@ -462,7 +529,6 @@ def save_plan(
         record["event"] = event
     if sent_at:
         record["sent_at"] = sent_at
-    records.append(record)
     _append_record(record)
     return record
 
@@ -481,29 +547,44 @@ def stamp_map_focus(
     label = (map_focus or "").strip()
     if not label:
         return None
-    records = _load_all()
-    for i in range(len(records) - 1, -1, -1):
-        if record_project_id(records[i]) == goal_id:
-            records[i]["map_focus"] = label
-            step = (focus_step_id or "").strip()
-            if step:
-                records[i]["focus_step_id"] = step
-            else:
-                records[i].pop("focus_step_id", None)
-            _save_all(records)
-            return records[i]
-    return None
+    records = load_project_history(goal_id)
+    if not records:
+        return None
+    latest = records[-1]
+    latest["map_focus"] = label
+    step = (focus_step_id or "").strip()
+    if step:
+        latest["focus_step_id"] = step
+    else:
+        latest.pop("focus_step_id", None)
+    _save_project(goal_id, records)
+    return latest
 
 
 def load_history() -> list[dict]:
-    """Return every saved goal+plan record, oldest first."""
+    """Return every saved goal+plan record across projects, oldest
+    first within each project (projects ordered by id)."""
     return _load_all()
 
 
 def get_latest_plan() -> dict | None:
-    """Return the most recently saved record, or None if there's no history yet."""
+    """Return the most recently saved record across every project, or
+    None if there's no history yet."""
     records = _load_all()
-    return records[-1] if records else None
+    if not records:
+        return None
+
+    def _at(record: dict) -> datetime:
+        raw = record.get("created_at") or ""
+        try:
+            parsed = datetime.fromisoformat(raw)
+        except ValueError:
+            return datetime.min
+        if parsed.tzinfo is not None:
+            parsed = parsed.astimezone().replace(tzinfo=None)
+        return parsed
+
+    return max(records, key=_at)
 
 
 # ============================================================
@@ -537,8 +618,7 @@ def _load_all_users() -> list[dict]:
 
 
 def _save_all_users(users: list[dict]) -> None:
-    """Write the full list of simulated users - same atomic-rename as
-    _save_all()."""
+    """Write the full list of simulated users - atomic temp-file rename."""
     ensure_data_dir()
     tmp_file = USERS_FILE.with_suffix(".json.tmp")
     with open(tmp_file, "w", encoding="utf-8") as f:
@@ -594,7 +674,8 @@ def archive_user(sim_user_id: int) -> dict | None:
     place. Returns the record, or None if id doesn't resolve. Archiving
     an already-archived user is a no-op.
 
-    Never touches plans.jsonl - a project's sim_user_id is left as-is.
+    Never touches project history files - a project's sim_user_id is
+    left as-is.
     """
     users = _load_all_users()
     for user in users:

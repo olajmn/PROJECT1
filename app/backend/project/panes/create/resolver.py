@@ -2,7 +2,7 @@
 Read and interpret goal history.
 
 This module does not store anything - it reads history via
-data_persistence.load_history() and answers, by goal_id:
+data_persistence and answers, by goal_id:
 
 - What is the full history of this goal?
 - What is the latest record for this goal?
@@ -21,7 +21,11 @@ the goal's text.
 
 from datetime import datetime
 
-from backend.store.data_persistence import load_history, record_project_id
+from backend.store.data_persistence import (
+    load_history,
+    load_project_history,
+    record_project_id,
+)
 
 
 # Timestamp handling
@@ -55,11 +59,9 @@ def get_history_for_goal(goal_id: int) -> list[dict]:
     back-and-forth of feedback and replanning for this project.
 
     Parameter name goal_id kept this round; matches project_id on disk.
+    Reads that project's file only (data/projects/{id}.jsonl).
     """
-    return [
-        r for r in load_history()
-        if record_project_id(r) == goal_id
-    ]
+    return load_project_history(goal_id)
 
 
 def get_latest_for_goal(goal_id: int) -> dict | None:
@@ -70,10 +72,8 @@ def get_latest_for_goal(goal_id: int) -> dict | None:
     "what was touched most recently across every project" - not safe once
     two projects can be active side by side (see docs/06-development.md).
     """
-    for record in reversed(load_history()):
-        if record_project_id(record) == goal_id:
-            return record
-    return None
+    history = load_project_history(goal_id)
+    return history[-1] if history else None
 
 
 # Read all goals

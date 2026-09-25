@@ -97,4 +97,29 @@ assert focused_msgs[3]["focus"] == "concept 4"
 assert focused_msgs[4]["focus"] == "concept 4"
 assert "focus" not in focused_msgs[5]  # general again
 assert focused_msgs[5] == {"role": "user", "text": "and now?"}
+
+# Map edits belong in Status, not the Talk thread (same as past_turns).
+with_map = [
+    {"goal": "House", "plan": empty, "feedback": None},
+    {
+        "goal": "House",
+        "plan": {"progression": {"steps": [{"label": "Rooms"}]}},
+        "feedback": "Added step: Rooms",
+        "event": "node_added",
+    },
+    {
+        "goal": "House",
+        "plan": {"progression": {"steps": [{"label": "Rooms"}]}},
+        "feedback": "Sure. Note: what next?",
+        "event": "chat",
+    },
+]
+map_msgs = thread_messages(with_map)
+assert [m["text"] for m in map_msgs] == [
+    "The map is empty.",
+    "what next?",
+    "Sure.",
+]
+assert not any("Added step" in (m.get("text") or "") for m in map_msgs)
+
 print("OK - thread_messages() builds You/Agent lines from history")

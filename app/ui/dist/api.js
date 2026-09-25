@@ -256,3 +256,11 @@ export async function fetchLog() {
     }
     return (await res.json());
 }
+/** One project's full history, oldest first (ungrouped). */
+export async function fetchProjectTimeline(projectId) {
+    const res = await fetch(`/api/projects/${projectId}/timeline`);
+    if (!res.ok) {
+        throw new Error(await httpErrorMessage(res));
+    }
+    return (await res.json());
+}

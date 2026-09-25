@@ -17,7 +17,7 @@
 //  5. Model (Settings → General)
 //      - fetchModel()
 //  6. Activity log (Settings → Logs)
-//      - fetchLog()
+//      - fetchLog(), fetchProjectTimeline()
 
 import type { ProjectView, LogEntry, ModelView, PastedNode, PastePreview, UserView } from "./dataShapes.js";
 
@@ -336,6 +336,17 @@ export async function fetchLog(): Promise<LogEntry[]> {
   const res = await fetch("/api/log");
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
+  }
+  return (await res.json()) as LogEntry[];
+}
+
+/** One project's full history, oldest first (ungrouped). */
+export async function fetchProjectTimeline(
+  projectId: number,
+): Promise<LogEntry[]> {
+  const res = await fetch(`/api/projects/${projectId}/timeline`);
+  if (!res.ok) {
+    throw new Error(await httpErrorMessage(res));
   }
   return (await res.json()) as LogEntry[];
 }

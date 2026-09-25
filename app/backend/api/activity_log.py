@@ -4,12 +4,12 @@ all projects, newest first.
 
 Nothing is recorded for the log. The events come from
 project/timeline.py, which reads the timestamped lines in
-data/plans.jsonl.
+data/projects/{id}.jsonl.
 """
 
 from backend.project.timeline import all_events
 
-# Newest entries shown; the rest stay in plans.jsonl.
+# Newest entries shown; the rest stay in the per-project JSONL files.
 LOG_LIMIT = 200
 
 

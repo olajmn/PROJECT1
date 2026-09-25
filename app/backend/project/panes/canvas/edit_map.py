@@ -17,11 +17,12 @@ Does not touch the Steps-page scratch tree.
 import copy
 import re
 
-from backend.store.data_persistence import load_history, save_plan
+from backend.store.data_persistence import save_plan
 from backend.project.panes.canvas.add_folder import folder_tree
 from backend.project.panes.canvas.bead import Step, from_labels, from_nested_labels
 from backend.project.panes.canvas.text_to_tree import parse_outline
 from backend.project.panes.canvas.call_suggest import children_from_conversation, zoom_into
+from backend.project.panes.create.resolver import get_history_for_goal
 
 _ID_NUM = re.compile(r"^p(\d+)$")
 
@@ -331,9 +332,7 @@ def suggest_progression_from_chat(
 def _recent_conversation(goal_id: int, latest_note: str, limit: int = 8) -> str:
     """Recent user feedback lines for this goal, plus the current note."""
     lines: list[str] = []
-    for record in load_history():
-        if record.get("project_id") != goal_id:
-            continue
+    for record in get_history_for_goal(goal_id):
         feedback = (record.get("feedback") or "").strip()
         if feedback:
             lines.append(f"User: {feedback}")

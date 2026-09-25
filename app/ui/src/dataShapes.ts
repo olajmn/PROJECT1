@@ -91,12 +91,14 @@ export interface ModelView {
 
 /** One saved change, from backend/project/timeline.py (via /api/log or
  * /api/projects/<id>/timeline). `event` is what happened ("node_added",
- * "renamed", …); `kind` is its group, shown as the entry's title. */
+ * "renamed", …); `kind` is its group, shown as the entry's title on the
+ * mixed activity feed; `focus` is the map node a chat was about. */
 export interface LogEntry {
   at: string | null;
   project_id: number | null;
   project: string;
   event: string;
-  kind: "Created" | "Chat" | "Map" | "Renamed" | "Owner" | "Archived";
+  kind: "Created" | "Chat" | "Map" | "Renamed" | "Owner" | "Archived" | "Other";
   text: string;
+  focus?: string;
 }

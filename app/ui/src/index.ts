@@ -6,7 +6,7 @@
 // Contents
 //  1. Shell
 //      - element handles + module state
-//      - chatRailApi / idMenu / createPanel / isolateChat / statusPanel
+//      - chatRailApi / idMenu / createPanel / chatPane
 //      - stepIdForLabel()
 //  2. Selection helpers
 //      - clearNodeSelection()
@@ -14,7 +14,6 @@
 //      - selected()
 //      - projectsForActiveUser()
 //      - ensureSelectionInActiveUser()
-//      - fillChatPlaceholder()
 //  3. Rendering
 //      - renderList()
 //      - renderWorkspace()
@@ -31,11 +30,9 @@ import {
   archiveProject,
   fetchProjects,
   fetchUsers,
-  pasteText,
   readMap,
   removeNode,
   renameProject,
-  sendChatMessage,
   suggestChildren,
 } from "./api.js";
 import { installChatResize, installSidebarResize } from "./shell/columnWidths.js";
@@ -46,10 +43,9 @@ import {
   projectsChronologicalForUser,
   projectsNewestFirst,
 } from "./panes/create/projectOrder.js";
-import { createIsolateChat } from "./panes/chat/showOnlyThis.js";
+import { installChatPane } from "./panes/chat/chatPane.js";
 import { messageRow } from "./panes/chat/messageRow.js";
-import { printMapText } from "./panes/chat/printMap.js";
-import { createStatusPanel } from "./panes/chat/statusPanel/statusPanel.js";
+import { installSendMessage } from "./panes/chat/sendMessage.js";
 import { displayProjectTitle } from "./panes/create/defaultNames.js";
 import { installCreatePanel } from "./panes/create/createForm.js";
 import { installTitleRename } from "./panes/create/renameProject.js";
@@ -137,13 +133,26 @@ function stepIdForLabel(label: string): string | null {
   return null;
 }
 
-const isolateChat = createIsolateChat({
+const chatPane = installChatPane({
+  statusPanel: statusEl,
+  statusResize,
+  statusToggle,
   threadEl: chatThread,
-  resolveStepId: stepIdForLabel,
-  onChange: () => renderWorkspace(),
+  printBtn: chatPrintMap,
+  onIsolateChange: () => renderWorkspace(),
+  getProject: () => selected(),
+  getSelectedNodeId: () => selectedNodeId,
 });
 
-const statusPanel = createStatusPanel(statusEl, statusResize, statusToggle);
+installSendMessage({
+  form: chatForm,
+  input: chatInput,
+  errorEl: chatError,
+  getProject: () => selected(),
+  getSelectedNodeId: () => selectedNodeId,
+  getSelectedNodeLabel: () => selectedNodeLabel,
+  onUpdated: (updated) => replaceProject(updated),
+});
 
 installSidebarResize(appShell, sidebarResize);
 const chatRailApi = installChatResize(workspace, chatResize, projectChat);
@@ -175,8 +184,8 @@ const idMenu = installIdMenu({
   onActiveUserChanged: () => {
     ensureSelectionInActiveUser();
     // Switching id should reveal that id's project — don't keep Create over it.
-    if (selected()) createPanel.close();
-    isolateChat.clear();
+    if (selected())     createPanel.close();
+    chatPane.clearIsolate();
     renderList();
     renderWorkspace();
     renderSidebarBrand();
@@ -191,7 +200,7 @@ const idMenu = installIdMenu({
     selectedNodeId = null;
     selectedNodeLabel = null;
     createPanel.close();
-    isolateChat.clear();
+    chatPane.clearIsolate();
     renderList();
     renderWorkspace();
     renderSidebarBrand();
@@ -224,19 +233,10 @@ function clearNodeSelection(scope: ParentNode = projectMain): void {
     el.classList.remove("is-selected");
   });
   scope.querySelectorAll(".node-focus-note").forEach((el) => el.remove());
-  updatePrintButton();
-}
-
-function updatePrintButton(): void {
-  const hasProject = selected() != null && !createPanel.isOpen();
-  chatPrintMap.disabled = !hasProject;
-  if (selectedNodeId) {
-    chatPrintMap.textContent = "Print path";
-    chatPrintMap.title = "Print this node's path as stored on the map";
-  } else {
-    chatPrintMap.textContent = "Print map";
-    chatPrintMap.title = "Print the stored map labels";
-  }
+  chatPane.updatePrintButton(
+    selected() != null && !createPanel.isOpen(),
+    selectedNodeId,
+  );
 }
 
 function isProgressionTree(node: { children: { id: string }[] }): boolean {
@@ -269,14 +269,6 @@ function ensureSelectionInActiveUser(): void {
       : null;
   selectedNodeId = null;
   selectedNodeLabel = null;
-}
-
-function fillChatPlaceholder(text: string): void {
-  chatThread.innerHTML = "";
-  const note = document.createElement("p");
-  note.className = "chat-placeholder";
-  note.textContent = text;
-  chatThread.appendChild(note);
 }
 
 // 3. Rendering
@@ -324,7 +316,7 @@ function renderList(): void {
       selectedNodeId = null;
       selectedNodeLabel = null;
       createPanel.close();
-      isolateChat.clear();
+      chatPane.clearIsolate();
       renderList();
       renderWorkspace();
     });
@@ -351,9 +343,8 @@ function renderWorkspace(): void {
     mainEmpty.hidden = true;
     createPanel.mount(projectMain);
     projectChat.hidden = false;
-    fillChatPlaceholder("Select a project to open its chat.");
-    statusPanel.fill(null, () => {});
-    updatePrintButton();
+    chatPane.fillEmpty("Select a project to open its chat.");
+    chatPane.updatePrintButton(false, null);
     return;
   }
 
@@ -394,7 +385,7 @@ function renderWorkspace(): void {
       scaleHost.insertAdjacentElement("afterend", focus);
     }
     focus.textContent = note;
-    updatePrintButton();
+    chatPane.updatePrintButton(true, selectedNodeId);
   };
 
   const nodeLabel = (stepId: string): string => {
@@ -578,7 +569,7 @@ function renderWorkspace(): void {
       selectedId = null;
       selectedNodeId = null;
       selectedNodeLabel = null;
-      isolateChat.clear();
+      chatPane.clearIsolate();
       renderList();
       renderWorkspace();
     },
@@ -620,10 +611,10 @@ function renderWorkspace(): void {
     try {
       const reading = await readMap(project.project_id);
       // Shown, never saved — gone on the next render, by design.
-      chatThread.append(
+      chatPane.threadEl.append(
         messageRow({ role: "agent", text: reading.summary }),
       );
-      chatThread.scrollTop = chatThread.scrollHeight;
+      chatPane.threadEl.scrollTop = chatPane.threadEl.scrollHeight;
     } catch (err) {
       chatError.hidden = false;
       chatError.textContent = `(error: ${(err as Error).message})`;
@@ -698,19 +689,16 @@ function renderWorkspace(): void {
     markSelected(focus.stepId, `Looking at: ${focus.label}`);
   }
 
-  isolateChat.fill(project.thread ?? [], (stepId, label) => {
-    markSelected(stepId, `Looking at: ${label}`);
-    if (paste.isOpen()) paste.updatePasteHint();
-    if (folder.isOpen()) folder.updateFolderHint();
+  chatPane.fillProject({
+    project,
+    resolveStepId: stepIdForLabel,
+    onSelectNode: (stepId, label) => {
+      markSelected(stepId, `Looking at: ${label}`);
+      if (paste.isOpen()) paste.updatePasteHint();
+      if (folder.isOpen()) folder.updateFolderHint();
+    },
   });
-  statusPanel.fill(project.status, (label) => {
-    const stepId = stepIdForLabel(label);
-    if (!stepId) return;
-    markSelected(stepId, `Looking at: ${label}`);
-    if (paste.isOpen()) paste.updatePasteHint();
-    if (folder.isOpen()) folder.updateFolderHint();
-  });
-  updatePrintButton();
+  chatPane.updatePrintButton(true, selectedNodeId);
 }
 
 function renderSidebarBrand(): void {
@@ -808,74 +796,6 @@ async function load(): Promise<void> {
 }
 
 // 5. Event listeners
-
-chatPrintMap.addEventListener("click", () => {
-  const project = selected();
-  if (!project) return;
-  const text = printMapText(project.node, selectedNodeId);
-  chatThread.append(messageRow({ role: "agent", text }));
-  chatThread.scrollTop = chatThread.scrollHeight;
-});
-
-chatForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const project = selected();
-  if (!project) return;
-  const text = chatInput.value.trim();
-  if (!text) return;
-  const sendButton = chatForm.querySelector(
-    'button[type="submit"]',
-  ) as HTMLButtonElement;
-  chatInput.disabled = true;
-  setButtonBusy(sendButton, true);
-  chatError.hidden = true;
-  try {
-    // A multi-line paste while focused on a node is imported as
-    // children of that node instead of sent as an ordinary chat
-    // message - only on Send, not on paste itself (a paste is just
-    // text arriving in the compose box, same as typing it; it should
-    // not act on its own before the user chooses to send it). Falls
-    // back to an ordinary message if nothing recognizable parses out.
-    // unwrap=false (keep everything) - unlike the Paste structure
-    // form, chat has no preview to catch a wrong guess before it
-    // happens, so the safe default is an extra node the user can
-    // remove afterward (visible, reversible), never a silently
-    // discarded one they never see.
-    let updated;
-    if (selectedNodeId && text.includes("\n")) {
-      try {
-        updated = await pasteText(
-          project.project_id,
-          text,
-          selectedNodeId,
-          false,
-        );
-      } catch {
-        updated = await sendChatMessage(
-          project.project_id,
-          text,
-          selectedNodeLabel,
-          selectedNodeId,
-        );
-      }
-    } else {
-      updated = await sendChatMessage(
-        project.project_id,
-        text,
-        selectedNodeLabel,
-        selectedNodeId,
-      );
-    }
-    chatInput.value = "";
-    replaceProject(updated);
-  } catch (err) {
-    chatError.hidden = false;
-    chatError.textContent = `(error: ${(err as Error).message})`;
-  } finally {
-    chatInput.disabled = false;
-    setButtonBusy(sendButton, false);
-  }
-});
 
 projectListToggle.addEventListener("click", () => {
   listManuallyOpen = !listManuallyOpen;

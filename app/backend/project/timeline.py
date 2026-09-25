@@ -3,7 +3,7 @@ A project's timeline: every saved change, in order, as plain events —
 created, chat, node added, renamed, archived, ...
 
 Every change is already saved as one timestamped line in
-data/plans.jsonl (store/data_persistence.py). This file only reads
+data/projects/{id}.jsonl (store/data_persistence.py). This file only reads
 those lines back as events; it writes nothing. Used by Settings → Logs
 (api/activity_log.py) and the project timeline address
 (/api/projects/<id>/timeline). See docs/04-current-state.md § 4.
