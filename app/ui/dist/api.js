@@ -70,7 +70,7 @@ export async function addNode(projectId, label, parentId) {
     if (parentId) {
         body.parent_id = parentId;
     }
-    const res = await fetch(`/api/projects/${projectId}/progression`, {
+    const res = await fetch(`/api/projects/${projectId}/map`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -82,7 +82,7 @@ export async function addNode(projectId, label, parentId) {
     return (await res.json());
 }
 export async function removeNode(projectId, stepId) {
-    const res = await fetch(`/api/projects/${projectId}/progression/${stepId}/remove`, {
+    const res = await fetch(`/api/projects/${projectId}/map/${stepId}/remove`, {
         method: "POST",
     });
     if (!res.ok) {
@@ -92,7 +92,7 @@ export async function removeNode(projectId, stepId) {
     return (await res.json());
 }
 export async function suggestChildren(projectId, stepId) {
-    const res = await fetch(`/api/projects/${projectId}/zoom/${stepId}`, { method: "POST" });
+    const res = await fetch(`/api/projects/${projectId}/suggest/${stepId}`, { method: "POST" });
     if (!res.ok) {
         const detail = (await res.text()).trim();
         // send_error() returns an HTML page; pull the plain reason if present.
@@ -111,7 +111,7 @@ export async function pasteText(projectId, text, parentId, unwrap = true) {
     if (parentId) {
         body.parent_id = parentId;
     }
-    const res = await fetch(`/api/projects/${projectId}/progression/import`, {
+    const res = await fetch(`/api/projects/${projectId}/map/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -140,13 +140,13 @@ export async function previewPaste(text) {
 /** Import an already-built {"label", "children"} tree directly - no
  * text parsing, no unwrap guess - for when the caller already has the
  * exact shape the user chose (ui/'s preview, after toggling nodes
- * in/out). See import_progression_outline()'s own `forest` param. */
+ * in/out). See import_map_outline()'s own `forest` param. */
 export async function pasteNodes(projectId, nodes, parentId) {
     const body = { nodes };
     if (parentId) {
         body.parent_id = parentId;
     }
-    const res = await fetch(`/api/projects/${projectId}/progression/import`, {
+    const res = await fetch(`/api/projects/${projectId}/map/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -172,7 +172,7 @@ export async function addFolder(projectId, folder, parentId) {
     if (parentId) {
         body.parent_id = parentId;
     }
-    const res = await fetch(`/api/projects/${projectId}/progression/folder`, {
+    const res = await fetch(`/api/projects/${projectId}/map/folder`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -204,7 +204,7 @@ export async function sendChatMessage(projectId, text, focusLabel, focusStepId) 
     if (focusStepId) {
         body.focus_step_id = focusStepId;
     }
-    const res = await fetch(`/api/projects/${projectId}/feedback`, {
+    const res = await fetch(`/api/projects/${projectId}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
