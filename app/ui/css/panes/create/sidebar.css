@@ -1,0 +1,269 @@
+/* Left pane (sidebar) chrome: Manager brand, the Manager | Projects
+ * separator, the add button, project list, bottom bar.
+ * Values from css/tokens.css.
+ *
+ * Split with css/panes/create/idMenu.css: that file owns the look *inside*
+ * the id panel. Anything that sits in the sidebar's own flow belongs
+ * here even when the panel drives it — .id-menu-resize is a sibling of
+ * the panel, and .sidebar-add is shared with the panel's id "+".
+ *
+ * Vertical layout: nothing grows. Every item is content-sized, and the
+ * free space goes to #create-open's margin-top: auto — that, not a
+ * stretched list, is what parks the project "+" at the foot, just
+ * above Settings.
+ *
+ * When the two sections can't both fit, they do NOT give way equally:
+ * .project-list has a far higher flex-shrink than .sidebar-id, so it
+ * collapses first and the id panel keeps whatever height the separator
+ * was dragged to. That asymmetry is what lets a height pin on the id
+ * list (panes/create/manager/resizeList.ts) claim the slack above the project
+ * "+" and then squeeze Projects, instead of being flexed back. Everything below
+ * the list is flex: 0 0 auto, so a collapsed list still leaves the
+ * header, the "+" and the bottom bar.
+ *
+ * Contents
+ *  1. Sidebar frame + brand
+ *      - .sidebar / .sidebar-id / .sidebar-brand
+ *      - .id-menu-resize (Manager | Projects separator)
+ *  2. Add button + project list
+ *      - .sidebar-add (shared with idMenu's id "+")
+ *  3. Bottom bar (Settings)
+ */
+
+/* 1. Sidebar frame + brand */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-3);
+  background: var(--color-bg-sidebar);
+  border-right: var(--border);
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar-id {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar-brand {
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-2);
+  cursor: pointer;
+}
+
+.sidebar-brand:hover,
+.sidebar-brand.is-active {
+  color: var(--color-text);
+}
+
+/* Manager | Projects separator — the horizontal twin of .sidebar-resize
+ * / .chat-resize (css/shell/layout.css): a real separator element BETWEEN
+ * the two regions rather than a line drawn inside one of them, which is
+ * what lets it span the sidebar's full width without fighting anyone's
+ * overflow. Same idiom as those two: the element itself is the visible
+ * line, ::before only widens the drag target. Hidden with the panel
+ * (manager/manager.ts) — it marks a live resize target, not a permanent
+ * structural divider. */
+.id-menu-resize {
+  position: relative;
+  flex: 0 0 auto;
+  height: 0;
+  margin-inline: calc(-1 * var(--space-3));
+  border-top: var(--border);
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.id-menu-resize::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -4px;
+  height: 8px;
+}
+
+.id-menu-resize:hover,
+body.is-resizing-id-menu .id-menu-resize {
+  border-top-color: var(--color-accent);
+}
+
+body.is-resizing-id-menu {
+  cursor: ns-resize;
+  user-select: none;
+}
+
+/* 2. Add button + project list */
+
+/* The one "mint something here" control, shared by both sections that
+ * have something to mint: Projects (#create-open, opens the Create pane)
+ * and Manager (the id "+", which adds its own spacing — see
+ * .sidebar-id-menu-create in idMenu.css). Same glyph, same weight; which
+ * section it belongs to is read from where it sits, not from a label. */
+.sidebar-add {
+  display: block;
+  flex: 0 0 auto;
+  width: 1.8rem;
+  height: 1.8rem;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.sidebar-add:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+/* Project mint only — not the Manager id "+". Parks this control at
+ * the foot so it does not hang under the Projects header when the
+ * list is closed or short. Settings stays immediately below. */
+#create-open {
+  margin-top: auto;
+}
+
+/* Content-sized, not space-filling. Free space goes to #create-open's
+ * margin-top: auto, which is what keeps the "+" (and Settings under
+ * it) at the bottom.
+ *
+ * The high flex-shrink is what lets a Manager list height pin claim
+ * space (panes/create/manager/resizeList.ts): when the two sections can't both
+ * fit, this list yields first instead of splitting the deficit evenly
+ * with the panel, which would have shrunk the panel back as fast as the
+ * drag grew it. Everything else down here — the Projects header, the
+ * "+", the Settings bar — is flex: 0 0 auto, so squeezing this to
+ * nothing still leaves a way back. It scrolls (min-height: 0) for as
+ * long as it has height to scroll in. */
+.project-list {
+  flex: 0 100 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.project-list-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+  text-align: left;
+  padding: 0.4rem 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.project-list-item:hover {
+  color: var(--color-accent);
+}
+
+/* Selection is carried by the title's weight, not a rule under the row —
+ * the sidebar's only horizontal lines are the two section boundaries, so
+ * a third one here read as structure rather than state. The id line stays
+ * muted meta either way ([[visual-principles]]). */
+.project-list-item.is-selected {
+  color: var(--color-text);
+}
+
+.project-list-item.is-selected .project-list-title {
+  font-weight: 600;
+}
+
+.project-list-title {
+  font-size: 0.9rem;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sidebar-empty {
+  margin: 0;
+  padding: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* 3. Bottom bar (Settings) */
+
+/* The sidebar's bottom bar. Mirrors .map-copy-row (css/panes/canvas/frame.css) in
+ * height and rule so the two columns' footer lines meet across the shell,
+ * the way .column-top-bar does at the top — which is why the box bleeds
+ * past .sidebar's own padding on three sides and sits flush in the frame,
+ * with the inline padding putting Settings back on the sidebar's text
+ * inset. Carrying the rule on the box (not a ::before) is what lets the
+ * two line up: the border is then the bar's own top edge.
+ *
+ * Also opts out of the generic `nav` bottom treatment in css/base.css —
+ * that rule dresses the Settings pages' top nav, where a rule underneath
+ * separates nav from page. Here the nav ends the frame, so that border
+ * had nothing to separate and the space it held open below itself was
+ * dead. */
+.sidebar-more {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-1);
+  flex: 0 0 auto;
+  min-height: 1.75rem;
+  margin: 0 calc(-1 * var(--space-3)) calc(-1 * var(--space-4));
+  padding: 0 var(--space-3);
+  border-top: var(--border);
+  border-bottom: none;
+}
+
+.sidebar-more a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: var(--font-size-xs);
+  padding: 0.15rem 0;
+}
+
+.sidebar-more a:hover {
+  color: var(--color-accent);
+}
+
+@media (max-width: 800px) {
+  .sidebar {
+    border-right: none;
+    border-bottom: var(--border);
+  }
+}

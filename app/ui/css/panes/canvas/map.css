@@ -1,0 +1,499 @@
+/* Projects map: how nodes and spines are drawn (TS lives in src/panes/canvas/).
+ * Unique/heavy UI — OK to grow files here. Colors from css/tokens.css.
+ *
+ * Contents
+ *  1. Map surface & SVG spines
+ *      - .progress-line / .progress-map-svg / .progress-spine
+ *  2. Rows & indent
+ *      - .progress-row / .progress-branch / .progress-trunk
+ *  3. Paste outline (the bar itself is in frame.css)
+ *      - .map-paste-* / .outline-preview-*
+ *  4. Poles, beads, menus
+ *      - .progress-pole* / .progress-bead-* / .progress-menu-*
+ *  5. Add / focus
+ *      - .progress-add* / .node-focus-note
+ */
+
+/* 1. Map canvas & SVG spines */
+
+.progress-line {
+  position: relative;
+  margin: 0.35rem 0 0.5rem;
+  overflow: visible;
+  padding: 0.35rem 0 0.5rem;
+}
+
+.progress-map-svg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  /* Size comes from width/height attributes (= viewBox) so user units
+   * match local layout px from getBoundingClientRect / mapScale. */
+  pointer-events: none;
+  overflow: visible;
+  z-index: 0;
+}
+
+.progress-svg-stroke {
+  stroke: var(--color-text-muted);
+  stroke-width: 1.25;
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.progress-spine {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.15rem;
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+/* 2. Rows & indent */
+
+.progress-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.15rem 0.3rem;
+  min-width: min-content;
+}
+
+/* Bead rows: enough air that boxes don't kiss; still one continuous spine. */
+.progress-bead,
+.progress-depth-row {
+  margin: 0.28rem 0;
+}
+
+.progress-branch {
+  flex: 0 0 auto;
+  display: inline-block;
+  color: transparent;
+  white-space: pre;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+/* Indent spacer only — spine drawn in SVG. */
+.progress-trunk {
+  margin: 0.35rem 0;
+  padding: 0.05rem 0;
+  border-left: none;
+}
+
+.progress-trunk-block + .progress-trunk-block {
+  margin-top: 0.55rem;
+}
+
+/* 3. Paste outline */
+
+.map-paste-form,
+.map-folder-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-width: 26rem;
+  margin: -0.25rem 0 0.75rem;
+  padding: 0.6rem;
+  border: var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+}
+
+.map-paste-form[hidden],
+.map-folder-form[hidden] {
+  display: none;
+}
+
+.map-folder-input {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 0.82rem;
+  box-sizing: border-box;
+}
+
+.map-paste-input {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 0.82rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.map-paste-hint {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+}
+
+.map-paste-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.map-paste-actions button {
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.25rem 0.6rem;
+}
+
+.map-paste-preview {
+  max-height: 10rem;
+  overflow-y: auto;
+  padding: 0.4rem 0.55rem;
+  border: var(--border);
+  border-radius: var(--radius);
+  background: var(--color-bg-panel);
+  font-size: 0.78rem;
+}
+
+.map-paste-preview-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.outline-preview-list,
+.outline-preview-list ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 1rem;
+}
+
+.outline-preview-list {
+  padding-left: 0;
+}
+
+.outline-preview-list li {
+  line-height: 1.5;
+}
+
+.outline-preview-title-toggle {
+  color: var(--color-text);
+  cursor: pointer;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.outline-preview-title-toggle:hover {
+  border-bottom-color: var(--color-text-muted);
+}
+
+.outline-preview-title-toggle.is-excluded {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.outline-preview-title-toggle.is-excluded:hover {
+  color: var(--color-text-muted);
+}
+
+/* 4. Poles, beads, menus */
+
+/* Header beads: same box language as tree beads, not progression nodes. */
+.progress-header-unit {
+  pointer-events: none;
+}
+
+.progress-pole-identity .entity-id {
+  font-weight: 500;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
+}
+
+.progress-pole-name .progress-name-label {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+.progress-name-label.is-renamable,
+.progress-name-input {
+  /* Header beads are pointer-events: none so the camera can pan
+     over #N / title. The rename target has to take clicks. */
+  pointer-events: auto;
+}
+
+.progress-name-label.is-renamable {
+  cursor: text;
+}
+
+.progress-name-input {
+  font: inherit;
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  min-width: 8rem;
+  width: 16rem;
+  max-width: 24rem;
+}
+
+/* One square around label + tools (indent spacer stays outside). */
+.progress-bead-unit {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.2rem 0.35rem;
+  box-sizing: border-box;
+  min-height: 1.6rem;
+  padding: 0.15rem 0.4rem 0.15rem 0.5rem;
+  border: var(--border);
+  border-radius: var(--radius);
+  background: transparent;
+}
+
+.progress-row.is-selected > .progress-bead-unit {
+  border-color: var(--color-accent);
+}
+
+/* Hidden by mapScale grain (overview); still in DOM for + to reveal. */
+.progress-row.is-grain-hidden {
+  display: none !important;
+}
+
+/* Parent with deeper nodes tucked under current grain. */
+.progress-row.has-grain-more > .progress-bead-unit::after {
+  content: "";
+  flex: 0 0 auto;
+  width: 0.35rem;
+  height: 0.35rem;
+  margin-left: 0.15rem;
+  border-radius: 1px;
+  background: var(--color-text-muted);
+  opacity: 0.55;
+}
+
+.progress-bead-btn,
+/* One node, one line — the canvas grows sideways instead of wrapping. */
+.progress-bead-label,
+.progress-name-label {
+  white-space: nowrap;
+}
+
+.progress-bead-label {
+  font: inherit;
+  font-size: inherit;
+  font-weight: 400;
+  line-height: inherit;
+  text-align: left;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  cursor: default;
+}
+
+/* A <button>, so the browser's default fill has to be cleared — without
+   this, clickable nodes render lighter than plain ones. */
+.progress-bead-btn {
+  font: inherit;
+  font-size: inherit;
+  font-weight: 400;
+  line-height: inherit;
+  text-align: left;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.progress-bead-btn:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-decoration-color: var(--color-border);
+  text-underline-offset: 0.15em;
+  text-decoration-thickness: 1px;
+}
+
+/* Selected: accent underline on the label + accent unit border. */
+.progress-row.is-selected .progress-bead-btn,
+.progress-row.is-selected .progress-bead-label {
+  color: var(--color-text);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent);
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 2px;
+  background: transparent;
+  padding: 0;
+}
+
+/* Depth quieter than spine ([[surfaces]] § 4). */
+.progress-depth-row {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+}
+
+.progress-depth-row .progress-bead-btn,
+.progress-depth-row .progress-bead-label {
+  color: var(--color-text-muted);
+}
+
+.progress-depth-row.is-selected .progress-bead-btn,
+.progress-depth-row.is-selected .progress-bead-label {
+  color: var(--color-text);
+}
+
+/* Tools stay visible while node layout is still in flux — hover-hide later. */
+
+.progress-menu-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.progress-menu-toggle {
+  width: 1.35rem;
+  height: 1.25rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.progress-menu-toggle:hover,
+.progress-menu-toggle[aria-expanded="true"] {
+  color: var(--color-text);
+  background: var(--color-bg-sidebar);
+}
+
+.progress-menu {
+  position: fixed;
+  z-index: 40;
+  min-width: 14rem;
+  max-width: 18rem;
+  padding: 0.25rem 0;
+  border: var(--border);
+  border-radius: var(--radius);
+  background: var(--color-bg-panel);
+  box-shadow: none;
+}
+
+.progress-menu[hidden] {
+  display: none;
+}
+
+.progress-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.45rem 0.7rem;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  opacity: 1;
+}
+
+.progress-menu-item-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.progress-menu-item-detail {
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--color-text-muted);
+}
+
+.progress-menu-item:hover:not(:disabled) {
+  background: var(--color-bg-workspace);
+}
+
+.progress-menu-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* 5. Add / focus */
+
+.node-focus-note {
+  margin: 0.35rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}
+
+.progress-add-wrap {
+  align-items: center;
+}
+
+.progress-add {
+  flex: 0 0 auto;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.2rem;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.progress-add-inline {
+  margin-left: 0.15rem;
+}
+
+.progress-add:hover {
+  border-color: var(--color-text-soft);
+  color: var(--color-text);
+}
+
+.progress-add-form {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.progress-add-form[hidden] {
+  display: none;
+}
+
+.progress-add-input {
+  width: 10rem;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.progress-add-form button {
+  padding: 0.2rem 0.45rem;
+  font-family: inherit;
+  font-size: 0.75rem;
+}

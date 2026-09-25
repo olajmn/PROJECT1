@@ -1,0 +1,115 @@
+/* The canvas frame itself — mirrors src/panes/canvas/zoomAndPan/ (panAndZoom.ts, frameControls.ts).
+ * Node drawing is css/panes/canvas/map.css; the column around it is css/panes/canvas/pane.css.
+ * Tokens from css/tokens.css.
+ *
+ * Contents
+ *  1. Viewport & frame
+ *      - .map-scale-viewport / .map-frame
+ *  2. Sticky top bar
+ *      - .map-top-bar
+ *  3. Bottom action bar
+ *      - .map-copy-row / .map-copy-group / .map-copy-button
+ */
+
+/* 1. Viewport & frame */
+
+.map-scale-viewport {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.75rem;
+  /* Room for .map-top-bar, which overlays the padding box. frameInner()
+     subtracts this, so the camera stays clear of the strip on its own. */
+  padding-top: 2.25rem;
+}
+
+/*
+ * Canvas frame — tree lives here. −/+ = grain; wheel/drag = camera.
+ * No box: the bars above and below carry the only rules, and those run
+ * the full column width.
+ */
+.map-frame {
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.map-scale-viewport.is-camera-on {
+  cursor: grab;
+  touch-action: none;
+}
+
+.map-scale-viewport.is-camera-on.is-panning {
+  cursor: grabbing;
+}
+
+/* 2. Sticky top bar */
+
+/*
+ * Grain/view controls, plus a way back to the top — click the bare strip,
+ * or scroll while hovering it.
+ */
+.map-top-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  /* Opaque on purpose: the tree pans up into this strip, and the fill is
+     what makes rows disappear behind it instead of showing through. */
+  background: var(--color-bg-workspace);
+  cursor: pointer;
+}
+
+.map-top-bar .map-scale-toolbar {
+  margin: 0;
+  cursor: auto;
+}
+
+/* 3. Bottom action bar */
+
+/* Mirrors .map-top-bar: one rule, full width, actions on the left and the
+   project-level action on the right. Same side padding as the top bar, so
+   the two bars' contents line up down the left edge. */
+.map-copy-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  min-height: 1.75rem;
+  margin: 0;
+  padding: 0 var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.map-copy-group {
+  display: flex;
+  align-items: center;
+}
+
+.map-copy-button {
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+}
+
+.map-copy-button:hover {
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.map-copy-row .map-copy-button + .map-copy-button {
+  margin-left: 0.4rem;
+}

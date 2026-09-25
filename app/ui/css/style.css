@@ -1,0 +1,27 @@
+/* App UI styles — split under css/; this file only pulls them in.
+   Pages link it as /css/style.css.
+   Order: type → tokens → base → areas (shell / panes: create, canvas, chat / settings). */
+
+/* 300 is here for the middle pane's guidance text (.project-hint /
+   .workspace-empty, css/panes/canvas/pane.css). Without it that rule resolves to
+   400 and reads no lighter — browsers synthesize bold, never light. */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap");
+
+@import url("tokens.css");
+@import url("base.css");
+@import url("shell/layout.css");
+@import url("shell/columnRail.css");
+@import url("shell/spinner.css");
+@import url("panes/create/sidebar.css");
+@import url("panes/create/idMenu.css");
+@import url("panes/create/panel.css");
+@import url("panes/canvas/pane.css");
+@import url("panes/canvas/frame.css");
+@import url("panes/canvas/map.css");
+@import url("panes/canvas/skeleton.css");
+@import url("panes/chat/conversation.css");
+@import url("panes/chat/agent-chat.css");
+@import url("panes/chat/chart.css");
+@import url("shared.css");
+@import url("settings/chrome.css");
+@import url("settings/paragraphs.css");

@@ -1,0 +1,75 @@
+/* Shared message / legacy plan-tree bits (Projects chat also uses .message).
+ * Prefer css/panes/chat/agent-chat.css for the live chat pane.
+ * Values from css/tokens.css.
+ *
+ * Contents
+ *  1. Transcript / message
+ *  2. Plan tree (legacy)
+ */
+
+/* 1. Transcript / message */
+
+#transcript {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+}
+
+.message {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.message .who {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  min-width: 3.5rem;
+}
+
+.message-agent .text {
+  color: var(--color-text);
+}
+
+/* 2. Plan tree (legacy) */
+
+.plan {
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+}
+
+.plan ul {
+  list-style: none;
+  margin: 0;
+  padding-left: var(--space-4);
+}
+
+.plan > ul {
+  padding-left: 0;
+}
+
+.node {
+  padding: 0.15rem 0;
+}
+
+.node-done {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+.node-current {
+  font-weight: 600;
+}
+.node-open {
+  color: var(--color-text);
+}
+
+.plan-busy {
+  opacity: 0.6;
+  pointer-events: none;
+}

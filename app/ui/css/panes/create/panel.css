@@ -1,0 +1,83 @@
+/* Create pane — naming and minting a project in the middle column.
+ * Mirrors src/panes/create/createForm.ts and backend/project/panes/create/.
+ * Sidebar Create entry styles live in css/panes/create/sidebar.css.
+ * Tokens from css/tokens.css.
+ *
+ * The middle column is empty of a map here, so the cluster sits in
+ * the leftover space (margin: auto) instead of tucking into a corner.
+ * Heading is quiet guidance; the field is the primary thing.
+ *
+ * Contents
+ *  1. Cluster
+ *      - .create-panel / .create-heading
+ *  2. Field + actions
+ *      - .create-project-form / .create-actions / .create-bare (+)
+ *      - Add folder (panes/create/projectFromFolder.ts)
+ */
+
+/* 1. Cluster */
+
+.create-panel {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: min(26rem, 100%);
+  margin: auto;
+  padding: 0 var(--space-4);
+}
+
+.create-panel[hidden] {
+  display: none;
+}
+
+.create-heading {
+  margin: 0 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  font-weight: 300;
+  line-height: var(--line-height);
+}
+
+/* 2. Field + actions */
+
+.create-project-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+.create-project-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 2.75rem;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius);
+  resize: vertical;
+  background: transparent;
+  color: var(--color-text);
+}
+
+.create-project-form textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.create-project-form button {
+  padding: 0.35rem var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.create-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Same name, no planner — the tree comes later. */
+.create-bare {
+  min-width: 2rem;
+  padding: 0.35rem var(--space-2);
+}

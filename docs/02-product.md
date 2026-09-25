@@ -116,13 +116,15 @@ and decides nothing itself. Today's data is placeholder:
 | `create_project()` mints a `project_id` locally | The project is created on-chain; the app receives its id |
 | `backend/store/` reads and writes local JSON files | The same place reads from / writes to the outside source |
 
-`backend/store/` is the only code that touches data and `backend/api/`
-the only way in, so those are the two places that change when data
+The create pane (`backend/project/panes/create/` and `ui/src/panes/create/`:
+projects, ids, and who owns which project) is the part that maps onto
+accounts, minting, and ownership. `backend/store/` is the only code that
+touches data and `backend/api/` the only way in, so those are the two places that change when data
 moves out; chat, map, and UI should not need to know where data lives.
 
 Known gaps against this today (see [[04-current-state]]): default
 project names ("New project N") are decided in the UI
-(`ui/src/create/autoname.ts`); the folder picker opens a macOS dialog on
+(`ui/src/panes/create/defaultNames.ts`); the folder picker opens a macOS dialog on
 the server; there is no written API reference; the server accepts
 localhost only, with no login.
 

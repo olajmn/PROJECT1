@@ -1,0 +1,30 @@
+/* Line view (`.is-skeleton`) — ink off; `src/panes/canvas/lineView/` draws. */
+
+.progress-line.is-skeleton .progress-bead-unit,
+.progress-line.is-skeleton .progress-header-unit {
+  color: transparent;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.progress-line.is-skeleton .progress-bead-unit > *,
+.progress-line.is-skeleton .progress-header-unit > *,
+.progress-line.is-skeleton .progress-add,
+.progress-line.is-skeleton .progress-menu-wrap {
+  visibility: hidden;
+}
+
+.progress-line.is-skeleton .progress-row.has-grain-more > .progress-bead-unit::after {
+  display: none;
+}
+
+.progress-line.is-skeleton .progress-svg-stroke {
+  stroke-width: 1.35;
+  stroke: var(--color-text-muted);
+}
+
+/* Horizontal bar = the node / word stand-in. */
+.progress-line.is-skeleton .progress-svg-word {
+  stroke-width: 1.6;
+}

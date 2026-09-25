@@ -22,10 +22,10 @@ how the canvas should *read*. Not a pixel spec. Product loop:
 **Code homes (today):**
 
 - Canvas data / write paths: `backend/project/panes/canvas/`
-- Canvas UI (name lag): `app/ui/src/map/` + `app/ui/css/map/`
-- Sidebar: `app/ui/src/sidebar/` (`idMenu/` incl. list-height resize, `projectListOrder.ts`) + `user/activeUser.ts`
-- Chat: `app/ui/src/chat/` + Projects compose in `pages/projects.ts`
-- Shell glue (column resize, tabs, rail): `app/ui/src/shell/` — owns sidebar\|map\|chat widths only; Manager height stays under `sidebar/idMenu/`
+- Canvas UI: `app/ui/src/panes/canvas/` + `app/ui/css/panes/canvas/`
+- Sidebar (lives in the create pane): `app/ui/src/panes/create/` (`manager/` incl. list-height resize, `projectOrder.ts`) + `user/activeId.ts`
+- Chat: `app/ui/src/panes/chat/` + Projects compose in `src/index.ts`
+- Shell glue (column resize, tabs, rail): `app/ui/src/shell/` — owns sidebar\|map\|chat widths only; Manager height stays under `panes/create/manager/`
 
 ## 2. What canvas is not
 
@@ -48,13 +48,13 @@ Same data (`plan.progression` beads). Different read on screen.
 **One living frame** (no Fit/All tabs):
 - **− / +** — grow or shrink *tree depth* (grain). Boxes keep natural
   size; overview re-fits in the frame after each step.
-- **Camera** (`frame/camera.ts`) — wheel zoom anchored under the cursor
+- **Camera** (`zoomAndPan/panAndZoom.ts`) — wheel zoom anchored under the cursor
   **vertically** (spine stays on the left edge), drag pan **up/down**
   (clamped — no empty gap above the tree). **Furthest out** = whole
   *visible grain* in the frame; **closest in** = natural size (1×).
   Double-click empty → overview (re-picks a readable grain). Unpins so
   zoom may auto-pick Line again.
-- **Text | Line** (`frame/chrome.ts` + `skeleton/` + `lines/paint.ts`) —
+- **Text | Line** (`zoomAndPan/frameControls.ts` + `lineView/` + `lines/drawLines.ts`) —
   view mode, separate from zoom limits. **≤ ~20% → Line**, **> ~26% →
   Text** (hysteresis between). Toolbar sets preference until the next
   zoom threshold. Same nest hierarchy; in Line each horizontal bar *is*
@@ -66,7 +66,7 @@ Free node placement / pan outside the frame stay **out**. Rename
 
 ## 4. Layout (locked design)
 
-ASCII, not pixels. Implementation later against `src/map/` + `css/map/`
+ASCII, not pixels. Implementation later against `src/panes/canvas/` + `css/panes/canvas/`
 — behavior stays (select, +, ×, ⋯, paste); expression changes.
 
 ```text
@@ -91,7 +91,7 @@ ASCII, not pixels. Implementation later against `src/map/` + `css/map/`
    Plain label + ⋯. Light square around label+tools.
 4. **Depth** — Children nest **under** their parent (drop from box
    bottom, tick into child left edge). DOM indent and SVG nest share
-   one step (`mapGeom`). Depth text is **muted** vs spine. v1 keeps
+   one step (`spacing.ts`). Depth text is **muted** vs spine. v1 keeps
    expand-all.
 5. **Connectors** — Strokes meet **box edges** only (never through
    labels). Title → trunk exits the title **bottom** at the nest X.
@@ -119,7 +119,6 @@ ASCII, not pixels. Implementation later against `src/map/` + `css/map/`
 - Free drag placement of nodes; pan outside `.map-frame`
 - Cards / glass nodes
 - File-folder sidebar
-- Renaming `src/map/` → `canvas/` (after expression lands)
 
 ## 5. See also
 

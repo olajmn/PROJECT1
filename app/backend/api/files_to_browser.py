@@ -39,8 +39,8 @@ CONTENT_TYPES = {
 
 def send_page_file(handler: BaseHTTPRequestHandler) -> None:
     """Answer one request with the file its address names, or 404.
-    "/" opens the Projects page."""
-    requested = "projects.html" if handler.path == "/" else handler.path.lstrip("/")
+    "/" opens index.html, the Projects page."""
+    requested = "index.html" if handler.path == "/" else handler.path.lstrip("/")
     file_path = _find_file(requested)
     if file_path is None:
         handler.send_error(404)
@@ -57,17 +57,14 @@ def send_page_file(handler: BaseHTTPRequestHandler) -> None:
 
 
 def _find_file(requested: str) -> Path | None:
-    """Map an address to a real file: ui/ root first (style.css,
-    dist/…), then ui/pages/. Refuses anything outside app/ui/."""
+    """Map an address to a real file under app/ui/ (e.g. /settings/logs.html
+    → ui/settings/logs.html). Refuses anything outside app/ui/."""
     name = requested.lstrip("/")
     if not name or ".." in name.split("/"):
         return None
-    for base in (UI_DIR, UI_DIR / "pages"):
-        candidate = (base / name).resolve()
-        try:
-            candidate.relative_to(UI_DIR)
-        except ValueError:
-            return None
-        if candidate.is_file():
-            return candidate
-    return None
+    candidate = (UI_DIR / name).resolve()
+    try:
+        candidate.relative_to(UI_DIR)
+    except ValueError:
+        return None
+    return candidate if candidate.is_file() else None

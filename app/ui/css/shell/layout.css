@@ -25,7 +25,7 @@
 }
 
 /* Sidebar and chat each start with the same empty strip the canvas's own
- * .map-top-bar already occupies (css/map/frame.css) — same height and
+ * .map-top-bar already occupies (css/panes/canvas/frame.css) — same height and
  * rule, so the horizontal line lands at the same height in all three
  * columns. Purely visual for now: no controls live in this strip here. */
 .column-top-bar {
@@ -34,7 +34,7 @@
   border-bottom: var(--border);
 }
 
-/* .sidebar's own padding (css/sidebar/sidebar.css) would otherwise inset
+/* .sidebar's own padding (css/panes/create/sidebar.css) would otherwise inset
  * the strip on all sides — pull it back out to the sidebar's true edges,
  * same bleed amount as the divider rules in that file. #project-chat has
  * no padding of its own, so it needs no equivalent override. */

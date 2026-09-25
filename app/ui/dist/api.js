@@ -8,8 +8,8 @@ async function httpErrorMessage(res) {
     const plain = (fromHtml || detail || `request failed: ${res.status}`).replace(/\s+/g, " ");
     return plain.slice(0, 240);
 }
-// 1. Goals / Projects
-export async function fetchActiveGoals() {
+// 1. Projects
+export async function fetchProjects() {
     const res = await fetch("/api/projects");
     if (!res.ok) {
         throw new Error(`request failed: ${res.status}`);
@@ -35,8 +35,8 @@ export async function createProject(text, simUserId) {
     return (await res.json());
 }
 /** Replace the project's display name. Identity stays project_id. */
-export async function renameProject(goalId, text) {
-    const res = await fetch(`/api/projects/${goalId}/name`, {
+export async function renameProject(projectId, text) {
+    const res = await fetch(`/api/projects/${projectId}/name`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
@@ -46,33 +46,15 @@ export async function renameProject(goalId, text) {
     }
     return (await res.json());
 }
-export async function sendGoalFeedback(goalId, text, focusLabel, focusStepId) {
-    const body = { text };
-    if (focusLabel) {
-        body.focus_label = focusLabel;
-    }
-    if (focusStepId) {
-        body.focus_step_id = focusStepId;
-    }
-    const res = await fetch(`/api/projects/${goalId}/feedback`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-    });
+export async function archiveProject(projectId) {
+    const res = await fetch(`/api/projects/${projectId}/cancel`, { method: "POST" });
     if (!res.ok) {
         throw new Error(`request failed: ${res.status}`);
     }
     return (await res.json());
 }
-export async function cancelGoal(goalId) {
-    const res = await fetch(`/api/projects/${goalId}/cancel`, { method: "POST" });
-    if (!res.ok) {
-        throw new Error(`request failed: ${res.status}`);
-    }
-    return (await res.json());
-}
-export async function setProjectUser(goalId, simUserId) {
-    const res = await fetch(`/api/projects/${goalId}/user`, {
+export async function setProjectUser(projectId, simUserId) {
+    const res = await fetch(`/api/projects/${projectId}/user`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sim_user_id: simUserId }),
@@ -82,8 +64,35 @@ export async function setProjectUser(goalId, simUserId) {
     }
     return (await res.json());
 }
-export async function zoomGoalStep(goalId, stepId) {
-    const res = await fetch(`/api/projects/${goalId}/zoom/${stepId}`, { method: "POST" });
+// 2. Map
+export async function addNode(projectId, label, parentId) {
+    const body = { label };
+    if (parentId) {
+        body.parent_id = parentId;
+    }
+    const res = await fetch(`/api/projects/${projectId}/progression`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+        const detail = (await res.text()).trim();
+        throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+    }
+    return (await res.json());
+}
+export async function removeNode(projectId, stepId) {
+    const res = await fetch(`/api/projects/${projectId}/progression/${stepId}/remove`, {
+        method: "POST",
+    });
+    if (!res.ok) {
+        const detail = (await res.text()).trim();
+        throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+    }
+    return (await res.json());
+}
+export async function suggestChildren(projectId, stepId) {
+    const res = await fetch(`/api/projects/${projectId}/zoom/${stepId}`, { method: "POST" });
     if (!res.ok) {
         const detail = (await res.text()).trim();
         // send_error() returns an HTML page; pull the plain reason if present.
@@ -94,12 +103,50 @@ export async function zoomGoalStep(goalId, stepId) {
     }
     return (await res.json());
 }
-export async function addProgressionStep(goalId, label, parentId) {
-    const body = { label };
+export async function pasteText(projectId, text, parentId, unwrap = true) {
+    const body = {
+        text,
+        unwrap,
+    };
     if (parentId) {
         body.parent_id = parentId;
     }
-    const res = await fetch(`/api/projects/${goalId}/progression`, {
+    const res = await fetch(`/api/projects/${projectId}/progression/import`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+        const detail = (await res.text()).trim();
+        throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+    }
+    return (await res.json());
+}
+/** Dry-run parse_outline() both ways (title line dropped / kept) so
+ * the paste form can show what would be created before committing -
+ * no project needed, nothing saved. */
+export async function previewPaste(text) {
+    const res = await fetch("/api/parse-outline-preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+    });
+    if (!res.ok) {
+        const detail = (await res.text()).trim();
+        throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+    }
+    return (await res.json());
+}
+/** Import an already-built {"label", "children"} tree directly - no
+ * text parsing, no unwrap guess - for when the caller already has the
+ * exact shape the user chose (ui/'s preview, after toggling nodes
+ * in/out). See import_progression_outline()'s own `forest` param. */
+export async function pasteNodes(projectId, nodes, parentId) {
+    const body = { nodes };
+    if (parentId) {
+        body.parent_id = parentId;
+    }
+    const res = await fetch(`/api/projects/${projectId}/progression/import`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -120,31 +167,12 @@ export async function chooseFolder() {
     const body = (await res.json());
     return body.path ?? "";
 }
-export async function importProgressionFolder(goalId, folder, parentId) {
+export async function addFolder(projectId, folder, parentId) {
     const body = { path: folder };
     if (parentId) {
         body.parent_id = parentId;
     }
-    const res = await fetch(`/api/projects/${goalId}/progression/folder`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-        const detail = (await res.text()).trim();
-        throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
-    }
-    return (await res.json());
-}
-export async function importProgressionOutline(goalId, text, parentId, unwrap = true) {
-    const body = {
-        text,
-        unwrap,
-    };
-    if (parentId) {
-        body.parent_id = parentId;
-    }
-    const res = await fetch(`/api/projects/${goalId}/progression/import`, {
+    const res = await fetch(`/api/projects/${projectId}/progression/folder`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -159,60 +187,34 @@ export async function importProgressionOutline(goalId, text, parentId, unwrap = 
  * Read an existing map back into words — what the project looks to be
  * about. Nothing is saved; the reading is gone on the next render.
  */
-export async function readTree(goalId) {
-    const res = await fetch(`/api/projects/${goalId}/read`, { method: "POST" });
+export async function readMap(projectId) {
+    const res = await fetch(`/api/projects/${projectId}/read`, { method: "POST" });
     if (!res.ok) {
         const detail = (await res.text()).trim();
         throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
     }
     return (await res.json());
 }
-/** Dry-run parse_outline() both ways (title line dropped / kept) so
- * the paste form can show what would be created before committing -
- * no goal needed, nothing saved. */
-export async function previewOutline(text) {
-    const res = await fetch("/api/parse-outline-preview", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-    });
-    if (!res.ok) {
-        const detail = (await res.text()).trim();
-        throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+// 3. Chat
+export async function sendChatMessage(projectId, text, focusLabel, focusStepId) {
+    const body = { text };
+    if (focusLabel) {
+        body.focus_label = focusLabel;
     }
-    return (await res.json());
-}
-/** Import an already-built {"label", "children"} tree directly - no
- * text parsing, no unwrap guess - for when the caller already has the
- * exact shape the user chose (ui/'s preview, after toggling nodes
- * in/out). See import_progression_outline()'s own `forest` param. */
-export async function importProgressionForest(goalId, nodes, parentId) {
-    const body = { nodes };
-    if (parentId) {
-        body.parent_id = parentId;
+    if (focusStepId) {
+        body.focus_step_id = focusStepId;
     }
-    const res = await fetch(`/api/projects/${goalId}/progression/import`, {
+    const res = await fetch(`/api/projects/${projectId}/feedback`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
     });
     if (!res.ok) {
-        const detail = (await res.text()).trim();
-        throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+        throw new Error(`request failed: ${res.status}`);
     }
     return (await res.json());
 }
-export async function removeProgressionStep(goalId, stepId) {
-    const res = await fetch(`/api/projects/${goalId}/progression/${stepId}/remove`, {
-        method: "POST",
-    });
-    if (!res.ok) {
-        const detail = (await res.text()).trim();
-        throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
-    }
-    return (await res.json());
-}
-// 2. Simulated users
+// 4. Simulated users
 export async function fetchUsers() {
     const res = await fetch("/api/users");
     if (!res.ok) {
@@ -238,7 +240,7 @@ export async function archiveUser(simUserId) {
     }
     return (await res.json());
 }
-// 4. Model boundary (Settings → General)
+// 5. Model (Settings → General)
 export async function fetchModel() {
     const res = await fetch("/api/model");
     if (!res.ok) {
@@ -246,7 +248,7 @@ export async function fetchModel() {
     }
     return (await res.json());
 }
-// 5. Activity log (Settings → Logs)
+// 6. Activity log (Settings → Logs)
 export async function fetchLog() {
     const res = await fetch("/api/log");
     if (!res.ok) {

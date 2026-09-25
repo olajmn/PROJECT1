@@ -3,22 +3,23 @@
 // already decided.
 
 // Contents
-//  1. Goals / Projects
-//      - fetchActiveGoals()
-//      - createProject()
-//      - renameProject()
-//      - sendGoalFeedback()
-//      - cancelGoal()
-//      - setProjectUser()
-//  2. Simulated users
-//      - fetchUsers()
-//      - createUser()
-//      - archiveUser()
-//  3. Outline import helpers (used by Projects)
-//  4. Model boundary (Settings → General)
-//  5. Activity log (Settings → Logs)
+//  1. Projects
+//      - fetchProjects(), createProject(), renameProject()
+//      - archiveProject(), setProjectUser()
+//  2. Map
+//      - addNode(), removeNode(), suggestChildren()
+//      - pasteText(), previewPaste(), pasteNodes()
+//      - chooseFolder(), addFolder(), readMap()
+//  3. Chat
+//      - sendChatMessage()
+//  4. Simulated users
+//      - fetchUsers(), createUser(), archiveUser()
+//  5. Model (Settings → General)
+//      - fetchModel()
+//  6. Activity log (Settings → Logs)
+//      - fetchLog()
 
-import type { GoalView, LogEntry, ModelView, OutlineNode, OutlinePreview, UserView } from "./types.js";
+import type { ProjectView, LogEntry, ModelView, PastedNode, PastePreview, UserView } from "./dataShapes.js";
 
 async function httpErrorMessage(res: Response): Promise<string> {
   const detail = (await res.text()).trim();
@@ -29,21 +30,21 @@ async function httpErrorMessage(res: Response): Promise<string> {
   return plain.slice(0, 240);
 }
 
-// 1. Goals / Projects
+// 1. Projects
 
-export async function fetchActiveGoals(): Promise<GoalView[]> {
+export async function fetchProjects(): Promise<ProjectView[]> {
   const res = await fetch("/api/projects");
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
-  return (await res.json()) as GoalView[];
+  return (await res.json()) as ProjectView[];
 }
 
 /** Mint a project: `text` is the name, canvas starts empty. */
 export async function createProject(
   text: string,
   simUserId?: number | null,
-): Promise<GoalView> {
+): Promise<ProjectView> {
   const body: { text: string; sim_user_id?: number } = {
     text,
   };
@@ -58,15 +59,15 @@ export async function createProject(
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
-  return (await res.json()) as GoalView;
+  return (await res.json()) as ProjectView;
 }
 
 /** Replace the project's display name. Identity stays project_id. */
 export async function renameProject(
-  goalId: number,
+  projectId: number,
   text: string,
-): Promise<GoalView> {
-  const res = await fetch(`/api/projects/${goalId}/name`, {
+): Promise<ProjectView> {
+  const res = await fetch(`/api/projects/${projectId}/name`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text }),
@@ -74,47 +75,19 @@ export async function renameProject(
   if (!res.ok) {
     throw new Error(await httpErrorMessage(res));
   }
-  return (await res.json()) as GoalView;
+  return (await res.json()) as ProjectView;
 }
 
-export async function sendGoalFeedback(
-  goalId: number,
-  text: string,
-  focusLabel?: string | null,
-  focusStepId?: string | null,
-): Promise<GoalView> {
-  const body: {
-    text: string;
-    focus_label?: string;
-    focus_step_id?: string;
-  } = { text };
-  if (focusLabel) {
-    body.focus_label = focusLabel;
-  }
-  if (focusStepId) {
-    body.focus_step_id = focusStepId;
-  }
-  const res = await fetch(`/api/projects/${goalId}/feedback`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+export async function archiveProject(projectId: number): Promise<ProjectView> {
+  const res = await fetch(`/api/projects/${projectId}/cancel`, { method: "POST" });
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
-  return (await res.json()) as GoalView;
+  return (await res.json()) as ProjectView;
 }
 
-export async function cancelGoal(goalId: number): Promise<GoalView> {
-  const res = await fetch(`/api/projects/${goalId}/cancel`, { method: "POST" });
-  if (!res.ok) {
-    throw new Error(`request failed: ${res.status}`);
-  }
-  return (await res.json()) as GoalView;
-}
-
-export async function setProjectUser(goalId: number, simUserId: number | null): Promise<GoalView> {
-  const res = await fetch(`/api/projects/${goalId}/user`, {
+export async function setProjectUser(projectId: number, simUserId: number | null): Promise<ProjectView> {
+  const res = await fetch(`/api/projects/${projectId}/user`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ sim_user_id: simUserId }),
@@ -122,32 +95,21 @@ export async function setProjectUser(goalId: number, simUserId: number | null): 
   if (!res.ok) {
     throw new Error(await httpErrorMessage(res));
   }
-  return (await res.json()) as GoalView;
+  return (await res.json()) as ProjectView;
 }
 
-export async function zoomGoalStep(goalId: number, stepId: string): Promise<GoalView> {
-  const res = await fetch(`/api/projects/${goalId}/zoom/${stepId}`, { method: "POST" });
-  if (!res.ok) {
-    const detail = (await res.text()).trim();
-    // send_error() returns an HTML page; pull the plain reason if present.
-    const plain = detail.match(/no timeframe[\s\S]*?(?=<|$)/i)?.[0]
-      ?? detail.match(/Error code: (\d+)[\s\S]*?<p>([^<]+)/i)?.[2]
-      ?? detail.match(/cannot zoom[^.<]*/i)?.[0];
-    throw new Error((plain || detail || `request failed: ${res.status}`).slice(0, 200));
-  }
-  return (await res.json()) as GoalView;
-}
+// 2. Map
 
-export async function addProgressionStep(
-  goalId: number,
+export async function addNode(
+  projectId: number,
   label: string,
   parentId?: string | null,
-): Promise<GoalView> {
+): Promise<ProjectView> {
   const body: { label: string; parent_id?: string } = { label };
   if (parentId) {
     body.parent_id = parentId;
   }
-  const res = await fetch(`/api/projects/${goalId}/progression`, {
+  const res = await fetch(`/api/projects/${projectId}/progression`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -156,7 +118,97 @@ export async function addProgressionStep(
     const detail = (await res.text()).trim();
     throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
   }
-  return (await res.json()) as GoalView;
+  return (await res.json()) as ProjectView;
+}
+
+export async function removeNode(projectId: number, stepId: string): Promise<ProjectView> {
+  const res = await fetch(`/api/projects/${projectId}/progression/${stepId}/remove`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const detail = (await res.text()).trim();
+    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+  }
+  return (await res.json()) as ProjectView;
+}
+
+export async function suggestChildren(projectId: number, stepId: string): Promise<ProjectView> {
+  const res = await fetch(`/api/projects/${projectId}/zoom/${stepId}`, { method: "POST" });
+  if (!res.ok) {
+    const detail = (await res.text()).trim();
+    // send_error() returns an HTML page; pull the plain reason if present.
+    const plain = detail.match(/no timeframe[\s\S]*?(?=<|$)/i)?.[0]
+      ?? detail.match(/Error code: (\d+)[\s\S]*?<p>([^<]+)/i)?.[2]
+      ?? detail.match(/cannot zoom[^.<]*/i)?.[0];
+    throw new Error((plain || detail || `request failed: ${res.status}`).slice(0, 200));
+  }
+  return (await res.json()) as ProjectView;
+}
+
+export async function pasteText(
+  projectId: number,
+  text: string,
+  parentId?: string | null,
+  unwrap = true,
+): Promise<ProjectView> {
+  const body: { text: string; parent_id?: string; unwrap: boolean } = {
+    text,
+    unwrap,
+  };
+  if (parentId) {
+    body.parent_id = parentId;
+  }
+  const res = await fetch(`/api/projects/${projectId}/progression/import`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = (await res.text()).trim();
+    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+  }
+  return (await res.json()) as ProjectView;
+}
+
+/** Dry-run parse_outline() both ways (title line dropped / kept) so
+ * the paste form can show what would be created before committing -
+ * no project needed, nothing saved. */
+export async function previewPaste(text: string): Promise<PastePreview> {
+  const res = await fetch("/api/parse-outline-preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) {
+    const detail = (await res.text()).trim();
+    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+  }
+  return (await res.json()) as PastePreview;
+}
+
+/** Import an already-built {"label", "children"} tree directly - no
+ * text parsing, no unwrap guess - for when the caller already has the
+ * exact shape the user chose (ui/'s preview, after toggling nodes
+ * in/out). See import_progression_outline()'s own `forest` param. */
+export async function pasteNodes(
+  projectId: number,
+  nodes: PastedNode[],
+  parentId?: string | null,
+): Promise<ProjectView> {
+  const body: { nodes: PastedNode[]; parent_id?: string } = { nodes };
+  if (parentId) {
+    body.parent_id = parentId;
+  }
+  const res = await fetch(`/api/projects/${projectId}/progression/import`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = (await res.text()).trim();
+    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+  }
+  return (await res.json()) as ProjectView;
 }
 
 /** macOS folder dialog. Empty string means the user cancelled. */
@@ -170,16 +222,16 @@ export async function chooseFolder(): Promise<string> {
   return body.path ?? "";
 }
 
-export async function importProgressionFolder(
-  goalId: number,
+export async function addFolder(
+  projectId: number,
   folder: string,
   parentId?: string | null,
-): Promise<GoalView> {
+): Promise<ProjectView> {
   const body: { path: string; parent_id?: string } = { path: folder };
   if (parentId) {
     body.parent_id = parentId;
   }
-  const res = await fetch(`/api/projects/${goalId}/progression/folder`, {
+  const res = await fetch(`/api/projects/${projectId}/progression/folder`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -188,35 +240,10 @@ export async function importProgressionFolder(
     const detail = (await res.text()).trim();
     throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
   }
-  return (await res.json()) as GoalView;
+  return (await res.json()) as ProjectView;
 }
 
-export async function importProgressionOutline(
-  goalId: number,
-  text: string,
-  parentId?: string | null,
-  unwrap = true,
-): Promise<GoalView> {
-  const body: { text: string; parent_id?: string; unwrap: boolean } = {
-    text,
-    unwrap,
-  };
-  if (parentId) {
-    body.parent_id = parentId;
-  }
-  const res = await fetch(`/api/projects/${goalId}/progression/import`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const detail = (await res.text()).trim();
-    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
-  }
-  return (await res.json()) as GoalView;
-}
-
-export interface TreeReading {
+export interface MapReading {
   summary: string;
 }
 
@@ -224,68 +251,46 @@ export interface TreeReading {
  * Read an existing map back into words — what the project looks to be
  * about. Nothing is saved; the reading is gone on the next render.
  */
-export async function readTree(goalId: number): Promise<TreeReading> {
-  const res = await fetch(`/api/projects/${goalId}/read`, { method: "POST" });
+export async function readMap(projectId: number): Promise<MapReading> {
+  const res = await fetch(`/api/projects/${projectId}/read`, { method: "POST" });
   if (!res.ok) {
     const detail = (await res.text()).trim();
     throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
   }
-  return (await res.json()) as TreeReading;
+  return (await res.json()) as MapReading;
 }
 
-/** Dry-run parse_outline() both ways (title line dropped / kept) so
- * the paste form can show what would be created before committing -
- * no goal needed, nothing saved. */
-export async function previewOutline(text: string): Promise<OutlinePreview> {
-  const res = await fetch("/api/parse-outline-preview", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
-  });
-  if (!res.ok) {
-    const detail = (await res.text()).trim();
-    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
-  }
-  return (await res.json()) as OutlinePreview;
-}
+// 3. Chat
 
-/** Import an already-built {"label", "children"} tree directly - no
- * text parsing, no unwrap guess - for when the caller already has the
- * exact shape the user chose (ui/'s preview, after toggling nodes
- * in/out). See import_progression_outline()'s own `forest` param. */
-export async function importProgressionForest(
-  goalId: number,
-  nodes: OutlineNode[],
-  parentId?: string | null,
-): Promise<GoalView> {
-  const body: { nodes: OutlineNode[]; parent_id?: string } = { nodes };
-  if (parentId) {
-    body.parent_id = parentId;
+export async function sendChatMessage(
+  projectId: number,
+  text: string,
+  focusLabel?: string | null,
+  focusStepId?: string | null,
+): Promise<ProjectView> {
+  const body: {
+    text: string;
+    focus_label?: string;
+    focus_step_id?: string;
+  } = { text };
+  if (focusLabel) {
+    body.focus_label = focusLabel;
   }
-  const res = await fetch(`/api/projects/${goalId}/progression/import`, {
+  if (focusStepId) {
+    body.focus_step_id = focusStepId;
+  }
+  const res = await fetch(`/api/projects/${projectId}/feedback`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const detail = (await res.text()).trim();
-    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+    throw new Error(`request failed: ${res.status}`);
   }
-  return (await res.json()) as GoalView;
+  return (await res.json()) as ProjectView;
 }
 
-export async function removeProgressionStep(goalId: number, stepId: string): Promise<GoalView> {
-  const res = await fetch(`/api/projects/${goalId}/progression/${stepId}/remove`, {
-    method: "POST",
-  });
-  if (!res.ok) {
-    const detail = (await res.text()).trim();
-    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
-  }
-  return (await res.json()) as GoalView;
-}
-
-// 2. Simulated users
+// 4. Simulated users
 
 export async function fetchUsers(): Promise<UserView[]> {
   const res = await fetch("/api/users");
@@ -315,7 +320,7 @@ export async function archiveUser(simUserId: number): Promise<UserView> {
   return (await res.json()) as UserView;
 }
 
-// 4. Model boundary (Settings → General)
+// 5. Model (Settings → General)
 
 export async function fetchModel(): Promise<ModelView> {
   const res = await fetch("/api/model");
@@ -325,7 +330,7 @@ export async function fetchModel(): Promise<ModelView> {
   return (await res.json()) as ModelView;
 }
 
-// 5. Activity log (Settings → Logs)
+// 6. Activity log (Settings → Logs)
 
 export async function fetchLog(): Promise<LogEntry[]> {
   const res = await fetch("/api/log");

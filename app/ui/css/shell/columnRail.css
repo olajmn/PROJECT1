@@ -1,6 +1,6 @@
 /* Column rail: collapse to icon strip (chat now; sidebar later).
- * Behavior: src/shell/columnRail/collapseRail.ts
- * Numbers (min / rail / expand): src/shell/columnResize.ts CHAT
+ * Behavior: src/shell/collapseToRail.ts
+ * Numbers (min / rail / expand): src/shell/columnWidths.ts CHAT
  *
  * Contents
  *  1. Workspace rail width
