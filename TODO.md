@@ -44,6 +44,12 @@ polish after real use: removed-node names in "Recent map work",
 wording, pinning facts said in chat. Dead `isolateRange` caller.
 [[05-decisions]] #37; § 4.
 
+**36. Isolate all LLM talk in one place** (Step, after 34/35) —
+anything that prompts or calls a model (`model_input/`, `llm_client`,
+Suggest prompts in `call_suggest`, …) should be one swappable module
+on/off — SoT + Status stay the core; chat is a thin edge. Not a big
+rewrite now; park until Status and SoT shape are clearer. § —
+
 ## Queue
 
 Each item: kind (**Bug** / **Step** / **Question**) and impact tier
