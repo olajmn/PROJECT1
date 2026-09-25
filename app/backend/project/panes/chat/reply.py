@@ -13,10 +13,11 @@ reload.
 """
 
 from backend.llm_client import send_chat
-from backend.store.data_persistence import save_plan, stamp_map_focus
+from backend.store.data_persistence import now_utc, save_plan, stamp_map_focus
 from backend.project.panes.canvas.edit_map import suggest_progression_from_chat
 from backend.project.panes.chat.model_input.build_prompt import build_messages
 from backend.project.panes.create.resolver import get_history_for_goal
+from backend.project.status.build_status import build_status, status_text
 
 # User is asking for ideas / structure under the focused node.
 _STRUCTURE_CUES = (
@@ -50,10 +51,13 @@ def reply(
 ) -> dict:
     """{"record", "reply"} - the saved project record the screen is
     rebuilt from, and the reply text to show."""
+    # Taken before the model is called: the reply can take a while, and
+    # the message was sent now, not when the reply is saved.
+    sent_at = now_utc()
     if map_focus and focus_step_id and _asks_for_structure(note):
         try:
             record, labels = suggest_progression_from_chat(
-                latest, focus_step_id, note,
+                latest, focus_step_id, note, sent_at=sent_at,
             )
         except Exception:
             record, labels = None, []
@@ -62,9 +66,10 @@ def reply(
             return {"record": _stamp(record, map_focus, focus_step_id), "reply": text}
 
     history = get_history_for_goal(latest["project_id"])
-    messages = build_messages(latest, note, history, map_focus, focus_step_id)
+    status = status_text(build_status(history))
+    messages = build_messages(latest, note, history, map_focus, focus_step_id, status)
     text = send_chat(messages).strip()
-    record = _save_talk(latest, note, text)
+    record = _save_talk(latest, note, text, sent_at)
     return {"record": _stamp(record, map_focus, focus_step_id), "reply": text}
 
 
@@ -77,7 +82,7 @@ def _stamp(record: dict, map_focus: str | None, focus_step_id: str | None) -> di
     return stamped if stamped is not None else record
 
 
-def _save_talk(latest: dict, note: str, text: str) -> dict:
+def _save_talk(latest: dict, note: str, text: str, sent_at: str) -> dict:
     """Keep the map as it is; store the turn as "<reply> Note: <note>",
     the shape screen/chat_thread.py and model_input/build_prompt.py read."""
     return save_plan(
@@ -90,6 +95,8 @@ def _save_talk(latest: dict, note: str, text: str) -> dict:
         current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
         step_status=latest.get("step_status"),
+        event="chat",
+        sent_at=sent_at,
     )
 
 

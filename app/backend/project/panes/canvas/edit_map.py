@@ -79,6 +79,7 @@ def add_progression_bead(
         current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
         step_status=latest.get("step_status"),
+        event="node_added",
     )
 
 
@@ -88,6 +89,7 @@ def import_progression_outline(
     parent_id: str | None = None,
     unwrap: bool = True,
     forest: list[dict] | None = None,
+    event: str = "pasted",
 ) -> dict:
     """
     Parse a pasted outline/ASCII tree (parse_outline.py — markdown
@@ -158,6 +160,7 @@ def import_progression_outline(
         current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
         step_status=latest.get("step_status"),
+        event=event,
     )
 
 
@@ -172,6 +175,7 @@ def import_progression_folder(
         latest,
         parent_id=parent_id,
         forest=folder_tree(folder),
+        event="folder_added",
     )
 
 
@@ -205,6 +209,7 @@ def remove_progression_bead(latest: dict, step_id: str) -> dict:
         current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
         step_status=latest.get("step_status"),
+        event="node_removed",
     )
 
 
@@ -265,6 +270,7 @@ def zoom_progression_step(latest: dict, step_id: str) -> dict:
         current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
         step_status=latest.get("step_status"),
+        event="suggested",
     )
 
 
@@ -272,12 +278,14 @@ def suggest_progression_from_chat(
     latest: dict,
     step_id: str,
     note: str,
+    sent_at: str | None = None,
 ) -> tuple[dict, list[str]]:
     """
     User asked for structure under a focused map node while chatting.
     Proposes children grounded in recent conversation + this note.
     Appends under the node (does not wipe existing children).
-    Returns (saved record, new labels).
+    Returns (saved record, new labels). `sent_at` is when the message
+    was sent (see save_plan()).
     """
     plan = copy.deepcopy(latest.get("plan") or {})
     progression = plan.get("progression")
@@ -314,6 +322,8 @@ def suggest_progression_from_chat(
         current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
         step_status=latest.get("step_status"),
+        event="chat_added_nodes",
+        sent_at=sent_at,
     )
     return record, labels
 

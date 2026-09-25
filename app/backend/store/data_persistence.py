@@ -40,12 +40,12 @@ only ever one value.
 #      - _backfill_goal_ids() / _normalize_project_ids() / record_project_id()
 #      - _normalize_sim_user_ids()
 #      - _backfill_user_ids()
+#      - now_utc()
 #
 #  2. Goal records (plans.jsonl)
 #      - _next_goal_id() / _load_all() / _save_all() / _append_record()
 #      - save_plan()  (persists project_id + sim_user_id)
 #      - stamp_map_focus()
-#      - set_project_name()
 #      - load_history()
 #      - get_latest_plan()
 #
@@ -57,7 +57,7 @@ only ever one value.
 #      - archive_user()
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
@@ -198,6 +198,14 @@ def _backfill_user_ids(records: list[dict]) -> None:
         if not record.get("user_id"):
             record["user_id"] = DEFAULT_USER_ID
 
+
+
+def now_utc() -> str:
+    """The current time as text, in UTC with its offset
+    ("2026-09-25T18:27:51.305+00:00"), so it means the same moment on any
+    machine. Records saved before 2026-09-25 hold local time without an
+    offset; resolver.created_at_key() reads both."""
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
 # ============================================================
 # 2. Goal records (plans.jsonl)
@@ -350,6 +358,8 @@ def save_plan(
     current_step: int = 0,
     sim_user_id: int | None = None,
     step_status: list[str] | None = None,
+    event: str | None = None,
+    sent_at: str | None = None,
 ) -> dict:
     """
     Append a new goal+plan record to history and persist it to disk.
@@ -421,6 +431,14 @@ def save_plan(
     (same reasoning as `frozen_duration`). Distinct from stub
     `user_id` (= DEFAULT_USER_ID).
 
+    `event` names what happened, for the project's timeline
+    (project/timeline.py): "created", "chat", "node_added", "renamed", ...
+    Records saved before 2026-09-25 have none; the timeline reads their
+    `feedback` text instead.
+
+    `sent_at` is when the user sent a chat message, which can be well
+    before `created_at` (when the reply was saved). Chat turns only.
+
     Returns the record that was saved (useful for confirming to the user).
     """
     records = _load_all()
@@ -438,11 +456,12 @@ def save_plan(
         "step_status": step_status,
         "completed": completed,
         "cancelled": cancelled,
-        # Local time, naive (no tzinfo) - matches every other timestamp
-        # in this project. Older records stored this in UTC; see
-        # resolver.created_at_key() for sorting mixed-era history.
-        "created_at": datetime.now().isoformat(),
+        "created_at": now_utc(),
     }
+    if event:
+        record["event"] = event
+    if sent_at:
+        record["sent_at"] = sent_at
     records.append(record)
     _append_record(record)
     return record
@@ -471,26 +490,6 @@ def stamp_map_focus(
                 records[i]["focus_step_id"] = step
             else:
                 records[i].pop("focus_step_id", None)
-            _save_all(records)
-            return records[i]
-    return None
-
-
-def set_project_name(goal_id: int, name: str) -> dict | None:
-    """Replace the display label on the latest record for this
-    project. Identity is `project_id`; the `goal` field is only the
-    name. Mutates in place (same as stamp_map_focus) so a rename is
-    not a new chat turn. Parameter name goal_id kept this round.
-    """
-    label = (name or "").strip()
-    if not label:
-        return None
-    records = _load_all()
-    for i in range(len(records) - 1, -1, -1):
-        if record_project_id(records[i]) == goal_id:
-            if records[i].get("goal") == label:
-                return records[i]
-            records[i]["goal"] = label
             _save_all(records)
             return records[i]
     return None
@@ -569,7 +568,7 @@ def save_user(text: str) -> dict:
         "id": _next_user_id(users),
         "user_id": DEFAULT_USER_ID,
         "text": text,
-        "created_at": datetime.now().isoformat(),
+        "created_at": now_utc(),
     }
     users.append(record)
     _save_all_users(users)
@@ -603,6 +602,7 @@ def archive_user(sim_user_id: int) -> dict | None:
             if user.get("archived"):
                 return user
             user["archived"] = True
+            user["archived_at"] = now_utc()
             _save_all_users(users)
             return user
     return None

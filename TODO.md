@@ -16,15 +16,26 @@ for that same principle applied to documentation, not just this file).
 
 ## Active
 
-**23. Goal → Project migration** (~~Phase A + B + alias drop done~~ 2026-09-20)
+**28. Split `ui/src/index.ts` into the panes** (Step, started 2026-09-25)
 
-Product [[05-decisions]] #25; wire [[05-decisions]] #29 /
-[[goal-to-project-migration]]. Primary only: `project_id`, `/api/projects`,
-llm3 `"project"`. Decide/Fill engine is gone. Still open (not Active):
-rename display field `goal`; mass-rename Python symbols (`create_goal`,
-…).
+`index.ts` (~900 lines) still draws the project list, the whole map
+column, and the chat, and handles every click. Move each part into its
+pane, one pane at a time, with a build + module-load check and a manual
+click-through after each:
 
-Facts: `docs/04-current-state.md` § Vocabulary / § 1; Parallel P3 / P9.
+1. create — `panes/create/projectList.ts`, `projectsForId.ts`,
+   `manager/managerButton.ts`
+2. canvas — `panes/canvas/mapPane.ts`, `nodeMenu.ts`, `bottomBar.ts`
+3. chat — `panes/chat/chatPane.ts`, `sendMessage.ts`
+
+The target files exist (empty, each naming the code that moves in).
+Selection state stays in `index.ts`, which hands each pane what it needs;
+column layout moves to `shell/`. Goal: `index.ts` only starts the shell
+and the panes and connects them (~100–150 lines). Also drop the dead
+`pendingMapFocus`. `docs/04-current-state.md` § 2.v.
+
+(Previously Active: 23, Goal → Project migration — done 2026-09-20;
+leftover names are Queue 32.)
 
 ## Queue
 
@@ -50,18 +61,22 @@ stable identity (for referring back to it), not its rank.
 2. ~~**Accepting a `suggested_action` never produces a step tree**~~ (removed with `route_note` / judgment). § 5.
 3. ~~**Topic continuity / multi-goal free conversation**~~ (removed 2026-09-20) — free conversation / `ChatFocus` / CLI / Node 3 deleted (#31). Projects chat is keyed by URL id. § 5.
 20. ~~**Opening gate is a duration proxy**~~ (narrowed 2026-09-17) - opening still refuses `suggested_action`; missing timeframe no longer blocks planable mint or progression click-zoom (soft grounding). Residual: planability_slots still unread; Steps scratch zoom still needs a span. § 5.
-21. **Week/day calendar baseline (was: session tree painted across a longer span)** (Step residual) — Time still has `week_windows()` / `day_windows()`. Project calendar fill (`engine/time/calendar.py`) is gone. Still open: year face if needed; later **ambient timeline**. § 5. Related to 17.
+21. **Week/day calendar baseline** (Step, parked) — Time can still compute `week_windows()` / `day_windows()`, but nothing in the product calls them since project calendar fill (`calendar.py`) was removed. Only relevant if time returns to the map (year face, **ambient timeline**). § 5. Related to 17, 27.
 
 ### Tier 2
 
-4. **Sim-user choice at project-creation time** (Step) - Set Goal always creates a project unlinked; linking only happens afterward via Projects sidebar id menu. § 5, § 10.
-5. **Structured step-completion signal** (Step) - `advance_step()` is gone with the planner; no live writer for step status. § 5, § 9, § 10.
-6. **User-archive timing** (Step) - `archive_user()` doesn't stamp when archiving happened, only creation. § 5, § 10.
+4. ~~**Sim-user choice at project-creation time**~~ (done) - Create (`createForm.ts`, `projectFromFolder.ts`) passes the active id, so new projects are linked from the start. § 5.
+5. **Structured step-completion signal** (Step, parked — old plan model, not this round) - `advance_step()` is gone with the planner; nothing writes a node's `resolved`, so every node shows "open". § 5, § 9.
+6. ~~**User-archive timing**~~ (fixed 2026-09-25) - `archive_user()` stamps `archived_at`. § 5.
 7. ~~**Session end detection**~~ (moot 2026-09-25) - Sessions removed ([[05-decisions]] #35). See 27.
-12. **Decomposition / zoom, for real plans** (Step) - WHAT `plan.progression` is user-steered and is the display SoT (`map_tree()`, A3); Projects select / Suggest / Talk / nested +/- / chat-grounded suggest under focus persist (`edit_map`). Still open: free-text step naming without map focus, zoom-ask (16), whether to stop writing calendar `plan.steps` entirely, and any remaining data-shape questions in [[planning-model.md]]. Steps page remains scratch. § 5, § 7, § 9.
-16. **Zoom cannot ask for anything** (Step) - `zoom_into()` returns children or nothing, so the third state of Minimum planability's gate (UNKNOWN and NECESSARY → ask) has no per-level equivalent; a step whose breakdown depends on something personal and unstated gets a plausible invented one instead of a question. The old asking machinery (`clarification`/`suggested_action`) is gone with Stage 3. § 5.
-24. ~~**ASCII map has no way back in**~~ (built 2026-09-19) - `parse_outline.py` parses a pasted outline/ASCII tree into `import_progression_outline()`'s append. Projects' **Paste structure** form calls it. § 1.i / § 4.
-26. **Id has no rename** (Step) - create (`buildCreateIdForm`, one-click "+" since 2026-09-22) and delete (`sidebar-id-card-menu` "Delete") both exist; there's no way to change an id's label after creation short of delete + recreate. Noted live when the create flow was simplified to drop its label input. § 1.i.
+12. **Decomposition / zoom** (Step) - the map (`plan.progression`) is user-steered and is what the screen draws (`map_tree()`); + / × / Paste / Add folder / Suggest / chat-suggest under a selected node all write it (`edit_map`). Still open: naming a node in chat without selecting it first, zoom-ask (16), and remaining data-shape questions in [[planning-model.md]]. § 5, § 7, § 9.
+16. **Zoom cannot ask for anything** (Step, parked — old plan model, not this round) - `zoom_into()` returns children or nothing, so the third state of Minimum planability's gate (UNKNOWN and NECESSARY → ask) has no per-level equivalent; a step whose breakdown depends on something personal and unstated gets a plausible invented one instead of a question. The old asking machinery (`clarification`/`suggested_action`) is gone with Stage 3. § 5.
+24. ~~**ASCII map has no way back in**~~ (built 2026-09-19) - `text_to_tree.py` (`parse_outline()`) parses a pasted outline/ASCII tree into `import_progression_outline()`'s append. Projects' **Paste structure** form calls it. § 1.i / § 4.
+29. **Default project names are decided in the UI** (Step) - "New project N" is computed in `ui/src/panes/create/defaultNames.ts`, so any other client (e.g. the planned NFT app, `docs/02-product.md` § 5) would have to copy it. Move it to `create_project()` when the name is empty. § 1.i.
+30. **No written API reference** (Step) - another client has to read `app/backend/api/requests_from_browser.py` (`_POST_ROUTES`) to learn the addresses and bodies. A short overview of each `/api/...` address. `docs/02-product.md` § 5.
+31. **Unclear names in the Settings pages** (Step) - `ui/src/settings/` (`paragraphs/`: `registerTemplate.ts`, `lineKinds.ts`, `drawLine.ts`, `makeTag.ts`, …) did not get the plain-name pass the panes got on 2026-09-25.
+32. **Old words left outside the UI code** (Step) - the data field `goal` (a project's name), backend names (`cancel_goal`, `get_latest_for_goal`, `get_history_for_goal`, `add_progression_bead`, `zoom_progression_step`, …), and web addresses (`/feedback`, `/zoom/<node>`, `/progression`). Renaming addresses or the data field touches UI, backend, and stored records together. Was the residual of 23.
+26. **Id has no rename** (Step) - create (`panes/create/manager/newIdButton.ts`, one-click "+" since 2026-09-22) and delete (the id card's ⋯ "Delete", `idCard.ts`) both exist; there's no way to change an id's label after creation short of delete + recreate. Noted live when the create flow was simplified to drop its label input. § 1.i.
 
 ### Tier 3
 
@@ -70,21 +85,23 @@ stable identity (for referring back to it), not its rank.
 
 ### Tier 4
 
-9. **Node 3's second capability** (Step) - `select_capability()` can only ever return `"planning"` or `None`. § 7, § 10.
+9. **A second capability** (Step) - the agent can only do Project today. Node 3 / `select_capability()`, which would have chosen between capabilities, was removed with free conversation ([[05-decisions]] #31); the design stays in `docs/03-architecture.md`. § 7.
 10. **Memory domain** (Step) - not built at all. § 7, § 9.
 11. **Knowledge / RAG** (Step) - not built at all. § 7.
 13. **Acting** (Step) - the agent performs no external action. § 7.
 14. **Continuity / proactivity** (Step) - no scheduler or background behavior. § 7. Related to 17 below: for a practice, the absence of input is itself information, and nothing runs between two user messages.
-25. **2D box-diagram import** (Step) - item 24's `parse_outline.py` only reads indentation-based outlines/trees (markdown bullets, numbered lists, this app's own box-drawing export). A genuine 2D box-and-arrow diagram (boxes with borders, a bracket fanning to several children, a spine continuing through only one branch) carries its structure in screen *position*, not indentation - no deterministic rule generalizes across diagram styles (arrow conventions, box characters vary). Likely path: send the pasted diagram text through `send_message()` with a JSON schema (same schema-constrained pattern `construct_progression.py` already uses), not a hand-written geometry parser - closer to a Faculty's job (interpreting ambiguous input) than deterministic code's.
+25. **2D box-diagram import** (Step) - item 24's `text_to_tree.py` only reads indentation-based outlines/trees (markdown bullets, numbered lists, this app's own box-drawing export). A genuine 2D box-and-arrow diagram (boxes with borders, a bracket fanning to several children, a spine continuing through only one branch) carries its structure in screen *position*, not indentation - no deterministic rule generalizes across diagram styles (arrow conventions, box characters vary). Likely path: send the pasted diagram text through `send_message()` with a JSON schema (same schema-constrained pattern `call_suggest.py` already uses), not a hand-written geometry parser - closer to a Faculty's job (interpreting ambiguous input) than deterministic code's.
 
 ### Untiered
 
-15. **Node 1 re-voicing** (Question) - whether Node 1 should re-voice a capability's output verbatim or in its own words is undecided. § 9; see also `docs/03-architecture.md` Part 3 § 8.
+15. **Node 1 re-voicing** (Question, parked — architecture only) - whether Node 1 should re-voice a capability's output verbatim or in its own words. Talk has no Voice role today ([[05-decisions]] #33), so nothing waits on this until a reasoning step exists. `docs/03-architecture.md` Part 3 § 8.
 17. **Practices have no shape** (Question) - a recurring, open-ended commitment ("save 10 a day", "10 push-ups a day") fits the implemented model on no axis: no deadline to count down toward, no completion to reach, nothing to decompose - a rate and an accumulation instead. Whether it's a third kind of record, a Goal with different fields, or not a Goal at all is undecided. `docs/concepts.md` § 4.ix.
-18. **A plan can only be regenerated, never edited** (Question) - `step_status` is parallel-indexed to `steps`, so identity is positional and reorganizing silently moves statuses onto different steps; `current_step` is forward-only, so "2 is done but 1 isn't" is unexpressible. `replan()` regenerates; nothing edits. User **+** / **×** on `plan.progression` (2026-09-17) is a partial exception for the WHAT line only. `docs/concepts.md` § 4.x.
-19. **Vision as a typing mechanism, or as background context** (Question) - whether a Vision decides what counts as progress for everything under it, or stays the weak background context `judgment/prompts.py` (`FILL_SYSTEM_PROMPT`) currently instructs it to be ("never let it override... what the goal itself actually asks for"). The two readings can't both hold. `docs/concepts.md` § 4.xi.
+18. **A plan can only be regenerated, never edited** (Question, parked — old plan model) - `step_status` is parallel-indexed to `steps`, so identity is positional and reorganizing silently moves statuses onto different steps; `current_step` is forward-only, so "2 is done but 1 isn't" is unexpressible. `replan()` regenerates; nothing edits. User **+** / **×** on `plan.progression` (2026-09-17) is a partial exception for the WHAT line only. `docs/concepts.md` § 4.x.
+19. **Vision as a typing mechanism, or as background context** (Question, parked) - whether a broader direction decides what counts as progress for everything under it, or is only weak background context. The prompt that used to answer "background" (`FILL_SYSTEM_PROMPT`) was removed with the engine, and Vision itself became the simulated users (`id#N`, [[05-decisions]] #30), so nothing implements either reading today. `docs/concepts.md` § 4.xi.
+33. **Talk only sees the map's labels** (Question) - the chat model gets every node's label and the selected node's path (`model_input/map_as_text.py`), not what is behind a node (file contents, notes). Whether Talk should see more, and from where (Memory 10, Knowledge 11), is open. [[05-decisions]] #33.
+34. **Status panel, after the draft** (Step) - the Status panel above the chat (2026-09-25, [[05-decisions]] #37) shows the computed status and gives the chat's model the same text. Still open: map edits still appear in the chat thread as "You: Added step …" lines (they belong in Status, not the chat); "Recent map work under" can name a node that has since been removed (its name then selects nothing); `showOnlyThis.isolateRange()` lost its only caller with the talk chart; wording and what the summary should hold after real use. Next step after that: facts said in the chat ("the budget is 2 million") have no place in the status — a way to pin them. § 4.
 27. **What counts as a session / visit** (Question) - the removed Session record (#35) meant a server process start, not a user visit. If the agent should understand time (when the user was last here, cadence of contact), a visit likely builds on the timestamps every saved chat turn and map change already carries (`created_at` in `plans.jsonl`), not on server starts. Settings → Logs already lists those timestamps (`activity_log()`). § 5.
-23. **Goal → Project product migration** (Step / Question) - UI shell is Projects; backend/prompts still Goal-planner. Thin first slice is **Active** above. Residual after that: `02-product` / concepts language; stop auto-minting a full middle without user accept; End pole = done not title; storage rename last. § 5 / § 9.
+23. ~~**Goal → Project migration**~~ (done 2026-09-20) - UI, wire (`project_id`, `/api/projects`), and chat are Project; the engine that auto-minted a middle is gone. Leftover old words → 32; `docs/02-product.md` language → the docs pass.
 
 ## Parallel paths
 
@@ -120,11 +137,11 @@ Detail and reasoning: `docs/04-current-state.md` § 5 (Parallel / dual paths).
 
 | # | Pair | Status | Where |
 |---|---|---|---|
-| P1 | Week grain vs session grain | Intentional dual | `time/calendar.py`, `week_windows()`, `day_windows()` |
-| P2 | Even-slice `step_plan` vs dates on the step | Time Faculty only | `frozen_duration.step_plan`; manifestation no longer maps leftover `plan.steps` |
-| P3 | `plan.progression` vs legacy `plan.steps` + zoom scratch | Intentional dual (display SoT settled) | Display = progression only (`map_tree()`, A3 2026-09-20); calendar `plan.steps` still written when fill works (WHEN); Steps page scratch — Queue 12; [[goal-to-project-migration]] A3 |
-| P4 | `planability_slots` vs `_planability()` | Unread / unwired | `goal/planability_slots.py` — Queue 22 |
-| P5 | Opening duration-proxy vs necessity test | Proxy (narrowed) | Missing time no longer blocks PLAN/zoom; End clarity still Decide — Queue 20 |
+| P1 | Week grain vs session grain | Time Faculty only | `week_windows()` / `day_windows()` in `backend/foundation/time/`; `calendar.py` (project calendar fill) removed, nothing in the product calls them — Queue 21 |
+| P2 | Even-slice `step_plan` vs dates on the step | Time Faculty only | `frozen_duration.step_plan`; `map_tree()` does not read leftover `plan.steps` |
+| P3 | `plan.progression` vs legacy `plan.steps` | Leftover on disk only | The screen draws `plan.progression` only (`map_tree()`); nothing writes `plan.steps` any more, older records may still carry it; the Steps page is gone |
+| P4 | `planability_slots` vs `_planability()` | ~~Deleted~~ | both removed with the engine — Queue 22 |
+| P5 | Opening duration-proxy vs necessity test | ~~Retired~~ | the opening gate went with Decide/Fill; Create is `create_project()` only — Queue 20 |
 | P6 | `ui/` vs `frontend-legacy/` | ~~Deleted~~ | `frontend-legacy/` removed 2026-09-19 — only `ui/` remains |
 | P7 | Module Library vs callers | ~~Deleted~~ | `module_library/` removed 2026-09-25 (#34) — Queue 8 |
 | P8 | Projects workspace vs Active (legacy) | ~~Deleted~~ | Active UI removed 2026-09-19; Projects is the only known-context surface |

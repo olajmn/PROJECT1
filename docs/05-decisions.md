@@ -348,6 +348,34 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Reversible?** Yes — the removed files are in git history.
 
+## 36. 2026-09-25 — A project's saved lines are its timeline
+
+**Decision:** Treat a project's lines in `data/plans.jsonl` as its timeline, and make that record complete and unambiguous. From now on every line's `created_at` is UTC with an offset (`now_utc()`); every line names what happened in a fixed `event` field (`created`, `chat`, `node_added`, `renamed`, `archived`, …); chat lines also store `sent_at` (when the message was sent, before the model replied); a rename appends a line instead of overwriting the name; archiving an id stamps `archived_at`. `backend/project/timeline.py` reads the lines back as events for Settings → Logs and `GET /api/projects/<id>/timeline`; chat messages carry their time to the screen.
+
+**Date:** 2026-09-25
+
+**Alternatives considered:** a separate event file next to `plans.jsonl`; converting existing lines to the new shape.
+
+**Why this choice:** Every change already appended a timestamped line, so the history existed — it had gaps (renames overwrote, local times without a zone, one time for message and reply) and its "what happened" was free text. Closing those gaps in the same file keeps one source of truth. A complete timeline is what the current state of a project adds up to — the same role `docs/04-current-state.md` plays for this codebase — and is the base for giving the chat's model a project status later (TODO 33/34).
+
+**Trade-off:** Old lines stay as they are: local times without a zone, no `event` (named from their text by `event_name()`), no rename history before this date. Each line still stores a full copy of the map, so the file grows with every change.
+
+**Reversible?** Yes for the code; lines written in the new shape keep their extra fields.
+
+## 37. 2026-09-25 — A computed Status replaces the talk chart; the user and the model read the same text
+
+**Decision:** Replace the talk chart above the chat with a **Status** panel: a short summary of where the project stands (name, owner, last change, map size, top level, recent map work, last topic) and its history newest first, with similar events grouped ("Added 12 nodes under X", "Chat · 6 messages about …"). `backend/project/status/` computes it from the timeline (#36) — no model, nothing saved. The chat's model gets the same status as plain text in its system message, marked as fact; the chat is conversation.
+
+**Date:** 2026-09-25
+
+**Alternatives considered:** keep the talk chart and add Status as a second tab; a status written by the model; showing the status as another node tree.
+
+**Why this choice:** The talk chart was an experiment and duplicated the map's tree form. A timeline is a sequence, so text fits it. A computed status cannot disagree with the saved lines, which is what lets it be treated as fact; a model-written one would be a second source that could be wrong. Showing the model's own context to the user means that when the agent says something odd, the user can see what it was working from. The status plays the role for the model that `docs/04-current-state.md` plays for a coding session: its way of seeing the project, which the map is for the user.
+
+**Trade-off:** The status only knows what was saved as a change; facts stated in the chat are not in it (TODO 34). The talk chart's one unique view — which conversation grew out of which — is gone. The model's text puts the day on every history line: with the day only as a heading, the model placed yesterday's changes under today.
+
+**Reversible?** Yes — the talk chart is in git history.
+
 ## See also
 
 - [[03-architecture]]

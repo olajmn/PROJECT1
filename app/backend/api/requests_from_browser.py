@@ -20,7 +20,7 @@ server.py only starts the server; everything it answers is decided here.
 #
 #  3. Handler
 #      - do_GET() / do_POST()
-#      - projects: create, rename, cancel, set user
+#      - projects: create, rename, cancel, set user, timeline
 #      - map: add node, remove node, paste, add folder, suggest, read
 #      - chat: message
 #      - users: create, archive
@@ -48,6 +48,7 @@ from backend.project.panes.canvas.edit_map import (
 )
 from backend.llm_client import MODEL, TEMPERATURE
 from backend.api.activity_log import activity_log
+from backend.project.timeline import project_timeline
 from backend.api.files_to_browser import send_page_file
 from backend.api.answers_to_browser import (
     active_projects,
@@ -93,6 +94,9 @@ _POST_ROUTES = [
 ]
 _POST_ROUTES = [(re.compile(f"^{path}$"), method) for path, method in _POST_ROUTES]
 
+# One project's history, oldest first (project/timeline.py).
+_TIMELINE_ROUTE = re.compile(r"^/api/projects/(\d+)/timeline$")
+
 
 # ============================================================
 # 3. Handler
@@ -117,6 +121,8 @@ class Handler(BaseHTTPRequestHandler):
             })
         elif self.path == "/api/log":
             self._send_json(activity_log())
+        elif match := _TIMELINE_ROUTE.match(self.path):
+            self._handle_project_timeline(int(match.group(1)))
         else:
             send_page_file(self)
 
@@ -307,6 +313,12 @@ class Handler(BaseHTTPRequestHandler):
             self._model_failed(e)
             return
         self._send_json(project_view(result["record"], reply=result["reply"]))
+
+    def _handle_project_timeline(self, project_id: int) -> None:
+        """Everything that happened in one project, oldest first."""
+        if self._load_project(project_id) is None:
+            return
+        self._send_json(project_timeline(project_id))
 
     # --- users ------------------------------------------------
 

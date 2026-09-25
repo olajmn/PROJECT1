@@ -23,10 +23,19 @@ def thread_messages(history: list[dict]) -> list[dict]:
     Talk turns store a labeled feedback string
     ("<reply> Note: <raw>") rather than the raw note. The user line
     is the note; a repeated surface uses the label as the agent line
-    so the thread doesn't print the same line twice."""
+    so the thread doesn't print the same line twice.
+
+    Each message carries `at`, when it happened: the agent line the
+    record's `created_at`, the user line `sent_at` when saved (chat turns
+    since 2026-09-25), else `created_at`. Renames are not chat and are
+    left out; they are on the project timeline (project/timeline.py)."""
     messages: list[dict] = []
     previous_surface = None
     for record in history:
+        if record.get("event") == "renamed":
+            # Still the latest map summary: the next line compares against it.
+            previous_surface = surface_text(record)
+            continue
         focus = (record.get("map_focus") or "").strip() or None
         step = (record.get("focus_step_id") or "").strip() or None
         extra: dict = {}
@@ -35,32 +44,48 @@ def thread_messages(history: list[dict]) -> list[dict]:
             if step:
                 extra["focus_step_id"] = step
 
+        created_at = record.get("created_at")
         feedback = record.get("feedback")
         if feedback:
-            messages.append(
-                {"role": "user", "text": _user_line(feedback), **extra},
-            )
+            messages.append({
+                "role": "user", "text": _user_line(feedback),
+                **_at(record.get("sent_at") or created_at), **extra,
+            })
         surface = surface_text(record)
         agent_text = surface
         if surface == previous_surface:
             ack = _ack_line(feedback)
             if ack:
                 agent_text = ack
-        messages.append({"role": "agent", "text": agent_text, **extra})
+        messages.append(
+            {"role": "agent", "text": agent_text, **_at(created_at), **extra},
+        )
         previous_surface = surface
     return messages
 
 
-def thread_for(goal_id: int, reply: str | None = None) -> list[dict]:
+def thread_for(
+    goal_id: int,
+    reply: str | None = None,
+    history: list[dict] | None = None,
+) -> list[dict]:
     """Live thread for one goal. When `reply` is the model's wording from
     the turn just taken, it replaces the last agent line so the card
-    shows the reply rather than the one-line map summary."""
-    messages = thread_messages(get_history_for_goal(goal_id))
+    shows the reply rather than the one-line map summary. Pass `history`
+    when the caller already loaded it."""
+    if history is None:
+        history = get_history_for_goal(goal_id)
+    messages = thread_messages(history)
     if reply and messages and messages[-1]["role"] == "agent":
         last = dict(messages[-1])
         last["text"] = reply
         messages[-1] = last
     return messages
+
+
+def _at(when: str | None) -> dict:
+    """{"at": when}, or nothing when the record has no time."""
+    return {"at": when} if when else {}
 
 
 def _user_line(feedback: str) -> str:

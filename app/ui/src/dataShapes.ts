@@ -27,18 +27,20 @@ export interface MapNode {
 export interface ChatMessage {
   role: "user" | "agent";
   text: string;
+  /** When it was sent (you) or saved (agent), ISO time. Missing on very old lines. */
+  at?: string;
   focus?: string;
   focus_step_id?: string;
 }
 
-/** One About-stretch in the derived talk tree (not the file map). */
-export interface TalkChartEntry {
-  label: string;
-  start: number;
-  end: number;
-  open: boolean;
-  children: TalkChartEntry[];
-  focus_step_id?: string;
+/** A project's status (backend/project/status/build_status.py): the
+ * summary on top, the history newest first. `nodes` are node names the
+ * text mentions; the panel makes them clickable. */
+export interface ProjectStatus {
+  summary: { label: string; text: string; nodes: string[] }[];
+  history: { day: string; time: string; text: string; nodes: string[] }[];
+  /** History lines left out, older than the ones shown. */
+  earlier: number;
 }
 
 export interface ProjectView {
@@ -51,7 +53,7 @@ export interface ProjectView {
   created_at?: string | null;
   node: MapNode | null;
   thread: ChatMessage[];
-  talk: TalkChartEntry[];
+  status: ProjectStatus;
 }
 
 
@@ -87,11 +89,14 @@ export interface ModelView {
 
 // 6. Activity log (Settings → Logs)
 
-/** One saved change, from backend/api/activity_log.py activity_log(). */
+/** One saved change, from backend/project/timeline.py (via /api/log or
+ * /api/projects/<id>/timeline). `event` is what happened ("node_added",
+ * "renamed", …); `kind` is its group, shown as the entry's title. */
 export interface LogEntry {
   at: string | null;
   project_id: number | null;
   project: string;
-  kind: "Created" | "Chat" | "Map" | "Owner" | "Cancelled";
+  event: string;
+  kind: "Created" | "Chat" | "Map" | "Renamed" | "Owner" | "Archived";
   text: string;
 }

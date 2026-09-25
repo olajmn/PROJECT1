@@ -14,9 +14,13 @@ no product rules.
 #      - map_tree()
 
 from backend.store.data_persistence import record_project_id
-from backend.project.panes.chat.screen.talk_chart import talk_tree
+from backend.project.status.build_status import build_status
 from backend.project.panes.chat.screen.chat_thread import thread_for
-from backend.project.panes.create.resolver import created_at_key, get_latest_for_all_goals
+from backend.project.panes.create.resolver import (
+    created_at_key,
+    get_history_for_goal,
+    get_latest_for_all_goals,
+)
 
 
 # ============================================================
@@ -26,7 +30,7 @@ from backend.project.panes.create.resolver import created_at_key, get_latest_for
 
 def project_view(record: dict, reply: str | None = None) -> dict:
     """One project as the browser gets it after any project action:
-    name, state, map tree, chat, and talk chart.
+    name, state, map tree, chat, and status (the panel above the chat).
 
     `reply` (a chat reply just made) is placed as the last message in
     `thread`, not sent as its own field.
@@ -38,7 +42,8 @@ def project_view(record: dict, reply: str | None = None) -> dict:
         # A broken tree must not hide the rest of the project.
         print(f"(debug: map_tree() failed for project {pid}: {e})")
         node = None
-    thread = thread_for(pid, reply) if pid is not None else []
+    history = get_history_for_goal(pid) if pid is not None else []
+    thread = thread_for(pid, reply, history) if pid is not None else []
     return {
         "project_id": pid,
         "goal": record["goal"],
@@ -48,7 +53,7 @@ def project_view(record: dict, reply: str | None = None) -> dict:
         "created_at": record.get("created_at"),
         "node": node,
         "thread": thread,
-        "talk": talk_tree(thread),
+        "status": build_status(history),
     }
 
 

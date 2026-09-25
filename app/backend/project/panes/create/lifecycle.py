@@ -37,6 +37,7 @@ def create_project(typed_text: str, sim_user_id_value: str) -> dict:
         typed_text,
         {"progression": {"steps": []}},
         sim_user_id=sim_user_id,
+        event="created",
     )
 
 
@@ -79,5 +80,5 @@ def cancel_goal(goal_id: int) -> dict | None:
         duration=latest.get("duration"), goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"), cancelled=True,
-        step_status=latest.get("step_status"),
+        step_status=latest.get("step_status"), event="archived",
     )

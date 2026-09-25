@@ -1,8 +1,9 @@
 """
 Puts together what the model is sent when you press Send, in order:
 
-1. An intro text: the project name, every label on the map, and the
-   node you have selected.
+1. An intro text: the project's status (the same text shown above the
+   chat — project/status/), every label on the map, and the node you
+   have selected.
 2. The earlier chat, as real back-and-forth messages.
 3. Your new message.
 
@@ -25,10 +26,12 @@ def build_messages(
     history: list[dict],
     map_focus: str | None = None,
     focus_step_id: str | None = None,
+    status: str | None = None,
 ) -> list[dict]:
-    """[{role, content}] for llm_client.send_chat()."""
+    """[{role, content}] for llm_client.send_chat(). `status` is the
+    project's status text (status/build_status.status_text())."""
     messages = [
-        {"role": "system", "content": _system_text(latest, map_focus, focus_step_id)},
+        {"role": "system", "content": _system_text(latest, map_focus, focus_step_id, status)},
     ]
     messages.extend(past_turns(history))
     messages.append({"role": "user", "content": _with_focus(note, map_focus)})
@@ -55,14 +58,22 @@ def _system_text(
     latest: dict,
     map_focus: str | None,
     focus_step_id: str | None,
+    status: str | None = None,
 ) -> str:
     name = (latest.get("goal") or "").strip() or "untitled"
     parts = [
         "You are talking with the user about one of their projects. "
         "The project is shown to them as a map of labeled nodes.",
         f'Project: "{name}"',
-        "The map (labels only):\n" + map_status(latest),
     ]
+    if status:
+        # Computed from the project's saved changes, so it is fact; the
+        # chat below is conversation. The user sees the same text.
+        parts.append(
+            "Project status (computed from its saved changes — treat it as "
+            "fact; the user sees the same text above the chat):\n" + status
+        )
+    parts.append("The map (labels only):\n" + map_status(latest))
     selected = focus_labels(latest, map_focus, focus_step_id)
     if selected:
         parts.append("The user has selected this node (path from the top):\n" + selected)

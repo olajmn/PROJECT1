@@ -6,6 +6,8 @@ Run the full project verification routine, in order:
    - `-m backend.foundation.time.test_time`
    - `-m backend.store.test_data_persistence`
    - `-m backend.project.panes.chat.screen.test_chat_thread`
+   - `-m backend.project.test_timeline`
+   - `-m backend.project.status.test_status`
 
 After both: report a compact summary - what's clean, and call out anything that isn't (a real stale-path/orphan finding, a docs_lint REVIEW hit not already known-legitimate, a test failure that persists on retry, `docs/04-current-state.md` staleness). Don't dump the full raw output unless something is actually wrong.
 

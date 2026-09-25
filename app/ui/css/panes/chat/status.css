@@ -1,0 +1,168 @@
+/* Status panel above the chat — where the project stands now and what
+ * has happened, as plain text. TS lives in src/panes/chat/statusPanel/.
+ *
+ * Contents
+ *  1. Status button (Manager twin)
+ *  2. Panel
+ *  3. Summary, history, node names
+ *  4. Resize handle (twin of .id-menu-resize)
+ */
+
+/* 1. Status button */
+
+.project-chat .chat-brand {
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+}
+
+.project-chat .chat-brand:hover,
+.project-chat .chat-brand.is-active {
+  color: var(--color-text);
+}
+
+/* 2. Panel */
+
+.project-chat .status-panel {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  min-height: 0;
+  max-height: 42%;
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-3);
+  overflow: auto;
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+/* 3. Summary, history, node names */
+
+.status-panel .status-summary {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.15rem var(--space-3);
+  margin: 0 0 var(--space-3);
+}
+
+.status-panel .status-summary dt {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.7;
+}
+
+.status-panel .status-summary dd {
+  margin: 0;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.status-panel .status-heading {
+  margin: 0 0 var(--space-1);
+  padding-top: var(--space-2);
+  border-top: var(--border);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.status-panel .status-day {
+  margin: var(--space-2) 0 0.1rem;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-soft);
+}
+
+.status-panel .status-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.status-panel .status-lines li {
+  display: grid;
+  grid-template-columns: 2.75rem 1fr;
+  gap: var(--space-2);
+}
+
+.status-panel .status-time {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-panel .status-text {
+  min-width: 0;
+  word-break: break-word;
+}
+
+.status-panel .status-earlier {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* A node name: reads as text, underlined on hover, selects it on the map. */
+.status-panel .status-node {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: var(--color-border);
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.status-panel .status-node:hover {
+  text-decoration-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* 4. Resize handle */
+
+.project-chat .status-resize {
+  position: relative;
+  flex: 0 0 auto;
+  height: 0;
+  border-top: var(--border);
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+}
+
+.project-chat .status-resize::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -4px;
+  height: 8px;
+}
+
+.project-chat .status-resize:hover,
+body.is-resizing-status .status-resize {
+  border-top-color: var(--color-accent);
+}
+
+body.is-resizing-status {
+  cursor: ns-resize;
+  user-select: none;
+}

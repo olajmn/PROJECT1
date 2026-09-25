@@ -21,7 +21,7 @@
 @import url("panes/canvas/skeleton.css");
 @import url("panes/chat/conversation.css");
 @import url("panes/chat/agent-chat.css");
-@import url("panes/chat/chart.css");
+@import url("panes/chat/status.css");
 @import url("shared.css");
 @import url("settings/chrome.css");
 @import url("settings/paragraphs.css");

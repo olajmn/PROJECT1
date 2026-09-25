@@ -70,7 +70,7 @@ def set_project_user(goal_id: int, sim_user_id: int | None) -> dict | None:
         duration=latest.get("duration"), goal_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
         completed=latest.get("completed", False), sim_user_id=sim_user_id,
-        step_status=latest.get("step_status"),
+        step_status=latest.get("step_status"), event="owner_changed",
     )
 
 

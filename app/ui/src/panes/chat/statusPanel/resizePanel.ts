@@ -1,33 +1,34 @@
-// Height drag on the chat chart — same separator idiom as
-// Manager | Projects (`create/manager/resize.ts`).
+// Height drag on the status panel above the chat — same separator idiom as
+// Manager | Projects (`create/manager/resizeList.ts`).
 //
 // Contents
 //  1. Stored height
-//      - applyStoredChartHeight()
+//      - applyStoredPanelHeight()
 //  2. Drag
-//      - installChartResize()
+//      - installPanelResize()
 
+// Key kept from the talk chart this panel replaced, so a pinned height survives.
 const HEIGHT_KEY = "projects.chartHeightPx";
-const MIN_CHART_HEIGHT = 0;
+const MIN_PANEL_HEIGHT = 0;
 const MIN_THREAD_HEIGHT = 80;
 const FALLBACK_MAX_HEIGHT = 360;
 
 // 1. Stored height
 
-function maxChartHeight(map: HTMLElement): number {
-  const chat = map.closest(".project-chat");
+function maxPanelHeight(panel: HTMLElement): number {
+  const chat = panel.closest(".project-chat");
   if (!(chat instanceof HTMLElement)) return FALLBACK_MAX_HEIGHT;
   const thread = chat.querySelector(".goal-thread");
-  const chartH = map.getBoundingClientRect().height;
+  const panelH = panel.getBoundingClientRect().height;
   const threadH =
     thread instanceof HTMLElement ? thread.getBoundingClientRect().height : 0;
   const steal = Math.max(0, threadH - MIN_THREAD_HEIGHT);
-  return Math.max(MIN_CHART_HEIGHT, Math.floor(chartH + steal));
+  return Math.max(MIN_PANEL_HEIGHT, Math.floor(panelH + steal));
 }
 
-function applyChartHeight(map: HTMLElement, px: number): void {
-  map.style.height = `${px}px`;
-  map.style.maxHeight = `${px}px`;
+function applyPanelHeight(panel: HTMLElement, px: number): void {
+  panel.style.height = `${px}px`;
+  panel.style.maxHeight = `${px}px`;
 }
 
 function storedHeight(): number {
@@ -35,31 +36,31 @@ function storedHeight(): number {
   return Number.isFinite(h) && h >= 0 ? h : NaN;
 }
 
-export function applyStoredChartHeight(
-  map: HTMLElement,
+export function applyStoredPanelHeight(
+  panel: HTMLElement,
   opts?: { clampToContent?: boolean },
 ): void {
   const h = storedHeight();
   if (!Number.isFinite(h)) return;
-  map.style.height = "";
-  map.style.maxHeight = "";
-  const capped = Math.min(maxChartHeight(map), h);
+  panel.style.height = "";
+  panel.style.maxHeight = "";
+  const capped = Math.min(maxPanelHeight(panel), h);
   if (opts?.clampToContent === false) {
-    // Empty pane (no talk on this project): keep the pin so the
+    // Empty panel (a project with no status yet): keep the pin so the
     // handle stays usable when switching projects.
-    applyChartHeight(map, capped);
+    applyPanelHeight(panel, capped);
     return;
   }
-  const content = map.scrollHeight;
-  // May be shorter than the tree (handle under Talk) but not taller
-  // than the tree (empty void under the last bead).
-  applyChartHeight(map, Math.min(capped, content));
+  const content = panel.scrollHeight;
+  // May be shorter than the content (handle under Status) but not taller
+  // than the content (no empty space under the last line).
+  applyPanelHeight(panel, Math.min(capped, content));
 }
 
 // 2. Drag
 
-export function installChartResize(
-  map: HTMLElement,
+export function installPanelResize(
+  panel: HTMLElement,
   handle: HTMLElement,
 ): void {
   let dragging = false;
@@ -73,9 +74,9 @@ export function installChartResize(
     dragging = true;
     handle.setPointerCapture(event.pointerId);
     startY = event.clientY;
-    startH = map.getBoundingClientRect().height;
-    maxH = maxChartHeight(map);
-    document.body.classList.add("is-resizing-chart");
+    startH = panel.getBoundingClientRect().height;
+    maxH = maxPanelHeight(panel);
+    document.body.classList.add("is-resizing-status");
   });
 
   handle.addEventListener("pointermove", (event) => {
@@ -83,22 +84,22 @@ export function installChartResize(
     const nextH = Math.min(
       maxH,
       Math.max(
-        MIN_CHART_HEIGHT,
+        MIN_PANEL_HEIGHT,
         Math.round(startH + (event.clientY - startY)),
       ),
     );
-    applyChartHeight(map, nextH);
+    applyPanelHeight(panel, nextH);
   });
 
   const end = (event: PointerEvent) => {
     if (!dragging) return;
     dragging = false;
     handle.releasePointerCapture(event.pointerId);
-    document.body.classList.remove("is-resizing-chart");
+    document.body.classList.remove("is-resizing-status");
     try {
       localStorage.setItem(
         HEIGHT_KEY,
-        String(Math.round(map.getBoundingClientRect().height)),
+        String(Math.round(panel.getBoundingClientRect().height)),
       );
     } catch {
       /* private mode / quota — pin is best-effort */
