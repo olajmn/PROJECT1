@@ -35,5 +35,5 @@ enough. See `ARCHITECTURE.md`'s RAG/embeddings section.
 
 The raw data already exists and is technically complete:
 `backend/store/data_persistence.py`'s `load_history()`/
-`get_history_for_goal()`. What's missing is organizing this as its own
+`get_history_for_project()`. What's missing is organizing this as its own
 capability rather than reading it ad hoc from within `goals/goal/`.

@@ -14,10 +14,10 @@ until Vision's own shape is decided.
 #      - create_project()
 #
 #  2. Cancellation
-#      - cancel_goal()
+#      - cancel_project()
 
 from backend.store.data_persistence import save_plan
-from backend.project.panes.create.resolver import get_latest_for_goal
+from backend.project.panes.create.resolver import get_latest_for_project
 
 
 # ============================================================
@@ -46,7 +46,7 @@ def create_project(typed_text: str, sim_user_id_value: str) -> dict:
 # ============================================================
 
 
-def cancel_goal(goal_id: int) -> dict | None:
+def cancel_project(project_id: int) -> dict | None:
     """
     Mark a goal as cancelled (abandoned) - a distinct terminal status
     from `completed`, not a UI-level relabeling of it and not a third
@@ -58,7 +58,7 @@ def cancel_goal(goal_id: int) -> dict | None:
 
     Returns the newly saved record, or None if the change is
     rejected - never partially applied:
-    - `goal_id` doesn't resolve to any goal.
+    - `project_id` doesn't resolve to any goal.
     - the goal is already completed - a finished goal doesn't also
       become abandoned; one terminal status wins, and completion,
       already decided, isn't overwritten by a later Cancel click.
@@ -67,7 +67,7 @@ def cancel_goal(goal_id: int) -> dict | None:
     no-op - returns `latest` unchanged rather than appending an
     identical record (same idiom as set_project_user()).
     """
-    latest = get_latest_for_goal(goal_id)
+    latest = get_latest_for_project(project_id)
     if latest is None:
         return None
     if latest.get("completed"):
@@ -76,8 +76,8 @@ def cancel_goal(goal_id: int) -> dict | None:
         return latest
 
     return save_plan(
-        latest["goal"], latest["plan"], feedback="Cancelled",
-        duration=latest.get("duration"), goal_id=latest["project_id"],
+        latest["name"], latest["plan"], feedback="Cancelled",
+        duration=latest.get("duration"), project_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"), cancelled=True,
         step_status=latest.get("step_status"), event="archived",

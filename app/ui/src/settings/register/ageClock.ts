@@ -1,4 +1,4 @@
-// Live age beside Created / Started stamps.
+// Live age beside Created / Started stamps on the Settings register.
 
 export const AGE_ATTR = "data-created-iso";
 

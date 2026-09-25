@@ -18,8 +18,8 @@ from backend.project.status.build_status import build_status
 from backend.project.panes.chat.screen.chat_thread import thread_for
 from backend.project.panes.create.resolver import (
     created_at_key,
-    get_history_for_goal,
-    get_latest_for_all_goals,
+    get_history_for_project,
+    get_latest_for_all_projects,
 )
 
 
@@ -42,11 +42,11 @@ def project_view(record: dict, reply: str | None = None) -> dict:
         # A broken tree must not hide the rest of the project.
         print(f"(debug: map_tree() failed for project {pid}: {e})")
         node = None
-    history = get_history_for_goal(pid) if pid is not None else []
+    history = get_history_for_project(pid) if pid is not None else []
     thread = thread_for(pid, reply, history) if pid is not None else []
     return {
         "project_id": pid,
-        "goal": record["goal"],
+        "name": record["name"],
         "completed": bool(record.get("completed")),
         "cancelled": bool(record.get("cancelled")),
         "sim_user_id": record.get("sim_user_id"),
@@ -59,7 +59,7 @@ def project_view(record: dict, reply: str | None = None) -> dict:
 
 def active_projects() -> list[dict]:
     """Every project that's neither completed nor cancelled, newest first."""
-    latest = get_latest_for_all_goals()
+    latest = get_latest_for_all_projects()
     active = [r for r in latest if not r.get("completed") and not r.get("cancelled")]
     active.sort(key=created_at_key, reverse=True)
     return active
@@ -98,7 +98,7 @@ def map_tree(record: dict) -> dict | None:
         return None
     return {
         "id": f"project-{pid}",
-        "label": record.get("goal", ""),
+        "label": record.get("name", ""),
         "status": "done" if record.get("completed") else "open",
         "children": children,
     }

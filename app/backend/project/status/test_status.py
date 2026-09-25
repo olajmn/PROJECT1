@@ -11,9 +11,9 @@ from backend.project.status.build_status import build_status, status_text
 NOW = datetime(2026, 9, 25, 20, 0, tzinfo=timezone.utc).astimezone()
 
 
-def line(feedback, at, event=None, focus=None, steps=None, goal="House", **extra):
+def line(feedback, at, event=None, focus=None, steps=None, name="House", **extra):
     record = {
-        "project_id": 7, "goal": goal, "sim_user_id": 3, "feedback": feedback,
+        "project_id": 7, "name": name, "sim_user_id": 3, "feedback": feedback,
         "created_at": at, "plan": {"progression": {"steps": steps or []}},
     }
     if event:
@@ -33,7 +33,7 @@ def main() -> None:
         line("Added step under Rooms: Bath", "2026-09-25T10:01:00.000+00:00", "node_added"),
         line("Ok. Note: hi", "2026-09-25T11:00:00.000+00:00", "chat"),
         line("Ok. Note: and this?", "2026-09-25T11:01:00.000+00:00", "chat", focus="Kitchen"),
-        line("Renamed: House → Home", "2026-09-25T12:00:00.000+00:00", "renamed", steps=tree, goal="Home"),
+        line("Renamed: House → Home", "2026-09-25T12:00:00.000+00:00", "renamed", steps=tree, name="Home"),
     ]
     status = build_status(history, now=NOW)
 
@@ -63,8 +63,8 @@ def main() -> None:
 
     # Old lines (no event, local time without offset) read the same way.
     old = build_status([
-        {"project_id": 1, "goal": "Old", "feedback": None, "created_at": "2026-09-20T10:00:00"},
-        {"project_id": 1, "goal": "Old", "feedback": "Imported 1 step(s)",
+        {"project_id": 1, "name": "Old", "feedback": None, "created_at": "2026-09-20T10:00:00"},
+        {"project_id": 1, "name": "Old", "feedback": "Imported 1 step(s)",
          "created_at": "2026-09-20T10:05:00", "plan": {}},
     ], now=NOW)
     assert [h["text"] for h in old["history"]] == ["Pasted structure (1 top node)", "Created"]

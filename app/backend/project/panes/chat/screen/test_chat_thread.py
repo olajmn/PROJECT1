@@ -9,12 +9,12 @@ shoes = {"progression": {"steps": [{"label": "shoes"}]}}
 
 history = [
     {
-        "goal": "start working out",
+        "name": "start working out",
         "plan": empty,
         "feedback": None,
     },
     {
-        "goal": "start working out",
+        "name": "start working out",
         "plan": shoes,
         "feedback": "I weigh 90 kilograms.",
     },
@@ -30,7 +30,7 @@ assert len(messages) == 3
 leftover = thread_messages(
     [
         {
-            "goal": "gym",
+            "name": "gym",
             "plan": {
                 "clarification": "How often?",
                 "suggested_action": "Buy shoes",
@@ -48,7 +48,7 @@ assert leftover[0] == {"role": "agent", "text": "gym: warmup."}
 # not the labeled blob and not the same map line twice.
 check_in = history + [
     {
-        "goal": "start working out",
+        "name": "start working out",
         "plan": shoes,
         "feedback": "Still working on it. Note: still working",
     },
@@ -61,26 +61,26 @@ assert checked[4] == {"role": "agent", "text": "Still working on it."}
 same = {"progression": {"steps": []}}
 focused = [
     {
-        "goal": "becoming a developer",
+        "name": "becoming a developer",
         "plan": same,
         "feedback": None,
     },
     {
-        "goal": "becoming a developer",
+        "name": "becoming a developer",
         "plan": same,
         "feedback": "what is this?",
         "map_focus": "concept 4",
         "focus_step_id": "p2",
     },
     {
-        "goal": "becoming a developer",
+        "name": "becoming a developer",
         "plan": same,
         "feedback": "make 3 ideas",
         "map_focus": "concept 4",
         "focus_step_id": "p2",
     },
     {
-        "goal": "becoming a developer",
+        "name": "becoming a developer",
         "plan": same,
         "feedback": "and now?",
     },
@@ -100,15 +100,15 @@ assert focused_msgs[5] == {"role": "user", "text": "and now?"}
 
 # Map edits belong in Status, not the Talk thread (same as past_turns).
 with_map = [
-    {"goal": "House", "plan": empty, "feedback": None},
+    {"name": "House", "plan": empty, "feedback": None},
     {
-        "goal": "House",
+        "name": "House",
         "plan": {"progression": {"steps": [{"label": "Rooms"}]}},
         "feedback": "Added step: Rooms",
         "event": "node_added",
     },
     {
-        "goal": "House",
+        "name": "House",
         "plan": {"progression": {"steps": [{"label": "Rooms"}]}},
         "feedback": "Sure. Note: what next?",
         "event": "chat",

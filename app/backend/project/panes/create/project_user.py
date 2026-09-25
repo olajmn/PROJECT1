@@ -5,8 +5,8 @@ Identity writes, not reasoning. Judgment does not own this.
 """
 
 from backend.project.panes.create.resolver import (
-    get_latest_for_all_goals,
-    get_latest_for_goal,
+    get_latest_for_all_projects,
+    get_latest_for_project,
 )
 from backend.store.data_persistence import (
     archive_user as archive_user_record,
@@ -15,7 +15,7 @@ from backend.store.data_persistence import (
 )
 
 
-def set_project_user(goal_id: int, sim_user_id: int | None) -> dict | None:
+def set_project_user(project_id: int, sim_user_id: int | None) -> dict | None:
     """
     Add, move, or remove a project's id link after mint (see
     docs/planning-model.md, the authority on Vision).
@@ -23,13 +23,13 @@ def set_project_user(goal_id: int, sim_user_id: int | None) -> dict | None:
     currently has.
 
     Unlike chat's talk() (which takes an already-resolved `latest`
-    record), this resolves `goal_id` itself, since the route calling
+    record), this resolves `project_id` itself, since the route calling
     it has no other reason to look the record up first.
 
     Returns the newly saved record, or None if the change is
     rejected - never partially applied, and never raises for an
     ordinary bad input:
-    - `goal_id` doesn't resolve to any goal.
+    - `project_id` doesn't resolve to any goal.
     - `sim_user_id` is given but no such Vision exists (a stale/tampered
       value - the real UI always offers ids from `load_users()`, so
       this is a defensive check, not the normal path).
@@ -37,7 +37,7 @@ def set_project_user(goal_id: int, sim_user_id: int | None) -> dict | None:
     Requesting the Vision the goal is already linked to (or already
     has none, for `sim_user_id=None`) is a genuine no-op - returns
     `latest` unchanged rather than appending an identical record. A
-    cancelled goal (see cancel_goal()) is also a no-op here — never
+    cancelled goal (see cancel_project()) is also a no-op here — never
     a save_plan() call that could silently revive it.
 
     Preserves `plan`, `duration`, `frozen_duration`, `current_step`,
@@ -46,7 +46,7 @@ def set_project_user(goal_id: int, sim_user_id: int | None) -> dict | None:
     goal/plan itself, so nothing else about it should look any
     different than it did the moment before.
     """
-    latest = get_latest_for_goal(goal_id)
+    latest = get_latest_for_project(project_id)
     if latest is None:
         return None
     if latest.get("cancelled"):
@@ -66,8 +66,8 @@ def set_project_user(goal_id: int, sim_user_id: int | None) -> dict | None:
         feedback_text = f"{verb} Vision: {vision['text']}"
 
     return save_plan(
-        latest["goal"], latest["plan"], feedback=feedback_text,
-        duration=latest.get("duration"), goal_id=latest["project_id"],
+        latest["name"], latest["plan"], feedback=feedback_text,
+        duration=latest.get("duration"), project_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
         completed=latest.get("completed", False), sim_user_id=sim_user_id,
         step_status=latest.get("step_status"), event="owner_changed",
@@ -88,10 +88,10 @@ def archive_user(sim_user_id: int) -> dict | None:
     a closed, historical record, not a claim that the Vision is still
     active, so there's nothing to detach.
 
-    Detaching reuses set_project_user(goal_id, None) per Goal rather
+    Detaching reuses set_project_user(project_id, None) per Goal rather
     than writing a second way to change a Goal's Vision link, so it
     inherits that function's safety checks. Like set_project_user(),
-    this appends a new record per affected Goal (goal_id carried
+    this appends a new record per affected Goal (project_id carried
     forward) - no existing record is ever mutated or removed.
 
     Returns the archived Vision record (or the already-archived one,
@@ -101,7 +101,7 @@ def archive_user(sim_user_id: int) -> dict | None:
     if vision is None:
         return None
 
-    for latest in get_latest_for_all_goals():
+    for latest in get_latest_for_all_projects():
         if (latest.get("sim_user_id") == sim_user_id
                 and not latest.get("completed")
                 and not latest.get("cancelled")):

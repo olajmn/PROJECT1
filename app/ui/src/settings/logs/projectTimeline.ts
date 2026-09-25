@@ -6,10 +6,10 @@ import { fetchProjectTimeline } from "../../api.js";
 import type { LogEntry } from "../../dataShapes.js";
 import {
   arrangeStack,
+  el,
   logBlock,
   startAgeClock,
-} from "../paragraphs/index.js";
-import { el } from "../paragraphs/makeTag.js";
+} from "../register/index.js";
 
 function tapeBlock(entry: LogEntry) {
   // Event name as title (node_added, chat, …); kind as secondary label.

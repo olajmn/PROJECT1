@@ -1,16 +1,16 @@
-// Block / stack / two-column group layout.
+// Block / stack / two-column group layout for the Settings register.
 
-import { el } from "./makeTag.js";
-import { drawLine } from "./drawLine.js";
-import type { Block, Group } from "./lineKinds.js";
+import { el } from "./dom.js";
+import { paintLine } from "./paintLine.js";
+import type { Block, Group } from "./types.js";
 
 export function arrangeBlock(
-  paras: Block,
+  lines: Block,
   className = "settings-block",
 ): HTMLElement {
   const block = el("div", className);
-  for (const para of paras) {
-    block.appendChild(drawLine(para));
+  for (const line of lines) {
+    block.appendChild(paintLine(line));
   }
   return block;
 }

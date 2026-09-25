@@ -44,7 +44,7 @@ def parse_outline(text: str, unwrap: bool = True) -> list[dict]:
     it only sees position (is this line alone at the top?), never
     meaning. `unwrap=False` returns the raw parse, title line included,
     for a caller that wants to show the user both and let them choose
-    (see progression_zoom.import_progression_outline()'s own `unwrap`
+    (see progression_zoom.import_map_outline()'s own `unwrap`
     parameter and server.py's preview route) rather than this parser
     silently guessing for them.
     """

@@ -398,11 +398,26 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Alternatives considered:** keep one combined `projects.jsonl`; name files by project title; put each project in a subdirectory with multiple files.
 
-**Why this choice:** The product unit is a project, and the developer already wants a per-project tape in Logs. One file per id matches that intuition, avoids rewriting every project's lines when one changes, and makes `get_history_for_goal` a single-file read. `{id}.jsonl` stays stable when the display name changes.
+**Why this choice:** The product unit is a project, and the developer already wants a per-project tape in Logs. One file per id matches that intuition, avoids rewriting every project's lines when one changes, and makes `get_history_for_project` a single-file read. `{id}.jsonl` stays stable when the display name changes.
 
 **Trade-off:** Listing every project or building the mixed activity log scans the directory. A combined backup may still sit as `projects.jsonl.bak` after migration.
 
 **Reversible?** Yes — concatenate the files back into one jsonl and restore the old constant (git history has the prior store).
+
+
+## 40. 2026-09-25 — Project/Map/Talk naming (`goal` → `name`, API paths)
+
+**Decision:** Rename the project display field `goal` → `name` on disk and on the wire (`ProjectView.name`). On load, promote legacy `goal` → `name` and rewrite the project file (same pattern as `goal_id` → `project_id`). Rename Goal-era Python symbols to Project/Map/Talk language (`cancel_project`, `get_latest_for_project` / `get_history_for_project`, `add_map_node` / `remove_map_node` / `suggest_map_children` / import helpers). Change HTTP paths together: `/progression` → `/map`, `/zoom/<pN>` → `/suggest/<pN>`, `/feedback` → `/chat`. Leave the nested tree field `plan.progression` and event names unchanged this round.
+
+**Date:** 2026-09-25
+
+**Alternatives considered:** keep `goal` on disk and only rename UI labels; rename `plan.progression` in the same pass; keep old API path aliases forever.
+
+**Why this choice:** The product language is Project / Map / Talk. Keeping `goal` and `/feedback`/`/zoom`/`/progression` in live code forced a constant translation tax. Promoting on load matches how `project_id` was introduced (#29). Renaming API paths in one pass with `api.ts` avoids a half-migrated client. Nested `plan.progression` and event strings are a larger data-shape change deferred to a later pass (Queue 35 / Item 12).
+
+**Trade-off:** Old bookmarks or external clients hitting `/feedback` etc. break; only this app's UI talks to these routes today. Docs that quote old paths in dated history stay as written.
+
+**Reversible?** Yes — reverse the promote, restore symbols/paths from git; disk lines already rewritten to `name` would need a reverse promote.
 
 ## See also
 

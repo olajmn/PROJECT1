@@ -2,7 +2,7 @@
 // Updates ?project= in the URL so a project tape can be bookmarked.
 
 import { fetchProjects } from "../../api.js";
-import { el } from "../paragraphs/makeTag.js";
+import { el } from "../register/dom.js";
 
 export type LogScope =
   | { kind: "all" }
@@ -50,12 +50,12 @@ export async function mountLogScope(
     const projects = await fetchProjects();
     const open = projects
       .filter((p) => !p.cancelled)
-      .sort((a, b) => a.goal.localeCompare(b.goal) || a.project_id - b.project_id);
+      .sort((a, b) => a.name.localeCompare(b.name) || a.project_id - b.project_id);
 
     for (const p of open) {
       const opt = document.createElement("option");
       opt.value = String(p.project_id);
-      opt.textContent = `${p.goal} (#${p.project_id})`;
+      opt.textContent = `${p.name} (#${p.project_id})`;
       select.appendChild(opt);
     }
 

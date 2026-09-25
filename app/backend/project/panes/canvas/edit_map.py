@@ -1,14 +1,14 @@
 """
 User-authored and zoom writes on a Goal's shadow plan.progression.
 
-add_progression_bead() — one Step the user named (no LLM), at the
+add_map_node() — one Step the user named (no LLM), at the
 root or under a parent_id.
-import_progression_outline() — a whole pasted outline/ASCII tree,
+import_map_outline() — a whole pasted outline/ASCII tree,
 parsed by text_to_tree.py (no LLM), appended the same way.
-import_progression_folder() — one folder on disk, walked by
+import_map_folder() — one folder on disk, walked by
 add_folder/walk.py, appended the same way. Each node keeps its path.
-remove_progression_bead() — drop a Step by id (no LLM).
-zoom_progression_step() — expand one Step via call_suggest.py
+remove_map_node() — drop a Step by id (no LLM).
+suggest_map_children() — expand one Step via call_suggest.py
 (same is_too_coarse / children_of as the Steps workbench).
 
 Does not touch the Steps-page scratch tree.
@@ -22,12 +22,12 @@ from backend.project.panes.canvas.add_folder import folder_tree
 from backend.project.panes.canvas.bead import Step, from_labels, from_nested_labels
 from backend.project.panes.canvas.text_to_tree import parse_outline
 from backend.project.panes.canvas.call_suggest import children_from_conversation, zoom_into
-from backend.project.panes.create.resolver import get_history_for_goal
+from backend.project.panes.create.resolver import get_history_for_project
 
 _ID_NUM = re.compile(r"^p(\d+)$")
 
 
-def add_progression_bead(
+def add_map_node(
     latest: dict,
     label: str,
     parent_id: str | None = None,
@@ -71,11 +71,11 @@ def add_progression_bead(
         feedback = f"Added step: {text}"
 
     return save_plan(
-        latest["goal"],
+        latest["name"],
         plan,
         feedback=feedback,
         duration=latest.get("duration"),
-        goal_id=latest["project_id"],
+        project_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
@@ -84,7 +84,7 @@ def add_progression_bead(
     )
 
 
-def import_progression_outline(
+def import_map_outline(
     latest: dict,
     text: str | None = None,
     parent_id: str | None = None,
@@ -96,7 +96,7 @@ def import_progression_outline(
     Parse a pasted outline/ASCII tree (parse_outline.py — markdown
     bullets, numbered lists, this app's own box-drawing export, or
     plain lines) and append the whole result as new Steps — no model
-    call, same append-not-replace shape as add_progression_bead().
+    call, same append-not-replace shape as add_map_node().
     Raises ValueError if nothing recognizable parses out, or if
     parent_id is set but not found.
 
@@ -152,11 +152,11 @@ def import_progression_outline(
         feedback = f"Imported {len(new_steps)} step(s)"
 
     return save_plan(
-        latest["goal"],
+        latest["name"],
         plan,
         feedback=feedback,
         duration=latest.get("duration"),
-        goal_id=latest["project_id"],
+        project_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
@@ -165,14 +165,14 @@ def import_progression_outline(
     )
 
 
-def import_progression_folder(
+def import_map_folder(
     latest: dict,
     folder: str,
     parent_id: str | None = None,
 ) -> dict:
     """Walk one folder into beads and append them. No model call.
-    Same append-not-replace shape as import_progression_outline()."""
-    return import_progression_outline(
+    Same append-not-replace shape as import_map_outline()."""
+    return import_map_outline(
         latest,
         parent_id=parent_id,
         forest=folder_tree(folder),
@@ -180,7 +180,7 @@ def import_progression_folder(
     )
 
 
-def remove_progression_bead(latest: dict, step_id: str) -> dict:
+def remove_map_node(latest: dict, step_id: str) -> dict:
     """
     Remove `step_id` from plan.progression (top-level or nested).
     No model call. Raises if missing progression or step.
@@ -201,11 +201,11 @@ def remove_progression_bead(latest: dict, step_id: str) -> dict:
         plan["progression"] = None
 
     return save_plan(
-        latest["goal"],
+        latest["name"],
         plan,
         feedback=f"Removed step: {removed_label}",
         duration=latest.get("duration"),
-        goal_id=latest["project_id"],
+        project_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
@@ -231,7 +231,7 @@ def _remove_step(steps: list, step_id: str) -> str | None:
                 return found
     return None
 
-def zoom_progression_step(latest: dict, step_id: str) -> dict:
+def suggest_map_children(latest: dict, step_id: str) -> dict:
     """
     Expand `step_id` one level under latest["plan"]["progression"].
     Appends a new history record with the updated tree.
@@ -262,11 +262,11 @@ def zoom_progression_step(latest: dict, step_id: str) -> dict:
     ]
 
     return save_plan(
-        latest["goal"],
+        latest["name"],
         new_plan,
         feedback=f"Zoomed into: {step['label']}",
         duration=latest.get("duration"),
-        goal_id=latest["project_id"],
+        project_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
@@ -275,7 +275,7 @@ def zoom_progression_step(latest: dict, step_id: str) -> dict:
     )
 
 
-def suggest_progression_from_chat(
+def suggest_map_from_chat(
     latest: dict,
     step_id: str,
     note: str,
@@ -314,11 +314,11 @@ def suggest_progression_from_chat(
     existing.extend(s.to_dict() for s in from_labels(labels, mint))
 
     record = save_plan(
-        latest["goal"],
+        latest["name"],
         plan,
         feedback=note,
         duration=latest.get("duration"),
-        goal_id=latest["project_id"],
+        project_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
@@ -329,10 +329,10 @@ def suggest_progression_from_chat(
     return record, labels
 
 
-def _recent_conversation(goal_id: int, latest_note: str, limit: int = 8) -> str:
+def _recent_conversation(project_id: int, latest_note: str, limit: int = 8) -> str:
     """Recent user feedback lines for this goal, plus the current note."""
     lines: list[str] = []
-    for record in get_history_for_goal(goal_id):
+    for record in get_history_for_project(project_id):
         feedback = (record.get("feedback") or "").strip()
         if feedback:
             lines.append(f"User: {feedback}")

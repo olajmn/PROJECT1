@@ -7,7 +7,7 @@ Suggest / remove), renames, and archive lines belong in Status, not here
 nodes under a focus stay in the thread.
 """
 
-from backend.project.panes.create.resolver import get_history_for_goal
+from backend.project.panes.create.resolver import get_history_for_project
 from backend.project.timeline import event_name
 
 # Saved lines that are not Talk. Status / timeline own these.
@@ -80,7 +80,7 @@ def thread_messages(history: list[dict]) -> list[dict]:
 
 
 def thread_for(
-    goal_id: int,
+    project_id: int,
     reply: str | None = None,
     history: list[dict] | None = None,
 ) -> list[dict]:
@@ -89,7 +89,7 @@ def thread_for(
     shows the reply rather than the one-line map summary. Pass `history`
     when the caller already loaded it."""
     if history is None:
-        history = get_history_for_goal(goal_id)
+        history = get_history_for_project(project_id)
     messages = thread_messages(history)
     if reply and messages and messages[-1]["role"] == "agent":
         last = dict(messages[-1])
@@ -126,7 +126,7 @@ def surface_text(record: dict) -> str:
     if not labels:
         return "The map is empty."
     listed = ", ".join(labels)
-    name = (record.get("goal") or "").strip()
+    name = (record.get("name") or "").strip()
     return f"{name}: {listed}." if name else f"{listed}."
 
 

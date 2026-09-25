@@ -12,7 +12,7 @@ from backend.project.panes.chat.model_input.build_prompt import (
 
 def main() -> None:
     latest = {
-        "goal": "Garden",
+        "name": "Garden",
         "plan": {"progression": {"steps": [
             {"id": "p1", "label": "Beds", "children": []},
         ]}},

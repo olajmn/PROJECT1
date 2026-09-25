@@ -32,7 +32,7 @@ app/ui/
 │   ├── map/                  # progression canvas (today: canvas/ + map TS)
 │   ├── chat/                 # thread, compose, About-frames
 │   └── pages/
-│       └── settings/         # chrome + paragraphs (+ thin tab sheets if needed)
+│       └── settings/         # chrome + register (+ thin tab sheets if needed)
 └── src/
     ├── api.ts / types.ts
     ├── user/                 # active id — pairs with sidebar brand conceptually
@@ -43,7 +43,7 @@ app/ui/
     └── pages/
         ├── projects.ts       # orchestrator only
         └── settings/
-            ├── paragraphs/   # shared register (recipe + paint)
+            ├── register/     # shared register (blocks + paint)
             ├── general/
             ├── directory/
             └── logs/

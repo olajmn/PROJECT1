@@ -14,9 +14,9 @@ reload.
 
 from backend.llm_client import send_chat
 from backend.store.data_persistence import now_utc, save_plan, stamp_map_focus
-from backend.project.panes.canvas.edit_map import suggest_progression_from_chat
+from backend.project.panes.canvas.edit_map import suggest_map_from_chat
 from backend.project.panes.chat.model_input.build_prompt import build_messages
-from backend.project.panes.create.resolver import get_history_for_goal
+from backend.project.panes.create.resolver import get_history_for_project
 from backend.project.status.build_status import build_status, status_text
 
 # User is asking for ideas / structure under the focused node.
@@ -56,7 +56,7 @@ def reply(
     sent_at = now_utc()
     if map_focus and focus_step_id and _asks_for_structure(note):
         try:
-            record, labels = suggest_progression_from_chat(
+            record, labels = suggest_map_from_chat(
                 latest, focus_step_id, note, sent_at=sent_at,
             )
         except Exception:
@@ -65,7 +65,7 @@ def reply(
             text = f'Added under "{map_focus}": {", ".join(labels)}.'
             return {"record": _stamp(record, map_focus, focus_step_id), "reply": text}
 
-    history = get_history_for_goal(latest["project_id"])
+    history = get_history_for_project(latest["project_id"])
     status = status_text(build_status(history))
     messages = build_messages(latest, note, history, map_focus, focus_step_id, status)
     text = send_chat(messages).strip()
@@ -86,11 +86,11 @@ def _save_talk(latest: dict, note: str, text: str, sent_at: str) -> dict:
     """Keep the map as it is; store the turn as "<reply> Note: <note>",
     the shape screen/chat_thread.py and model_input/build_prompt.py read."""
     return save_plan(
-        latest.get("goal") or "",
+        latest.get("name") or "",
         latest.get("plan") or {},
         feedback=f"{text} Note: {note}",
         duration=latest.get("duration"),
-        goal_id=latest["project_id"],
+        project_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),

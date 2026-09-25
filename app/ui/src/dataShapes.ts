@@ -21,8 +21,7 @@ export interface MapNode {
 
 // 2. Projects and chat
 //
-// Wire identity is project_id / /api/projects. Display text field
-// remains `goal` until a later rename.
+// Wire identity is project_id / /api/projects. Display title is `name`.
 
 export interface ChatMessage {
   role: "user" | "agent";
@@ -45,7 +44,7 @@ export interface ProjectStatus {
 
 export interface ProjectView {
   project_id: number;
-  goal: string;
+  name: string;
   completed: boolean;
   cancelled: boolean;
   sim_user_id: number | null;

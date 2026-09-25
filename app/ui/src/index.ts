@@ -210,7 +210,7 @@ const idMenu = installIdMenu({
 const createPanel = installCreatePanel({
   onNeedUser: () => idMenu.open(),
   onChange: () => renderWorkspace(),
-  getTitles: () => projectsForActiveUser().map((p) => p.goal),
+  getTitles: () => projectsForActiveUser().map((p) => p.name),
   onCreated: (created) => {
     projects = [
       created,
@@ -306,7 +306,7 @@ function renderList(): void {
     }
     const title = document.createElement("span");
     title.className = "project-list-title";
-    title.textContent = displayProjectTitle(project.goal);
+    title.textContent = displayProjectTitle(project.name);
     const id = document.createElement("span");
     id.className = "entity-id";
     id.textContent = projectListIdLabel(visible, project);
@@ -544,7 +544,7 @@ function renderWorkspace(): void {
   };
 
   line = treeWordsElement(
-    displayProjectTitle(project.goal),
+    displayProjectTitle(project.name),
     middle,
     canSelect
       ? (stepId: string) => {
@@ -561,7 +561,7 @@ function renderWorkspace(): void {
   );
   const nameText = line.querySelector(".progress-name-label");
   if (nameText instanceof HTMLElement) {
-    installTitleRename(nameText, project.goal, renameTitle);
+    installTitleRename(nameText, project.name, renameTitle);
   }
   body.appendChild(line);
   installMapScale(body, line, project.project_id, {
@@ -584,7 +584,7 @@ function renderWorkspace(): void {
   copyBtn.title = "Copy a classic text tree for docs or chat";
   copyBtn.addEventListener("click", async () => {
     const text = copyAsText(
-      project.goal,
+      project.name,
       middle,
       `#${project.project_id}`,
     );
@@ -630,7 +630,7 @@ function renderWorkspace(): void {
   const archiveBtn = document.createElement("button");
   archiveBtn.type = "button";
   archiveBtn.className = "map-copy-button";
-  archiveBtn.textContent = `Archive “${displayProjectTitle(project.goal)}”`;
+  archiveBtn.textContent = `Archive “${displayProjectTitle(project.name)}”`;
   archiveBtn.addEventListener("click", async () => {
     archiveBtn.disabled = true;
     try {

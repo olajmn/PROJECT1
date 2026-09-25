@@ -2,7 +2,7 @@
 Read and interpret goal history.
 
 This module does not store anything - it reads history via
-data_persistence and answers, by goal_id:
+data_persistence and answers, by project_id:
 
 - What is the full history of this goal?
 - What is the latest record for this goal?
@@ -13,7 +13,7 @@ grouped or sorted for display, is board-building logic, not goal
 identity - see frontend/view_data/goal_overview.py, where the board is
 actually built.
 
-goal_id itself is minted in data_persistence.py (_next_goal_id()), not
+project_id itself is minted in data_persistence.py (_next_project_id()), not
 here - moving it here would create a circular import between the two
 modules. See docs/05-decisions.md for why identity is a minted id, not
 the goal's text.
@@ -42,7 +42,7 @@ def created_at_key(record: dict) -> datetime:
     tzinfo here.
 
     Public (not `_`-prefixed) because frontend/view_data/goal_overview.py
-    needs it too, to sort the board it builds from get_latest_for_all_goals().
+    needs it too, to sort the board it builds from get_latest_for_all_projects().
     """
     parsed = datetime.fromisoformat(record["created_at"])
     if parsed.tzinfo is not None:
@@ -53,18 +53,18 @@ def created_at_key(record: dict) -> datetime:
 # Read one goal
 
 
-def get_history_for_goal(goal_id: int) -> list[dict]:
+def get_history_for_project(project_id: int) -> list[dict]:
     """
     Return every record for one project_id, oldest first - the full
     back-and-forth of feedback and replanning for this project.
 
-    Parameter name goal_id kept this round; matches project_id on disk.
+    Parameter name project_id kept this round; matches project_id on disk.
     Reads that project's file only (data/projects/{id}.jsonl).
     """
-    return load_project_history(goal_id)
+    return load_project_history(project_id)
 
 
-def get_latest_for_goal(goal_id: int) -> dict | None:
+def get_latest_for_project(project_id: int) -> dict | None:
     """
     Return the most recent record for one project_id, or None.
 
@@ -72,14 +72,14 @@ def get_latest_for_goal(goal_id: int) -> dict | None:
     "what was touched most recently across every project" - not safe once
     two projects can be active side by side (see docs/06-development.md).
     """
-    history = load_project_history(goal_id)
+    history = load_project_history(project_id)
     return history[-1] if history else None
 
 
 # Read all goals
 
 
-def get_latest_for_all_goals() -> list[dict]:
+def get_latest_for_all_projects() -> list[dict]:
     """
     Return the latest record for every project_id in history - one
     project, one record.

@@ -180,7 +180,7 @@ function buildProjectGroup(
     row.className = "sidebar-id-card-project";
     const goal = document.createElement("span");
     goal.className = "sidebar-id-card-project-goal";
-    goal.textContent = displayProjectTitle(project.goal);
+    goal.textContent = displayProjectTitle(project.name);
     const id = document.createElement("span");
     id.className = "sidebar-id-menu-hint";
     id.textContent = projectListIdLabel(linked, project);

@@ -1,4 +1,4 @@
-// Tiny DOM helper shared by drawLine / arrange.
+// Tiny DOM helper for the Settings register.
 
 export function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,

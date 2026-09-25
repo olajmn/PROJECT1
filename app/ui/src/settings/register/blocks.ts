@@ -1,6 +1,4 @@
-// Register visual template — how a Settings register div looks.
-//
-// Last authoring step before paint: title + fact rows (label → value).
+// Register blocks — how a Settings register entry looks (title + facts).
 // Shared by General, Directory, and Logs. Edit fact lists here to steer look.
 
 // Contents
@@ -9,7 +7,7 @@
 //  3. Log entry block (Logs)
 //  4. Id group / project / orphan (Directory)
 
-import type { Block, Group } from "./lineKinds.js";
+import type { Block, Group } from "./types.js";
 
 // 1. Value bags
 
@@ -29,7 +27,7 @@ export type LogValues = {
 
 export type ProjectValues = {
   id: number;
-  goal: string;
+  name: string;
   created: string | null | undefined;
 };
 
@@ -101,7 +99,7 @@ export function idGroup(v: IdValues): Group {
 export function projectBlock(v: ProjectValues): Block {
   return [
     { t: "title", kind: "Project", name: "" },
-    { t: "fact", label: "Name", value: v.goal },
+    { t: "fact", label: "Name", value: v.name },
     { t: "fact", label: "ID", value: String(v.id) },
     { t: "fact", label: "Created", created: v.created ?? null },
   ];

@@ -1,6 +1,6 @@
 // Directory — Settings → Directory page body.
 //
-// Shape: ../paragraphs/registerTemplate.ts
+// Shape: ../register/blocks.ts
 
 // Contents
 //  1. Helpers
@@ -16,7 +16,7 @@ import {
   orphanGroup,
   startAgeClock,
   type ProjectValues,
-} from "../paragraphs/index.js";
+} from "../register/index.js";
 
 // 1. Helpers
 
@@ -30,7 +30,7 @@ function displayLabel(user: UserView): string {
 function projectValues(project: ProjectView): ProjectValues {
   return {
     id: project.project_id,
-    goal: project.goal,
+    name: project.name,
     created: project.created_at,
   };
 }

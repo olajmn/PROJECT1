@@ -1,14 +1,14 @@
 // Logs — Settings → Logs page body: every saved change, newest first
 // (All activity scope). One-project tape: projectTimeline.ts.
-// Shape: ../paragraphs/registerTemplate.ts (logBlock)
+// Shape: ../register/blocks.ts (logBlock)
 
 import { fetchLog } from "../../api.js";
 import {
   arrangeStack,
+  el,
   logBlock,
   startAgeClock,
-} from "../paragraphs/index.js";
-import { el } from "../paragraphs/makeTag.js";
+} from "../register/index.js";
 
 /** Fill a `.settings-register` host with the activity log. */
 export async function mountLogs(host: HTMLElement): Promise<void> {

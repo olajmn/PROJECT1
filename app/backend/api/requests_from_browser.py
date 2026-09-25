@@ -32,19 +32,19 @@ from http.server import BaseHTTPRequestHandler
 
 from backend.store.data_persistence import load_users, save_user
 from backend.project.panes.chat.reply import reply
-from backend.project.panes.create.lifecycle import cancel_goal, create_project
+from backend.project.panes.create.lifecycle import cancel_project, create_project
 from backend.project.panes.create.rename import rename_project
-from backend.project.panes.create.resolver import get_latest_for_goal
+from backend.project.panes.create.resolver import get_latest_for_project
 from backend.project.panes.canvas.add_folder import choose_folder
 from backend.project.panes.canvas.read_map import read_tree
 from backend.project.panes.canvas.text_to_tree import parse_outline
 from backend.project.panes.create.project_user import archive_user, set_project_user
 from backend.project.panes.canvas.edit_map import (
-    add_progression_bead,
-    import_progression_folder,
-    import_progression_outline,
-    remove_progression_bead,
-    zoom_progression_step,
+    add_map_node,
+    import_map_folder,
+    import_map_outline,
+    remove_map_node,
+    suggest_map_children,
 )
 from backend.llm_client import MODEL, TEMPERATURE
 from backend.api.activity_log import activity_log
@@ -72,21 +72,19 @@ _MODEL_FAILED = "that took longer than expected - try again in a moment"
 
 # Every POST address and the method that answers it. (\d+) is a project
 # or user id, (p\d+) a map node id; both are passed to the method in
-# order. Some addresses keep older words (feedback = chat message,
-# zoom = suggest children, progression = the map) so the UI need not
-# change.
+# order. Map, suggest, and chat paths use Project/Map/Talk names.
 _POST_ROUTES = [
     (r"/api/projects", "_handle_create_project"),
     (r"/api/projects/(\d+)/name", "_handle_rename_project"),
     (r"/api/projects/(\d+)/cancel", "_handle_cancel_project"),
     (r"/api/projects/(\d+)/user", "_handle_set_project_user"),
-    (r"/api/projects/(\d+)/progression", "_handle_add_node"),
-    (r"/api/projects/(\d+)/progression/(p\d+)/remove", "_handle_remove_node"),
-    (r"/api/projects/(\d+)/progression/import", "_handle_paste_structure"),
-    (r"/api/projects/(\d+)/progression/folder", "_handle_add_folder"),
-    (r"/api/projects/(\d+)/zoom/(p\d+)", "_handle_suggest_children"),
+    (r"/api/projects/(\d+)/map", "_handle_add_node"),
+    (r"/api/projects/(\d+)/map/(p\d+)/remove", "_handle_remove_node"),
+    (r"/api/projects/(\d+)/map/import", "_handle_paste_structure"),
+    (r"/api/projects/(\d+)/map/folder", "_handle_add_folder"),
+    (r"/api/projects/(\d+)/suggest/(p\d+)", "_handle_suggest_children"),
     (r"/api/projects/(\d+)/read", "_handle_read_map"),
-    (r"/api/projects/(\d+)/feedback", "_handle_chat_message"),
+    (r"/api/projects/(\d+)/chat", "_handle_chat_message"),
     (r"/api/parse-outline-preview", "_handle_parse_outline_preview"),
     (r"/api/choose-folder", "_handle_choose_folder"),
     (r"/api/users", "_handle_create_user"),
@@ -160,7 +158,7 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json(project_view(record))
 
     def _handle_cancel_project(self, project_id: int) -> None:
-        record = cancel_goal(project_id)
+        record = cancel_project(project_id)
         if record is None:
             self.send_error(404, "no such project, or already completed")
             return
@@ -189,7 +187,7 @@ class Handler(BaseHTTPRequestHandler):
         latest = self._load_project(project_id)
         if latest is None:
             return
-        self._save_map_change(lambda: add_progression_bead(
+        self._save_map_change(lambda: add_map_node(
             latest,
             str(body.get("label") or ""),
             parent_id=_parent_id(body),
@@ -200,7 +198,7 @@ class Handler(BaseHTTPRequestHandler):
         latest = self._load_project(project_id)
         if latest is None:
             return
-        self._save_map_change(lambda: remove_progression_bead(latest, node_id))
+        self._save_map_change(lambda: remove_map_node(latest, node_id))
 
     def _handle_paste_structure(self, project_id: int) -> None:
         """Pasted outline text, or an already-parsed `nodes` tree, becomes
@@ -212,7 +210,7 @@ class Handler(BaseHTTPRequestHandler):
         if latest is None:
             return
         nodes = body.get("nodes")
-        self._save_map_change(lambda: import_progression_outline(
+        self._save_map_change(lambda: import_map_outline(
             latest,
             text=str(body.get("text") or "") if nodes is None else None,
             parent_id=_parent_id(body),
@@ -228,7 +226,7 @@ class Handler(BaseHTTPRequestHandler):
         latest = self._load_project(project_id)
         if latest is None:
             return
-        self._save_map_change(lambda: import_progression_folder(
+        self._save_map_change(lambda: import_map_folder(
             latest,
             str(body.get("path") or ""),
             parent_id=_parent_id(body),
@@ -240,7 +238,7 @@ class Handler(BaseHTTPRequestHandler):
         if latest is None:
             return
         try:
-            record = zoom_progression_step(latest, node_id)
+            record = suggest_map_children(latest, node_id)
         except ValueError as e:
             self.send_error(422, str(e))
             return
@@ -259,7 +257,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(400, "nothing to read - the map is empty")
             return
         try:
-            reading = read_tree(latest["goal"], steps)
+            reading = read_tree(latest["name"], steps)
         except Exception as e:
             self._model_failed(e)
             return
@@ -359,7 +357,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _load_project(self, project_id: int) -> dict | None:
         """The project's latest record, or None after answering 404."""
-        latest = get_latest_for_goal(project_id)
+        latest = get_latest_for_project(project_id)
         if latest is None:
             self.send_error(404, "no such project")
         return latest

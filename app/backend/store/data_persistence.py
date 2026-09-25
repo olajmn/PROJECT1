@@ -141,21 +141,23 @@ def record_project_id(record: dict) -> int | None:
 def _backfill_goal_ids(records: list[dict]) -> None:
     """
     Records saved before any numeric identity existed have no identity
-    beyond their `goal` text. Assign one id per distinct goal text, in
+    beyond their display text. Assign one id per distinct name, in
     first-appearance order, onto project_id (legacy files used goal_id;
     _normalize_project_ids promotes that).
 
     Records that already have project_id or goal_id are left untouched.
+    Reads legacy `goal` or current `name` for the display text.
     """
     seen: dict[str, int] = {}
     next_id = 1
     for record in records:
         if record.get("project_id") or record.get("goal_id"):
             continue
-        if record["goal"] not in seen:
-            seen[record["goal"]] = next_id
+        text = record.get("name") or record.get("goal") or ""
+        if text not in seen:
+            seen[text] = next_id
             next_id += 1
-        record["project_id"] = seen[record["goal"]]
+        record["project_id"] = seen[text]
 
 
 def _normalize_project_ids(records: list[dict]) -> bool:
@@ -177,6 +179,24 @@ def _normalize_project_ids(records: list[dict]) -> bool:
             needed_rewrite = True
         if "goal_id" in record:
             del record["goal_id"]
+            needed_rewrite = True
+    return needed_rewrite
+
+
+def _normalize_project_names(records: list[dict]) -> bool:
+    """Promote legacy goal → name; drop goal from memory.
+
+    Returns True if a disk rewrite is needed so grepping shows name.
+    """
+    needed_rewrite = False
+    for record in records:
+        if "goal" in record:
+            if record.get("name") is None:
+                record["name"] = record["goal"]
+            del record["goal"]
+            needed_rewrite = True
+        elif "name" not in record:
+            record["name"] = ""
             needed_rewrite = True
     return needed_rewrite
 
@@ -234,12 +254,13 @@ def _normalize_records(records: list[dict]) -> tuple[list[dict], bool]:
     """Backfill ids and normalize plan shapes in place.
 
     Returns (records, needs_disk_rewrite) — rewrite when goal_id was
-    promoted to project_id or vision_id to sim_user_id.
+    promoted to project_id, vision_id to sim_user_id, or goal to name.
     """
     _backfill_goal_ids(records)
     _backfill_user_ids(records)
     needs_rewrite = _normalize_project_ids(records)
     needs_rewrite = _normalize_sim_user_ids(records) or needs_rewrite
+    needs_rewrite = _normalize_project_names(records) or needs_rewrite
     for record in records:
         record["plan"] = _normalize_plan(record["plan"])
     return records, needs_rewrite
@@ -412,13 +433,13 @@ def _load_all() -> list[dict]:
 
 
 def save_plan(
-    goal: str,
+    name: str,
     plan: dict,
     feedback: str | None = None,
     duration: str | None = None,
     completed: bool = False,
     cancelled: bool = False,
-    goal_id: int | None = None,
+    project_id: int | None = None,
     frozen_duration: dict | None = None,
     current_step: int = 0,
     sim_user_id: int | None = None,
@@ -427,32 +448,31 @@ def save_plan(
     sent_at: str | None = None,
 ) -> dict:
     """
-    Append a new goal+plan record to history and persist it to disk.
+    Append a new project record to history and persist it to disk.
 
     `feedback` is the user's feedback (if any) that caused this plan to
     be created - i.e. what they said about the *previous* plan's
     "now" action, which led the agent to replan. None for a brand
-    new goal that has no prior feedback yet.
+    new project that has no prior feedback yet.
 
     `duration` is a leftover stored span (e.g. "30 minutes"), if one
     was ever given. Chat and Create do not write a new one.
 
-    `completed` marks the whole goal (not just one "now" step) as
+    `completed` marks the whole project (not just one "now" step) as
     done - the user said so explicitly, rather than the agent guessing
     it from a missing next action.
 
-    `cancelled` marks the whole goal as abandoned - a distinct terminal
+    `cancelled` marks the whole project as abandoned - a distinct terminal
     status from `completed`, not a lesser/failed version of it. This
     function doesn't enforce the two being mutually exclusive; that's
-    `cancel_goal()`'s job (it refuses to cancel an already-
-    completed goal), same division of responsibility as everywhere
+    `cancel_project()`'s job (it refuses to cancel an already-
+    completed project), same division of responsibility as everywhere
     else in this file - persistence stores what it's given, decisions
     live in the caller.
 
-    `goal_id` (parameter name kept this round) is the project's real
-    identity, separate from its display text. Stored on disk as
-    `project_id`. Pass the existing id to continue a project already in
-    history; leave it None for a genuinely new one (minted here).
+    `project_id` is the project's real identity, separate from its
+    display `name`. Pass the existing id to continue a project already
+    in history; leave it None for a genuinely new one (minted here).
     Never invent an id - always get it from an existing record or this
     function's return value.
 
@@ -480,7 +500,7 @@ def save_plan(
     list, parallel-indexed to `plan.steps` - separate from
     `current_step` so that an Action being reported done never, by
     itself, means the Step it was attempted for is realized (see
-    docs/planning-model.md). None for goals with no steps, or steps
+    docs/planning-model.md). None for projects with no steps, or steps
     saved before this field existed; callers treat a
     missing/mismatched-length list as "every step still open" rather
     than requiring a migration. Callers that carry `current_step`
@@ -507,14 +527,14 @@ def save_plan(
     Returns the record that was saved (useful for confirming to the user).
     """
     _ensure_migrated()
-    project_id = goal_id if goal_id is not None else _next_goal_id()
-    existing = load_project_history(project_id)
+    pid = project_id if project_id is not None else _next_goal_id()
+    existing = load_project_history(pid)
     record = {
         "id": len(existing) + 1,
         "user_id": DEFAULT_USER_ID,
-        "project_id": project_id,
+        "project_id": pid,
         "sim_user_id": sim_user_id,
-        "goal": goal,
+        "name": name,
         "plan": plan,
         "feedback": feedback,
         "duration": duration,
@@ -534,20 +554,19 @@ def save_plan(
 
 
 def stamp_map_focus(
-    goal_id: int,
+    project_id: int,
     map_focus: str,
     focus_step_id: str | None = None,
 ) -> dict | None:
     """Attach map_focus (and optional step id) to the latest history
     record for this project — so the chat thread can frame 'about this
     node' and re-select it from the frame. Returns that record, or
-    None if none found. Parameter name goal_id kept this round; matches
-    project_id on disk.
+    None if none found.
     """
     label = (map_focus or "").strip()
     if not label:
         return None
-    records = load_project_history(goal_id)
+    records = load_project_history(project_id)
     if not records:
         return None
     latest = records[-1]
@@ -557,7 +576,7 @@ def stamp_map_focus(
         latest["focus_step_id"] = step
     else:
         latest.pop("focus_step_id", None)
-    _save_project(goal_id, records)
+    _save_project(project_id, records)
     return latest
 
 

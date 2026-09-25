@@ -22,8 +22,8 @@ those lines back as events; it writes nothing. Used by Settings → Logs
 from backend.store.data_persistence import load_history, record_project_id
 from backend.project.panes.create.resolver import (
     created_at_key,
-    get_history_for_goal,
-    get_latest_for_all_goals,
+    get_history_for_project,
+    get_latest_for_all_projects,
 )
 
 
@@ -88,8 +88,8 @@ def event_name(record: dict) -> str:
 
 def project_timeline(project_id: int) -> list[dict]:
     """One project's events, oldest first — its whole history."""
-    history = get_history_for_goal(project_id)
-    name = history[-1].get("goal", "") if history else ""
+    history = get_history_for_project(project_id)
+    name = history[-1].get("name", "") if history else ""
     return [to_event(r, name) for r in history]
 
 
@@ -97,14 +97,14 @@ def all_events(limit: int | None = None) -> list[dict]:
     """Every project's events together, newest first; `limit` keeps the
     newest ones only."""
     names = {
-        record_project_id(r): r.get("goal") or ""
-        for r in get_latest_for_all_goals()
+        record_project_id(r): r.get("name") or ""
+        for r in get_latest_for_all_projects()
     }
     records = sorted(load_history(), key=created_at_key, reverse=True)
     if limit is not None:
         records = records[:limit]
     return [
-        to_event(r, names.get(record_project_id(r)) or r.get("goal") or "")
+        to_event(r, names.get(record_project_id(r)) or r.get("name") or "")
         for r in records
     ]
 

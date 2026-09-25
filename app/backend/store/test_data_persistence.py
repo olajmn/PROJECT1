@@ -48,6 +48,8 @@ try:
     # so every reader can rely on the key existing.
     plain_record = dp.save_plan("Make a song", {"now": "Write one line"})
     assert plain_record["sim_user_id"] is None, plain_record["sim_user_id"]
+    assert plain_record["name"] == "Make a song"
+    assert "goal" not in plain_record
     assert plain_record["project_id"] == 1
     path_1 = dp.project_path(1)
     assert path_1.exists()
@@ -70,6 +72,8 @@ try:
     assert abs_goal["sim_user_id"] == cardio_goal["sim_user_id"] == user["id"]
     assert abs_goal["project_id"] != cardio_goal["project_id"]
     assert "goal_id" not in abs_goal
+    assert "name" in abs_goal
+    assert "goal" not in abs_goal
     assert "vision_id" not in abs_goal
     assert dp.project_path(abs_goal["project_id"]).exists()
     assert dp.project_path(cardio_goal["project_id"]).exists()
@@ -79,7 +83,7 @@ try:
     dp.save_plan(
         "Get visible abs",
         {"now": "again"},
-        goal_id=abs_goal["project_id"],
+        project_id=abs_goal["project_id"],
         sim_user_id=user["id"],
         event="chat",
     )
@@ -106,7 +110,7 @@ try:
     )
     history = dp.load_history()
     assert len(history) == 1
-    assert history[0]["goal"] == "Legacy goal"
+    assert history[0]["name"] == "Legacy goal"
     assert history[0]["project_id"] == 1
     assert history[0]["sim_user_id"] is None
     assert "goal_id" not in history[0]
@@ -117,6 +121,8 @@ try:
     disk_line = dp.project_path(1).read_text(encoding="utf-8").strip()
     assert '"project_id"' in disk_line
     assert '"goal_id"' not in disk_line
+    assert '"name"' in disk_line
+    assert '"goal"' not in disk_line
     assert '"sim_user_id"' in disk_line
     shutil.rmtree(migrate_dir, ignore_errors=True)
 
@@ -211,13 +217,17 @@ try:
     )
     promoted = dp.load_project_history(7)
     assert promoted[0]["project_id"] == 7
+    assert promoted[0]["name"] == "Promote me"
     assert "goal_id" not in promoted[0]
+    assert "goal" not in promoted[0]
     disk = dp.project_path(7).read_text(encoding="utf-8")
     assert '"project_id": 7' in disk
     assert "goal_id" not in disk
+    assert '"name"' in disk
+    assert '"goal"' not in disk
     shutil.rmtree(promote_dir, ignore_errors=True)
 
-    print("OK - goal_id → project_id JSONL promotion behaves as expected")
+    print("OK - goal_id → project_id and goal → name JSONL promotion behaves as expected")
 
     # Existing project file with vision_id is rewritten to sim_user_id.
     vision_promote_dir = Path(tempfile.mkdtemp(prefix="vision_promote_test_"))
@@ -237,6 +247,8 @@ try:
     )
     vpromoted = dp.load_project_history(3)
     assert vpromoted[0]["sim_user_id"] == 2
+    assert vpromoted[0]["name"] == "Had a vision"
+    assert "goal" not in vpromoted[0]
     assert "vision_id" not in vpromoted[0]
     vdisk = dp.project_path(3).read_text(encoding="utf-8")
     assert '"sim_user_id": 2' in vdisk

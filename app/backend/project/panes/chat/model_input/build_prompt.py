@@ -60,7 +60,7 @@ def _system_text(
     focus_step_id: str | None,
     status: str | None = None,
 ) -> str:
-    name = (latest.get("goal") or "").strip() or "untitled"
+    name = (latest.get("name") or "").strip() or "untitled"
     parts = [
         "You are talking with the user about one of their projects. "
         "The project is shown to them as a map of labeled nodes.",

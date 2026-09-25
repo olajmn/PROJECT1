@@ -1,9 +1,9 @@
 // General — Settings → General page body.
 //
-// Shape: ../paragraphs/registerTemplate.ts
+// Shape: ../register/blocks.ts
 
 import { fetchModel } from "../../api.js";
-import { arrangeStack, modelBlock } from "../paragraphs/index.js";
+import { arrangeStack, modelBlock } from "../register/index.js";
 
 function el<K extends keyof HTMLElementTagNameMap>(
   tag: K,
@@ -16,7 +16,7 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-/** Fill a `.settings-register` host with model facts via registerTemplate. */
+/** Fill a `.settings-register` host with model facts via register blocks. */
 export async function mountModelFacts(host: HTMLElement): Promise<void> {
   host.replaceChildren();
 

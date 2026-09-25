@@ -78,7 +78,7 @@ they weren't obvious until checked against the prototype's actual code:
 
 - **"State" isn't a separate store from Memory.** In the prototype, the
   current state of a goal is just its most recent record
-  (`get_latest_for_goal()`) - a view into Memory, not something stored
+  (`get_latest_for_project()`) - a view into Memory, not something stored
   independently. Modeling it as its own component would introduce a
   distinction that doesn't exist in practice.
 - **User Representation isn't only consulted after Reasoning/Planning.** It

@@ -51,7 +51,7 @@ def build_status(history: list[dict], now: datetime | None = None) -> dict:
     if not history:
         return {"summary": [], "history": [], "earlier": 0}
     now = now or datetime.now().astimezone()
-    name = history[-1].get("goal") or "untitled"
+    name = history[-1].get("name") or "untitled"
     events = [to_event(record, name) for record in history]
     lines = group_events(events)
 
@@ -96,7 +96,7 @@ def _summary(history: list[dict], lines: list[dict], now: datetime) -> list[dict
     latest = history[-1]
     rows = []
 
-    project = latest.get("goal") or "untitled"
+    project = latest.get("name") or "untitled"
     owner = latest.get("sim_user_id")
     first = next((line["when"] for line in lines if line["when"]), None)
     started = f", started {_date(first, now)}" if first else ""

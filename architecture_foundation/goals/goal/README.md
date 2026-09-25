@@ -22,7 +22,7 @@ yet is still a valid Goal (e.g. mid-clarification).
 
 ## Reference implementation
 
-`backend/goals/goal/resolver.py` - `get_latest_for_all_goals()`, `get_latest_for_goal()`,
-`get_history_for_goal()`. Identity fixed by a real, documented past bug: see
+`backend/goals/goal/resolver.py` - `get_latest_for_all_projects()`, `get_latest_for_project()`,
+`get_history_for_project()`. Identity fixed by a real, documented past bug: see
 the prototype's `docs/05-decisions.md`, 2026-08-20, on why `goal_id` exists
 instead of grouping by goal text.
