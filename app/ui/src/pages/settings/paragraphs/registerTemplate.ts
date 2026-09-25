@@ -6,7 +6,7 @@
 // Contents
 //  1. Value bags
 //  2. Model block (General)
-//  3. Session block (Logs)
+//  3. Log entry block (Logs)
 //  4. Id group / project / orphan (Directory)
 
 import type { Block, Group } from "./lineKinds.js";
@@ -19,10 +19,11 @@ export type ModelValues = {
   temperature: number;
 };
 
-export type SessionValues = {
-  id: number;
-  startedAt: string;
-  current: boolean;
+export type LogValues = {
+  kind: string;
+  project: string;
+  at: string | null;
+  text: string;
 };
 
 export type ProjectValues = {
@@ -53,20 +54,19 @@ export function modelBlock(v: ModelValues): Block {
   ];
 }
 
-// 3. Session block (Logs)
+// 3. Log entry block (Logs)
 //
-//   Session  3
-//   ID        3
-//   Started   …
-//   Status    Current
+//   Chat  nytt bygg
+//   When   …
+//   What   whats this about?
 
-export function sessionBlock(v: SessionValues): Block {
-  return [
-    { t: "title", kind: "Session", name: String(v.id) },
-    { t: "fact", label: "ID", value: String(v.id) },
-    { t: "fact", label: "Started", created: v.startedAt },
-    { t: "fact", label: "Status", value: v.current ? "Current" : "—" },
+export function logBlock(v: LogValues): Block {
+  const block: Block = [
+    { t: "title", kind: v.kind, name: v.project },
+    { t: "fact", label: "When", created: v.at },
   ];
+  if (v.text) block.push({ t: "fact", label: "What", value: v.text });
+  return block;
 }
 
 // 4. Id group / project / orphan (Directory)

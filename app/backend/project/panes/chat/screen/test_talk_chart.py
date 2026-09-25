@@ -1,9 +1,9 @@
 """Checks for talk_tree(). Run from app/:
 
-    .venv/bin/python -m backend.project.panes.chat.chart.test_tree
+    .venv/bin/python -m backend.project.panes.chat.screen.test_talk_chart
 """
 
-from backend.project.panes.chat.chart.tree import talk_tree
+from backend.project.panes.chat.screen.talk_chart import talk_tree
 
 
 def main() -> None:

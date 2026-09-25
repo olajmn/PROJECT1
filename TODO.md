@@ -56,16 +56,16 @@ stable identity (for referring back to it), not its rank.
 
 4. **Sim-user choice at project-creation time** (Step) - Set Goal always creates a project unlinked; linking only happens afterward via Projects sidebar id menu. § 5, § 10.
 5. **Structured step-completion signal** (Step) - `advance_step()` is gone with the planner; no live writer for step status. § 5, § 9, § 10.
-6. **User-archive timing in the Session log** (Step) - `archive_user()` doesn't stamp when archiving happened, only creation. § 5, § 10.
-7. **Session end detection** (Step) - no graceful-shutdown hook sets a Session's real `ended_at`. Lower actual impact than the others in this tier - the read-side window-bounding fix already makes the derived log accurate without it. § 5, § 10.
-12. **Decomposition / zoom, for real plans** (Step) - WHAT `plan.progression` is user-steered and is the display SoT (`to_planning_node`, A3); Projects select / Suggest / Talk / nested +/- / chat-grounded suggest under focus persist (`edit_map`). Still open: free-text step naming without map focus, zoom-ask (16), whether to stop writing calendar `plan.steps` entirely, and any remaining data-shape questions in [[planning-model.md]]. Steps page remains scratch. § 5, § 7, § 9.
+6. **User-archive timing** (Step) - `archive_user()` doesn't stamp when archiving happened, only creation. § 5, § 10.
+7. ~~**Session end detection**~~ (moot 2026-09-25) - Sessions removed ([[05-decisions]] #35). See 27.
+12. **Decomposition / zoom, for real plans** (Step) - WHAT `plan.progression` is user-steered and is the display SoT (`map_tree()`, A3); Projects select / Suggest / Talk / nested +/- / chat-grounded suggest under focus persist (`edit_map`). Still open: free-text step naming without map focus, zoom-ask (16), whether to stop writing calendar `plan.steps` entirely, and any remaining data-shape questions in [[planning-model.md]]. Steps page remains scratch. § 5, § 7, § 9.
 16. **Zoom cannot ask for anything** (Step) - `zoom_into()` returns children or nothing, so the third state of Minimum planability's gate (UNKNOWN and NECESSARY → ask) has no per-level equivalent; a step whose breakdown depends on something personal and unstated gets a plausible invented one instead of a question. The old asking machinery (`clarification`/`suggested_action`) is gone with Stage 3. § 5.
 24. ~~**ASCII map has no way back in**~~ (built 2026-09-19) - `parse_outline.py` parses a pasted outline/ASCII tree into `import_progression_outline()`'s append. Projects' **Paste structure** form calls it. § 1.i / § 4.
 26. **Id has no rename** (Step) - create (`buildCreateIdForm`, one-click "+" since 2026-09-22) and delete (`sidebar-id-card-menu` "Delete") both exist; there's no way to change an id's label after creation short of delete + recreate. Noted live when the create flow was simplified to drop its label input. § 1.i.
 
 ### Tier 3
 
-8. **Module Library unwired** (Step) - five working Modules, reachable from nothing. § 5.
+8. ~~**Module Library unwired**~~ (removed 2026-09-25, [[05-decisions]] #34) - code deleted; design stays in `docs/03-architecture.md` Part 2 § 2.ii.
 22. ~~**Planability slots unread**~~ (removed). § 5. Related to 20.
 
 ### Tier 4
@@ -83,6 +83,7 @@ stable identity (for referring back to it), not its rank.
 17. **Practices have no shape** (Question) - a recurring, open-ended commitment ("save 10 a day", "10 push-ups a day") fits the implemented model on no axis: no deadline to count down toward, no completion to reach, nothing to decompose - a rate and an accumulation instead. Whether it's a third kind of record, a Goal with different fields, or not a Goal at all is undecided. `docs/concepts.md` § 4.ix.
 18. **A plan can only be regenerated, never edited** (Question) - `step_status` is parallel-indexed to `steps`, so identity is positional and reorganizing silently moves statuses onto different steps; `current_step` is forward-only, so "2 is done but 1 isn't" is unexpressible. `replan()` regenerates; nothing edits. User **+** / **×** on `plan.progression` (2026-09-17) is a partial exception for the WHAT line only. `docs/concepts.md` § 4.x.
 19. **Vision as a typing mechanism, or as background context** (Question) - whether a Vision decides what counts as progress for everything under it, or stays the weak background context `judgment/prompts.py` (`FILL_SYSTEM_PROMPT`) currently instructs it to be ("never let it override... what the goal itself actually asks for"). The two readings can't both hold. `docs/concepts.md` § 4.xi.
+27. **What counts as a session / visit** (Question) - the removed Session record (#35) meant a server process start, not a user visit. If the agent should understand time (when the user was last here, cadence of contact), a visit likely builds on the timestamps every saved chat turn and map change already carries (`created_at` in `plans.jsonl`), not on server starts. Settings → Logs already lists those timestamps (`activity_log()`). § 5.
 23. **Goal → Project product migration** (Step / Question) - UI shell is Projects; backend/prompts still Goal-planner. Thin first slice is **Active** above. Residual after that: `02-product` / concepts language; stop auto-minting a full middle without user accept; End pole = done not title; storage rename last. § 5 / § 9.
 
 ## Parallel paths
@@ -121,10 +122,10 @@ Detail and reasoning: `docs/04-current-state.md` § 5 (Parallel / dual paths).
 |---|---|---|---|
 | P1 | Week grain vs session grain | Intentional dual | `time/calendar.py`, `week_windows()`, `day_windows()` |
 | P2 | Even-slice `step_plan` vs dates on the step | Time Faculty only | `frozen_duration.step_plan`; manifestation no longer maps leftover `plan.steps` |
-| P3 | `plan.progression` vs legacy `plan.steps` + zoom scratch | Intentional dual (display SoT settled) | Display = progression only (`to_planning_node`, A3 2026-09-20); calendar `plan.steps` still written when fill works (WHEN); Steps page scratch — Queue 12; [[goal-to-project-migration]] A3 |
+| P3 | `plan.progression` vs legacy `plan.steps` + zoom scratch | Intentional dual (display SoT settled) | Display = progression only (`map_tree()`, A3 2026-09-20); calendar `plan.steps` still written when fill works (WHEN); Steps page scratch — Queue 12; [[goal-to-project-migration]] A3 |
 | P4 | `planability_slots` vs `_planability()` | Unread / unwired | `goal/planability_slots.py` — Queue 22 |
 | P5 | Opening duration-proxy vs necessity test | Proxy (narrowed) | Missing time no longer blocks PLAN/zoom; End clarity still Decide — Queue 20 |
 | P6 | `ui/` vs `frontend-legacy/` | ~~Deleted~~ | `frontend-legacy/` removed 2026-09-19 — only `ui/` remains |
-| P7 | Module Library vs callers | Unread / unwired | `module_library/` — Queue 8 |
+| P7 | Module Library vs callers | ~~Deleted~~ | `module_library/` removed 2026-09-25 (#34) — Queue 8 |
 | P8 | Projects workspace vs Active (legacy) | ~~Deleted~~ | Active UI removed 2026-09-19; Projects is the only known-context surface |
 | P9 | Agent auto-`construct_progression` vs user-steered map | ~~Retired~~ (A2) | Helper file deleted; middle via + / Paste / Suggest |

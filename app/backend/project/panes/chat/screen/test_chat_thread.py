@@ -1,8 +1,8 @@
 """thread_messages() only - no model call. Run from app/:
-    .venv/bin/python -m backend.project.panes.chat.test_thread
+    .venv/bin/python -m backend.project.panes.chat.screen.test_chat_thread
 """
 
-from backend.project.panes.chat.thread import thread_messages
+from backend.project.panes.chat.screen.chat_thread import thread_messages
 
 empty = {"progression": {"steps": []}}
 shoes = {"progression": {"steps": [{"label": "shoes"}]}}

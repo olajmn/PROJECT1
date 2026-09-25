@@ -22,7 +22,7 @@ def set_project_user(goal_id: int, sim_user_id: int | None) -> dict | None:
     `sim_user_id=None` removes the project from whichever id it
     currently has.
 
-    Unlike take_turn() (which takes an already-resolved `latest`
+    Unlike chat's talk() (which takes an already-resolved `latest`
     record), this resolves `goal_id` itself, since the route calling
     it has no other reason to look the record up first.
 

@@ -290,6 +290,64 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Reversible?** Would require restoring deleted modules and routes from git history.
 
+## 32. 2026-09-25 — Chat owns its roles; `backend/agent/` removed
+
+**Decision:** Move Voice and Describe from `backend/agent/llm_roles/` to `backend/project/panes/chat/llm_roles/`, and `translate_nodes.py` to `backend/project/panes/canvas/`. Delete `backend/agent/`. Inside chat, split interaction (`send.py`, `history.py`, `chart/`) from what Voice is given to know (`context/map_labels.py`, `context/recent_chat.py`). Supersedes the `backend/agent/` placement in #26's **Do** list.
+
+**Date:** 2026-09-25
+
+**Alternatives considered:** keep `backend/agent/llm_roles/` as shared roles and gather only the chat flow under `panes/chat/`; put `translate_nodes.py` under chat.
+
+**Why this choice:** Project chat is the only caller of Voice and Describe since free conversation and Node 3 were removed (#31). A top-level `agent/` folder implied a layer above Project that no longer exists. `translate_nodes.py`'s main job is the map tree the UI draws (`api/views.py`), so it sits with the map; chat imports its one-line `surface_text()` from canvas, as it already imports `edit_map`.
+
+**Trade-off:** A second capability that needs Voice or Describe would have to move them out again to a shared home.
+
+**Reversible?** Yes — a file move plus import updates.
+
+## 33. 2026-09-25 — Talk is one plain chat call (Voice and Describe removed)
+
+**Decision:** Replace Talk's Describe → Voice pipeline with one plain chat call: `chat/talk.py` sends `context/messages.py`'s conversation (a short system text with the project name, every map label, and the selected node's path; then earlier Talk turns as real user/assistant messages; then the note) through a new `llm_client.send_chat()`. Delete `chat/llm_roles/` (Voice, Describe, `roles.md`) and `chat/context/recent_chat.py`. Chat folders: `talk.py` (one Send), `context/` (what the model is given), `conversation/` (what the user sees: thread + talk chart). A focused structure request still mints children, now with a fixed "Added under …" reply instead of a Voice call. Partly supersedes #32 (which had just moved the roles under chat).
+
+**Date:** 2026-09-25
+
+**Alternatives considered:** keep Voice and only stop calling Describe; feed Describe's output into Voice; loosen Voice's prompt but keep the two-role split.
+
+**Why this choice:** Describe's output had no consumer once Node 3 was removed (#31) — one model call per message, discarded. Voice's prompt ("one or two short sentences", "never invent", no purpose inference) plus a 12-line / 400-character chat block was the main cause of shallow replies. A plain chat with the map and the real conversation answers from the same facts with far less code. The understand → choose → act → speak design in [[03-architecture]] is unchanged as the target architecture; Talk today simply does not implement it, since no reasoning or capability-choice step exists to sit between the roles.
+
+**Trade-off:** Talk no longer follows the Node 1 / Node 2 split. Replies are longer and less constrained; the only guard kept is that the model sees labels, not file contents. Turns about different nodes now share one conversation (tagged `[about: <node>]`) instead of being kept apart. When a reasoning step is built, the roles return with a real job.
+
+**Follow-up (same day):** chat names made literal so the folder reads without background: `talk.py` → `reply.py` (`reply()`), `context/` → `model_input/` (`messages.py` → `build_prompt.py`, `map_labels.py` → `map_as_text.py`), `conversation/` → `screen/` (`history.py` → `chat_thread.py`, `chart/talk_tree.py` → `talk_chart.py`). `translate_nodes.py` (#32) was split by its only users: `to_planning_node()` → `api/views.py`, `surface_text()` → `chat/screen/chat_thread.py`; the project view's unused `surface` field was dropped.
+
+**Reversible?** Yes — the removed files are in git history; `reply()` returns the same `{record, reply}` the route already used.
+
+## 34. 2026-09-25 — Remove the Module Library code
+
+**Decision:** Delete `backend/module_library/` (`interpret`, `hypothesize`, `critique`, `reason`, `synthesize`). Keep its design in [[03-architecture]] Part 2 § 2.ii. Reverses the earlier "stays built but unwired until a concrete Node need demonstrates it" position.
+
+**Date:** 2026-09-25
+
+**Alternatives considered:** keep it parked, unwired, as before.
+
+**Why this choice:** Nothing ever imported it. The Modules were building blocks for Node reasoning steps; after #31 (no Node 3) and #33 (Talk is one plain chat call), no reasoning step exists or is planned for this stage, so there is no caller in sight. Keeping it cost reader attention — one more folder to understand — for no behavior.
+
+**Trade-off:** A future reasoning step would rebuild or restore the Modules instead of finding them ready.
+
+**Reversible?** Yes — `git checkout <commit> -- app/backend/module_library` restores it unchanged.
+
+## 35. 2026-09-25 — Replace Sessions with an activity log
+
+**Decision:** Remove Sessions (`store/session.py`, `data/sessions.json`, `GET /api/sessions`, `api/state.py`). Settings → Logs shows an activity log instead: `api/activity_log.py` `activity_log()` (first written in `api/screen_data.py`, split into its own file the same day) via `GET /api/log` — every saved change across projects, newest first (last 200), labeled Created / Chat / Map / Owner / Cancelled from each record's `feedback`. Nothing new is recorded; the log reads `plans.jsonl`.
+
+**Date:** 2026-09-25
+
+**Alternatives considered:** keep Sessions and wire `api/state.py` from `server.py` so they record again; remove Sessions without a replacement.
+
+**Why this choice:** A Session meant a server process start — five restarts in an hour were five Sessions, a server left running for days was one — so it never described use of the app. It had also silently stopped: `api/state.py`, its only caller, was never imported, and the Logs page showed a five-day-old record as "Current". Every chat turn and map change is already a timestamped record, so a log of real activity needs no new storage.
+
+**Trade-off:** Renames overwrite the name in place and do not appear in the log. Kinds are read from `feedback` text, so a new kind of saved change needs a label added in `_log_kind()`. What a "visit" is, if the agent later needs one, stays open (`TODO.md` Queue 27).
+
+**Reversible?** Yes — the removed files are in git history.
+
 ## See also
 
 - [[03-architecture]]

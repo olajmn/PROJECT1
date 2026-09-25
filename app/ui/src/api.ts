@@ -16,9 +16,9 @@
 //      - archiveUser()
 //  3. Outline import helpers (used by Projects)
 //  4. Model boundary (Settings → General)
-//  5. Sessions (Settings → Logs)
+//  5. Activity log (Settings → Logs)
 
-import type { GoalView, ModelView, OutlineNode, OutlinePreview, SessionView, UserView } from "./types.js";
+import type { GoalView, LogEntry, ModelView, OutlineNode, OutlinePreview, UserView } from "./types.js";
 
 async function httpErrorMessage(res: Response): Promise<string> {
   const detail = (await res.text()).trim();
@@ -325,12 +325,12 @@ export async function fetchModel(): Promise<ModelView> {
   return (await res.json()) as ModelView;
 }
 
-// 5. Sessions (Settings → Logs)
+// 5. Activity log (Settings → Logs)
 
-export async function fetchSessions(): Promise<SessionView[]> {
-  const res = await fetch("/api/sessions");
+export async function fetchLog(): Promise<LogEntry[]> {
+  const res = await fetch("/api/log");
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
-  return (await res.json()) as SessionView[];
+  return (await res.json()) as LogEntry[];
 }

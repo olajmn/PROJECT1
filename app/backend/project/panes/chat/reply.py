@@ -1,0 +1,98 @@
+"""
+You send a message, you get a reply back.
+
+Two cases:
+- A node is selected and the message asks for ideas ("suggest",
+  "brainstorm", ...): new child nodes are added under it
+  (canvas/edit_map.py does the adding). The reply says what was added.
+- Anything else: the model answers, given what
+  model_input/build_prompt.py puts together.
+
+The message and reply are saved, so the chat is still there after a
+reload.
+"""
+
+from backend.llm_client import send_chat
+from backend.store.data_persistence import save_plan, stamp_map_focus
+from backend.project.panes.canvas.edit_map import suggest_progression_from_chat
+from backend.project.panes.chat.model_input.build_prompt import build_messages
+from backend.project.panes.create.resolver import get_history_for_goal
+
+# User is asking for ideas / structure under the focused node.
+_STRUCTURE_CUES = (
+    "suggest",
+    "suggestion",
+    "propose",
+    "come up with",
+    "make 3",
+    "make three",
+    "make two",
+    "make 2",
+    "ideas for",
+    "structure under",
+    "break down",
+    "brainstorm",
+    "concepts within",
+    "add concepts",
+    "generate",
+    "what could",
+    "foreslå",
+    "forslag",
+    "ideer",
+)
+
+
+def reply(
+    latest: dict,
+    note: str,
+    map_focus: str | None = None,
+    focus_step_id: str | None = None,
+) -> dict:
+    """{"record", "reply"} - the saved project record the screen is
+    rebuilt from, and the reply text to show."""
+    if map_focus and focus_step_id and _asks_for_structure(note):
+        try:
+            record, labels = suggest_progression_from_chat(
+                latest, focus_step_id, note,
+            )
+        except Exception:
+            record, labels = None, []
+        if labels:
+            text = f'Added under "{map_focus}": {", ".join(labels)}.'
+            return {"record": _stamp(record, map_focus, focus_step_id), "reply": text}
+
+    history = get_history_for_goal(latest["project_id"])
+    messages = build_messages(latest, note, history, map_focus, focus_step_id)
+    text = send_chat(messages).strip()
+    record = _save_talk(latest, note, text)
+    return {"record": _stamp(record, map_focus, focus_step_id), "reply": text}
+
+
+def _stamp(record: dict, map_focus: str | None, focus_step_id: str | None) -> dict:
+    """Mark the turn with the node it was about, so the thread can
+    frame it and the next Send can tag it."""
+    if not map_focus:
+        return record
+    stamped = stamp_map_focus(record["project_id"], map_focus, focus_step_id)
+    return stamped if stamped is not None else record
+
+
+def _save_talk(latest: dict, note: str, text: str) -> dict:
+    """Keep the map as it is; store the turn as "<reply> Note: <note>",
+    the shape screen/chat_thread.py and model_input/build_prompt.py read."""
+    return save_plan(
+        latest.get("goal") or "",
+        latest.get("plan") or {},
+        feedback=f"{text} Note: {note}",
+        duration=latest.get("duration"),
+        goal_id=latest["project_id"],
+        frozen_duration=latest.get("frozen_duration"),
+        current_step=latest.get("current_step", 0),
+        sim_user_id=latest.get("sim_user_id"),
+        step_status=latest.get("step_status"),
+    )
+
+
+def _asks_for_structure(note: str) -> bool:
+    text = (note or "").lower()
+    return any(cue in text for cue in _STRUCTURE_CUES)

@@ -74,14 +74,11 @@ PY_SCAN_FILES = ["server.py"]
 # Real entry points worth confirming still import - not dynamically
 # discovered.
 SMOKE_IMPORT_MODULES = [
-    "backend.project.panes.chat.turn",
+    "backend.project.panes.chat.reply",
     "backend.project.panes.create.lifecycle",
     "backend.project.panes.create.resolver",
     "backend.store.data_persistence",
-    "backend.agent.llm_roles.voice",
-    "backend.agent.llm_roles.describe",
-    "backend.agent.translate_nodes",
-    "backend.module_library.modules",
+    "backend.api.answers_to_browser",
     "server",
 ]
 
@@ -334,11 +331,10 @@ def main() -> int:
         print()
         print("  (observed fact only - a module can legitimately have")
         print("  no inbound import because it's a command-line entry")
-        print("  point (see SMOKE_IMPORT_MODULES above), or because it's")
-        print("  built but deliberately not yet wired in - see")
-        print("  docs/04-current-state.md § 5 for Module Library, the")
-        print("  known example of the latter as of this writing; that")
-        print("  judgment is not this script's.)")
+        print("  point (see SMOKE_IMPORT_MODULES above) or a test file,")
+        print("  or because it's built but deliberately not yet wired")
+        print("  in (see docs/04-current-state.md § 5); that judgment is")
+        print("  not this script's.)")
     else:
         print("  none")
 

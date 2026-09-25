@@ -1,12 +1,12 @@
-"""Topic sequences that make up the chat chart.
+"""The talk chart: which conversation grew out of which.
 
-A contiguous About-stretch is one sequence. Leaving that topic for
-another focused topic hangs the new sequence under the one you left
-(it grew out of it). Returning to project-wide talk closes the
-branch. Unfocused lines are not nodes.
+- Messages in a row about the same selected node = one entry.
+- Switching straight to another node puts the new entry under the
+  one you left (it grew out of it).
+- Chatting with no node selected ends the branch; those messages are
+  not shown in the chart.
 
-Derived from the thread the screen already shows. No write. Not the
-file map.
+Built from the chat thread each time. Nothing saved. Not the node map.
 """
 
 from __future__ import annotations

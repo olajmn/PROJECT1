@@ -1,0 +1,116 @@
+"""
+Shapes the data sent back to the browser: a project with its map tree
+and chat, the project list, a simulated user. Only reads and reshapes;
+no product rules.
+"""
+
+# Contents
+#  1. Project, project list, user
+#      - project_view()
+#      - active_projects()
+#      - user_view()
+#
+#  2. Map tree
+#      - map_tree()
+
+from backend.store.data_persistence import record_project_id
+from backend.project.panes.chat.screen.talk_chart import talk_tree
+from backend.project.panes.chat.screen.chat_thread import thread_for
+from backend.project.panes.create.resolver import created_at_key, get_latest_for_all_goals
+
+
+# ============================================================
+# 1. Project, project list, user
+# ============================================================
+
+
+def project_view(record: dict, reply: str | None = None) -> dict:
+    """One project as the browser gets it after any project action:
+    name, state, map tree, chat, and talk chart.
+
+    `reply` (a chat reply just made) is placed as the last message in
+    `thread`, not sent as its own field.
+    """
+    pid = record_project_id(record)
+    try:
+        node = map_tree(record)
+    except Exception as e:
+        # A broken tree must not hide the rest of the project.
+        print(f"(debug: map_tree() failed for project {pid}: {e})")
+        node = None
+    thread = thread_for(pid, reply) if pid is not None else []
+    return {
+        "project_id": pid,
+        "goal": record["goal"],
+        "completed": bool(record.get("completed")),
+        "cancelled": bool(record.get("cancelled")),
+        "sim_user_id": record.get("sim_user_id"),
+        "created_at": record.get("created_at"),
+        "node": node,
+        "thread": thread,
+        "talk": talk_tree(thread),
+    }
+
+
+def active_projects() -> list[dict]:
+    """Every project that's neither completed nor cancelled, newest first."""
+    latest = get_latest_for_all_goals()
+    active = [r for r in latest if not r.get("completed") and not r.get("cancelled")]
+    active.sort(key=created_at_key, reverse=True)
+    return active
+
+
+def user_view(user: dict) -> dict:
+    """{id, text, archived, created_at}. `archived` is only stored once
+    true, so it is filled in here."""
+    return {
+        "id": user["id"],
+        "text": user["text"],
+        "archived": bool(user.get("archived")),
+        "created_at": user["created_at"],
+    }
+
+
+# ============================================================
+# 2. Map tree
+# ============================================================
+
+
+def map_tree(record: dict) -> dict | None:
+    """The map as the browser draws it: {id, label, status, children},
+    with the project as the root. None when the map is empty."""
+    progression = (record.get("plan") or {}).get("progression")
+    steps = progression.get("steps") if isinstance(progression, dict) else None
+    if not isinstance(steps, list):
+        return None
+    pid = record["project_id"]
+    children = [
+        _node(step, fallback_id=f"{pid}-p-{i}")
+        for i, step in enumerate(steps)
+        if isinstance(step, dict)
+    ]
+    if not children:
+        return None
+    return {
+        "id": f"project-{pid}",
+        "label": record.get("goal", ""),
+        "status": "done" if record.get("completed") else "open",
+        "children": children,
+    }
+
+
+def _node(step: dict, fallback_id: str) -> dict:
+    """One node and everything under it. Stored nodes always have an
+    id; the fallback only covers very old records."""
+    step_id = step.get("id") or fallback_id
+    return {
+        "id": str(step_id),
+        "label": step.get("label") or "—",
+        # Nothing writes `resolved` today, so every node shows "open".
+        "status": "done" if step.get("resolved") else "open",
+        "children": [
+            _node(child, fallback_id=f"{step_id}-{j}")
+            for j, child in enumerate(step.get("children") or [])
+            if isinstance(child, dict)
+        ],
+    }

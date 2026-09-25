@@ -1,12 +1,12 @@
 """
-Small, direct checks for simulated-user / Session persistence and
+Small, direct checks for simulated-user persistence and
 plans.jsonl (including one-shot migration from a legacy plans.json
 array, and vision_id → sim_user_id / visions.json → users.json).
 
 Runs entirely against a temporary directory, never the real data/ -
 this module patches DATA_DIR / PLANS_FILE / LEGACY_PLANS_FILE /
-USERS_FILE / LEGACY_VISIONS_FILE on data_persistence and SESSIONS_FILE
-on session for the duration of the run and restores them afterward.
+USERS_FILE / LEGACY_VISIONS_FILE on data_persistence for the duration
+of the run and restores them afterward.
 
 Run from app/:
     .venv/bin/python -m backend.store.test_data_persistence
@@ -18,14 +18,12 @@ import tempfile
 from pathlib import Path
 
 from backend.store import data_persistence as dp
-from backend.store import session as session_store
 
 _original_data_dir = dp.DATA_DIR
 _original_plans_file = dp.PLANS_FILE
 _original_legacy_plans = dp.LEGACY_PLANS_FILE
 _original_users_file = dp.USERS_FILE
 _original_legacy_visions = dp.LEGACY_VISIONS_FILE
-_original_sessions_file = session_store.SESSIONS_FILE
 
 _tmp_dir = Path(tempfile.mkdtemp(prefix="data_persistence_test_"))
 dp.DATA_DIR = _tmp_dir
@@ -33,7 +31,6 @@ dp.PLANS_FILE = _tmp_dir / "plans.jsonl"
 dp.LEGACY_PLANS_FILE = _tmp_dir / "plans.json"
 dp.USERS_FILE = _tmp_dir / "users.json"
 dp.LEGACY_VISIONS_FILE = _tmp_dir / "visions.json"
-session_store.SESSIONS_FILE = _tmp_dir / "sessions.json"
 
 try:
     # A goal saved with no sim_user_id at all - the normal case - must
@@ -65,22 +62,6 @@ try:
     assert len(dp.load_history()) == 3
 
     print("OK - user / plans.jsonl persistence behaves as expected")
-
-    # A new Session mints an id and starts with no end time.
-    first_session = session_store.start_session()
-    assert first_session["id"] == 1
-    assert first_session["ended_at"] is None
-    assert first_session["started_at"]
-
-    # A second Session gets the next id, not a collision - same
-    # minting idiom as project_id/sim_user_id above.
-    second_session = session_store.start_session()
-    assert second_session["id"] == first_session["id"] + 1
-    assert [s["id"] for s in session_store.load_sessions()] == [
-        first_session["id"], second_session["id"],
-    ]
-
-    print("OK - session persistence behaves as expected")
 
     # Legacy plans.json array migrates to plans.jsonl once.
     migrate_dir = Path(tempfile.mkdtemp(prefix="plans_migrate_test_"))
@@ -203,5 +184,4 @@ finally:
     dp.LEGACY_PLANS_FILE = _original_legacy_plans
     dp.USERS_FILE = _original_users_file
     dp.LEGACY_VISIONS_FILE = _original_legacy_visions
-    session_store.SESSIONS_FILE = _original_sessions_file
     shutil.rmtree(_tmp_dir, ignore_errors=True)

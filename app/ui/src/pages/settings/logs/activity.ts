@@ -1,11 +1,11 @@
-// Logs — Settings → Logs page body.
+// Logs — Settings → Logs page body: every saved change, newest first.
 //
-// Shape: ../paragraphs/registerTemplate.ts
+// Shape: ../paragraphs/registerTemplate.ts (logBlock)
 
-import { fetchSessions } from "../../../api.js";
+import { fetchLog } from "../../../api.js";
 import {
   arrangeStack,
-  sessionBlock,
+  logBlock,
   startAgeClock,
 } from "../paragraphs/index.js";
 
@@ -20,28 +20,29 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-/** Fill a `.settings-register` host with process sessions via registerTemplate. */
+/** Fill a `.settings-register` host with the activity log. */
 export async function mountLogs(host: HTMLElement): Promise<void> {
   host.replaceChildren();
 
-  const empty = el("p", "empty-state", "No process sessions yet.");
+  const empty = el("p", "empty-state", "Nothing has happened yet.");
   empty.hidden = true;
   const error = el("p", "error");
   error.hidden = true;
   host.append(empty, error);
 
   try {
-    const sessions = await fetchSessions();
-    empty.hidden = sessions.length > 0;
-    if (sessions.length === 0) return;
+    const entries = await fetchLog();
+    empty.hidden = entries.length > 0;
+    if (entries.length === 0) return;
 
     host.appendChild(
       arrangeStack(
-        sessions.map((session, index) =>
-          sessionBlock({
-            id: session.id,
-            startedAt: session.started_at,
-            current: index === 0,
+        entries.map((entry) =>
+          logBlock({
+            kind: entry.kind,
+            project: entry.project,
+            at: entry.at,
+            text: entry.text,
           }),
         ),
       ),

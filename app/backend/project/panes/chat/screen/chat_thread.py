@@ -1,10 +1,11 @@
 """
-The message list on an Active goal card.
+The list of messages shown in the chat panel.
 
-Built from saved history - no model call.
+Built from saved chat - no model call. When a saved step changed the
+map instead of chatting, its line is a one-line summary of the map
+(surface_text()).
 """
 
-from backend.agent.translate_nodes import surface_text
 from backend.project.panes.create.resolver import get_history_for_goal
 
 
@@ -51,9 +52,9 @@ def thread_messages(history: list[dict]) -> list[dict]:
 
 
 def thread_for(goal_id: int, reply: str | None = None) -> list[dict]:
-    """Live thread for one goal. When `reply` is the Voice wording from
+    """Live thread for one goal. When `reply` is the model's wording from
     the turn just taken, it replaces the last agent line so the card
-    shows the voiced sentence rather than the raw surface."""
+    shows the reply rather than the one-line map summary."""
     messages = thread_messages(get_history_for_goal(goal_id))
     if reply and messages and messages[-1]["role"] == "agent":
         last = dict(messages[-1])
@@ -73,3 +74,25 @@ def _ack_line(feedback: str | None) -> str | None:
     if not feedback or " Note: " not in feedback:
         return None
     return feedback.split(" Note: ", 1)[0]
+
+
+def surface_text(record: dict) -> str:
+    """One sentence about the stored map."""
+    labels = [
+        (step.get("label") or "").strip()
+        for step in _top_steps(record)
+        if isinstance(step, dict) and (step.get("label") or "").strip()
+    ]
+    if not labels:
+        return "The map is empty."
+    listed = ", ".join(labels)
+    name = (record.get("goal") or "").strip()
+    return f"{name}: {listed}." if name else f"{listed}."
+
+
+def _top_steps(record: dict) -> list:
+    progression = (record.get("plan") or {}).get("progression")
+    if not isinstance(progression, dict):
+        return []
+    steps = progression.get("steps")
+    return steps if isinstance(steps, list) else []

@@ -1,7 +1,7 @@
 """Store — JSON persistence only.
 
-Moves dictionaries to/from data/plans.jsonl, users.json, sessions.json
-(data_persistence.py for goals/plans/simulated users; session.py for sessions).
+Moves dictionaries to/from data/plans.jsonl and users.json
+(data_persistence.py for projects and simulated users).
 Does not interpret what it saves. Not a Faculty and not agent/project
 domain logic.
 """

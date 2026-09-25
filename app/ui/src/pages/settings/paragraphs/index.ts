@@ -20,14 +20,14 @@ export type {
 
 export {
   idGroup,
+  logBlock,
   modelBlock,
   orphanGroup,
   projectBlock,
-  sessionBlock,
   type IdValues,
+  type LogValues,
   type ModelValues,
   type ProjectValues,
-  type SessionValues,
 } from "./registerTemplate.js";
 
 export { drawLine } from "./drawLine.js";

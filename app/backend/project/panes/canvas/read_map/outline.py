@@ -1,6 +1,6 @@
 """The map as indented labels — no model.
 
-The same shape text_to_tree.py parses. Read map and see_map both
+The same shape text_to_tree.py parses. Read map and chat/context/map_labels.py both
 use this so they look at the same tree.
 """
 

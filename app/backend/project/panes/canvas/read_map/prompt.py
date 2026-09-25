@@ -1,6 +1,6 @@
 """Read map — the instruction sent to the model.
 
-Not chat, and not Voice. Read map is given the labels already on the
+Not chat. Read map is given the labels already on the
 map and asked what that structure appears to be. It does not read file
 contents. The string below is the whole instruction. `read.py` sends it.
 """

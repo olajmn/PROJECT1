@@ -1,8 +1,8 @@
 // Frontend contract for app/'s first web prototype (docs/v4-migration-decision.md).
 // Deliberately NOT a mirror of Planning's own Python shape (PLAN_KEYS,
-// step_status, current_step, ...) - this is what translate_nodes
-// (backend/agent/translate_nodes.py) already reduced a project record
-// to, and nothing more. See that module's docstring for why.
+// step_status, current_step, ...) - this is what backend/api/answers_to_browser.py
+// (project_view(), map_tree()) already reduced a project record to,
+// and nothing more.
 
 // Contents
 //  1. Plan tree (Projects map nodes)
@@ -10,7 +10,7 @@
 //  3. Simulated users
 //  4. Outline import
 //  5. Model boundary (Settings → General)
-//  6. Sessions (Settings → Logs)
+//  6. Activity log (Settings → Logs)
 
 // 1. Plan tree (Projects map nodes)
 
@@ -51,11 +51,9 @@ export interface GoalView {
   sim_user_id: number | null;
   /** Latest history record timestamp for this project. */
   created_at?: string | null;
-  surface: string | null;
   node: PlanningNode | null;
   thread: ChatMessage[];
   talk: TalkSequence[];
-  reply: string | null;
 }
 
 /** Same record as GoalView — product name for the Projects surface. */
@@ -91,12 +89,13 @@ export interface ModelView {
   temperature: number;
 }
 
-// 6. Sessions (Settings → Logs)
+// 6. Activity log (Settings → Logs)
 
-/** One HTTP process-run record from data/sessions.json. */
-export interface SessionView {
-  id: number;
-  user_id: number;
-  started_at: string;
-  ended_at: string | null;
+/** One saved change, from backend/api/activity_log.py activity_log(). */
+export interface LogEntry {
+  at: string | null;
+  project_id: number | null;
+  project: string;
+  kind: "Created" | "Chat" | "Map" | "Owner" | "Cancelled";
+  text: string;
 }

@@ -1,7 +1,6 @@
-"""Chat pane — project-scoped conversation.
+"""Chat — talking with the model about one project.
 
-turn.py   - one Send (Describe → Voice; map suggest if focused)
-thread.py - message list for the UI
-chart/    - talk tree from About-stretches (not the file map)
-hold.py   - last thread lines as text for Voice (no write)
+reply.py     - you send a message, you get a reply back
+model_input/ - what the model is sent
+screen/      - what the chat panel shows you
 """

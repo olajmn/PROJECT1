@@ -3,8 +3,7 @@ Local storage for goals, plans, and simulated users (id#N). Goal
 history is one JSON object per line in data/plans.jsonl (JSONL);
 simulated users are a JSON array in data/users.json (legacy
 data/visions.json is promoted on first load). Both git-ignored (see
-.gitignore) - this is personal information, never committed. Session
-records live in session.py (data/sessions.json). A legacy
+.gitignore) - this is personal information, never committed. A legacy
 data/plans.json array, if still present, is migrated to plans.jsonl on
 first load.
 

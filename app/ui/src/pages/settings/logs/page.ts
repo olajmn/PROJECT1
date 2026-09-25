@@ -1,8 +1,8 @@
 // Settings → Logs page entry.
-// Mounts process-session inspect (data/sessions.json).
+// Mounts the activity log (every saved change, newest first).
 
 import { applyStoredTheme } from "../../../user/theme.js";
-import { mountLogs } from "./sessions.js";
+import { mountLogs } from "./activity.js";
 
 applyStoredTheme();
 

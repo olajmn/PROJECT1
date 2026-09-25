@@ -12,6 +12,7 @@ direction settled in [[05-decisions]] #25; remaining wire rename is
 - Primary surface and loop
 - MVP
 - Non-goals
+- Planned direction: NFT application (not built)
 - See also
 
 ## 1. Product definition
@@ -93,6 +94,47 @@ more ideation.
   ([[goal-to-project-migration]] Phase B)
 - Building every long-term capability menu item at once (old Planning /
   Memory / RAG sketches live in history docs; they are not this MVP)
+
+## 5. Planned direction: NFT application (not built)
+
+Stated 2026-09-25. A plan, not a decision — nothing here is built, and
+none of it is to be built inside this application yet.
+
+**The plan.** A separate application where a user creates an account,
+gets a wallet with that account, and mints NFTs / tokens with it. This
+application becomes an entrance to it, and the two are expected to
+merge. A project created here would then be created on the blockchain,
+not only locally.
+
+**What it means for this application now.** All data enters through
+the API (`app/backend/api/`); the UI only shows data and sends requests,
+and decides nothing itself. Today's data is placeholder:
+
+| Today (placeholder) | Later (from outside) |
+|---|---|
+| Simulated users `id#N` (`data/users.json`) | Real accounts and wallets |
+| `create_project()` mints a `project_id` locally | The project is created on-chain; the app receives its id |
+| `backend/store/` reads and writes local JSON files | The same place reads from / writes to the outside source |
+
+`backend/store/` is the only code that touches data and `backend/api/`
+the only way in, so those are the two places that change when data
+moves out; chat, map, and UI should not need to know where data lives.
+
+Known gaps against this today (see [[04-current-state]]): default
+project names ("New project N") are decided in the UI
+(`ui/src/create/autoname.ts`); the folder picker opens a macOS dialog on
+the server; there is no written API reference; the server accepts
+localhost only, with no login.
+
+**Open questions (to settle before any chain work):**
+
+- What goes on-chain and what does not. Every chain write typically
+  costs a fee, and on-chain data is public and permanent; map and chat
+  content is personal. One candidate split: ownership (this account
+  owns this project, as a token) on-chain, content elsewhere and
+  referenced from the token. Not decided.
+- What an account is here, and how it relates to simulated users and
+  to a "visit" (`TODO.md` Queue 27).
 
 ## See also
 

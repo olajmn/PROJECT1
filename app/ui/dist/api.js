@@ -246,9 +246,9 @@ export async function fetchModel() {
     }
     return (await res.json());
 }
-// 5. Sessions (Settings → Logs)
-export async function fetchSessions() {
-    const res = await fetch("/api/sessions");
+// 5. Activity log (Settings → Logs)
+export async function fetchLog() {
+    const res = await fetch("/api/log");
     if (!res.ok) {
         throw new Error(`request failed: ${res.status}`);
     }
