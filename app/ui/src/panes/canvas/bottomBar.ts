@@ -8,6 +8,7 @@
 
 import { archiveProject } from "../../api.js";
 import { displayProjectTitle } from "../create/defaultNames.js";
+import { projectChromeHash } from "../create/projectOrder.js";
 import { copyAsText } from "./copyAsText.js";
 import { buildAddFolderPanel } from "./folderForm.js";
 import { buildPasteTreePanel } from "./pasteForm.js";
@@ -61,7 +62,7 @@ export function mountBottomBar(opts: BottomBarOpts): BottomBar {
     const text = copyAsText(
       project.name,
       middle,
-      `#${project.project_id}`,
+      projectChromeHash(project),
     );
     try {
       await navigator.clipboard.writeText(text);

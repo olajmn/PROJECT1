@@ -9,7 +9,7 @@
 //  3. Data (load / replace / applyUsers)
 //  4. Initialization
 
-import { fetchProjects, fetchUsers } from "./api.js";
+import { fetchProjects, fetchAccounts } from "./api.js";
 import { installChatResize, installSidebarResize } from "./shell/columnWidths.js";
 import { installAccountsPanel } from "./panes/create/accounts/panel.js";
 import { renderAccountsBrand } from "./panes/create/accounts/brandButton.js";
@@ -28,7 +28,7 @@ import { installSendMessage } from "./panes/chat/sendMessage.js";
 import { installMapPane } from "./panes/canvas/mapPane.js";
 import { getActiveUserId, setActiveUserId } from "./user/activeAccount.js";
 import { applyStoredTheme } from "./user/theme.js";
-import type { ProjectView, UserView } from "./dataShapes.js";
+import type { AccountView, ProjectView } from "./dataShapes.js";
 
 applyStoredTheme();
 
@@ -57,7 +57,7 @@ const sidebarResize = document.getElementById("sidebar-resize") as HTMLElement;
 const chatResize = document.getElementById("chat-resize") as HTMLElement;
 
 let projects: ProjectView[] = [];
-let users: UserView[] = [];
+let users: AccountView[] = [];
 const selection: SelectionState = {
   selectedId: null,
   selectedNodeId: null,
@@ -199,7 +199,7 @@ const mapPane = installMapPane({
 
 // 3. Data
 
-function applyUsers(next: UserView[]): void {
+function applyUsers(next: AccountView[]): void {
   users = next;
   projects = detachArchivedOwners(projects, next);
   syncActiveUser(next);
@@ -228,7 +228,7 @@ function replaceProject(updated: ProjectView): void {
 async function load(): Promise<void> {
   const [goals, allUsers] = await Promise.all([
     fetchProjects(),
-    fetchUsers(),
+    fetchAccounts(),
   ]);
   projects = goals;
   users = allUsers;

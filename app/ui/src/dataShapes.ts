@@ -55,6 +55,8 @@ export interface ProjectView {
   completed: boolean;
   cancelled: boolean;
   sim_user_id: number | null;
+  /** Sticky per-account mint for map/chrome `#N`. Null when unassigned. */
+  account_n?: number | null;
   /** Latest history record timestamp for this project. */
   created_at?: string | null;
   node: MapNode | null;
@@ -65,13 +67,14 @@ export interface ProjectView {
 }
 
 
-// 3. Simulated users
+// 3. Accounts (simulated seats)
 
-export interface UserView {
+export interface AccountView {
   id: number;
   text: string;
   archived: boolean;
   created_at: string;
+  archived_at?: string;
 }
 
 // 4. Paste

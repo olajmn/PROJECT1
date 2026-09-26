@@ -112,7 +112,7 @@ and decides nothing itself. Today's data is placeholder:
 
 | Today (placeholder) | Later (from outside) |
 |---|---|
-| Simulated users `account#N` (`data/users.json`) | Real accounts and wallets |
+| Accounts `account#N` (`data/accounts.json`) | Real accounts and wallets |
 | `create_project()` mints a `project_id` locally | The project is created on-chain; the app receives its id |
 | `backend/storage/` reads and writes local JSON files | The same place reads from / writes to the outside source |
 

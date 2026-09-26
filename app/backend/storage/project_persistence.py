@@ -7,7 +7,9 @@ Legacy combined projects.jsonl / plans.jsonl / plans.json, and snapshot
 
 Identity grouping for display lives in create/resolver.py — project_id
 minting and on-load promotes stay here. Simulated users (account#N) live in
-users_persistence.py and are only referenced via optional sim_user_id.
+accounts_persistence.py and are only referenced via optional sim_user_id.
+Per-account sticky mint `account_n` (map/chrome `#N`) is assigned here;
+global `project_id` stays the wire identity.
 """
 
 # Contents
@@ -18,9 +20,11 @@ users_persistence.py and are only referenced via optional sim_user_id.
 #  2. Project records (current.json + events.jsonl)
 #      - load_current() / load_project_events() / save_plan()
 #      - stamp_map_focus() / surface_from_plan()
-#      - load_history() / load_all_currents()
+#      - load_history() / load_all_currents() / delete_project()
+#      - _next_account_n() / _resolve_account_n() / _ensure_account_n()
 
 import json
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -446,16 +450,23 @@ def _ensure_migrated() -> None:
     _ensure_folder_stores()
 
 
+def _iter_current_paths() -> list[tuple[int, Path]]:
+    """(project_id, current.json path) for every on-disk project folder."""
+    if not PROJECTS_DIR.exists():
+        return []
+    out: list[tuple[int, Path]] = []
+    for path in PROJECTS_DIR.iterdir():
+        if path.is_dir() and path.name.isdigit():
+            cur = path / "current.json"
+            if cur.exists():
+                out.append((int(path.name), cur))
+    return out
+
+
 def _existing_project_ids() -> list[int]:
     """Numeric project ids that have a current.json (after migration)."""
     _ensure_migrated()
-    if not PROJECTS_DIR.exists():
-        return []
-    ids: list[int] = []
-    for path in PROJECTS_DIR.iterdir():
-        if path.is_dir() and path.name.isdigit() and (path / "current.json").exists():
-            ids.append(int(path.name))
-    return ids
+    return [pid for pid, _ in _iter_current_paths()]
 
 
 def _next_goal_id() -> int:
@@ -465,6 +476,55 @@ def _next_goal_id() -> int:
     follow-up); values are project_id.
     """
     return max(_existing_project_ids(), default=0) + 1
+
+
+def _next_account_n(sim_user_id: int) -> int:
+    """Next sticky per-account mint (never reuses gaps after delete/move).
+
+    Uses the account's account_n_hi high-water mark only — no full
+    projects walk.
+    """
+    from backend.storage.accounts_persistence import account_n_hi, note_account_n
+
+    n = account_n_hi(sim_user_id) + 1
+    note_account_n(sim_user_id, n)
+    return n
+
+
+def _resolve_account_n(
+    *,
+    sim_user_id: int | None,
+    existing: dict | None,
+) -> int | None:
+    """Sticky account_n for this save.
+
+    Keep the previous mint when the owner is unchanged. Mint a new one
+    on create, claim, or move to another account. When unlinking, keep
+    the historical mint on the record.
+    """
+    prev_n = existing.get("account_n") if existing else None
+    prev_n = prev_n if isinstance(prev_n, int) else None
+    if sim_user_id is None:
+        return prev_n
+    prev_sim = existing.get("sim_user_id") if existing else None
+    if prev_n is not None and prev_sim == sim_user_id:
+        return prev_n
+    return _next_account_n(sim_user_id)
+
+
+def _ensure_account_n(record: dict, path: Path) -> dict:
+    """If this one record lacks account_n, mint and rewrite it.
+
+    Only touches the project being loaded — no scan of siblings.
+    """
+    if record.get("account_n") is not None:
+        return record
+    sid = record.get("sim_user_id")
+    if not isinstance(sid, int):
+        return record
+    record["account_n"] = _next_account_n(sid)
+    _write_json(path, record)
+    return record
 
 
 def load_current(project_id: int) -> dict | None:
@@ -478,7 +538,7 @@ def load_current(project_id: int) -> dict | None:
     current = records[0]
     if needs_rewrite:
         _write_json(path, current)
-    return current
+    return _ensure_account_n(current, path)
 
 
 def load_project_events(project_id: int) -> list[dict]:
@@ -533,12 +593,15 @@ def save_plan(
     """
     _ensure_migrated()
     pid = project_id if project_id is not None else _next_goal_id()
+    existing = load_current(pid) if project_id is not None else None
+    account_n = _resolve_account_n(sim_user_id=sim_user_id, existing=existing)
     existing_events = load_project_events(pid)
     record = {
         "id": len(existing_events) + 1,
         "user_id": DEFAULT_USER_ID,
         "project_id": pid,
         "sim_user_id": sim_user_id,
+        "account_n": account_n,
         "name": name,
         "plan": plan,
         "feedback": feedback,
@@ -641,6 +704,19 @@ def load_all_currents() -> list[dict]:
         if current is not None:
             currents.append(current)
     return currents
+
+
+def delete_project(project_id: int) -> bool:
+    """Permanently remove data/projects/{id}/ (current + events).
+
+    Returns True if a store was removed, False if none existed.
+    """
+    _ensure_migrated()
+    path = project_dir(project_id)
+    if not path.exists():
+        return False
+    shutil.rmtree(path)
+    return True
 
 
 def get_latest_plan() -> dict | None:

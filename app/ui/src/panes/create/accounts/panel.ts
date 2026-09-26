@@ -15,7 +15,7 @@ import {
   userLabel,
   ACCOUNTS_BRAND,
 } from "../../../user/activeAccount.js";
-import type { ProjectView, UserView } from "../../../dataShapes.js";
+import type { AccountView, ProjectView } from "../../../dataShapes.js";
 import { buildAccountCard } from "./accountCard.js";
 import { claimUnassigned, showError } from "./helpers.js";
 
@@ -27,10 +27,10 @@ const LEGACY_OPEN_KEY = "projects.idMenuOpen";
 export type AccountsPanelOptions = {
   anchor: HTMLElement;
   host: HTMLElement;
-  getUsers: () => UserView[];
+  getUsers: () => AccountView[];
   getProjects: () => ProjectView[];
   getSelectedId: () => number | null;
-  onUsersChanged: (users: UserView[]) => void;
+  onUsersChanged: (users: AccountView[]) => void;
   onProjectsUpdated: (updated: ProjectView[]) => void;
   onActiveUserChanged: (userId: number | null) => void;
   onSelectProject: (projectId: number) => void;
@@ -93,6 +93,22 @@ export function installAccountsPanel(
     opts.anchor.textContent = ACCOUNTS_BRAND;
   };
 
+  /** Keep "+" in the Accounts block: under the active card when open,
+   * otherwise under the brand — never park it above Settings. */
+  const placeCreateButton = (activeCard: HTMLElement | null): void => {
+    const btn = document.getElementById("create-open");
+    if (!(btn instanceof HTMLButtonElement)) return;
+    if (activeCard) {
+      activeCard.appendChild(btn);
+      btn.classList.add("sidebar-add--under-account");
+      return;
+    }
+    btn.classList.remove("sidebar-add--under-account");
+    const afterBrand = opts.anchor.nextSibling;
+    if (afterBrand) opts.host.insertBefore(btn, afterBrand);
+    else opts.host.appendChild(btn);
+  };
+
   const api: AccountsPanelApi = {
     open: () => {
       if (open) return;
@@ -106,6 +122,7 @@ export function installAccountsPanel(
     close: () => {
       if (!open) return;
       open = false;
+      placeCreateButton(null);
       menu.hidden = true;
       opts.anchor.setAttribute("aria-expanded", "false");
       opts.anchor.classList.remove("is-active");
@@ -134,6 +151,9 @@ export function installAccountsPanel(
   return api;
 
   function rebuild(): void {
+    // Park "+" outside the list first — innerHTML would destroy it if it
+    // were still nested under an account card.
+    placeCreateButton(null);
     list.innerHTML = "";
     foot.innerHTML = "";
 
@@ -151,19 +171,22 @@ export function installAccountsPanel(
       empty.textContent =
         "No accounts yet — create one in Settings → Directory.";
       list.appendChild(empty);
+      placeCreateButton(null);
     } else {
+      let activeCard: HTMLElement | null = null;
       for (const user of users) {
-        list.appendChild(
-          buildAccountCard(user, activeId === user.id, projects, {
-            getUsers: opts.getUsers,
-            getSelectedId: opts.getSelectedId,
-            onUsersChanged: opts.onUsersChanged,
-            onActiveUserChanged: opts.onActiveUserChanged,
-            onSelectProject: opts.onSelectProject,
-            afterChange,
-          }),
-        );
+        const card = buildAccountCard(user, activeId === user.id, projects, {
+          getUsers: opts.getUsers,
+          getSelectedId: opts.getSelectedId,
+          onUsersChanged: opts.onUsersChanged,
+          onActiveUserChanged: opts.onActiveUserChanged,
+          onSelectProject: opts.onSelectProject,
+          afterChange,
+        });
+        list.appendChild(card);
+        if (activeId === user.id) activeCard = card;
       }
+      placeCreateButton(activeCard);
     }
 
     const orphans = projects.filter((p) => p.sim_user_id === null);

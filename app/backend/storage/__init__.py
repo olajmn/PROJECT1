@@ -2,7 +2,7 @@
 
 Project SoT + events: project_persistence.py
   (data/projects/{id}/current.json + events.jsonl).
-Simulated users: users_persistence.py (data/users.json).
+Accounts: accounts_persistence.py (data/accounts.json).
 Shared roots: paths.py.
 
 Does not interpret what it saves. Not a Faculty and not agent/project

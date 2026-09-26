@@ -23,21 +23,32 @@ server.py only starts the server; everything it answers is decided here.
 #      - projects: create, rename, cancel, set user, timeline
 #      - map: add node, remove node, paste, add folder, suggest
 #      - chat: message (incl. slash-commands)
-#      - users: create, archive
+#      - accounts: create, rename, archive
 #      - shared helpers
 
 import json
 import re
 from http.server import BaseHTTPRequestHandler
 
-from backend.storage.users_persistence import load_users, rename_user, save_user
+from backend.storage.accounts_persistence import (
+    delete_account,
+    load_accounts,
+    rename_account,
+    restore_account,
+    save_account,
+)
 from backend.project.panes.chat.reply import reply
-from backend.project.panes.create.lifecycle import cancel_project, create_project
+from backend.project.panes.create.lifecycle import (
+    cancel_project,
+    create_project,
+    delete_project,
+    restore_project,
+)
 from backend.project.panes.create.rename import rename_project
 from backend.project.panes.create.resolver import get_latest_for_project
 from backend.project.panes.canvas.add_folder import choose_folder
 from backend.project.panes.canvas.text_to_tree import parse_outline
-from backend.project.panes.create.project_user import archive_user, set_project_user
+from backend.project.panes.create.project_user import archive_account, set_project_user
 from backend.project.panes.canvas.edit_map import (
     add_map_node,
     import_map_folder,
@@ -50,9 +61,10 @@ from backend.api.activity_log import activity_log
 from backend.project.timeline import project_timeline
 from backend.api.files_to_browser import send_page_file
 from backend.api.answers_to_browser import (
+    account_view,
     active_projects,
+    archived_projects,
     project_view,
-    user_view,
 )
 
 
@@ -76,6 +88,8 @@ _POST_ROUTES = [
     (r"/api/projects", "_handle_create_project"),
     (r"/api/projects/(\d+)/name", "_handle_rename_project"),
     (r"/api/projects/(\d+)/cancel", "_handle_cancel_project"),
+    (r"/api/projects/(\d+)/restore", "_handle_restore_project"),
+    (r"/api/projects/(\d+)/delete", "_handle_delete_project"),
     (r"/api/projects/(\d+)/user", "_handle_set_project_user"),
     (r"/api/projects/(\d+)/map", "_handle_add_node"),
     (r"/api/projects/(\d+)/map/(p\d+)/remove", "_handle_remove_node"),
@@ -85,9 +99,11 @@ _POST_ROUTES = [
     (r"/api/projects/(\d+)/chat", "_handle_chat_message"),
     (r"/api/parse-outline-preview", "_handle_parse_outline_preview"),
     (r"/api/choose-folder", "_handle_choose_folder"),
-    (r"/api/users", "_handle_create_user"),
-    (r"/api/users/(\d+)/rename", "_handle_rename_user"),
-    (r"/api/users/(\d+)/archive", "_handle_archive_user"),
+    (r"/api/accounts", "_handle_create_account"),
+    (r"/api/accounts/(\d+)/rename", "_handle_rename_account"),
+    (r"/api/accounts/(\d+)/archive", "_handle_archive_account"),
+    (r"/api/accounts/(\d+)/restore", "_handle_restore_account"),
+    (r"/api/accounts/(\d+)/delete", "_handle_delete_account"),
 ]
 _POST_ROUTES = [(re.compile(f"^{path}$"), method) for path, method in _POST_ROUTES]
 
@@ -108,8 +124,10 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         if self.path == "/api/projects":
             self._send_json([project_view(r) for r in active_projects()])
-        elif self.path == "/api/users":
-            self._send_json([user_view(u) for u in load_users()])
+        elif self.path == "/api/projects/archived":
+            self._send_json([project_view(r) for r in archived_projects()])
+        elif self.path == "/api/accounts":
+            self._send_json([account_view(u) for u in load_accounts()])
         elif self.path == "/api/model":
             self._send_json({
                 "provider": "ollama",
@@ -162,6 +180,19 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(404, "no such project, or already completed")
             return
         self._send_json(project_view(record))
+
+    def _handle_restore_project(self, project_id: int) -> None:
+        record = restore_project(project_id)
+        if record is None:
+            self.send_error(404, "no such project, or completed")
+            return
+        self._send_json(project_view(record))
+
+    def _handle_delete_project(self, project_id: int) -> None:
+        if not delete_project(project_id):
+            self.send_error(404, "no such project")
+            return
+        self._send_json({"ok": True, "project_id": project_id})
 
     def _handle_set_project_user(self, project_id: int) -> None:
         """Body is {"sim_user_id": <int>}, or null to unlink."""
@@ -304,33 +335,47 @@ class Handler(BaseHTTPRequestHandler):
             return
         self._send_json(project_timeline(project_id))
 
-    # --- users ------------------------------------------------
+    # --- accounts ---------------------------------------------
 
-    def _handle_create_user(self) -> None:
+    def _handle_create_account(self) -> None:
         text = self._read_text_body()
         if text is None:
             return
-        self._send_json(user_view(save_user(text)))
+        self._send_json(account_view(save_account(text)))
 
-    def _handle_rename_user(self, sim_user_id: int) -> None:
+    def _handle_rename_account(self, sim_user_id: int) -> None:
         body = self._read_json_body()
         if body is None:
             return
         if "text" not in body:
             self.send_error(400, "missing text")
             return
-        user = rename_user(sim_user_id, str(body.get("text") or ""))
-        if user is None:
-            self.send_error(404, "no such user")
+        account = rename_account(sim_user_id, str(body.get("text") or ""))
+        if account is None:
+            self.send_error(404, "no such account")
             return
-        self._send_json(user_view(user))
+        self._send_json(account_view(account))
 
-    def _handle_archive_user(self, sim_user_id: int) -> None:
-        user = archive_user(sim_user_id)
-        if user is None:
-            self.send_error(404, "no such user")
+    def _handle_archive_account(self, sim_user_id: int) -> None:
+        account = archive_account(sim_user_id)
+        if account is None:
+            self.send_error(404, "no such account")
             return
-        self._send_json(user_view(user))
+        self._send_json(account_view(account))
+
+    def _handle_restore_account(self, sim_user_id: int) -> None:
+        account = restore_account(sim_user_id)
+        if account is None:
+            self.send_error(404, "no such account")
+            return
+        self._send_json(account_view(account))
+
+    def _handle_delete_account(self, sim_user_id: int) -> None:
+        account = delete_account(sim_user_id)
+        if account is None:
+            self.send_error(404, "no such account")
+            return
+        self._send_json(account_view(account))
 
     # --- shared helpers ---------------------------------------
 

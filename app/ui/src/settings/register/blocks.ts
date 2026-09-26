@@ -29,6 +29,8 @@ export type ProjectValues = {
   id: number;
   name: string;
   created: string | null | undefined;
+  /** Sticky per-account mint (`account_n`). */
+  accountN?: number | null;
 };
 
 export type IdValues = {
@@ -69,17 +71,18 @@ export function logBlock(v: LogValues): Block {
   return block;
 }
 
-// 4. Id group / project / orphan (Directory)
+// 4. Account group / project / orphan (Directory)
 //
-//   Id
+//   Account
 //   Name      ai_slop
-//   ID        1
+//   Id        account#1
 //   Created   …
 //
 //                     Project
-//                     Name      prosjekt-1
-//                     ID        1
-//                     Created   …
+//                     Name       prosjekt-1
+//                     Local #    #1
+//                     Global ID  49
+//                     Created    …
 
 export function accountGroup(v: IdValues): Group {
   const left: Block = [
@@ -96,16 +99,15 @@ export function accountGroup(v: IdValues): Group {
   };
 }
 
-/** @deprecated Use accountGroup */
-export function idGroup(v: IdValues): Group {
-  return accountGroup(v);
-}
 
 export function projectBlock(v: ProjectValues): Block {
+  const local =
+    v.accountN != null ? `#${v.accountN}` : "—";
   return [
     { t: "title", kind: "Project", name: "" },
     { t: "fact", label: "Name", value: v.name },
-    { t: "fact", label: "ID", value: String(v.id) },
+    { t: "fact", label: "Local #", value: local },
+    { t: "fact", label: "Global ID", value: String(v.id) },
     { t: "fact", label: "Created", created: v.created ?? null },
   ];
 }

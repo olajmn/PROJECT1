@@ -7,11 +7,11 @@
 //  2. mountDirectory()
 
 import {
-  archiveUser,
-  createUser,
+  archiveAccount,
+  createAccount,
   fetchProjects,
-  fetchUsers,
-  renameUser,
+  fetchAccounts,
+  renameAccount,
 } from "../../api.js";
 import { projectsChronologicalForUser } from "../../panes/create/projectOrder.js";
 import { setButtonBusy } from "../../shell/busyButton.js";
@@ -21,7 +21,7 @@ import {
   setActiveUserId,
   userLabel,
 } from "../../user/activeAccount.js";
-import type { ProjectView, UserView } from "../../dataShapes.js";
+import type { AccountView, ProjectView } from "../../dataShapes.js";
 import {
   accountGroup,
   arrangeGroup,
@@ -37,6 +37,7 @@ function projectValues(project: ProjectView): ProjectValues {
     id: project.project_id,
     name: project.name,
     created: project.created_at,
+    accountN: project.account_n ?? null,
   };
 }
 
@@ -51,7 +52,7 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-function editableName(user: UserView): string {
+function editableName(user: AccountView): string {
   const t = user.text?.trim();
   if (t && t !== "user") return t;
   return "";
@@ -98,7 +99,7 @@ export async function mountDirectory(host: HTMLElement): Promise<void> {
     error.hidden = true;
     try {
       const [users, projects] = await Promise.all([
-        fetchUsers(),
+        fetchAccounts(),
         fetchProjects(),
       ]);
       const active = users.filter((u) => !u.archived);
@@ -165,7 +166,7 @@ export async function mountDirectory(host: HTMLElement): Promise<void> {
           event.preventDefault();
           setButtonBusy(renameSave, true);
           try {
-            await renameUser(user.id, renameInput.value);
+            await renameAccount(user.id, renameInput.value);
             await paint();
           } catch (err) {
             setButtonBusy(renameSave, false);
@@ -219,9 +220,9 @@ export async function mountDirectory(host: HTMLElement): Promise<void> {
         deleteYes.addEventListener("click", async () => {
           setButtonBusy(deleteYes, true);
           try {
-            await archiveUser(user.id);
+            await archiveAccount(user.id);
             if (getActiveUserId() === user.id) {
-              const live = (await fetchUsers()).filter((u) => !u.archived);
+              const live = (await fetchAccounts()).filter((u) => !u.archived);
               const fallback =
                 live.length > 0
                   ? live.reduce((a, b) => (a.id > b.id ? a : b)).id
@@ -259,7 +260,7 @@ export async function mountDirectory(host: HTMLElement): Promise<void> {
     const typed = createInput.value.trim();
     setButtonBusy(createSubmit, true);
     try {
-      await createUser(typed || "user");
+      await createAccount(typed || "user");
       createInput.value = "";
       await paint();
     } catch (err) {

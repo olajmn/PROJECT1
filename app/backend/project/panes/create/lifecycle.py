@@ -1,5 +1,5 @@
 """
-A project's lifecycle: mint one, abandon one.
+A project's lifecycle: mint one, abandon one, restore or erase.
 
 Identity and current state stay in resolver.py - this module only
 writes. Mint is create_project() — a name and an empty canvas, no
@@ -13,10 +13,13 @@ until Vision's own shape is decided.
 #  1. Creation
 #      - create_project()
 #
-#  2. Cancellation
-#      - cancel_project()
+#  2. Cancellation / restore / delete
+#      - cancel_project() / restore_project() / delete_project()
 
-from backend.storage.project_persistence import save_plan
+from backend.storage.project_persistence import (
+    delete_project as erase_project_store,
+    save_plan,
+)
 from backend.project.panes.create.resolver import get_latest_for_project
 
 
@@ -42,7 +45,7 @@ def create_project(typed_text: str, sim_user_id_value: str) -> dict:
 
 
 # ============================================================
-# 2. Cancellation
+# 2. Cancellation / restore / delete
 # ============================================================
 
 
@@ -82,3 +85,33 @@ def cancel_project(project_id: int) -> dict | None:
         sim_user_id=latest.get("sim_user_id"), cancelled=True,
         step_status=latest.get("step_status"), event="archived",
     )
+
+
+def restore_project(project_id: int) -> dict | None:
+    """Clear cancelled so the project is active again.
+
+    No-op if already live. Returns None if missing or completed
+    (completed is not restored this way).
+    """
+    latest = get_latest_for_project(project_id)
+    if latest is None:
+        return None
+    if latest.get("completed"):
+        return None
+    if not latest.get("cancelled"):
+        return latest
+
+    return save_plan(
+        latest["name"], latest["plan"], feedback="Restored",
+        duration=latest.get("duration"), project_id=latest["project_id"],
+        frozen_duration=latest.get("frozen_duration"),
+        current_step=latest.get("current_step", 0),
+        sim_user_id=latest.get("sim_user_id"), cancelled=False,
+        completed=False, step_status=latest.get("step_status"),
+        event="restored",
+    )
+
+
+def delete_project(project_id: int) -> bool:
+    """Permanently erase the project store. True if something was removed."""
+    return erase_project_store(project_id)

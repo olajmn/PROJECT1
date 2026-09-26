@@ -270,11 +270,18 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Why this choice:** Same optional FK pattern as before, but named for the multi-user simulation. `sim_user_id` avoids colliding with the existing stub operator `user_id` (= `DEFAULT_USER_ID`). Hard cut in `app/` (UI is the only client); one-shot disk promote `visions.json` → `users.json` and `vision_id` → `sim_user_id`.
 
-**Trade-off:** Stub `user_id` still always `DEFAULT_USER_ID` (auth deferred). Unassigned projects (`sim_user_id` null) are hidden from the sidebar until claimed under a user. Per-user local project numbers are not implemented yet.
+**Trade-off:** Stub `user_id` still always `DEFAULT_USER_ID` (auth deferred). Unassigned projects (`sim_user_id` null) are hidden from the sidebar until claimed under a user.
 
 **Follow-up (same day):** Backend + UI hard cut done — store `users.json`, API `/api/users`, `POST /api/projects/<id>/user` body `{sim_user_id}`, planner `set_project_user` / `archive_user`. Stub `user_id` unchanged. UI display label shortened to `id#N`. Later same day: ID management moved from a center topbar tab/panel to the Projects **sidebar brand + in-flow menu** (`sidebar/idMenu.ts`); local list ordinals `#1…n (#project_id)` via `projectListOrder.ts` (display only).
 
-**Follow-up (2026-09-26):** Sidebar brand is **Accounts** (was Manager). Seat display is a custom name + quiet **`account#N`**. Wire stays `sim_user_id` / `/api/users`. UI paths renamed from Manager/id menu → `panes/create/accounts/` (`panel.ts`, `accountCard.ts`, `brandButton.ts`), `user/activeAccount.ts`, `css/…/accountsPanel.css`. Account create/rename/delete live in Settings → Directory; sidebar lists seats + projects + project `+` only.
+**Follow-up (2026-09-26):** Sidebar brand is **Accounts** (was Manager). Seat display is a custom name + quiet **`account#N`**. UI paths renamed from Manager/id menu → `panes/create/accounts/` (`panel.ts`, `accountCard.ts`, `brandButton.ts`), `user/activeAccount.ts`, `css/…/accountsPanel.css`. Account create/rename/delete live in Settings → Directory; sidebar lists seats + projects + project `+` only.
+
+**Follow-up (2026-09-26, accounts store):** Disk/API renamed to match product — `accounts_persistence.py`, `data/accounts.json`, `/api/accounts` (legacy `users.json` / `visions.json` promoted on load). Project FK stays `sim_user_id`; stub operator `user_id` unchanged.
+
+**Follow-up (2026-09-26, Archive):** Settings → **Archive** lists soft-archived accounts and cancelled/completed projects. Restore un-archives (accounts) or clears `cancelled` (projects). Permanent delete removes the account record or the `data/projects/{id}/` folder. Directory still only soft-archives accounts.
+
+
+**Follow-up (2026-09-26, sticky mint):** Per-account project chrome uses sticky **`account_n`** on `current.json` (minted in `save_plan`; filled lazily in `load_current` when missing). High-water **`account_n_hi`** on the user record so deletes/moves never reuse a number — no full projects scan on reload. Map bead and Copy-as-ASCII show `#N` from `account_n`. Directory shows **Local #** + **Global ID** (`project_id`). A move to another account gets that account’s next mint. Wire identity remains global `project_id`.
 
 **Reversible?** Promote is one-way on disk once rewritten; restoring Vision copy would be a deliberate rename, not a flip of a switch.
 

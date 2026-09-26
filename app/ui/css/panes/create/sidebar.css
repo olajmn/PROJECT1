@@ -2,12 +2,9 @@
  * Values from css/tokens.css.
  *
  * Split with css/panes/create/accountsPanel.css: that file owns the look
- * *inside* the Accounts panel. .sidebar-add is the project mint control.
- *
- * Vertical layout: nothing grows. Every item is content-sized, and the
- * free space goes to #create-open's margin-top: auto — that parks the
- * project "+" at the foot, just above Settings. Projects live under
- * each account card inside the Accounts panel.
+ * *inside* the Accounts panel. .sidebar-add is the project mint control;
+ * it stays in the Accounts block (under the active card when open, under
+ * the brand when closed). Settings is pinned to the sidebar foot.
  *
  * Contents
  *  1. Sidebar frame + brand
@@ -92,9 +89,15 @@
   border-color: var(--color-text-muted);
 }
 
-/* Parks the project "+" above Settings. */
-#create-open {
-  margin-top: auto;
+/* Under the Accounts brand when the panel is closed. */
+.sidebar-accounts > .sidebar-add {
+  margin-top: var(--space-2);
+}
+
+/* Nested under the active account card while Accounts is open. */
+.sidebar-add--under-account {
+  margin-top: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 /* 3. Bottom bar (Settings) */
@@ -106,6 +109,9 @@
  * with the inline padding putting Settings back on the sidebar's text
  * inset. Carrying the rule on the box (not a ::before) is what lets the
  * two line up: the border is then the bar's own top edge.
+ *
+ * `margin-top: auto` pins Settings to the foot; project "+" stays in the
+ * Accounts block and does not share this spacer.
  *
  * Also opts out of the generic `nav` bottom treatment in css/base.css —
  * that rule dresses the Settings pages' top nav, where a rule underneath
@@ -119,7 +125,7 @@
   gap: var(--space-1);
   flex: 0 0 auto;
   min-height: 1.75rem;
-  margin: 0 calc(-1 * var(--space-3)) calc(-1 * var(--space-4));
+  margin: auto calc(-1 * var(--space-3)) calc(-1 * var(--space-4));
   padding: 0 var(--space-3);
   border-top: var(--border);
   border-bottom: none;

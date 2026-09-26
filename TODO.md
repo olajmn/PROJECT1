@@ -18,10 +18,12 @@ deliberately chosen as next.
 **42. Pre-demo clean box** (Step, next) — Map+Talk (40) is done enough
 to demo the loop; this is what’s left before calling it demo-ready.
 
-1. **User / account** — seats (`account#N` / Accounts / `sim_user_id`).
+1. **User / account** — seats (`account#N` / Accounts / `sim_user_id`);
+   sticky project `#N` via `account_n` (Directory Local # / Global ID).
+   Store: `accounts_persistence.py` / `data/accounts.json` / `/api/accounts`.
    Code home: `panes/create/accounts/`, `user/activeAccount.ts`,
-   Directory for create/rename/delete. Still open: default names (29),
-   map to real accounts ([[02-product]] § 5).
+   Directory for create/rename/delete; **Archive** for restore / perma-delete.
+   Still open: default names (29), map to real accounts ([[02-product]] § 5).
 2. **`architecture_foundation/`** — decide keep-as-archive vs move vs
    delete; do **not** rewrite it to match Map+Talk (it’s the old
    agent-shape sketch). See Queue 43.

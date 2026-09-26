@@ -16,7 +16,7 @@ import {
   getLastProjectId,
   setActiveUserId,
 } from "../../user/activeAccount.js";
-import type { ProjectView, UserView } from "../../dataShapes.js";
+import type { AccountView, ProjectView } from "../../dataShapes.js";
 
 // 1. Filter
 
@@ -64,7 +64,7 @@ export function ensureSelectionInActiveUser(
 // 3. Active account
 
 /** Keep localStorage active account aligned with non-archived users. */
-export function syncActiveUser(nextUsers: UserView[]): void {
+export function syncActiveUser(nextUsers: AccountView[]): void {
   const live = nextUsers.filter((u) => !u.archived);
   const active = getActiveUserId();
   if (active !== null && live.some((u) => u.id === active)) return;
@@ -78,7 +78,7 @@ export function syncActiveUser(nextUsers: UserView[]): void {
 /** Clear sim_user_id on projects whose owner account was archived. */
 export function detachArchivedOwners(
   projects: ProjectView[],
-  users: UserView[],
+  users: AccountView[],
 ): ProjectView[] {
   const activeIds = new Set(
     users.filter((v) => !v.archived).map((v) => v.id),

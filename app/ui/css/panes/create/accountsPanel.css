@@ -123,12 +123,6 @@
   }
 }
 
-.sidebar-account-card-wire {
-  color: var(--color-text-muted);
-  font-size: 0.72rem;
-  font-weight: 400;
-}
-
 .sidebar-account-card-projects {
   display: flex;
   flex-direction: column;

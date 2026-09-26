@@ -5,10 +5,10 @@ no product rules.
 """
 
 # Contents
-#  1. Project, project list, user
+#  1. Project, project list, account
 #      - project_view()
-#      - active_projects()
-#      - user_view()
+#      - active_projects() / archived_projects()
+#      - account_view()
 #
 #  2. Map tree
 #      - map_tree()
@@ -55,6 +55,7 @@ def project_view(
         "completed": bool(record.get("completed")),
         "cancelled": bool(record.get("cancelled")),
         "sim_user_id": record.get("sim_user_id"),
+        "account_n": record.get("account_n"),
         "created_at": record.get("created_at"),
         "node": node,
         "thread": thread,
@@ -76,15 +77,27 @@ def active_projects() -> list[dict]:
     return active
 
 
-def user_view(user: dict) -> dict:
-    """{id, text, archived, created_at}. `archived` is only stored once
-    true, so it is filled in here."""
-    return {
-        "id": user["id"],
-        "text": user["text"],
-        "archived": bool(user.get("archived")),
-        "created_at": user["created_at"],
+def archived_projects() -> list[dict]:
+    """Cancelled or completed projects, newest first (Settings → Archive)."""
+    latest = get_latest_for_all_projects()
+    closed = [r for r in latest if r.get("completed") or r.get("cancelled")]
+    closed.sort(key=created_at_key, reverse=True)
+    return closed
+
+
+def account_view(account: dict) -> dict:
+    """{id, text, archived, created_at, archived_at?}. `archived` is only
+    stored once true, so it is filled in here."""
+    view = {
+        "id": account["id"],
+        "text": account["text"],
+        "archived": bool(account.get("archived")),
+        "created_at": account["created_at"],
     }
+    if account.get("archived_at"):
+        view["archived_at"] = account["archived_at"]
+    return view
+
 
 
 # ============================================================

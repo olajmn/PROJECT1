@@ -79,7 +79,7 @@ SMOKE_IMPORT_MODULES = [
     "backend.project.panes.create.resolver",
     "backend.storage.paths",
     "backend.storage.project_persistence",
-    "backend.storage.users_persistence",
+    "backend.storage.accounts_persistence",
     "backend.api.answers_to_browser",
     "server",
 ]

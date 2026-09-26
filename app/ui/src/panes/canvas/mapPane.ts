@@ -13,6 +13,7 @@
 import { addNode, removeNode, renameProject } from "../../api.js";
 import { getActiveUserId, setLastProjectId } from "../../user/activeAccount.js";
 import { displayProjectTitle } from "../create/defaultNames.js";
+import { projectChromeHash } from "../create/projectOrder.js";
 import { installTitleRename } from "../create/renameProject.js";
 import type { ChatPane } from "../chat/chatPane.js";
 import {
@@ -240,7 +241,7 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
       removeBead,
       opts.getSelectedNodeId(),
       canSelect ? onMenuAction : undefined,
-      `#${project.project_id}`,
+      projectChromeHash(project),
     );
     const nameText = line.querySelector(".progress-name-label");
     if (nameText instanceof HTMLElement) {

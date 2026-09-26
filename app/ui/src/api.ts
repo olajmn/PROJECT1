@@ -6,20 +6,22 @@
 //  1. Projects
 //      - fetchProjects(), createProject(), renameProject()
 //      - archiveProject(), setProjectUser()
+//      - fetchArchivedProjects(), restoreProject(), deleteProject()
 //  2. Map
 //      - addNode(), removeNode(), suggestChildren()
 //      - pasteText(), previewPaste(), pasteNodes()
 //      - chooseFolder(), addFolder()
 //  3. Chat
 //      - sendChatMessage()
-//  4. Simulated users
-//      - fetchUsers(), createUser(), archiveUser()
+//  4. Accounts
+//      - fetchAccounts(), createAccount(), renameAccount()
+//      - archiveAccount(), restoreAccount(), deleteAccount()
 //  5. Model (Settings → General)
 //      - fetchModel()
 //  6. Activity log (Settings → Logs)
 //      - fetchLog(), fetchProjectTimeline()
 
-import type { ProjectView, LogEntry, ModelView, PastedNode, PastePreview, UserView } from "./dataShapes.js";
+import type { ProjectView, LogEntry, ModelView, PastedNode, PastePreview, AccountView } from "./dataShapes.js";
 
 async function httpErrorMessage(res: Response): Promise<string> {
   const detail = (await res.text()).trim();
@@ -84,6 +86,29 @@ export async function archiveProject(projectId: number): Promise<ProjectView> {
     throw new Error(`request failed: ${res.status}`);
   }
   return (await res.json()) as ProjectView;
+}
+
+export async function fetchArchivedProjects(): Promise<ProjectView[]> {
+  const res = await fetch("/api/projects/archived");
+  if (!res.ok) {
+    throw new Error(`request failed: ${res.status}`);
+  }
+  return (await res.json()) as ProjectView[];
+}
+
+export async function restoreProject(projectId: number): Promise<ProjectView> {
+  const res = await fetch(`/api/projects/${projectId}/restore`, { method: "POST" });
+  if (!res.ok) {
+    throw new Error(await httpErrorMessage(res));
+  }
+  return (await res.json()) as ProjectView;
+}
+
+export async function deleteProject(projectId: number): Promise<void> {
+  const res = await fetch(`/api/projects/${projectId}/delete`, { method: "POST" });
+  if (!res.ok) {
+    throw new Error(await httpErrorMessage(res));
+  }
 }
 
 export async function setProjectUser(projectId: number, simUserId: number | null): Promise<ProjectView> {
@@ -273,18 +298,19 @@ export async function sendChatMessage(
   return (await res.json()) as ProjectView;
 }
 
-// 4. Simulated users
+// 4. Accounts
 
-export async function fetchUsers(): Promise<UserView[]> {
-  const res = await fetch("/api/users");
+export async function fetchAccounts(): Promise<AccountView[]> {
+  const res = await fetch("/api/accounts");
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
-  return (await res.json()) as UserView[];
+  return (await res.json()) as AccountView[];
 }
 
-export async function createUser(text: string): Promise<UserView> {
-  const res = await fetch("/api/users", {
+
+export async function createAccount(text: string): Promise<AccountView> {
+  const res = await fetch("/api/accounts", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text }),
@@ -292,14 +318,15 @@ export async function createUser(text: string): Promise<UserView> {
   if (!res.ok) {
     throw new Error(await httpErrorMessage(res));
   }
-  return (await res.json()) as UserView;
+  return (await res.json()) as AccountView;
 }
 
-export async function renameUser(
+
+export async function renameAccount(
   simUserId: number,
   text: string,
-): Promise<UserView> {
-  const res = await fetch(`/api/users/${simUserId}/rename`, {
+): Promise<AccountView> {
+  const res = await fetch(`/api/accounts/${simUserId}/rename`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text }),
@@ -307,15 +334,33 @@ export async function renameUser(
   if (!res.ok) {
     throw new Error(await httpErrorMessage(res));
   }
-  return (await res.json()) as UserView;
+  return (await res.json()) as AccountView;
 }
 
-export async function archiveUser(simUserId: number): Promise<UserView> {
-  const res = await fetch(`/api/users/${simUserId}/archive`, { method: "POST" });
+
+export async function archiveAccount(simUserId: number): Promise<AccountView> {
+  const res = await fetch(`/api/accounts/${simUserId}/archive`, { method: "POST" });
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
-  return (await res.json()) as UserView;
+  return (await res.json()) as AccountView;
+}
+
+
+export async function restoreAccount(simUserId: number): Promise<AccountView> {
+  const res = await fetch(`/api/accounts/${simUserId}/restore`, { method: "POST" });
+  if (!res.ok) {
+    throw new Error(await httpErrorMessage(res));
+  }
+  return (await res.json()) as AccountView;
+}
+
+export async function deleteAccount(simUserId: number): Promise<AccountView> {
+  const res = await fetch(`/api/accounts/${simUserId}/delete`, { method: "POST" });
+  if (!res.ok) {
+    throw new Error(await httpErrorMessage(res));
+  }
+  return (await res.json()) as AccountView;
 }
 
 // 5. Model (Settings → General)

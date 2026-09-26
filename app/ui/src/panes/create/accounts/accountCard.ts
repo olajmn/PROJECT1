@@ -6,9 +6,8 @@ import { displayProjectTitle } from "../defaultNames.js";
 import {
   setActiveUserId,
   userLabel,
-  accountWireLabel,
 } from "../../../user/activeAccount.js";
-import type { ProjectView, UserView } from "../../../dataShapes.js";
+import type { AccountView, ProjectView } from "../../../dataShapes.js";
 import {
   projectsChronologicalForUser,
   projectsNewestFirst,
@@ -17,9 +16,9 @@ import {
 const EXPANDED_KEY = "accounts.cardExpanded";
 
 export type AccountCardCallbacks = {
-  getUsers: () => UserView[];
+  getUsers: () => AccountView[];
   getSelectedId: () => number | null;
-  onUsersChanged: (users: UserView[]) => void;
+  onUsersChanged: (users: AccountView[]) => void;
   onActiveUserChanged: (userId: number | null) => void;
   onSelectProject: (projectId: number) => void;
   /** Rebuild panel + brand after active-account change. */
@@ -62,7 +61,7 @@ export function isAccountCardExpanded(
 }
 
 export function buildAccountCard(
-  user: UserView,
+  user: AccountView,
   isActive: boolean,
   projects: ProjectView[],
   cb: AccountCardCallbacks,
@@ -84,12 +83,7 @@ export function buildAccountCard(
   name.textContent = userLabel(user);
   name.title = expanded ? "Hide projects" : "Show projects";
   name.setAttribute("aria-expanded", String(expanded));
-  const wire = document.createElement("span");
-  wire.className = "sidebar-account-card-wire";
-  wire.textContent = accountWireLabel(user.id);
-  // Avoid "account#15" twice when there is no custom name.
-  if (wire.textContent === name.textContent) wire.hidden = true;
-  titleWrap.append(name, wire);
+  titleWrap.append(name);
   top.appendChild(titleWrap);
   card.appendChild(top);
 
@@ -115,7 +109,7 @@ export function buildAccountCard(
 }
 
 function buildProjectGroup(
-  user: UserView,
+  user: AccountView,
   projects: ProjectView[],
   cb: AccountCardCallbacks,
 ): HTMLElement {
