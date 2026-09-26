@@ -18,13 +18,10 @@ deliberately chosen as next.
 **42. Pre-demo clean box** (Step, next) — Map+Talk (40) is done enough
 to demo the loop; this is what’s left before calling it demo-ready.
 
-1. **User / account** — seats (`account#N` / Accounts / `sim_user_id`);
-   sticky project `#N` via `account_n` (Directory Local # / Global ID).
-   Store: `accounts_persistence.py` / `data/accounts.json` / `/api/accounts`.
-   Code home: `panes/create/accounts/`, `user/activeAccount.ts`,
-   Directory for create/rename/delete; **Archive** for restore / perma-delete.
-   Default names moved server side 2026-09-26 (was Queue 29).
-   Still open: map to real accounts ([[02-product]] § 5).
+1. ~~**User / account**~~ — done 2026-09-26 (accounts, Directory,
+   Archive, server-side default names; what exists: `docs/04-current-state.md`
+   § 1). Real accounts / wallets are not pre-demo — they come from the
+   NFT app ([[02-product]] § 5).
 2. **`architecture_foundation/`** — decide keep-as-archive vs move vs
    delete; do **not** rewrite it to match Map+Talk (it’s the old
    agent-shape sketch). See Queue 43.
@@ -32,7 +29,7 @@ to demo the loop; this is what’s left before calling it demo-ready.
    outdated **00 / 03** (and closed **06**) so sessions don’t relearn
    the planner-agent story. Light pass, not a full rewrite.
 
-Related to 26, 27, 43. Time Faculty files can stay unused (21).
+Related to 27, 43. Time Faculty files can stay unused (21).
 
 ## Queue
 
@@ -56,8 +53,6 @@ unless noted.
     chat-suggest under a selected node write it. Still open: naming a
     node in chat without selecting it first, and remaining data-shape
     questions in [[planning-model.md]]. § 5, § 7, § 9.
-26. **Id has no rename** (Step) — create and delete exist; no way to
-    change an id's label after creation. § 1.i.
 30. **No written API reference** (Step) — short overview of each
     `/api/...` address. `docs/02-product.md` § 5.
 44. **Repo cleanup pass** (Step) — findings from a file review on
@@ -65,9 +60,18 @@ unless noted.
     tracked elsewhere are only cross-referenced: `architecture_foundation/`
     (43), outdated 00 / 03 (Active 42.3), unused Time Faculty (21),
     Status vs Current state naming (37), API reference (30).
-    1. **`docs/04-current-state.md` lags the last commits** — older
-       than `lifecycle.py`, `accounts_persistence.py`, `test_storage.py`
-       (Archive, never-reused account ids).
+
+    **Weight and order.** Most items are docs (2, 3, 8, 9 + 42.3, 43):
+    many, light, text-only — one session. The code items are few but
+    heavier: **5** is the main one (storage, follow `test_storage`
+    closely); Time Faculty (21, ~1 360 unused lines) is a keep-or-remove
+    decision, not cleanup; **6** and **7** are not urgent; **4** is a
+    one-minute fix. The code itself is in good shape (pyflakes clean,
+    small files) — the mess is mostly docs still telling the old
+    planner-agent story. Order: docs first, then 5.
+
+    1. ~~**`docs/04-current-state.md` lags the last commits**~~ — done
+       2026-09-26 (default names, never-reused account ids).
     2. **Stale code paths in living docs** — `docs/03-architecture.md:191`
        and `docs/04-current-state.md:119` (`backend/llm_client.py`),
        `docs/04-current-state.md:336` (`backend/goals/plan/action_reader.py`).
