@@ -23,7 +23,8 @@ to demo the loop; this is what’s left before calling it demo-ready.
    Store: `accounts_persistence.py` / `data/accounts.json` / `/api/accounts`.
    Code home: `panes/create/accounts/`, `user/activeAccount.ts`,
    Directory for create/rename/delete; **Archive** for restore / perma-delete.
-   Still open: default names (29), map to real accounts ([[02-product]] § 5).
+   Default names moved server side 2026-09-26 (was Queue 29).
+   Still open: map to real accounts ([[02-product]] § 5).
 2. **`architecture_foundation/`** — decide keep-as-archive vs move vs
    delete; do **not** rewrite it to match Map+Talk (it’s the old
    agent-shape sketch). See Queue 43.
@@ -31,7 +32,7 @@ to demo the loop; this is what’s left before calling it demo-ready.
    outdated **00 / 03** (and closed **06**) so sessions don’t relearn
    the planner-agent story. Light pass, not a full rewrite.
 
-Related to 26, 29, 27, 43. Time Faculty files can stay unused (21).
+Related to 26, 27, 43. Time Faculty files can stay unused (21).
 
 ## Queue
 
@@ -57,11 +58,45 @@ unless noted.
     questions in [[planning-model.md]]. § 5, § 7, § 9.
 26. **Id has no rename** (Step) — create and delete exist; no way to
     change an id's label after creation. § 1.i.
-29. **Default project names are decided in the UI** (Step) — "New
-    project N" lives in `defaultNames.ts`; move into `create_project()`
-    when the name is empty so other clients share it. § 1.i.
 30. **No written API reference** (Step) — short overview of each
     `/api/...` address. `docs/02-product.md` § 5.
+44. **Repo cleanup pass** (Step) — findings from a file review on
+    2026-09-26 (`tools.project_check` + spot reads). Items already
+    tracked elsewhere are only cross-referenced: `architecture_foundation/`
+    (43), outdated 00 / 03 (Active 42.3), unused Time Faculty (21),
+    Status vs Current state naming (37), API reference (30).
+    1. **`docs/04-current-state.md` lags the last commits** — older
+       than `lifecycle.py`, `accounts_persistence.py`, `test_storage.py`
+       (Archive, never-reused account ids).
+    2. **Stale code paths in living docs** — `docs/03-architecture.md:191`
+       and `docs/04-current-state.md:119` (`backend/llm_client.py`),
+       `docs/04-current-state.md:336` (`backend/goals/plan/action_reader.py`).
+       Hits in 05 / 06 / `v4-migration-decision.md` are history and
+       can stay.
+    3. **Working notes in `docs/`** — decide done (archive), active, or
+       merge into 02 / 04 for `v4-migration-decision.md`,
+       `goal-to-project-migration.md` (still points at "TODO Active
+       23", which no longer exists), `visual-reset.md`, `surfaces.md`.
+    4. **`app/ui/dist/api.js` is tracked although `app/ui/dist/` is in
+       `.gitignore`** — still changes in commits. Untrack with
+       `git rm --cached` or adjust the ignore rule.
+    5. **Legacy Goal code in storage** — `project_persistence.py` (740
+       lines, largest file) carries old-format normalization /
+       migration (`_backfill_goal_ids`, `_next_goal_id`,
+       `_migrate_legacy_snapshot_file`, …); `goal_id` still appears
+       ~26 times in backend + UI as the deprecated mirror of
+       `project_id`. Split migration into its own module, or drop it
+       once old data is converted.
+    6. **`requests_from_browser.py` routing** — one long `if/elif` on
+       `self.path` per method (445 lines); grows with every endpoint.
+       Not urgent. Related to 30.
+    7. **Test gaps** — no tests for `requests_from_browser.py`,
+       `edit_map.py`, or any UI TypeScript.
+    8. **`README.md` is 6 lines** — enough for solo use; needs more
+       before anyone else (or the NFT app) joins.
+    9. **`docs_lint` review hits** — 4 "the user's own …" phrases
+       (`CONVENTIONS.md:29`, `docs/05-decisions.md:84` / `:105`,
+       `docs/concepts.md:205`); check by hand.
 
 ### Tier 4
 

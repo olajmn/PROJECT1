@@ -48,7 +48,7 @@ from backend.project.panes.create.rename import rename_project
 from backend.project.panes.create.resolver import get_latest_for_project
 from backend.project.panes.canvas.add_folder import choose_folder
 from backend.project.panes.canvas.text_to_tree import parse_outline
-from backend.project.panes.create.project_user import archive_account, set_project_user
+from backend.project.panes.create.project_account import archive_account, set_project_user
 from backend.project.panes.canvas.edit_map import (
     add_map_node,
     import_map_folder,
@@ -156,10 +156,8 @@ class Handler(BaseHTTPRequestHandler):
         body = self._read_json_body()
         if body is None:
             return
+        # Empty text is allowed: create_project() picks `New project N`.
         text = (body.get("text") or "").strip()
-        if not text:
-            self.send_error(400, "empty text")
-            return
         raw_sim = body.get("sim_user_id")
         sim_user_id = str(int(raw_sim)) if raw_sim is not None else ""
         self._send_json(project_view(create_project(text, sim_user_id)))

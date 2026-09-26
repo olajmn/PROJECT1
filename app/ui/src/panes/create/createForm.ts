@@ -6,7 +6,7 @@
  * column shows Create when there is no canvas to show, or when the
  * sidebar's "+" asks for it over an open project.
  *
- * Empty name → Spotify-style autoname (`New project N`) via defaultNames.ts.
+ * Empty name is sent as-is; the server picks `New project N`.
  * Add folder mints empty, then walks the same import as the map.
  */
 
@@ -15,7 +15,6 @@ import { setButtonBusy } from "../../shell/busyButton.js";
 import { getActiveUserId } from "../../user/activeAccount.js";
 import type { ProjectView } from "../../dataShapes.js";
 import { mintFromFolder } from "./projectFromFolder.js";
-import { nextNewProjectName } from "./defaultNames.js";
 
 export type CreatePanelHandle = {
   /** True while the panel should take the middle pane. */
@@ -32,8 +31,6 @@ type CreatePanelOpts = {
   onCreated: (project: ProjectView) => void;
   /** Re-render the workspace after the panel opens or closes. */
   onChange: () => void;
-  /** Existing titles (active id) — used for autoname. */
-  getTitles: () => string[];
 };
 
 export function installCreatePanel(opts: CreatePanelOpts): CreatePanelHandle {
@@ -59,8 +56,7 @@ export function installCreatePanel(opts: CreatePanelOpts): CreatePanelHandle {
 
   /** Name + empty canvas. No engine. */
   const mint = async (): Promise<void> => {
-    const typed = input.value.trim();
-    const text = typed || nextNewProjectName(opts.getTitles());
+    const text = input.value.trim();
 
     const userId = getActiveUserId();
     if (userId === null) {
@@ -111,7 +107,6 @@ export function installCreatePanel(opts: CreatePanelOpts): CreatePanelHandle {
     try {
       const created = await mintFromFolder({
         typedName: input.value,
-        titles: opts.getTitles(),
         userId,
       });
       if (!created) return;

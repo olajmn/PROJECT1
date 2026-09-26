@@ -12,18 +12,16 @@ import {
   addFolder,
 } from "../../api.js";
 import type { ProjectView } from "../../dataShapes.js";
-import { nextNewProjectName } from "./defaultNames.js";
 
 export async function mintFromFolder(opts: {
   typedName: string;
-  titles: string[];
   userId: number;
 }): Promise<ProjectView | null> {
   const path = await chooseFolder();
   if (!path) return null;
 
-  const name =
-    opts.typedName.trim() || folderName(path) || nextNewProjectName(opts.titles);
+  // Empty falls through to the server's `New project N`.
+  const name = opts.typedName.trim() || folderName(path);
   const created = await createProject(name, opts.userId);
   try {
     return await addFolder(created.project_id, path);

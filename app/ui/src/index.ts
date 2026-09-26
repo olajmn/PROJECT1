@@ -16,7 +16,6 @@ import { renderAccountsBrand } from "./panes/create/accounts/brandButton.js";
 import {
   detachArchivedOwners,
   ensureSelectionInActiveUser,
-  projectsForActiveUser,
   syncActiveUser,
   type SelectionState,
 } from "./panes/create/projectsForAccount.js";
@@ -153,7 +152,6 @@ const accountsPanel = installAccountsPanel({
 const createPanel = installCreatePanel({
   onNeedUser: () => accountsPanel.open(),
   onChange: () => mapPane.render(),
-  getTitles: () => projectsForActiveUser(projects).map((p) => p.name),
   onCreated: (created) => {
     projects = [
       created,

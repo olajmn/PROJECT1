@@ -200,21 +200,14 @@ function attachNodeMenu(
     item.dataset.action = action.id;
     item.dataset.stepId = stepId;
 
-    const name = document.createElement("span");
-    name.className = "progress-menu-item-label";
-    name.textContent = action.label;
-    const detail = document.createElement("span");
-    detail.className = "progress-menu-item-detail";
-    detail.textContent = action.detail;
-    item.append(name, detail);
+    item.textContent = action.label;
 
     if (!onMenuAction) {
       item.disabled = true;
     } else {
       item.addEventListener("click", (event) => {
         event.stopPropagation();
-        menu.hidden = true;
-        toggle.setAttribute("aria-expanded", "false");
+        closeNodeMenu();
         onMenuAction(action.id, stepId);
       });
     }
@@ -224,18 +217,16 @@ function attachNodeMenu(
   toggle.addEventListener("click", (event) => {
     event.stopPropagation();
     const opening = menu.hidden;
-    document.querySelectorAll(".progress-menu").forEach((el) => {
-      (el as HTMLElement).hidden = true;
-    });
-    document.querySelectorAll(".progress-menu-toggle").forEach((el) => {
-      el.setAttribute("aria-expanded", "false");
-    });
+    closeNodeMenu();
     if (opening) {
+      // The map stage is CSS-transformed (pan/zoom), which makes it the
+      // containing block for position: fixed — so the open menu lives on
+      // <body>, where viewport coordinates mean the viewport.
+      document.body.appendChild(menu);
+      openNodeMenu = { menu, toggle, home: wrap };
       const rect = toggle.getBoundingClientRect();
-      menu.style.position = "fixed";
       menu.style.left = `${Math.round(rect.left)}px`;
       menu.style.top = `${Math.round(rect.bottom + 4)}px`;
-      menu.style.right = "auto";
       menu.hidden = false;
       toggle.setAttribute("aria-expanded", "true");
       requestAnimationFrame(() => {
@@ -452,17 +443,32 @@ export function treeWordsElement(
   return wrap;
 }
 
-/** Single document listener for all maps — close ⋯ on outside click. */
+/** The one open ⋯ menu, parked on <body> until it closes. */
+let openNodeMenu: {
+  menu: HTMLElement;
+  toggle: HTMLElement;
+  home: HTMLElement;
+} | null = null;
+
+function closeNodeMenu(): void {
+  if (!openNodeMenu) return;
+  const { menu, toggle, home } = openNodeMenu;
+  menu.hidden = true;
+  toggle.setAttribute("aria-expanded", "false");
+  home.appendChild(menu);
+  openNodeMenu = null;
+}
+
+/** Single set of document listeners for all maps — close ⋯ on outside
+ *  click, Escape, or anything that moves the map under it. */
 let nodeMenuCloserInstalled = false;
 function ensureNodeMenuCloser(): void {
   if (nodeMenuCloserInstalled) return;
   nodeMenuCloserInstalled = true;
-  document.addEventListener("click", () => {
-    document.querySelectorAll(".progress-menu").forEach((el) => {
-      (el as HTMLElement).hidden = true;
-    });
-    document.querySelectorAll(".progress-menu-toggle").forEach((el) => {
-      el.setAttribute("aria-expanded", "false");
-    });
+  document.addEventListener("click", closeNodeMenu);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeNodeMenu();
   });
+  document.addEventListener("wheel", closeNodeMenu, { passive: true });
+  window.addEventListener("resize", closeNodeMenu);
 }

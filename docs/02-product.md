@@ -122,10 +122,8 @@ accounts, minting, and ownership. `backend/storage/` is the only code that
 touches data and `backend/api/` the only way in, so those are the two places that change when data
 moves out; chat, map, and UI should not need to know where data lives.
 
-Known gaps against this today (see [[04-current-state]]): default
-project names ("New project N") are decided in the UI
-(`ui/src/panes/create/defaultNames.ts`); the folder picker opens a macOS dialog on
-the server; there is no written API reference; the server accepts
+Known gaps against this today (see [[04-current-state]]): the folder
+picker opens a macOS dialog on the server; there is no written API reference; the server accepts
 localhost only, with no login.
 
 **Open questions (to settle before any chain work):**

@@ -3,7 +3,8 @@ Small, direct checks for account persistence and
 per-project current.json + events.jsonl under data/projects/{id}/
 (including one-shot split from a combined projects.jsonl / plans.jsonl /
 plans.json, snapshot {id}.jsonl → folder, and vision_id → sim_user_id /
-visions.json|users.json → accounts.json).
+visions.json|users.json → accounts.json), plus create_project()'s
+default `New project N` naming, since it only reads what storage holds.
 
 Runs entirely against a temporary directory, never the real data/ -
 this module patches path constants on project_persistence /
@@ -370,6 +371,22 @@ try:
     shutil.rmtree(archive_dir, ignore_errors=True)
 
     print("OK - account restore/delete and project erase behave as expected")
+
+    from backend.project.panes.create.lifecycle import cancel_project, create_project
+
+    names_dir = Path(tempfile.mkdtemp(prefix="default_names_test_"))
+    _point_at(names_dir)
+    assert create_project("", "1")["name"] == "New project 1"
+    assert create_project("  ", "1")["name"] == "New project 2"
+    assert create_project("", "2")["name"] == "New project 1"  # per account
+    pp.save_plan("New project #7", {"now": "x"}, sim_user_id=1)  # legacy form
+    assert create_project("", "1")["name"] == "New project 8"
+    assert create_project("Typed", "1")["name"] == "Typed"
+    cancel_project(create_project("", "3")["project_id"])
+    assert create_project("", "3")["name"] == "New project 1"  # archived don't count
+    shutil.rmtree(names_dir, ignore_errors=True)
+
+    print("OK - empty create name becomes the next New project N")
 
 finally:
     storage_paths.DATA_DIR = _original_paths_data_dir

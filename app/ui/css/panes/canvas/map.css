@@ -386,13 +386,13 @@
 .progress-menu {
   position: fixed;
   z-index: 40;
-  min-width: 14rem;
-  max-width: 18rem;
-  padding: 0.25rem 0;
+  min-width: 9.5rem;
+  padding: var(--space-1);
   border: var(--border);
   border-radius: var(--radius);
   background: var(--color-bg-panel);
-  box-shadow: none;
+  /* Same single soft lift as the chat / command menu. */
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .progress-menu[hidden] {
@@ -400,36 +400,30 @@
 }
 
 .progress-menu-item {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.15rem;
+  display: block;
   width: 100%;
-  padding: 0.45rem 0.7rem;
+  padding: 0.3rem 0.55rem;
   border: none;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--color-text);
   font: inherit;
+  font-size: var(--font-size-sm);
+  line-height: 1.3;
   text-align: left;
+  white-space: nowrap;
   cursor: pointer;
-  opacity: 1;
 }
 
-.progress-menu-item-label {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--color-text);
+.progress-menu-item:hover:not(:disabled),
+.progress-menu-item:focus-visible {
+  /* Tint from the text colour: the stone fills are one value in light. */
+  background: color-mix(in srgb, var(--color-text) 7%, transparent);
+  outline: none;
 }
 
-.progress-menu-item-detail {
-  font-size: 0.72rem;
-  font-weight: 400;
-  line-height: 1.35;
-  color: var(--color-text-muted);
-}
-
-.progress-menu-item:hover:not(:disabled) {
-  background: var(--color-bg-workspace);
+.progress-menu-item[data-action="remove"] {
+  color: var(--color-error);
 }
 
 .progress-menu-item:disabled {

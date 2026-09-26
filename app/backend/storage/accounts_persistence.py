@@ -9,7 +9,7 @@ Project current + events live in project_persistence.py. Shared roots
 An account is a plain {id, text, created_at} record — no history.
 Projects may reference one via optional sim_user_id. Archiving mutates
 the account record in place; detaching projects is a higher-level decision
-(project_user.archive_account()). Sticky project mint high-water is
+(project_account.archive_account()). Sticky project mint high-water is
 `account_n_hi` (see project_persistence._next_account_n()).
 
 Every record also carries a stub user_id (DEFAULT_USER_ID) — the

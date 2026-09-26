@@ -5,22 +5,28 @@ Identity and current state stay in resolver.py - this module only
 writes. Mint is create_project() — a name and an empty canvas, no
 engine. Renaming the label is rename.py. Cancelling never does.
 Vision is accepted here as an optional link at birth, but
-linking/unlinking later stays on project_user.set_project_user()
+linking/unlinking later stays on project_account.set_project_user()
 until Vision's own shape is decided.
 """
 
 # Contents
 #  1. Creation
 #      - create_project()
+#      - next_default_name()
 #
 #  2. Cancellation / restore / delete
 #      - cancel_project() / restore_project() / delete_project()
+
+import re
 
 from backend.storage.project_persistence import (
     delete_project as erase_project_store,
     save_plan,
 )
-from backend.project.panes.create.resolver import get_latest_for_project
+from backend.project.panes.create.resolver import (
+    get_latest_for_all_projects,
+    get_latest_for_project,
+)
 from backend.storage.accounts_persistence import get_account
 
 
@@ -34,15 +40,40 @@ def create_project(typed_text: str, sim_user_id_value: str) -> dict:
     Mint a project: a name and an empty canvas. No engine.
 
     The typed text is only a label. The tree arrives afterwards —
-    built by hand, pasted, or walked in from a folder.
+    built by hand, pasted, or walked in from a folder. Empty text gets
+    `next_default_name()`, so every client names the same way.
     """
     sim_user_id = int(sim_user_id_value) if sim_user_id_value else None
+    name = typed_text.strip() or next_default_name(sim_user_id)
     return save_plan(
-        typed_text,
+        name,
         {"progression": {"steps": []}},
         sim_user_id=sim_user_id,
         event="created",
     )
+
+
+# Bare "New project" and legacy "New project #4" count too.
+_DEFAULT_NAME_RE = re.compile(r"^new project(?: #?(\d+))?$", re.IGNORECASE)
+
+
+def next_default_name(sim_user_id: int | None) -> str:
+    """
+    Next unused `New project N` among this account's active projects.
+
+    Counts per account, so each seat starts at 1; archived projects
+    don't count, matching what the sidebar shows.
+    """
+    highest = 0
+    for record in get_latest_for_all_projects():
+        if record.get("sim_user_id") != sim_user_id:
+            continue
+        if record.get("completed") or record.get("cancelled"):
+            continue
+        match = _DEFAULT_NAME_RE.match((record.get("name") or "").strip())
+        if match:
+            highest = max(highest, int(match.group(1) or 1))
+    return f"New project {highest + 1}"
 
 
 # ============================================================
