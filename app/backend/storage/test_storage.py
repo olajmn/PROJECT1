@@ -356,6 +356,11 @@ try:
     removed = ap.delete_account(seat["id"])
     assert removed is not None and removed["id"] == seat["id"]
     assert ap.get_account(seat["id"]) is None
+    assert seat["id"] not in [a["id"] for a in ap.load_accounts()]
+    assert ap.delete_account(seat["id"]) is None
+    assert ap.restore_account(seat["id"]) is None
+    after = ap.save_account("After delete")
+    assert after["id"] == seat["id"] + 1  # deleted id is never reused
 
     gone = pp.save_plan("To erase", {"now": "x"}, sim_user_id=None)
     assert pp.current_path(gone["project_id"]).exists()

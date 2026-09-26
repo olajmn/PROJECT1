@@ -14,6 +14,12 @@ the account record in place; detaching projects is a higher-level decision
 
 Every record also carries a stub user_id (DEFAULT_USER_ID) — the
 operator of this app, not the multi-account filter.
+
+Permanent delete leaves a tombstone ({id, user_id, deleted, deleted_at})
+so an account id is never reused: closed projects keep their
+sim_user_id, and a reused id would silently hand them to a new account.
+Tombstones count toward the next id and are invisible to every other
+function here.
 """
 
 # Contents
@@ -82,8 +88,14 @@ def _save_all_accounts(accounts: list[dict]) -> None:
     tmp_file.replace(ACCOUNTS_FILE)
 
 
+def _live(accounts: list[dict]) -> list[dict]:
+    """Accounts minus delete tombstones."""
+    return [a for a in accounts if not a.get("deleted")]
+
+
 def _next_account_id(accounts: list[dict]) -> int:
-    """One higher than the largest account id, or 1 if none yet."""
+    """One higher than the largest account id ever issued (tombstones
+    included), or 1 if none yet."""
     existing = [a["id"] for a in accounts]
     return max(existing, default=0) + 1
 
@@ -111,12 +123,12 @@ def save_account(text: str) -> dict:
 
 def load_accounts() -> list[dict]:
     """Return every saved account, oldest first."""
-    return _load_all_accounts()
+    return _live(_load_all_accounts())
 
 
 def get_account(sim_user_id: int) -> dict | None:
     """Return the account with this id, or None if missing."""
-    for account in _load_all_accounts():
+    for account in _live(_load_all_accounts()):
         if account["id"] == sim_user_id:
             return account
     return None
@@ -131,7 +143,7 @@ def rename_account(sim_user_id: int, text: str) -> dict | None:
     """
     label = (text or "").strip() or "user"
     accounts = _load_all_accounts()
-    for account in accounts:
+    for account in _live(accounts):
         if account["id"] == sim_user_id:
             account["text"] = label
             _save_all_accounts(accounts)
@@ -153,7 +165,7 @@ def note_account_n(sim_user_id: int, n: int) -> None:
     if not isinstance(n, int) or n < 1:
         return
     accounts = _load_all_accounts()
-    for account in accounts:
+    for account in _live(accounts):
         if account["id"] == sim_user_id:
             prev = account.get("account_n_hi")
             prev = prev if isinstance(prev, int) else 0
@@ -172,7 +184,7 @@ def archive_account(sim_user_id: int) -> dict | None:
     Never touches project files — a project's sim_user_id is left as-is.
     """
     accounts = _load_all_accounts()
-    for account in accounts:
+    for account in _live(accounts):
         if account["id"] == sim_user_id:
             if account.get("archived"):
                 return account
@@ -186,7 +198,7 @@ def archive_account(sim_user_id: int) -> dict | None:
 def restore_account(sim_user_id: int) -> dict | None:
     """Clear archived on an account. No-op if already live. None if missing."""
     accounts = _load_all_accounts()
-    for account in accounts:
+    for account in _live(accounts):
         if account["id"] == sim_user_id:
             if not account.get("archived"):
                 return account
@@ -198,12 +210,18 @@ def restore_account(sim_user_id: int) -> dict | None:
 
 
 def delete_account(sim_user_id: int) -> dict | None:
-    """Remove an account record permanently. Returns the removed record,
-    or None if id doesn't resolve. Does not touch project files."""
+    """Replace an account with a tombstone (see module docstring).
+    Returns the record as it was before deletion, or None if id doesn't
+    resolve. Does not touch project files."""
     accounts = _load_all_accounts()
     for i, account in enumerate(accounts):
-        if account["id"] == sim_user_id:
-            removed = accounts.pop(i)
+        if account["id"] == sim_user_id and not account.get("deleted"):
+            accounts[i] = {
+                "id": account["id"],
+                "user_id": account.get("user_id", DEFAULT_USER_ID),
+                "deleted": True,
+                "deleted_at": now_utc(),
+            }
             _save_all_accounts(accounts)
-            return removed
+            return account
     return None

@@ -202,8 +202,6 @@ export async function mountArchive(host: HTMLElement): Promise<void> {
     stack.replaceChildren();
     const showAccounts = filter !== "projects" && archivedAccounts.length > 0;
     const showProjects = filter !== "accounts" && projects.length > 0;
-    // Section titles only matter when both kinds are listed together.
-    const titled = filter === "all";
 
     empty.hidden = counts[filter] > 0;
     empty.textContent =
@@ -214,9 +212,6 @@ export async function mountArchive(host: HTMLElement): Promise<void> {
           : "Nothing in the archive.";
 
     if (showAccounts) {
-      if (titled) {
-        stack.appendChild(el("h2", "archive-section-title", "Accounts"));
-      }
       for (const account of archivedAccounts) {
         const article = el("article", "settings-block");
         article.appendChild(arrangeBlock(accountBlock(account)));
@@ -238,9 +233,6 @@ export async function mountArchive(host: HTMLElement): Promise<void> {
     }
 
     if (showProjects) {
-      if (titled) {
-        stack.appendChild(el("h2", "archive-section-title", "Projects"));
-      }
       for (const project of projects) {
         const article = el("article", "settings-block");
         article.appendChild(arrangeBlock(closedProjectBlock(project)));

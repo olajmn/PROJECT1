@@ -7,7 +7,7 @@
  *  3. Fact rows (label → value)
  *  4. Two-column group (Directory)
  *  5. Directory — create + rename (account overview)
- *  6. Archive — section titles + filter
+ *  6. Archive — filter
  */
 
 /* 1. Register host / stack */
@@ -262,20 +262,7 @@
   margin: 0;
 }
 
-/* 6. Archive — section titles + filter */
-
-.archive-section-title {
-  margin: var(--space-4) 0 var(--space-2);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.archive-section-title:first-child {
-  margin-top: 0;
-}
+/* 6. Archive — filter */
 
 .archive-filter {
   display: flex;

@@ -21,6 +21,7 @@ from backend.storage.project_persistence import (
     save_plan,
 )
 from backend.project.panes.create.resolver import get_latest_for_project
+from backend.storage.accounts_persistence import get_account
 
 
 # ============================================================
@@ -91,7 +92,9 @@ def restore_project(project_id: int) -> dict | None:
     """Clear cancelled so the project is active again.
 
     No-op if already live. Returns None if missing or completed
-    (completed is not restored this way).
+    (completed is not restored this way). If its account was deleted in
+    the meantime, the project comes back unassigned rather than tied to
+    an account that no longer exists.
     """
     latest = get_latest_for_project(project_id)
     if latest is None:
@@ -101,12 +104,16 @@ def restore_project(project_id: int) -> dict | None:
     if not latest.get("cancelled"):
         return latest
 
+    owner = latest.get("sim_user_id")
+    if owner is not None and get_account(owner) is None:
+        owner = None
+
     return save_plan(
         latest["name"], latest["plan"], feedback="Restored",
         duration=latest.get("duration"), project_id=latest["project_id"],
         frozen_duration=latest.get("frozen_duration"),
         current_step=latest.get("current_step", 0),
-        sim_user_id=latest.get("sim_user_id"), cancelled=False,
+        sim_user_id=owner, cancelled=False,
         completed=False, step_status=latest.get("step_status"),
         event="restored",
     )
