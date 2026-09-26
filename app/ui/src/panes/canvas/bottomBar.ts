@@ -1,14 +1,12 @@
 // The bar under the map: Copy as ASCII, Paste structure, Add folder,
-// Read map, Archive.
+// Archive. (Project summary is Talk `/project_summary` — see chat/commands.)
 
 // Contents
 //  1. Types
 //  2. Public API
 //      - mountBottomBar()
 
-import { archiveProject, readMap } from "../../api.js";
-import { setButtonBusy } from "../../shell/busyButton.js";
-import { messageRow } from "../chat/messageRow.js";
+import { archiveProject } from "../../api.js";
 import { displayProjectTitle } from "../create/defaultNames.js";
 import { copyAsText } from "./copyAsText.js";
 import { buildAddFolderPanel } from "./folderForm.js";
@@ -32,8 +30,6 @@ type BottomBarOpts = {
   getSelectedNodeLabel: () => string | null;
   onUpdated: (updated: ProjectView) => void;
   onArchived: () => void;
-  chatThread: HTMLDivElement;
-  chatError: HTMLParagraphElement;
 };
 
 // 2. Public API
@@ -81,31 +77,9 @@ export function mountBottomBar(opts: BottomBarOpts): BottomBar {
     }
   });
 
-  const readBtn = document.createElement("button");
-  readBtn.type = "button";
-  readBtn.className = "map-copy-button";
-  readBtn.textContent = "Read map";
-  readBtn.title = "Ask what this map looks to be about";
-  readBtn.addEventListener("click", async () => {
-    setButtonBusy(readBtn, true);
-    try {
-      const reading = await readMap(project.project_id);
-      // Shown, never saved — gone on the next render, by design.
-      opts.chatThread.append(
-        messageRow({ role: "agent", text: reading.summary }),
-      );
-      opts.chatThread.scrollTop = opts.chatThread.scrollHeight;
-    } catch (err) {
-      opts.chatError.hidden = false;
-      opts.chatError.textContent = `(error: ${(err as Error).message})`;
-    } finally {
-      setButtonBusy(readBtn, false);
-    }
-  });
-
   const copyGroup = document.createElement("div");
   copyGroup.className = "map-copy-group";
-  copyGroup.append(copyBtn, paste.pasteBtn, folder.folderBtn, readBtn);
+  copyGroup.append(copyBtn, paste.pasteBtn, folder.folderBtn);
 
   const archiveBtn = document.createElement("button");
   archiveBtn.type = "button";

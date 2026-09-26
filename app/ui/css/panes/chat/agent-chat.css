@@ -225,6 +225,64 @@
   font-size: var(--font-size-sm);
 }
 
+.project-chat .chat-command-menu {
+  position: relative;
+}
+
+.project-chat .chat-command-menu-toggle {
+  min-width: 2.25rem;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.project-chat .chat-command-menu-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + var(--space-2));
+  min-width: 14rem;
+  max-width: 18rem;
+  padding: var(--space-1);
+  border: var(--border);
+  border-radius: var(--radius);
+  background: var(--color-bg-panel);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  z-index: 5;
+}
+
+.project-chat .chat-command-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  width: 100%;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.project-chat .chat-command-menu-item:hover,
+.project-chat .chat-command-menu-item:focus {
+  background: var(--color-bg);
+  outline: none;
+}
+
+.project-chat .chat-command-menu-slash {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.project-chat .chat-command-menu-blurb {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--color-text-muted);
+  line-height: 1.3;
+}
+
 .project-chat .error {
   flex: 0 0 auto;
   margin: 0;

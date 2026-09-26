@@ -23,6 +23,7 @@ import {
 } from "./panes/create/projectsForId.js";
 import { installCreatePanel } from "./panes/create/createForm.js";
 import { installChatPane } from "./panes/chat/chatPane.js";
+import { installCommandMenu } from "./panes/chat/commands/menu.js";
 import { installSendMessage } from "./panes/chat/sendMessage.js";
 import { installMapPane } from "./panes/canvas/mapPane.js";
 import { getActiveUserId, setActiveUserId } from "./user/activeId.js";
@@ -50,7 +51,9 @@ const statusResize = document.getElementById("status-resize") as HTMLElement;
 const chatThread = document.getElementById("chat-thread") as HTMLDivElement;
 const chatForm = document.getElementById("chat-form") as HTMLFormElement;
 const chatInput = document.getElementById("chat-input") as HTMLTextAreaElement;
-const chatPrintMap = document.getElementById("chat-print-map") as HTMLButtonElement;
+const chatCommandMenuHost = document.getElementById(
+  "chat-command-menu-host",
+) as HTMLElement;
 const chatError = document.getElementById("chat-error") as HTMLParagraphElement;
 const appShell = document.querySelector(".app-shell") as HTMLElement;
 const workspace = document.querySelector(".workspace") as HTMLElement;
@@ -85,10 +88,7 @@ const chatPane = installChatPane({
   statusResize,
   statusToggle,
   threadEl: chatThread,
-  printBtn: chatPrintMap,
   onIsolateChange: () => mapPane.render(),
-  getProject: () => selected(),
-  getSelectedNodeId: () => selection.selectedNodeId,
 });
 
 installSendMessage({
@@ -99,6 +99,11 @@ installSendMessage({
   getSelectedNodeId: () => selection.selectedNodeId,
   getSelectedNodeLabel: () => selection.selectedNodeLabel,
   onUpdated: (updated) => replaceProject(updated),
+});
+
+installCommandMenu({
+  host: chatCommandMenuHost,
+  input: chatInput,
 });
 
 installSidebarResize(appShell, sidebarResize);

@@ -1,22 +1,23 @@
-"""The map as indented labels — no model.
+"""Tree as text — indented labels and paths. No model.
 
-The same shape text_to_tree.py parses. Read map and chat/context/map_labels.py both
-use this so they look at the same tree.
+For the program and the LLM (Talk brief, project summary), not a
+human Print feature. Same shape text_to_tree.py parses so every
+consumer looks at the same tree.
 """
 
 MAX_LINES = 400
 
 
-def outline_lines(steps: list) -> list[str]:
+def tree_lines(steps: list) -> list[str]:
     """Indented labels from this forest, capped at MAX_LINES."""
     lines: list[str] = []
     _collect(steps, 0, lines)
     return lines[:MAX_LINES]
 
 
-def outline_of(step: dict) -> list[str]:
+def tree_of(step: dict) -> list[str]:
     """One node and what sits under it."""
-    return outline_lines([step])
+    return tree_lines([step])
 
 
 def find_path(steps: list, step_id: str) -> list[dict] | None:
@@ -49,8 +50,8 @@ def path_lines(steps: list, step_id: str) -> list[str]:
             lines.append(f"{'  ' * depth}{label}")
     last = path[-1]
     last_depth = max(len(path) - 1, 0)
-    for line in outline_of(last):
-        # outline_of starts at depth 0; shift to sit under ancestors.
+    for line in tree_of(last):
+        # tree_of starts at depth 0; shift to sit under ancestors.
         raw = line.lstrip()
         extra = (len(line) - len(raw)) // 2
         lines.append(f"{'  ' * (last_depth + extra)}{raw}")

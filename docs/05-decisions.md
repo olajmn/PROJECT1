@@ -460,7 +460,86 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Reversible?** Yes — rename the package back; imports are mechanical.
 
 
+## 44. 2026-09-26 — Beads above panes; summary ≠ outline
+
+**Decision:** Lift bead shape + machine outline to `backend/project/beads/` (above `panes/`). The canvas map is one visual face of the family tree; chat is another door. Rename the old Read map brief/command to **project summary** (`model/brief/project_summary.py`, Talk `/project_summary`). Outline is for the program/LLM; Print map remains the human dump.
+
+**Date:** 2026-09-26
+
+**Why this choice:** A project is parent/child beads, not “the map.” Keeping shape under canvas implied the UI owned the entity. Summary is an LLM ask about that tree, not “reading” labels.
+
+**Reversible?** Yes — move files back; slash aliases keep `/read_map` working during cutover.
+
+
+## 45. 2026-09-26 — Package `beads/` renamed to `node/`
+
+**Decision:** Rename `backend/project/beads/` → `backend/project/node/` and `bead.py` → `node.py`. Singular: the package names the *one* unit the tree is made of. Class remains `Step` until a later rename to `Node`.
+
+**Date:** 2026-09-26
+
+**Why this choice:** “Node” matches what the unit is; architecture Node 1/2/3 is no longer live product vocabulary. Singular folder names the atom, not the collection.
+
+**Reversible?** Yes — rename back.
+
+
+## 46. 2026-09-26 — `outline.py` → `tree_as_text.py`
+
+**Decision:** Rename `project/node/outline.py` → `tree_as_text.py` (`outline_lines`/`outline_of` → `tree_lines`/`tree_of`). Machine walk of node labels into indented text; Talk still packs that via `model/brief/map_context.py` (formerly `map_as_text`).
+
+**Date:** 2026-09-26
+
+**Why this choice:** “Outline” sounded like a document feature. `tree_as_text` → Talk map packing reads as one pipeline (tree → text → model context).
+
+**Reversible?** Yes — rename back.
+
+
+## 47. 2026-09-26 — `brief/talk.py` → `conversation.py`
+
+**Decision:** Rename `model/brief/talk.py` → `conversation.py` (and `test_talk` → `test_conversation`). Same job: pack status + map labels + earlier turns + the new note for Send.
+
+**Date:** 2026-09-26
+
+**Why this choice:** "Talk" was product UI slang; the file packs the back-and-forth the model is sent. `conversation` is the dumb name for that.
+
+**Reversible?** Yes — rename back.
+
+
+## 48. 2026-09-26 — Drop Print map / Print path
+
+**Decision:** Remove the chat **Print map** / **Print path** button and `ui/src/panes/chat/printMap.ts`. Human tree-as-text stays on the canvas as **Copy as ASCII**. The model still receives labels via `tree_as_text` → `map_context` on Send.
+
+**Date:** 2026-09-26
+
+**Why this choice:** Print duplicated Copy (clipboard export) and the model path; dumping indented labels into the thread was low value.
+
+**Reversible?** Yes — restore the button + `printMap.ts` from git history.
+
+
+## 49. 2026-09-26 — Chat `/` command menu
+
+**Decision:** Add a small `/` dropdown next to Send (`ui/src/panes/chat/commands/`) that lists canonical slash-commands and submits the chosen one. Catalog mirrors backend `panes/chat/commands/`; no separate command tab yet.
+
+**Date:** 2026-09-26
+
+**Why this choice:** Slash commands were discoverable only by typing. A one-button menu is enough while the list is short.
+
+**Reversible?** Yes — remove the host + menu module.
+
+
+## 50. 2026-09-26 — `brief/map_as_text.py` → `map_context.py`
+
+**Decision:** Rename `model/brief/map_as_text.py` → `map_context.py` (and its test). Same job: pack whole-map labels + selected path for Talk.
+
+**Date:** 2026-09-26
+
+**Why this choice:** The file is context for the model, not “print map as text.” `tree_as_text` walks; `map_context` is what Talk attaches.
+
+**Reversible?** Yes — rename back.
+
+
 ## See also
+
+
 
 
 - [[03-architecture]]

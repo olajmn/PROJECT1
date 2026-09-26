@@ -9,7 +9,7 @@
 //  2. Map
 //      - addNode(), removeNode(), suggestChildren()
 //      - pasteText(), previewPaste(), pasteNodes()
-//      - chooseFolder(), addFolder(), readMap()
+//      - chooseFolder(), addFolder()
 //  3. Chat
 //      - sendChatMessage()
 //  4. Simulated users
@@ -241,23 +241,6 @@ export async function addFolder(
     throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
   }
   return (await res.json()) as ProjectView;
-}
-
-export interface MapReading {
-  summary: string;
-}
-
-/**
- * Read an existing map back into words — what the project looks to be
- * about. Nothing is saved; the reading is gone on the next render.
- */
-export async function readMap(projectId: number): Promise<MapReading> {
-  const res = await fetch(`/api/projects/${projectId}/read`, { method: "POST" });
-  if (!res.ok) {
-    const detail = (await res.text()).trim();
-    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
-  }
-  return (await res.json()) as MapReading;
 }
 
 // 3. Chat

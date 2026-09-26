@@ -1,9 +1,9 @@
 """Checks for map_status() and focus_labels(). Run from app/:
 
-    .venv/bin/python -m backend.model.brief.test_map_as_text
+    .venv/bin/python -m backend.model.brief.test_map_context
 """
 
-from backend.model.brief.map_as_text import (
+from backend.model.brief.map_context import (
     focus_labels,
     map_status,
 )

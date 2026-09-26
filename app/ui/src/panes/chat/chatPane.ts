@@ -1,5 +1,4 @@
-// Fills the chat column for one project: Status panel, message thread,
-// and the Print map button.
+// Fills the chat column for one project: Status panel and message thread.
 //
 // Selection state stays in index.ts. This pane only draws the column and
 // calls back when a Status node name or an About-frame should select a map
@@ -12,8 +11,6 @@
 //      - installChatPane()
 
 import type { ProjectView } from "../../dataShapes.js";
-import { messageRow } from "./messageRow.js";
-import { printMapText } from "./printMap.js";
 import { createIsolateChat } from "./showOnlyThis.js";
 import { createStatusPanel } from "./statusPanel/statusPanel.js";
 
@@ -29,10 +26,6 @@ export type ChatPane = {
     resolveStepId: (label: string) => string | null;
   }) => void;
   clearIsolate: () => void;
-  updatePrintButton: (
-    hasProject: boolean,
-    selectedNodeId: string | null,
-  ) => void;
   readonly threadEl: HTMLDivElement;
 };
 
@@ -41,11 +34,8 @@ type ChatPaneOpts = {
   statusResize: HTMLElement;
   statusToggle: HTMLButtonElement;
   threadEl: HTMLDivElement;
-  printBtn: HTMLButtonElement;
   /** Re-render the shell when isolate filter changes. */
   onIsolateChange: () => void;
-  getProject: () => ProjectView | null;
-  getSelectedNodeId: () => string | null;
 };
 
 // 2. Public API
@@ -73,14 +63,6 @@ export function installChatPane(opts: ChatPaneOpts): ChatPane {
     opts.threadEl.appendChild(note);
   };
 
-  opts.printBtn.addEventListener("click", () => {
-    const project = opts.getProject();
-    if (!project) return;
-    const text = printMapText(project.node, opts.getSelectedNodeId());
-    opts.threadEl.append(messageRow({ role: "agent", text }));
-    opts.threadEl.scrollTop = opts.threadEl.scrollHeight;
-  });
-
   return {
     threadEl: opts.threadEl,
     clearIsolate: () => isolateChat.clear(),
@@ -99,16 +81,6 @@ export function installChatPane(opts: ChatPaneOpts): ChatPane {
         if (!stepId) return;
         onSelectNode(stepId, label);
       });
-    },
-    updatePrintButton: (hasProject, selectedNodeId) => {
-      opts.printBtn.disabled = !hasProject;
-      if (selectedNodeId) {
-        opts.printBtn.textContent = "Print path";
-        opts.printBtn.title = "Print this node's path as stored on the map";
-      } else {
-        opts.printBtn.textContent = "Print map";
-        opts.printBtn.title = "Print the stored map labels";
-      }
     },
   };
 }

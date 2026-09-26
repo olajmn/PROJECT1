@@ -183,18 +183,6 @@ export async function addFolder(projectId, folder, parentId) {
     }
     return (await res.json());
 }
-/**
- * Read an existing map back into words — what the project looks to be
- * about. Nothing is saved; the reading is gone on the next render.
- */
-export async function readMap(projectId) {
-    const res = await fetch(`/api/projects/${projectId}/read`, { method: "POST" });
-    if (!res.ok) {
-        const detail = (await res.text()).trim();
-        throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
-    }
-    return (await res.json());
-}
 // 3. Chat
 export async function sendChatMessage(projectId, text, focusLabel, focusStepId) {
     const body = { text };

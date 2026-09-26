@@ -10,7 +10,7 @@ Puts together what the model is sent when you press Send, in order:
 No model call, nothing saved.
 """
 
-from backend.model.brief.map_as_text import focus_labels, map_status
+from backend.model.brief.map_context import focus_labels, map_status
 
 # Earlier turns kept per Send. Bounds prompt size on a local model;
 # older turns stay saved and shown, just not re-sent.

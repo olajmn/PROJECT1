@@ -1,6 +1,6 @@
 // One chat message row: "You" / "Agent" label, the text, and — when the
 // message has a time — a small time under it, like a messaging app.
-// Shared by the Projects chat (via showOnlyThis) and Read map / Print map.
+// Shared by the Projects chat (via showOnlyThis).
 
 import type { ChatMessage } from "../../dataShapes.js";
 

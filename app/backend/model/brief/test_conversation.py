@@ -1,9 +1,9 @@
 """Checks for build_messages() / past_turns() - no model call. Run from app/:
 
-    .venv/bin/python -m backend.model.brief.test_talk
+    .venv/bin/python -m backend.model.brief.test_conversation
 """
 
-from backend.model.brief.talk import (
+from backend.model.brief.conversation import (
     MAX_TURNS,
     build_messages,
     past_turns,

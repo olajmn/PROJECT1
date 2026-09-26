@@ -3,7 +3,7 @@ The list of messages shown in the chat panel.
 
 Built from saved chat - no model call. Map edits (add / paste / folder /
 Suggest / remove), renames, and archive lines belong in Status, not here
-— same rule as model/brief/talk.past_turns(). Chat turns and chat that mint
+— same rule as model/brief/conversation.past_turns(). Chat turns and chat that mint
 nodes under a focus stay in the thread.
 """
 

@@ -19,7 +19,7 @@ import re
 
 from backend.storage.project_persistence import save_plan
 from backend.project.panes.canvas.add_folder import folder_tree
-from backend.project.panes.canvas.bead import Step, from_labels, from_nested_labels
+from backend.project.node import Step, from_labels, from_nested_labels
 from backend.project.panes.canvas.text_to_tree import parse_outline
 from backend.project.panes.canvas.call_suggest import children_from_conversation, zoom_into
 from backend.project.panes.create.resolver import get_history_for_project

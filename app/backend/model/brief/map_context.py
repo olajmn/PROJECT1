@@ -1,17 +1,18 @@
-"""Turns the node tree into indented labels the model can read.
+"""Map context for Talk — indented labels (and focus path) the model
+gets on Send.
 
 Only reads the map, never changes it. No model call."""
 
-from backend.project.panes.canvas.read_map.outline import (
-    outline_lines,
+from backend.project.node.tree_as_text import (
     path_lines,
+    tree_lines,
 )
 
 
 def map_status(latest: dict) -> str:
-    """Every stored label as an indented outline. Empty map is said
+    """Every stored label as indented tree text. Empty map is said
     plainly."""
-    lines = outline_lines(_steps(latest))
+    lines = tree_lines(_steps(latest))
     if not lines:
         return "The map is empty."
     return "\n".join(lines)

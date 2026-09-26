@@ -1,13 +1,13 @@
 """
-One map bead: the recursive Step shape used at every depth.
+One project node: the recursive Step shape at every depth of the
+family tree (parent/child). The atom the rest of the system builds from.
 
 Depth is data, not type — where a step sits in the tree, not what
 class it is. See docs/planning-model.md § Structural axis.
 
-Pure shape and tree helpers — no model call, no persistence. Stored
-inside a plan record's progression, so every field must survive
-json.dumps(). Display SoT is plan.progression; leftover plan.steps
-is not read here.
+Pure shape — no model call, no persistence. Stored inside
+plan.progression; leftover plan.steps is not read here. Canvas/chat
+are faces of nodes; they do not own the shape.
 """
 
 from collections.abc import Callable, Iterator
@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 
 @dataclass
 class Step:
-    """One position in the project map tree."""
+    """One position in the project's node tree."""
 
     # Minted once and never reused, so a step can change without
     # becoming a different step. Display numbering ("1.", "i.") is
@@ -26,8 +26,8 @@ class Step:
     label: str
     children: list["Step"] = field(default_factory=list)
 
-    # Absolute path when this bead was minted from a file or folder.
-    # Absent on beads the user typed or pasted.
+    # Absolute path when this node was minted from a file or folder.
+    # Absent on nodes the user typed or pasted.
     path: str | None = None
 
     # Whether the children have to happen in order.
@@ -75,7 +75,7 @@ class Step:
 
 
 def from_labels(labels: list[str], mint_id: Callable[[], str]) -> list[Step]:
-    """One flat level of beads from label strings."""
+    """One flat level of nodes from label strings."""
     return [Step(id=mint_id(), label=label) for label in labels]
 
 

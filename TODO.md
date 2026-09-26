@@ -15,7 +15,11 @@ deliberately chosen as next.
 
 ## Active
 
-*(none — pick from Queue when ready)*
+**40. Talk slash-commands + node core** (Step, next) — family tree
+in `project/node/` (above panes); canvas is one face. Commands in
+`panes/chat/commands/`: `/project_summary` (aliases `/map_summary`,
+`/read_map`). `/` menu in chat UI lists them. Next: Queue 39, `/add`.
+Related to 39.
 
 ## Queue
 
@@ -83,7 +87,8 @@ unless noted.
     events) — the product twin of Cursor `/full-check`, for the *user
     project* not this repo. Current state panel is mainly for the human;
     the model already gets a slice via `status_text`, but explicit
-    commands are optional later. Related to model brief (#42).
+    commands are optional later. Lives under Active 40's `commands/`
+    when built. Related to model brief (#42).
 
 ## Parallel paths
 

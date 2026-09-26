@@ -21,8 +21,8 @@ server.py only starts the server; everything it answers is decided here.
 #  3. Handler
 #      - do_GET() / do_POST()
 #      - projects: create, rename, cancel, set user, timeline
-#      - map: add node, remove node, paste, add folder, suggest, read
-#      - chat: message
+#      - map: add node, remove node, paste, add folder, suggest
+#      - chat: message (incl. slash-commands)
 #      - users: create, archive
 #      - shared helpers
 
@@ -36,7 +36,6 @@ from backend.project.panes.create.lifecycle import cancel_project, create_projec
 from backend.project.panes.create.rename import rename_project
 from backend.project.panes.create.resolver import get_latest_for_project
 from backend.project.panes.canvas.add_folder import choose_folder
-from backend.project.panes.canvas.read_map import read_tree
 from backend.project.panes.canvas.text_to_tree import parse_outline
 from backend.project.panes.create.project_user import archive_user, set_project_user
 from backend.project.panes.canvas.edit_map import (
@@ -83,7 +82,6 @@ _POST_ROUTES = [
     (r"/api/projects/(\d+)/map/import", "_handle_paste_structure"),
     (r"/api/projects/(\d+)/map/folder", "_handle_add_folder"),
     (r"/api/projects/(\d+)/suggest/(p\d+)", "_handle_suggest_children"),
-    (r"/api/projects/(\d+)/read", "_handle_read_map"),
     (r"/api/projects/(\d+)/chat", "_handle_chat_message"),
     (r"/api/parse-outline-preview", "_handle_parse_outline_preview"),
     (r"/api/choose-folder", "_handle_choose_folder"),
@@ -246,25 +244,6 @@ class Handler(BaseHTTPRequestHandler):
             self._model_failed(e)
             return
         self._send_json(project_view(record))
-
-    def _handle_read_map(self, project_id: int) -> None:
-        """The model summarises the whole map. Nothing is saved."""
-        latest = self._load_project(project_id)
-        if latest is None:
-            return
-        steps = (latest.get("plan") or {}).get("progression", {}).get("steps")
-        if not isinstance(steps, list) or not steps:
-            self.send_error(400, "nothing to read - the map is empty")
-            return
-        try:
-            reading = read_tree(latest["name"], steps)
-        except Exception as e:
-            self._model_failed(e)
-            return
-        if reading is None:
-            self.send_error(503, "no reading came back - try again")
-            return
-        self._send_json(reading)
 
     def _handle_parse_outline_preview(self) -> None:
         """Paste structure's preview: the pasted text read both ways

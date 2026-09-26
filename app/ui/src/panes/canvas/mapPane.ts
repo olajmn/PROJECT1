@@ -87,10 +87,6 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
       el.classList.remove("is-selected");
     });
     scope.querySelectorAll(".node-focus-note").forEach((el) => el.remove());
-    opts.chatPane.updatePrintButton(
-      opts.getProject() != null && !opts.isCreateOpen(),
-      null,
-    );
   };
 
   const render = (): void => {
@@ -108,7 +104,6 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
       opts.mountCreate();
       opts.projectChat.hidden = false;
       opts.chatPane.fillEmpty("Select a project to open its chat.");
-      opts.chatPane.updatePrintButton(false, null);
       return;
     }
 
@@ -144,7 +139,6 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
         scaleHost.insertAdjacentElement("afterend", focus);
       }
       focus.textContent = note;
-      opts.chatPane.updatePrintButton(true, stepId);
     };
 
     const nodeLabel = (stepId: string): string => {
@@ -198,8 +192,6 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
       getSelectedNodeLabel: opts.getSelectedNodeLabel,
       onUpdated: opts.onUpdated,
       onArchived: () => opts.onArchived(project.project_id),
-      chatThread: opts.chatPane.threadEl,
-      chatError: opts.chatError,
     });
 
     const onMenuAction = async (
@@ -291,7 +283,6 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
         if (bar.folder.isOpen()) bar.folder.updateFolderHint();
       },
     });
-    opts.chatPane.updatePrintButton(true, opts.getSelectedNodeId());
   };
 
   return {

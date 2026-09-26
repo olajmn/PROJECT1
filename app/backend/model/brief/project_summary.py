@@ -1,11 +1,10 @@
-"""Read map — the instruction (and response schema) sent to the model.
+"""Project summary — instruction + schema sent to the model.
 
-Not chat. Read map is given the labels already on the map and asked
-what that structure appears to be. It does not read file contents.
-`canvas/read_map/read.py` sends this.
+Given node labels (tree as text), ask what the project appears to
+be about. Does not read file contents. Talk `/project_summary` runs this.
 """
 
-READ_MAP_SYSTEM_PROMPT = (
+PROJECT_SUMMARY_SYSTEM_PROMPT = (
     "You are given the structure of a project someone has already "
     "built or pasted in - a tree of labels, indented to show what "
     "sits under what. Nobody has written down what the project is "
@@ -17,7 +16,7 @@ READ_MAP_SYSTEM_PROMPT = (
     "missing."
 )
 
-READING_SCHEMA = {
+PROJECT_SUMMARY_SCHEMA = {
     "type": "object",
     "properties": {
         "summary": {"type": "string"},
