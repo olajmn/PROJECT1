@@ -108,6 +108,19 @@ unless noted.
     Not a chat `/` command: a dump in the thread is noise, and the
     thread goes back to the model — same reason Print map was dropped
     ([[05-decisions]] #48).
+46. **Talk demo polish** (Step, pre-demo candidate for Active 42) —
+    answers feel weak today. Bounded pass so chat reads as a working,
+    deliberate part of the product, not a prototype.
+    1. **Analyse first** — why answers are poor, above all what the
+       model actually receives as context (brief, focus node, history);
+       explain the problem briefly before larger changes.
+    2. **Then fix only what's needed:** relevant answers about the
+       project; clear context for the selected project / node; natural,
+       readable thread; tidy loading / error states; input + Send work;
+       existing slash-commands (`panes/chat/commands/`) keep working.
+    3. **4–5 demo scenarios** the chat should handle, written down.
+    Out of scope: RAG, long-term memory, agent loops, new chat
+    architecture. Related to 33 (model sees only labels).
 
 ### Tier 4
 
