@@ -19,7 +19,7 @@ import re
 
 from backend.storage.project_persistence import save_plan
 from backend.project.panes.canvas.add_folder import folder_tree
-from backend.project.node import Step, from_labels, from_nested_labels
+from backend.project.node import Step, from_labels, from_nested_labels, sibling_label_clash
 from backend.project.panes.canvas.text_to_tree import parse_outline
 from backend.project.panes.canvas.call_suggest import children_from_conversation, zoom_into
 from backend.project.panes.create.resolver import get_history_for_project
@@ -35,6 +35,7 @@ def add_map_node(
     """
     Append one Step the user named — no model call.
     Creates plan.progression if missing. Empty/whitespace label raises.
+    Duplicate label among siblings raises.
     If parent_id is set, append under that step's children; otherwise
     at the progression root.
     """
@@ -52,9 +53,6 @@ def add_map_node(
         steps = []
         progression["steps"] = steps
 
-    mint = _id_minter(progression)
-    new_step = Step(id=mint(), label=text).to_dict()
-
     if parent_id:
         found = _find_step(steps, parent_id, ancestors=[])
         if found is None:
@@ -64,10 +62,21 @@ def add_map_node(
         if not isinstance(children, list):
             children = []
             parent["children"] = children
-        children.append(new_step)
+        siblings = children
+    else:
+        parent = None
+        siblings = steps
+
+    clash = sibling_label_clash(siblings, text)
+    if clash:
+        raise ValueError(clash)
+
+    mint = _id_minter(progression)
+    new_step = Step(id=mint(), label=text).to_dict()
+    siblings.append(new_step)
+    if parent is not None:
         feedback = f"Added step under {parent.get('label') or parent_id}: {text}"
     else:
-        steps.append(new_step)
         feedback = f"Added step: {text}"
 
     return save_plan(
@@ -145,11 +154,16 @@ def import_map_outline(
         if not isinstance(children, list):
             children = []
             parent["children"] = children
-        children.extend(new_steps)
-        feedback = f"Imported {len(new_steps)} step(s) under {parent.get('label') or parent_id}"
+        siblings = children
+        feedback = (
+            f"Imported {len(new_steps)} step(s) under "
+            f"{parent.get('label') or parent_id}"
+        )
     else:
-        steps.extend(new_steps)
+        siblings = steps
         feedback = f"Imported {len(new_steps)} step(s)"
+    _reject_sibling_clashes(siblings, new_steps)
+    siblings.extend(new_steps)
 
     return save_plan(
         latest["name"],
@@ -231,6 +245,38 @@ def _remove_step(steps: list, step_id: str) -> str | None:
                 return found
     return None
 
+
+def _reject_sibling_clashes(siblings: list, new_steps: list[dict]) -> None:
+    """Raise if any label collides with siblings or among new peers.
+
+    Checks this level against existing siblings, then each new node's
+    children among themselves (and so on).
+    """
+    seen: list = list(siblings)
+    for step in new_steps:
+        label = (step.get("label") or "").strip()
+        clash = sibling_label_clash(seen, label)
+        if clash:
+            raise ValueError(clash)
+        seen.append(step)
+        children = step.get("children")
+        if isinstance(children, list) and children:
+            _reject_sibling_clashes([], children)
+
+
+def _labels_without_sibling_clash(siblings: list, labels: list[str]) -> list[str]:
+    """Keep labels that would not collide at this level (order preserved)."""
+    seen: list = list(siblings)
+    kept: list[str] = []
+    for label in labels:
+        text = (label or "").strip()
+        if not text or sibling_label_clash(seen, text):
+            continue
+        kept.append(text)
+        seen.append({"label": text})
+    return kept
+
+
 def suggest_map_children(latest: dict, step_id: str) -> dict:
     """
     Expand `step_id` one level under latest["plan"]["progression"].
@@ -253,6 +299,10 @@ def suggest_map_children(latest: dict, step_id: str) -> dict:
 
     step, ancestors = found
     labels = zoom_into(step["label"], ancestors)
+    if not labels:
+        return latest
+
+    labels = _labels_without_sibling_clash([], labels)
     if not labels:
         return latest
 
@@ -280,6 +330,8 @@ def suggest_map_from_chat(
     step_id: str,
     note: str,
     sent_at: str | None = None,
+    map_focus: str | None = None,
+    focus_step_id: str | None = None,
 ) -> tuple[dict, list[str]]:
     """
     User asked for structure under a focused map node while chatting.
@@ -311,6 +363,9 @@ def suggest_map_from_chat(
     if not isinstance(existing, list):
         existing = []
         step["children"] = existing
+    labels = _labels_without_sibling_clash(existing, labels)
+    if not labels:
+        return latest, []
     existing.extend(s.to_dict() for s in from_labels(labels, mint))
 
     record = save_plan(
@@ -325,6 +380,8 @@ def suggest_map_from_chat(
         step_status=latest.get("step_status"),
         event="chat_added_nodes",
         sent_at=sent_at,
+        map_focus=map_focus,
+        focus_step_id=focus_step_id,
     )
     return record, labels
 

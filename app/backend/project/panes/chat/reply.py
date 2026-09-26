@@ -2,8 +2,8 @@
 You send a message, you get a reply back.
 
 Cases:
-- A slash-command (`/project_summary`, …): chat/commands/ runs it; same save
-  path as ordinary Talk.
+- A slash-command (`/project_summary`, `/add`, …): chat/commands/ runs it; same save
+  path as ordinary Talk (map-writing commands update the tree first).
 - A node is selected and the message asks for ideas ("suggest",
   "brainstorm", ...): new child nodes are added under it
   (canvas/edit_map.py does the adding). The reply says what was added.
@@ -17,7 +17,7 @@ reload.
 from backend.model.brief.conversation import build_messages
 from backend.model.client import send_chat
 from backend.storage.paths import now_utc
-from backend.storage.project_persistence import save_plan, stamp_map_focus
+from backend.storage.project_persistence import save_plan
 from backend.project.panes.canvas.edit_map import suggest_map_from_chat
 from backend.project.panes.chat.commands import try_command
 from backend.project.panes.create.resolver import get_history_for_project
@@ -59,40 +59,60 @@ def reply(
     # the message was sent now, not when the reply is saved.
     sent_at = now_utc()
 
-    commanded = try_command(latest, note)
+    commanded = try_command(latest, note, focus_step_id=focus_step_id)
     if commanded is not None:
-        record = _save_talk(latest, note, commanded, sent_at)
-        return {"record": _stamp(record, map_focus, focus_step_id), "reply": commanded}
+        text = commanded.reply
+        # /select (or path /add with UI focus) frames About-focus.
+        stamp_label = commanded.select_label or map_focus
+        stamp_id = commanded.select_id or focus_step_id
+        base = commanded.record if commanded.record is not None else latest
+        record = _save_talk(
+            base, note, text, sent_at,
+            map_focus=stamp_label, focus_step_id=stamp_id,
+        )
+        out = {"record": record, "reply": text}
+        if commanded.select_id and commanded.select_label:
+            out["select"] = {
+                "id": commanded.select_id,
+                "label": commanded.select_label,
+            }
+        return out
 
     if map_focus and focus_step_id and _asks_for_structure(note):
         try:
             record, labels = suggest_map_from_chat(
-                latest, focus_step_id, note, sent_at=sent_at,
+                latest,
+                focus_step_id,
+                note,
+                sent_at=sent_at,
+                map_focus=map_focus,
+                focus_step_id=focus_step_id,
             )
         except Exception:
             record, labels = None, []
         if labels:
             text = f'Added under "{map_focus}": {", ".join(labels)}.'
-            return {"record": _stamp(record, map_focus, focus_step_id), "reply": text}
+            return {"record": record, "reply": text}
 
     history = get_history_for_project(latest["project_id"])
     status = status_text(build_status(history, current=latest))
     messages = build_messages(latest, note, history, map_focus, focus_step_id, status)
     text = send_chat(messages).strip()
-    record = _save_talk(latest, note, text, sent_at)
-    return {"record": _stamp(record, map_focus, focus_step_id), "reply": text}
+    record = _save_talk(
+        latest, note, text, sent_at,
+        map_focus=map_focus, focus_step_id=focus_step_id,
+    )
+    return {"record": record, "reply": text}
 
 
-def _stamp(record: dict, map_focus: str | None, focus_step_id: str | None) -> dict:
-    """Mark the turn with the node it was about, so the thread can
-    frame it and the next Send can tag it."""
-    if not map_focus:
-        return record
-    stamped = stamp_map_focus(record["project_id"], map_focus, focus_step_id)
-    return stamped if stamped is not None else record
-
-
-def _save_talk(latest: dict, note: str, text: str, sent_at: str) -> dict:
+def _save_talk(
+    latest: dict,
+    note: str,
+    text: str,
+    sent_at: str,
+    map_focus: str | None = None,
+    focus_step_id: str | None = None,
+) -> dict:
     """Keep the map as it is; store the turn as "<reply> Note: <note>",
     the shape screen/chat_thread.py and model/brief/conversation.py read."""
     return save_plan(
@@ -107,6 +127,8 @@ def _save_talk(latest: dict, note: str, text: str, sent_at: str) -> dict:
         step_status=latest.get("step_status"),
         event="chat",
         sent_at=sent_at,
+        map_focus=map_focus,
+        focus_step_id=focus_step_id,
     )
 
 

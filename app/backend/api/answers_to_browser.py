@@ -28,12 +28,17 @@ from backend.project.panes.create.resolver import (
 # ============================================================
 
 
-def project_view(record: dict, reply: str | None = None) -> dict:
+def project_view(
+    record: dict,
+    reply: str | None = None,
+    select: dict | None = None,
+) -> dict:
     """One project as the browser gets it after any project action:
     name, state, map tree, chat, and status (the panel above the chat).
 
     `reply` (a chat reply just made) is placed as the last message in
-    `thread`, not sent as its own field.
+    `thread`, not sent as its own field. `select` (optional
+    `{id, label}` from `/select`) tells the UI to focus that node.
     """
     pid = record_project_id(record)
     try:
@@ -44,7 +49,7 @@ def project_view(record: dict, reply: str | None = None) -> dict:
         node = None
     history = get_history_for_project(pid) if pid is not None else []
     thread = thread_for(pid, reply, history) if pid is not None else []
-    return {
+    view = {
         "project_id": pid,
         "name": record["name"],
         "completed": bool(record.get("completed")),
@@ -55,6 +60,12 @@ def project_view(record: dict, reply: str | None = None) -> dict:
         "thread": thread,
         "status": build_status(history, current=record),
     }
+    if select and select.get("id") and select.get("label"):
+        view["select"] = {
+            "id": str(select["id"]),
+            "label": str(select["label"]),
+        }
+    return view
 
 
 def active_projects() -> list[dict]:

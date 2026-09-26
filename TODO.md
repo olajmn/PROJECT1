@@ -17,9 +17,9 @@ deliberately chosen as next.
 
 **40. Talk slash-commands + node core** (Step, next) — family tree
 in `project/node/` (above panes); canvas is one face. Commands in
-`panes/chat/commands/`: `/project_summary` (aliases `/map_summary`,
-`/read_map`). `/` menu in chat UI lists them. Next: Queue 39, `/add`.
-Related to 39.
+`panes/chat/commands/`: `/project_summary`, `/add`, `/select` (focus or
+`Parent / Child`). Chat placeholder: `Talk about <label>…`. `/` menu
+lists commands. Next: Queue 39. Related to 39.
 
 ## Queue
 

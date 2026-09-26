@@ -37,6 +37,9 @@ class Step:
     resolved: bool = False
 
     def add_child(self, step: "Step") -> None:
+        clash = sibling_label_clash(self.children, step.label)
+        if clash:
+            raise ValueError(clash)
         self.children.append(step)
 
     def walk(self) -> Iterator["Step"]:
@@ -72,6 +75,24 @@ class Step:
             path=data.get("path") or None,
             children=[cls.from_dict(child) for child in data.get("children", [])],
         )
+
+
+def sibling_label_clash(siblings: list, label: str) -> str | None:
+    """If a sibling already uses this label (same level), return an
+    error string; else None. Accepts Step objects or dict steps."""
+    wanted = (label or "").strip()
+    if not wanted:
+        return None
+    for sib in siblings or []:
+        if isinstance(sib, Step):
+            existing = (sib.label or "").strip()
+        elif isinstance(sib, dict):
+            existing = (sib.get("label") or "").strip()
+        else:
+            continue
+        if existing == wanted:
+            return f'A sibling already named "{wanted}".'
+    return None
 
 
 def from_labels(labels: list[str], mint_id: Callable[[], str]) -> list[Step]:

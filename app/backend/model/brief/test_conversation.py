@@ -42,7 +42,8 @@ def main() -> None:
 
     unfocused = build_messages(latest, "hi", [])
     assert len(unfocused) == 2
-    assert "selected" not in unfocused[0]["content"]
+    assert "selected this node" not in unfocused[0]["content"]
+    assert "No map node is focused" in unfocused[0]["content"]
 
     many = [{"feedback": f"r{i} Note: n{i}"} for i in range(MAX_TURNS + 5)]
     assert len(past_turns(many)) == 2 * MAX_TURNS

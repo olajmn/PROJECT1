@@ -15,6 +15,9 @@ import { getActiveUserId, setLastProjectId } from "../../user/activeId.js";
 import { displayProjectTitle } from "../create/defaultNames.js";
 import { installTitleRename } from "../create/renameProject.js";
 import type { ChatPane } from "../chat/chatPane.js";
+import {
+  focusPathPlaceholder,
+} from "../chat/focusPath.js";
 import { treeWordsElement } from "./drawNodes.js";
 import type { NodeMenuActionId } from "./drawNodes.js";
 import { installMapScale } from "./zoomAndPan/index.js";
@@ -123,7 +126,7 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
         row?.querySelector(".progress-bead-btn, .progress-bead-label")
           ?.textContent ?? stepId;
       opts.setSelectedNode(stepId, label);
-      opts.chatInput.placeholder = `About “${label}”…`;
+      opts.chatInput.placeholder = focusPathPlaceholder(label);
       line.querySelectorAll(".progress-row.is-selected").forEach((el) => {
         el.classList.remove("is-selected");
       });
@@ -283,6 +286,11 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
         if (bar.folder.isOpen()) bar.folder.updateFolderHint();
       },
     });
+    const heldId = opts.getSelectedNodeId();
+    if (heldId) {
+      const label = opts.getSelectedNodeLabel() || nodeLabel(heldId) || heldId;
+      markSelected(heldId, `Looking at: ${label}`);
+    }
   };
 
   return {

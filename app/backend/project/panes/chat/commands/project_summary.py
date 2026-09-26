@@ -12,18 +12,23 @@ from backend.model.brief.project_summary import (
 )
 from backend.model.client import send_message
 from backend.project.node.tree_as_text import tree_lines
+from backend.project.panes.chat.commands.result import CommandResult
 
 
-def run(latest: dict, note: str) -> str:
-    """Reply text for `/project_summary`. `note` kept for a later args form."""
-    del note  # no args yet
+def run(
+    latest: dict,
+    note: str,
+    focus_step_id: str | None = None,
+) -> CommandResult:
+    """Talk saves the turn as usual."""
+    del note, focus_step_id  # no args / focus yet
     steps = ((latest.get("plan") or {}).get("progression") or {}).get("steps")
     if not isinstance(steps, list) or not steps:
-        return "The map is empty — nothing to summarise."
+        return CommandResult("The map is empty — nothing to summarise.")
     summary = _summarise_tree(latest.get("name") or "", steps)
     if summary is None:
-        return "No summary came back — try again."
-    return summary
+        return CommandResult("No summary came back — try again.")
+    return CommandResult(summary)
 
 
 def _summarise_tree(goal_label: str, steps: list[dict]) -> str | None:

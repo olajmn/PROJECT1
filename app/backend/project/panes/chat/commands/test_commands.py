@@ -4,16 +4,88 @@
 """
 
 from backend.project.panes.chat.commands import try_command
+from backend.project.panes.chat.commands import add as add_mod
 
 
 def main() -> None:
-    empty = {"name": "Empty", "plan": {"progression": {"steps": []}}}
+    empty = {
+        "name": "Empty",
+        "project_id": 1,
+        "plan": {"progression": {"steps": []}},
+    }
     assert try_command(empty, "hello") is None
     assert try_command(empty, "/unknown") is None
     msg = "The map is empty — nothing to summarise."
-    assert try_command(empty, "/project_summary") == msg
-    assert try_command(empty, "/map_summary") == msg
-    assert try_command(empty, "/read_map") == msg
+    assert try_command(empty, "/project_summary").reply == msg
+    assert try_command(empty, "/map_summary").reply == msg
+    assert try_command(empty, "/read_map").reply == msg
+
+    # /add parse — no save (missing focus / parent).
+    result = try_command(empty, "/add")
+    assert result is not None and result.record is None
+    assert "Usage" in result.reply
+
+    result = try_command(empty, "/add alone")
+    assert result is not None and result.record is None
+    assert "Usage" in result.reply
+
+    result = try_command(empty, "/add Missing / Child")
+    assert result is not None and result.record is None
+    assert "No node at path" in result.reply
+
+    tree = {
+        "name": "T",
+        "project_id": 99,
+        "plan": {
+            "progression": {
+                "steps": [
+                    {
+                        "id": "p1",
+                        "label": "CLIENT",
+                        "children": [
+                            {
+                                "id": "p2",
+                                "label": "hey3",
+                                "children": [],
+                            },
+                        ],
+                    }
+                ]
+            }
+        },
+    }
+    parent_id, child, err = add_mod._resolve(tree, "client", "p1")
+    assert err is None and parent_id == "p1" and child == "client"
+    parent_id, child, err = add_mod._resolve(tree, "CLIENT / bills", None)
+    assert err is None and parent_id == "p1" and child == "bills"
+    parent_id, child, err = add_mod._resolve(tree, "CLIENT / hey3 / hey", None)
+    assert err is None and parent_id == "p2" and child == "hey"
+    parent_id, child, err = add_mod._resolve(tree, "CLIENT / missing / hey", None)
+    assert parent_id is None and "No node at path" in (err or "")
+
+    # Malformed path must not mint a label that contains "/".
+    bad = try_command(tree, "/add CLIENT /hey")
+    assert bad is not None and bad.record is None
+    assert "spaces around" in bad.reply.lower()
+    bad = try_command(tree, "/add client /add hey /hey")
+    assert bad is not None and bad.record is None
+    assert "spaces around" in bad.reply.lower()
+    bad = try_command(tree, "/select CLIENT /hey")
+    assert bad is not None and bad.select_id is None
+    assert "spaces around" in bad.reply.lower()
+
+    selected = try_command(tree, "/select CLIENT / hey3")
+    assert selected is not None
+    assert selected.select_id == "p2"
+    assert selected.select_label == "hey3"
+    assert "Selected:" in selected.reply
+    assert try_command(tree, "/focus CLIENT").select_id == "p1"
+
+    # Sibling labels must be unique at the same level.
+    dup = try_command(tree, "/add CLIENT / hey3")
+    assert dup is not None and dup.record is None
+    assert "sibling already named" in dup.reply.lower()
+
     print("OK - try_command dispatch")
 
 

@@ -74,6 +74,7 @@ export function installSendMessage(opts: SendMessageOpts): void {
         );
       }
       opts.input.value = "";
+      opts.input.dispatchEvent(new Event("input"));
       opts.onUpdated(updated);
     } catch (err) {
       opts.errorEl.hidden = false;

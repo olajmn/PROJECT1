@@ -289,7 +289,13 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             self._model_failed(e)
             return
-        self._send_json(project_view(result["record"], reply=result["reply"]))
+        self._send_json(
+            project_view(
+                result["record"],
+                reply=result["reply"],
+                select=result.get("select"),
+            )
+        )
 
     def _handle_project_timeline(self, project_id: int) -> None:
         """Everything that happened in one project, oldest first."""

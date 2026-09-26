@@ -515,6 +515,8 @@ def save_plan(
     step_status: list[str] | None = None,
     event: str | None = None,
     sent_at: str | None = None,
+    map_focus: str | None = None,
+    focus_step_id: str | None = None,
 ) -> dict:
     """
     Update the project's current SoT and append one slim event.
@@ -522,6 +524,10 @@ def save_plan(
     Callers still pass the full project fields; only current.json keeps
     the map. The events tape stores event/feedback/times (and a one-line
     map surface for chat), not a full plan copy.
+
+    `map_focus` / `focus_step_id` mark this Talk turn as about a selected
+    node (About frames + model history). They are not inherited from the
+    previous current — pass them only when this save is focused.
 
     Returns the current record that was saved.
     """
@@ -548,13 +554,12 @@ def save_plan(
         record["event"] = event
     if sent_at:
         record["sent_at"] = sent_at
-
-    previous = load_current(pid)
-    if previous:
-        if previous.get("map_focus") and "map_focus" not in record:
-            record["map_focus"] = previous["map_focus"]
-        if previous.get("focus_step_id") and "focus_step_id" not in record:
-            record["focus_step_id"] = previous["focus_step_id"]
+    focus = (map_focus or "").strip()
+    if focus:
+        record["map_focus"] = focus
+        step = (focus_step_id or "").strip()
+        if step:
+            record["focus_step_id"] = step
 
     record["surface"] = surface_from_plan(name, plan)
     _write_json(current_path(pid), record)
@@ -567,8 +572,10 @@ def stamp_map_focus(
     map_focus: str,
     focus_step_id: str | None = None,
 ) -> dict | None:
-    """Attach map_focus on current so chat can frame 'about this node'.
-    Does not append an event.
+    """Attach map_focus on current *and* the matching events line.
+
+    Prefer passing focus into save_plan for new Talk turns. This remains
+    for callers that already saved and need to tag the latest line.
     """
     label = (map_focus or "").strip()
     if not label:
@@ -583,7 +590,36 @@ def stamp_map_focus(
     else:
         latest.pop("focus_step_id", None)
     _write_json(current_path(project_id), latest)
+    _stamp_latest_event(project_id, latest.get("id"), label, step or None)
     return latest
+
+
+def _stamp_latest_event(
+    project_id: int,
+    record_id: int | None,
+    map_focus: str,
+    focus_step_id: str | None,
+) -> None:
+    """Patch map_focus onto the events.jsonl line with this id."""
+    if record_id is None:
+        return
+    path = events_path(project_id)
+    if not path.exists():
+        return
+    events = _read_jsonl(path)
+    changed = False
+    for event in events:
+        if event.get("id") != record_id:
+            continue
+        event["map_focus"] = map_focus
+        if focus_step_id:
+            event["focus_step_id"] = focus_step_id
+        else:
+            event.pop("focus_step_id", None)
+        changed = True
+        break
+    if changed:
+        _write_events(project_id, events)
 
 
 def load_history() -> list[dict]:

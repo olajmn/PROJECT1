@@ -537,6 +537,17 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Reversible?** Yes — rename back.
 
 
+## 51. 2026-09-26 — Focus path in chat + `/add`
+
+**Decision:** On map select, the chat placeholder shows `Talk about <label>…` via `ui/src/panes/chat/focusPath.ts`. Talk `/add` and `/select` (`panes/chat/commands/`): under focus or `Parent / Child` by first label match; `/add` uses `edit_map.add_map_node` (no model). Path syntax requires spaces around every `/` (`slash_path_error` in `node_path.py`) — `CLIENT /hey` is rejected, not minted as a label. Sibling labels must be unique at one level: rule in `project/node/node.py` (`sibling_label_clash`); write doors in `edit_map` enforce it.
+
+**Date:** 2026-09-26
+
+**Why this choice:** Chat should aim and grow the tree without relying on canvas chrome. Path-in-placeholder replaces Print path for navigation; `/add` is the write door. Strict ` / ` keeps path segments from becoming accidental labels. Sibling uniqueness is a tree invariant (owned by `node/`), not a chat-only check — so canvas +, paste, and `/add` share one rule.
+
+**Reversible?** Yes — drop the command + restore the old About-label placeholder.
+
+
 ## See also
 
 

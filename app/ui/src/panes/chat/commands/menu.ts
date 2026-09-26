@@ -47,8 +47,11 @@ export function installCommandMenu(opts: CommandMenuOpts): void {
     item.append(slash, blurb);
     item.addEventListener("click", () => {
       close();
-      opts.input.value = cmd.slash;
+      opts.input.value = `${cmd.slash} `;
+      opts.input.dispatchEvent(new Event("input"));
       opts.input.focus();
+      const end = opts.input.value.length;
+      opts.input.setSelectionRange(end, end);
     });
     panel.appendChild(item);
   }

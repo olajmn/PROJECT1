@@ -77,6 +77,11 @@ def _system_text(
     selected = focus_labels(latest, map_focus, focus_step_id)
     if selected:
         parts.append("The user has selected this node (path from the top):\n" + selected)
+    else:
+        parts.append(
+            "No map node is focused right now — talk about the project as a "
+            "whole, not about a previous node from earlier in the chat."
+        )
     # The model only ever receives labels; without this it describes
     # file contents it has never seen.
     parts.append(

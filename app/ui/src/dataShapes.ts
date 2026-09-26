@@ -60,6 +60,8 @@ export interface ProjectView {
   node: MapNode | null;
   thread: ChatMessage[];
   status: ProjectStatus;
+  /** Set by `/select` — UI should focus this map node. */
+  select?: { id: string; label: string };
 }
 
 
