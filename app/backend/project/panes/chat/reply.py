@@ -6,17 +6,17 @@ Two cases:
   "brainstorm", ...): new child nodes are added under it
   (canvas/edit_map.py does the adding). The reply says what was added.
 - Anything else: the model answers, given what
-  model_input/build_prompt.py puts together.
+  model/brief/talk.py puts together.
 
 The message and reply are saved, so the chat is still there after a
 reload.
 """
 
-from backend.llm_client import send_chat
-from backend.store.paths import now_utc
-from backend.store.project_persistence import save_plan, stamp_map_focus
+from backend.model.brief.talk import build_messages
+from backend.model.client import send_chat
+from backend.storage.paths import now_utc
+from backend.storage.project_persistence import save_plan, stamp_map_focus
 from backend.project.panes.canvas.edit_map import suggest_map_from_chat
-from backend.project.panes.chat.model_input.build_prompt import build_messages
 from backend.project.panes.create.resolver import get_history_for_project
 from backend.project.status.build_status import build_status, status_text
 
@@ -85,7 +85,7 @@ def _stamp(record: dict, map_focus: str | None, focus_step_id: str | None) -> di
 
 def _save_talk(latest: dict, note: str, text: str, sent_at: str) -> dict:
     """Keep the map as it is; store the turn as "<reply> Note: <note>",
-    the shape screen/chat_thread.py and model_input/build_prompt.py read."""
+    the shape screen/chat_thread.py and model/brief/talk.py read."""
     return save_plan(
         latest.get("name") or "",
         latest.get("plan") or {},

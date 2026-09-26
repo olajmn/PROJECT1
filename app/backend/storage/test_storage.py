@@ -11,7 +11,7 @@ users_persistence / paths for the duration of the run and restores them
 afterward.
 
 Run from app/:
-    .venv/bin/python -m backend.store.test_store
+    .venv/bin/python -m backend.storage.test_storage
 """
 
 import json
@@ -19,11 +19,11 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from backend.store import paths as store_paths
-from backend.store import project_persistence as pp
-from backend.store import users_persistence as up
+from backend.storage import paths as storage_paths
+from backend.storage import project_persistence as pp
+from backend.storage import users_persistence as up
 
-_original_paths_data_dir = store_paths.DATA_DIR
+_original_paths_data_dir = storage_paths.DATA_DIR
 _original_pp = {
     "DATA_DIR": pp.DATA_DIR,
     "PROJECTS_DIR": pp.PROJECTS_DIR,
@@ -38,7 +38,7 @@ _original_up = {
 
 
 def _point_at(root: Path) -> None:
-    store_paths.DATA_DIR = root
+    storage_paths.DATA_DIR = root
     pp.DATA_DIR = root
     pp.PROJECTS_DIR = root / "projects"
     pp.LEGACY_PROJECTS_JSONL = root / "projects.jsonl"
@@ -299,7 +299,7 @@ try:
 
     print("OK - visions.json → users.json promote behaves as expected")
 finally:
-    store_paths.DATA_DIR = _original_paths_data_dir
+    storage_paths.DATA_DIR = _original_paths_data_dir
     for key, value in _original_pp.items():
         setattr(pp, key, value)
     for key, value in _original_up.items():

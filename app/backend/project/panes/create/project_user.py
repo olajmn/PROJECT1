@@ -8,11 +8,11 @@ from backend.project.panes.create.resolver import (
     get_latest_for_all_projects,
     get_latest_for_project,
 )
-from backend.store.users_persistence import (
+from backend.storage.users_persistence import (
     archive_user as archive_user_record,
     get_user,
 )
-from backend.store.project_persistence import save_plan
+from backend.storage.project_persistence import save_plan
 
 
 def set_project_user(project_id: int, sim_user_id: int | None) -> dict | None:

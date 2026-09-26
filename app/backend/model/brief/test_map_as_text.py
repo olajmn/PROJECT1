@@ -1,9 +1,9 @@
 """Checks for map_status() and focus_labels(). Run from app/:
 
-    .venv/bin/python -m backend.project.panes.chat.model_input.test_map_as_text
+    .venv/bin/python -m backend.model.brief.test_map_as_text
 """
 
-from backend.project.panes.chat.model_input.map_as_text import (
+from backend.model.brief.map_as_text import (
     focus_labels,
     map_status,
 )

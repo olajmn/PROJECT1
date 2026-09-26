@@ -1,7 +1,7 @@
 """Read an existing map back into words, on demand.
 
 The structure is the source of truth. This module only describes what
-is there. The instruction lives in `prompt.py`.
+is there. The instruction lives in model/brief/read_map.py.
 
 Nothing here writes. Whether a reading is kept is a decision for the
 caller and is deliberately not made here.
@@ -9,17 +9,10 @@ caller and is deliberately not made here.
 
 import json
 
-from backend.llm_client import send_message
+from backend.model.brief.read_map import READING_SCHEMA, READ_MAP_SYSTEM_PROMPT
+from backend.model.client import send_message
 from backend.project.panes.canvas.read_map.outline import outline_lines
-from backend.project.panes.canvas.read_map.prompt import READ_MAP_SYSTEM_PROMPT
 
-READING_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "summary": {"type": "string"},
-    },
-    "required": ["summary"],
-}
 
 def read_tree(goal_label: str, steps: list[dict]) -> dict | None:
     """{"summary"} for this tree, or None if there is nothing to read.

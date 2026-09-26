@@ -20,7 +20,7 @@ operator of this app, not the multi-user filter.
 
 import json
 
-from backend.store.paths import (
+from backend.storage.paths import (
     DATA_DIR,
     DEFAULT_USER_ID,
     ensure_data_dir,

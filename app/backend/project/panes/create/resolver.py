@@ -20,7 +20,7 @@ the project's display name.
 
 from datetime import datetime
 
-from backend.store.project_persistence import (
+from backend.storage.project_persistence import (
     load_all_currents,
     load_current,
     load_project_history,

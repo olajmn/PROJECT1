@@ -34,6 +34,6 @@ enough. See `ARCHITECTURE.md`'s RAG/embeddings section.
 ## Reference implementation
 
 The raw data already exists and is technically complete:
-`backend/store/project_persistence.py`'s `load_history()`/
+`backend/storage/project_persistence.py`'s `load_history()`/
 `load_project_history()`. What's missing is organizing this as its own
 capability rather than reading it ad hoc from within project panes.

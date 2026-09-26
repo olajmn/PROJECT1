@@ -1,4 +1,4 @@
-"""Store — JSON persistence only.
+"""Storage — JSON persistence only.
 
 Project SoT + events: project_persistence.py
   (data/projects/{id}/current.json + events.jsonl).

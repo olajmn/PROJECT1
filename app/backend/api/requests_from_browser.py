@@ -30,7 +30,7 @@ import json
 import re
 from http.server import BaseHTTPRequestHandler
 
-from backend.store.users_persistence import load_users, save_user
+from backend.storage.users_persistence import load_users, save_user
 from backend.project.panes.chat.reply import reply
 from backend.project.panes.create.lifecycle import cancel_project, create_project
 from backend.project.panes.create.rename import rename_project
@@ -46,7 +46,7 @@ from backend.project.panes.canvas.edit_map import (
     remove_map_node,
     suggest_map_children,
 )
-from backend.llm_client import MODEL, TEMPERATURE
+from backend.model.client import MODEL, TEMPERATURE
 from backend.api.activity_log import activity_log
 from backend.project.timeline import project_timeline
 from backend.api.files_to_browser import send_page_file

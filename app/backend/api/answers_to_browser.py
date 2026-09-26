@@ -13,7 +13,7 @@ no product rules.
 #  2. Map tree
 #      - map_tree()
 
-from backend.store.project_persistence import record_project_id
+from backend.storage.project_persistence import record_project_id
 from backend.project.status.build_status import build_status
 from backend.project.panes.chat.screen.chat_thread import thread_for
 from backend.project.panes.create.resolver import (

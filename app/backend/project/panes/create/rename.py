@@ -5,7 +5,7 @@ A rename is saved as its own line (event "renamed"), so the project's
 timeline keeps every name it has had. The chat does not show it.
 """
 
-from backend.store.project_persistence import save_plan
+from backend.storage.project_persistence import save_plan
 from backend.project.panes.create.resolver import get_latest_for_project
 
 

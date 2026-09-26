@@ -10,7 +10,7 @@ Puts together what the model is sent when you press Send, in order:
 No model call, nothing saved.
 """
 
-from backend.project.panes.chat.model_input.map_as_text import focus_labels, map_status
+from backend.model.brief.map_as_text import focus_labels, map_status
 
 # Earlier turns kept per Send. Bounds prompt size on a local model;
 # older turns stay saved and shown, just not re-sent.
@@ -28,7 +28,7 @@ def build_messages(
     focus_step_id: str | None = None,
     status: str | None = None,
 ) -> list[dict]:
-    """[{role, content}] for llm_client.send_chat(). `status` is the
+    """[{role, content}] for model.client.send_chat(). `status` is the
     project's status text (status/build_status.status_text())."""
     messages = [
         {"role": "system", "content": _system_text(latest, map_focus, focus_step_id, status)},

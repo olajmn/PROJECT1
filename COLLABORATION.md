@@ -48,7 +48,7 @@ At the start of a session, run (from the project root, against `app/`'s own venv
 
 then read `docs/04-current-state.md`. The output is what's mechanically observable right now, not proof the project is verified — each script only reports what it actually checks (see `global-standards/AI_COLLABORATION_GUIDE.md` §1).
 
-`/full-check` (`.claude/commands/full-check.md`) runs `project_check.py` plus `app/`'s full test suite (`test_math`, `test_time`, `test_store`, `test_thread`) in one go, and reports a compact summary rather than raw output — the version of the above actually meant to be typed day to day.
+`/full-check` (`.claude/commands/full-check.md`) runs `project_check.py` plus `app/`'s full test suite (`test_math`, `test_time`, `test_storage`, `test_thread`) in one go, and reports a compact summary rather than raw output — the version of the above actually meant to be typed day to day.
 
 Before renaming, moving, or deleting anything another file might reference, grep the vault and the code for the old name first; run `tools/project_check.py` afterward as the mechanical backstop, not a substitute for the grep.
 

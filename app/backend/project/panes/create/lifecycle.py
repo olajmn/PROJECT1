@@ -16,7 +16,7 @@ until Vision's own shape is decided.
 #  2. Cancellation
 #      - cancel_project()
 
-from backend.store.project_persistence import save_plan
+from backend.storage.project_persistence import save_plan
 from backend.project.panes.create.resolver import get_latest_for_project
 
 

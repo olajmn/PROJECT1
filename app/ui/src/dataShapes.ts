@@ -86,7 +86,7 @@ export interface PastePreview {
 
 // 5. Model boundary (Settings → General)
 
-/** Read-only peek at llm_client's dials (GET /api/model). */
+/** Read-only peek at model.client dials (GET /api/model). */
 export interface ModelView {
   provider: string;
   model: string;

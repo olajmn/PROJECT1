@@ -3,13 +3,13 @@ The list of messages shown in the chat panel.
 
 Built from saved chat - no model call. Map edits (add / paste / folder /
 Suggest / remove), renames, and archive lines belong in Status, not here
-— same rule as model_input/past_turns(). Chat turns and chat that mint
+— same rule as model/brief/talk.past_turns(). Chat turns and chat that mint
 nodes under a focus stay in the thread.
 """
 
 from backend.project.panes.create.resolver import get_history_for_project
 from backend.project.timeline import event_name
-from backend.store.project_persistence import surface_from_plan
+from backend.storage.project_persistence import surface_from_plan
 
 # Saved lines that are not Talk. Status / timeline own these.
 _NOT_CHAT = frozenset({

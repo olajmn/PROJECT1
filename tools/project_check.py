@@ -77,9 +77,9 @@ SMOKE_IMPORT_MODULES = [
     "backend.project.panes.chat.reply",
     "backend.project.panes.create.lifecycle",
     "backend.project.panes.create.resolver",
-    "backend.store.paths",
-    "backend.store.project_persistence",
-    "backend.store.users_persistence",
+    "backend.storage.paths",
+    "backend.storage.project_persistence",
+    "backend.storage.users_persistence",
     "backend.api.answers_to_browser",
     "server",
 ]

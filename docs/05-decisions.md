@@ -434,7 +434,34 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Reversible?** Yes — concatenate current+events back into snapshot lines, or restore `{id}.jsonl` from git/backups.
 
 
+## 42. 2026-09-26 — Model brief package (`backend/model/`)
+
+**Decision:** Gather everything that turns project data into what an external LLM is told into `backend/model/`: `client.py` (the wire — formerly `llm_client.py`) and `brief/` (Talk, Suggest, Read map prompts + packing — formerly `chat/model_input/` and prompt constants in canvas). Not under `foundation/` (Faculties stay deterministic). Call sites stay thin.
+
+**Date:** 2026-09-26
+
+**Alternatives considered:** leave prompts under each pane; put briefing inside `foundation/`; keep `llm_client.py` at `backend/` root forever.
+
+**Why this choice:** The model is outside the program (swap backends, same rules). What *is* inside is how we brief it from our data — that belongs in one Infrastructure package next to `storage/`, not scattered through chat/Suggest/read_map as if the model were part of the core.
+
+**Trade-off:** Brief modules still import map outline helpers from canvas (`read_map/outline`) — they read product shapes, they do not own the wire. An on/off kill-switch for LLM features is not part of this move.
+
+**Reversible?** Yes — move files back; import paths are mechanical.
+
+
+## 43. 2026-09-26 — Rename `store/` → `storage/`
+
+**Decision:** Rename `backend/store/` to `backend/storage/` (and `test_store` → `test_storage`). File names (`project_persistence.py`, …) stay.
+
+**Date:** 2026-09-26
+
+**Why this choice:** `store` was easy to misread (shop / client state store). `storage` matches the Infrastructure role — on-disk persistence next to `model/`.
+
+**Reversible?** Yes — rename the package back; imports are mechanical.
+
+
 ## See also
+
 
 - [[03-architecture]]
 - [[06-development]]

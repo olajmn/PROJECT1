@@ -1,5 +1,5 @@
 """
-Shared on-disk roots for the store.
+Shared on-disk roots for storage.
 
 Project records and simulated users both live under DATA_DIR; each has
 its own module (project_persistence / users_persistence). Paths and the

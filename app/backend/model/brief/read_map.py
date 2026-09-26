@@ -1,8 +1,8 @@
-"""Read map — the instruction sent to the model.
+"""Read map — the instruction (and response schema) sent to the model.
 
-Not chat. Read map is given the labels already on the
-map and asked what that structure appears to be. It does not read file
-contents. The string below is the whole instruction. `read.py` sends it.
+Not chat. Read map is given the labels already on the map and asked
+what that structure appears to be. It does not read file contents.
+`canvas/read_map/read.py` sends this.
 """
 
 READ_MAP_SYSTEM_PROMPT = (
@@ -16,3 +16,11 @@ READ_MAP_SYSTEM_PROMPT = (
     "not recommend, judge whether it is good, or propose what is "
     "missing."
 )
+
+READING_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "summary": {"type": "string"},
+    },
+    "required": ["summary"],
+}

@@ -24,7 +24,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from backend.store.paths import DATA_DIR, DEFAULT_USER_ID, ensure_data_dir, now_utc
+from backend.storage.paths import DATA_DIR, DEFAULT_USER_ID, ensure_data_dir, now_utc
 
 PROJECTS_DIR = DATA_DIR / "projects"
 # Older combined files — split into PROJECTS_DIR on first load.

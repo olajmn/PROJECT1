@@ -114,11 +114,11 @@ and decides nothing itself. Today's data is placeholder:
 |---|---|
 | Simulated users `id#N` (`data/users.json`) | Real accounts and wallets |
 | `create_project()` mints a `project_id` locally | The project is created on-chain; the app receives its id |
-| `backend/store/` reads and writes local JSON files | The same place reads from / writes to the outside source |
+| `backend/storage/` reads and writes local JSON files | The same place reads from / writes to the outside source |
 
 The create pane (`backend/project/panes/create/` and `ui/src/panes/create/`:
 projects, ids, and who owns which project) is the part that maps onto
-accounts, minting, and ownership. `backend/store/` is the only code that
+accounts, minting, and ownership. `backend/storage/` is the only code that
 touches data and `backend/api/` the only way in, so those are the two places that change when data
 moves out; chat, map, and UI should not need to know where data lives.
 

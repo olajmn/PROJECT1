@@ -15,22 +15,7 @@ deliberately chosen as next.
 
 ## Active
 
-**34. Current state panel** (Step) —
-UI chrome is "Current state"; day-change pulse is in (non-chat counts
-per day); summary trimmed to project / last change / map size. Still
-open: dead `isolateRange` caller. Click day → map/chat parked (see
-Queue). [[05-decisions]] #37; § 4.
-
-**36. Isolate all LLM talk in one place** (Step, after 34) —
-anything that prompts or calls a model (`model_input/`, `llm_client`,
-Suggest prompts in `call_suggest`, …) should be one swappable module
-on/off — SoT + Status stay the core; chat is a thin edge. Not a big
-rewrite now; park until Status polish is clearer. § —
-
-~~**35. Project SoT: current + event log**~~ — done 2026-09-26
-([[05-decisions]] #41): `data/projects/{id}/current.json` +
-`events.jsonl`; map/chat read current; Status/Logs read events;
-legacy `{id}.jsonl` migrates on load. No replay engine in v1.
+*(none — pick from Queue when ready)*
 
 ## Queue
 
@@ -93,6 +78,12 @@ unless noted.
 38. **Click a Changes day → map + chat focus** (Step, parked) —
     highlight nodes touched that day; isolate talk about those changes
     (like node About). Needs richer event payload. Related to 34.
+39. **Talk commands that force a SoT pass** (Step, keep in mind) —
+    e.g. a chat "full check" that deliberately re-reads `current` (+
+    events) — the product twin of Cursor `/full-check`, for the *user
+    project* not this repo. Current state panel is mainly for the human;
+    the model already gets a slice via `status_text`, but explicit
+    commands are optional later. Related to model brief (#42).
 
 ## Parallel paths
 
