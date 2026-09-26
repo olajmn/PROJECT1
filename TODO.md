@@ -15,10 +15,11 @@ deliberately chosen as next.
 
 ## Active
 
-**34. Status panel, after the draft** (Step) —
-polish after real use: removed-node names in "Recent map work",
-wording, pinning facts said in chat. Dead `isolateRange` caller.
-[[05-decisions]] #37; § 4.
+**34. Current state panel** (Step) —
+UI chrome is "Current state"; day-change pulse is in (non-chat counts
+per day); summary trimmed to project / last change / map size. Still
+open: dead `isolateRange` caller. Click day → map/chat parked (see
+Queue). [[05-decisions]] #37; § 4.
 
 **36. Isolate all LLM talk in one place** (Step, after 34) —
 anything that prompts or calls a model (`model_input/`, `llm_client`,
@@ -85,6 +86,13 @@ unless noted.
 33. **Talk only sees the map's labels** (Question) — model gets labels
     + focus path, not file contents / notes behind a node. [[05-decisions]]
     #33.
+37. **Rename Status code to Current state** (Step, not crucial) —
+    UI says "Current state"; folders/`status` wire/`build_status` still
+    say Status. Optional later (avoid confusing with disk `current.json`).
+    Related to 34.
+38. **Click a Changes day → map + chat focus** (Step, parked) —
+    highlight nodes touched that day; isolate talk about those changes
+    (like node About). Needs richer event payload. Related to 34.
 
 ## Parallel paths
 

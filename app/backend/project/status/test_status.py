@@ -1,4 +1,4 @@
-"""Checks for group_events / build_status / status_text - no files, no
+"""Checks for build_status / status_text day-change pulse - no files, no
 model. Run from app/:
 
     .venv/bin/python -m backend.project.status.test_status
@@ -37,39 +37,50 @@ def main() -> None:
     ]
     status = build_status(history, now=NOW)
 
-    texts = [h["text"] for h in status["history"]]
-    assert texts == [
-        'Renamed "House" → "Home"',
-        'Chat · 2 messages about "Kitchen"',
-        'Added 2 nodes under "Rooms"',
-        'Added "Rooms"',
-        "Created",
-    ], texts
-    assert [h["day"] for h in status["history"]] == ["Today", "Today", "Today", "Yesterday", "Yesterday"]
-    assert status["history"][2]["nodes"] == ["Rooms"]
+    # Chat excluded; Sep 24: created + node_added = 2; Sep 25: 2 adds + rename = 3.
+    assert [(h["day"], h["changes"], h["text"]) for h in status["history"]] == [
+        ("Today", 3, "3 changes"),
+        ("Yesterday", 2, "2 changes"),
+    ], status["history"]
     assert status["earlier"] == 0
 
     summary = {row["label"]: row["text"] for row in status["summary"]}
     assert summary["Project"] == "Home (id#3), started 24 Sep", summary
     assert summary["Map"] == "3 nodes, 2 levels"
-    assert summary["Top level"] == "Rooms"
-    assert summary["Recent map work under"] == "Rooms"
-    assert summary["Last talked about"] == "Kitchen"
+    assert "Top level" not in summary
+    assert "Recent map work under" not in summary
+    assert "Last talked about" not in summary
+    assert "Last change" in summary
+    assert list(summary) == ["Project", "Last change", "Map"], list(summary)
 
     text = status_text(status)
     assert text.startswith("Project: Home (id#3), started 24 Sep")
-    assert "History (newest first):\n  Today " in text  # the day is on every line
-    assert 'Added 2 nodes under "Rooms"' in text
+    assert "Changes (newest first):\n  Today — 3 changes" in text
+    assert "Yesterday — 2 changes" in text
+    assert "Chat" not in text.split("Changes")[1]
 
-    # Old lines (no event, local time without offset) read the same way.
+    # Quiet days between first change and now are listed as 0.
+    gap = build_status([
+        line(None, "2026-09-20T10:00:00.000+00:00", "created"),
+        line("Added step: A", "2026-09-20T10:05:00.000+00:00", "node_added"),
+    ], now=NOW)
+    days = [(h["day"], h["changes"]) for h in gap["history"]]
+    assert days[0] == ("Today", 0), days
+    assert days[-1] == ("20 Sep", 2), days
+    assert sum(1 for _, n in days if n == 0) >= 1
+
+    # Old lines (no event, local time) still count; chat-shaped feedback excluded.
     old = build_status([
         {"project_id": 1, "name": "Old", "feedback": None, "created_at": "2026-09-20T10:00:00"},
         {"project_id": 1, "name": "Old", "feedback": "Imported 1 step(s)",
          "created_at": "2026-09-20T10:05:00", "plan": {}},
+        {"project_id": 1, "name": "Old", "feedback": "Hello Note: hi",
+         "created_at": "2026-09-20T11:00:00"},
     ], now=NOW)
-    assert [h["text"] for h in old["history"]] == ["Pasted structure (1 top node)", "Created"]
+    assert old["history"][-1]["changes"] == 2, old["history"]
+
     assert build_status([]) == {"summary": [], "history": [], "earlier": 0}
-    print("OK - project status")
+    print("OK - project status day pulse")
 
 
 if __name__ == "__main__":

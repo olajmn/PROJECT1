@@ -55,7 +55,7 @@
   display: grid;
   grid-template-columns: max-content 1fr;
   gap: 0.15rem var(--space-3);
-  margin: 0 0 var(--space-3);
+  margin: 0;
 }
 
 .status-panel .status-summary dt {
@@ -70,22 +70,16 @@
   word-break: break-word;
 }
 
+/* Subsection under Status chrome — quieter than the Status toggle, no rule. */
 .status-panel .status-heading {
-  margin: 0 0 var(--space-1);
-  padding-top: var(--space-2);
-  border-top: var(--border);
+  margin: var(--space-3) 0 var(--space-1);
+  padding: 0;
+  border: none;
   font-size: var(--font-size-xs);
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--color-text-muted);
-}
-
-.status-panel .status-day {
-  margin: var(--space-2) 0 0.1rem;
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  color: var(--color-text-soft);
 }
 
 .status-panel .status-lines {
@@ -100,11 +94,20 @@
   gap: var(--space-2);
 }
 
-.status-panel .status-time {
+/* Day-change pulse: day label + "N changes" (no clock column). */
+.status-panel .status-lines.status-days li {
+  grid-template-columns: 5.5rem 1fr;
+}
+
+.status-panel .status-day-label {
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
   line-height: 1.7;
   font-variant-numeric: tabular-nums;
+}
+
+.status-panel .status-lines.status-days li.is-quiet .status-text {
+  color: var(--color-text-muted);
 }
 
 .status-panel .status-text {

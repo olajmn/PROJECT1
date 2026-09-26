@@ -1,6 +1,6 @@
-// Draws a project's status as text: the summary rows, then the history
-// under day headings. Node names in the text become buttons that select
-// that node on the map.
+// Draws a project's status: summary rows, then a day-by-day change
+// pulse (chat excluded). Node names in the summary become buttons that
+// select that node on the map.
 //
 // Contents
 //  1. drawStatus()
@@ -32,37 +32,34 @@ export function drawStatus(
   if (status.history.length > 0) {
     const heading = document.createElement("p");
     heading.className = "status-heading";
-    heading.textContent = "History";
+    heading.textContent = "Changes";
     root.append(heading);
   }
 
-  let day: string | null = null;
-  let list: HTMLUListElement | null = null;
+  const list = document.createElement("ul");
+  list.className = "status-lines status-days";
   for (const line of status.history) {
-    if (line.day !== day || !list) {
-      day = line.day;
-      const dayLabel = document.createElement("p");
-      dayLabel.className = "status-day";
-      dayLabel.textContent = day;
-      list = document.createElement("ul");
-      list.className = "status-lines";
-      root.append(dayLabel, list);
-    }
     const item = document.createElement("li");
-    const time = document.createElement("span");
-    time.className = "status-time";
-    time.textContent = line.time;
+    const day = document.createElement("span");
+    day.className = "status-day-label";
+    day.textContent = line.day;
     const text = document.createElement("span");
     text.className = "status-text";
-    text.append(...withNodeButtons(line.text, line.nodes, onNode));
-    item.append(time, text);
+    text.textContent = line.text;
+    if (line.changes === 0) {
+      item.classList.add("is-quiet");
+    }
+    item.append(day, text);
     list.append(item);
+  }
+  if (status.history.length > 0) {
+    root.append(list);
   }
 
   if (status.earlier > 0) {
     const earlier = document.createElement("p");
     earlier.className = "status-earlier";
-    earlier.textContent = `… ${status.earlier} earlier`;
+    earlier.textContent = `… ${status.earlier} earlier days`;
     root.append(earlier);
   }
   return root;

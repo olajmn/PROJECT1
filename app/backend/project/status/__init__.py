@@ -1,8 +1,7 @@
-"""A project's status: where it stands now and what has happened, computed
-from its timeline — the same text shown above the chat and given to the
-chat's model.
+"""Current-state panel text for a project: summary + day-change pulse.
 
-group_events.py - collapses runs of similar events into one line
-build_status.py - the summary at the top + the grouped history; also as
-                  plain text for the model
+Computed from current SoT + events tape — the same facts shown above
+the chat (UI: "Current state") and given to the chat's model.
+
+build_status.py — summary rows + Changes pulse; also plain text for the model
 """

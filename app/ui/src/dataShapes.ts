@@ -33,12 +33,19 @@ export interface ChatMessage {
 }
 
 /** A project's status (backend/project/status/build_status.py): the
- * summary on top, the history newest first. `nodes` are node names the
- * text mentions; the panel makes them clickable. */
+ * summary on top, then a day-by-day change pulse (newest first; chat
+ * excluded). `nodes` on summary rows are clickable map labels. */
 export interface ProjectStatus {
   summary: { label: string; text: string; nodes: string[] }[];
-  history: { day: string; time: string; text: string; nodes: string[] }[];
-  /** History lines left out, older than the ones shown. */
+  history: {
+    day: string;
+    time: string;
+    text: string;
+    nodes: string[];
+    /** Non-chat events that day (one save = one change). */
+    changes?: number;
+  }[];
+  /** Calendar days left out, older than the ones shown. */
   earlier: number;
 }
 

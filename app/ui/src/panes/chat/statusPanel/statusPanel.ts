@@ -1,9 +1,9 @@
-// The Status panel above the chat: where the project stands now and what
-// has happened (backend/project/status/). The chat's model gets the same
-// text, so what you see here is what it knows.
+// The Current state panel above the chat: where the project stands now
+// and what has happened (backend/project/status/). The chat's model gets
+// the same text, so what you see here is what it knows.
 //
-// The "Status" button opens and closes it; open/closed and the height are
-// remembered across projects (localStorage).
+// The "Current state" button opens and closes it; open/closed and the
+// height are remembered across projects (localStorage).
 //
 // Contents
 //  1. Types
