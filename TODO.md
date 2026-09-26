@@ -101,6 +101,13 @@ unless noted.
     9. **`docs_lint` review hits** — 4 "the user's own …" phrases
        (`CONVENTIONS.md:29`, `docs/05-decisions.md:84` / `:105`,
        `docs/concepts.md:205`); check by hand.
+45. **Copy one branch as ASCII** (Step, after cleanup) — Copy as ASCII
+    (`panes/canvas/copyAsText.ts`) always copies the whole tree. Add
+    either a **Copy branch** item in the node ⋯ menu, or let Copy as
+    ASCII copy only the selected node's subtree when one is selected.
+    Not a chat `/` command: a dump in the thread is noise, and the
+    thread goes back to the model — same reason Print map was dropped
+    ([[05-decisions]] #48).
 
 ### Tier 4
 
