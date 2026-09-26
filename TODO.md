@@ -15,11 +15,21 @@ deliberately chosen as next.
 
 ## Active
 
-**40. Talk slash-commands + node core** (Step, next) — family tree
-in `project/node/` (above panes); canvas is one face. Commands in
-`panes/chat/commands/`: `/project_summary`, `/add`, `/select` (focus or
-`Parent / Child`). Chat placeholder: `Talk about <label>…`. `/` menu
-lists commands. Next: Queue 39. Related to 39.
+**42. Pre-demo clean box** (Step, next) — Map+Talk (40) is done enough
+to demo the loop; this is what’s left before calling it demo-ready.
+
+1. **User / id** — clean up simulated users (`id#N` / Manager /
+   `sim_user_id`): what an “id” is in the product, rename (26), default
+   project names on the server (29), how this maps later to real accounts
+   ([[02-product]] § 5). This is the real focus, not more map/chat.
+2. **`architecture_foundation/`** — decide keep-as-archive vs move vs
+   delete; do **not** rewrite it to match Map+Talk (it’s the old
+   agent-shape sketch). See Queue 43.
+3. **Docs north star** — keep **02 / 04 / 05** current; demote or stamp
+   outdated **00 / 03** (and closed **06**) so sessions don’t relearn
+   the planner-agent story. Light pass, not a full rewrite.
+
+Related to 26, 29, 27, 43. Time Faculty files can stay unused (21).
 
 ## Queue
 
@@ -87,8 +97,20 @@ unless noted.
     events) — the product twin of Cursor `/full-check`, for the *user
     project* not this repo. Current state panel is mainly for the human;
     the model already gets a slice via `status_text`, but explicit
-    commands are optional later. Lives under Active 40's `commands/`
-    when built. Related to model brief (#42).
+    commands are optional later. Lives under `panes/chat/commands/`
+    when built. Related to model brief (#42 in decisions; was Active 40).
+41. **Delete a node with children** (Question) — today × removes the
+    whole subtree (cascade). Fine while trees are shallow; later may
+    want promote children, forbid-until-empty, or ask. Tree policy
+    (owned with `project/node/`), not only canvas chrome — same rule
+    should apply if Talk ever deletes. Related to 12, 40.
+43. **`architecture_foundation/` disposition** (Question) — root folder
+    is a historical full-agent skeleton (Vision/Goal/Plan/…); not the
+    Map+Talk product. Useful later as archaeology or when a *new*
+    multi-app map is needed (e.g. NFT entrance); wrong as current
+    target. Options: leave + stamp “historical”, move under `docs/` /
+    archive, or delete. Do not rebuild it to mirror `app/` before demo.
+    In Active 42. Related to outdated [[03-architecture]].
 
 ## Parallel paths
 
