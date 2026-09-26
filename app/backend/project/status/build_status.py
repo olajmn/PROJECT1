@@ -1,11 +1,12 @@
 """
 A project's status: where it stands now (summary) and what has happened
-(history, newest first). Computed from the project's saved lines — no
-model, nothing saved — so it can never disagree with them.
+(history, newest first). Summary facts come from the current SoT;
+history lines come from the events tape — no model, nothing saved —
+so it can never disagree with them.
 
 The same status is shown above the chat (build_status(), for the screen)
 and given to the chat's model (status_text()), so what the user sees is
-what the model knows. docs/05-decisions.md #36–37.
+what the model knows. docs/05-decisions.md #36–37, #41.
 """
 
 # Contents
@@ -43,15 +44,21 @@ _MAP_EVENTS = ("node_added", "pasted", "folder_added", "suggested")
 # ============================================================
 
 
-def build_status(history: list[dict], now: datetime | None = None) -> dict:
+def build_status(
+    history: list[dict],
+    now: datetime | None = None,
+    current: dict | None = None,
+) -> dict:
     """{summary: [{label, text, nodes}], history: [{day, time, text,
-    nodes}], earlier: int} for one project's saved lines, oldest first.
-    `nodes` are node names the text mentions (clickable on screen).
-    `now` is only for tests; it decides what counts as today."""
+    nodes}], earlier: int} for one project's events, oldest first.
+    `current` is the SoT record (map/name/owner); when omitted, the
+    last history line is used (tests / older callers that still embed
+    the map). `now` is only for tests; it decides what counts as today."""
     if not history:
         return {"summary": [], "history": [], "earlier": 0}
     now = now or datetime.now().astimezone()
-    name = history[-1].get("name") or "untitled"
+    latest = current if current is not None else history[-1]
+    name = latest.get("name") or history[-1].get("name") or "untitled"
     events = [to_event(record, name) for record in history]
     lines = group_events(events)
 
@@ -65,7 +72,7 @@ def build_status(history: list[dict], now: datetime | None = None) -> dict:
             "nodes": nodes,
         })
     return {
-        "summary": _summary(history, lines, now),
+        "summary": _summary(lines, now, latest),
         "history": shown,
         "earlier": max(0, len(lines) - HISTORY_LINES),
     }
@@ -92,8 +99,11 @@ def status_text(status: dict) -> str:
 # ============================================================
 
 
-def _summary(history: list[dict], lines: list[dict], now: datetime) -> list[dict]:
-    latest = history[-1]
+def _summary(
+    lines: list[dict],
+    now: datetime,
+    latest: dict,
+) -> list[dict]:
     rows = []
 
     project = latest.get("name") or "untitled"

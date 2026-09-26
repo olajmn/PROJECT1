@@ -13,7 +13,8 @@ reload.
 """
 
 from backend.llm_client import send_chat
-from backend.store.data_persistence import now_utc, save_plan, stamp_map_focus
+from backend.store.paths import now_utc
+from backend.store.project_persistence import save_plan, stamp_map_focus
 from backend.project.panes.canvas.edit_map import suggest_map_from_chat
 from backend.project.panes.chat.model_input.build_prompt import build_messages
 from backend.project.panes.create.resolver import get_history_for_project
@@ -66,7 +67,7 @@ def reply(
             return {"record": _stamp(record, map_focus, focus_step_id), "reply": text}
 
     history = get_history_for_project(latest["project_id"])
-    status = status_text(build_status(history))
+    status = status_text(build_status(history, current=latest))
     messages = build_messages(latest, note, history, map_focus, focus_step_id, status)
     text = send_chat(messages).strip()
     record = _save_talk(latest, note, text, sent_at)

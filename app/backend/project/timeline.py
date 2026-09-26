@@ -3,7 +3,7 @@ A project's timeline: every saved change, in order, as plain events —
 created, chat, node added, renamed, archived, ...
 
 Every change is already saved as one timestamped line in
-data/projects/{id}.jsonl (store/data_persistence.py). This file only reads
+data/projects/{id}/events.jsonl (store/project_persistence.py). This file only reads
 those lines back as events; it writes nothing. Used by Settings → Logs
 (api/activity_log.py) and the project timeline address
 (/api/projects/<id>/timeline). See docs/04-current-state.md § 4.
@@ -19,7 +19,11 @@ those lines back as events; it writes nothing. Used by Settings → Logs
 #      - all_events()
 #      - to_event()
 
-from backend.store.data_persistence import load_history, record_project_id
+from backend.store.project_persistence import (
+    load_current,
+    load_history,
+    record_project_id,
+)
 from backend.project.panes.create.resolver import (
     created_at_key,
     get_history_for_project,
@@ -89,7 +93,10 @@ def event_name(record: dict) -> str:
 def project_timeline(project_id: int) -> list[dict]:
     """One project's events, oldest first — its whole history."""
     history = get_history_for_project(project_id)
-    name = history[-1].get("name", "") if history else ""
+    current = load_current(project_id)
+    name = (current or {}).get("name", "") or (
+        history[-1].get("name", "") if history else ""
+    )
     return [to_event(r, name) for r in history]
 
 

@@ -8,11 +8,11 @@ from backend.project.panes.create.resolver import (
     get_latest_for_all_projects,
     get_latest_for_project,
 )
-from backend.store.data_persistence import (
+from backend.store.users_persistence import (
     archive_user as archive_user_record,
     get_user,
-    save_plan,
 )
+from backend.store.project_persistence import save_plan
 
 
 def set_project_user(project_id: int, sim_user_id: int | None) -> dict | None:
@@ -76,7 +76,7 @@ def set_project_user(project_id: int, sim_user_id: int | None) -> dict | None:
 
 def archive_user(sim_user_id: int) -> dict | None:
     """
-    Archive a Vision (data_persistence.archive_user()) and detach it
+    Archive a simulated user (users_persistence.archive_user()) and detach it
     from every currently-active Goal that references it - an archived
     Vision is no longer an active direction, so an active Goal
     shouldn't keep showing a current tie to it. Vision and Goal have

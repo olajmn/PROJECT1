@@ -15,40 +15,21 @@ deliberately chosen as next.
 
 ## Active
 
-**28. Split `ui/src/index.ts` into the panes** (Step, started 2026-09-25)
-
-`index.ts` (~800 lines) still owns the project list, map column, and
-most click wiring. Move each part into its pane:
-
-1. create — `panes/create/projectList.ts`, `projectsForId.ts`,
-   `manager/managerButton.ts` (stubs still empty)
-2. canvas — `panes/canvas/mapPane.ts`, `nodeMenu.ts`, `bottomBar.ts`
-   (stubs still empty)
-3. chat — `panes/chat/chatPane.ts`, `sendMessage.ts` (**started** —
-   Status + send path live here; thread/selection still heavy in
-   `index.ts`)
-
-Selection state stays in `index.ts`, which hands each pane what it
-needs; column layout moves to `shell/`. Goal: `index.ts` only starts
-the shell and the panes and connects them (~100–150 lines). Also drop
-dead `pendingMapFocus` if any remains. `docs/04-current-state.md` § 2.v.
-
-**35. Project SoT: current + event log** (Step, next after 28) —
-each `data/projects/{id}.jsonl` still stores a full snapshot per line.
-Prefer one **current** file + slim **events** tape; map/chat read
-current; Logs/Status read events. Parked after the per-project split
-(#39) and naming pass (#40). [[05-decisions]] #39; § 1.iii / § 5.
-
-**34. Status panel, after the draft** (Step, tomorrow with 28) —
+**34. Status panel, after the draft** (Step) —
 polish after real use: removed-node names in "Recent map work",
 wording, pinning facts said in chat. Dead `isolateRange` caller.
 [[05-decisions]] #37; § 4.
 
-**36. Isolate all LLM talk in one place** (Step, after 34/35) —
+**36. Isolate all LLM talk in one place** (Step, after 34) —
 anything that prompts or calls a model (`model_input/`, `llm_client`,
 Suggest prompts in `call_suggest`, …) should be one swappable module
 on/off — SoT + Status stay the core; chat is a thin edge. Not a big
-rewrite now; park until Status and SoT shape are clearer. § —
+rewrite now; park until Status polish is clearer. § —
+
+~~**35. Project SoT: current + event log**~~ — done 2026-09-26
+([[05-decisions]] #41): `data/projects/{id}/current.json` +
+`events.jsonl`; map/chat read current; Status/Logs read events;
+legacy `{id}.jsonl` migrates on load. No replay engine in v1.
 
 ## Queue
 

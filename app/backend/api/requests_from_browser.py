@@ -30,7 +30,7 @@ import json
 import re
 from http.server import BaseHTTPRequestHandler
 
-from backend.store.data_persistence import load_users, save_user
+from backend.store.users_persistence import load_users, save_user
 from backend.project.panes.chat.reply import reply
 from backend.project.panes.create.lifecycle import cancel_project, create_project
 from backend.project.panes.create.rename import rename_project

@@ -4,7 +4,7 @@ Run the full project verification routine, in order:
 2. The full test suite, each run from `app/`, with `app/.venv/bin/python`:
    - `-m backend.foundation.test_math`
    - `-m backend.foundation.time.test_time`
-   - `-m backend.store.test_data_persistence`
+   - `-m backend.store.test_store`
    - `-m backend.project.panes.chat.screen.test_chat_thread`
    - `-m backend.project.test_timeline`
    - `-m backend.project.status.test_status`

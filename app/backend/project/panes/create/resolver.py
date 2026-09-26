@@ -1,30 +1,29 @@
 """
-Read and interpret goal history.
+Read and interpret project history.
 
-This module does not store anything - it reads history via
-data_persistence and answers, by project_id:
+This module does not store anything - it reads via project_persistence
+and answers, by project_id:
 
-- What is the full history of this goal?
-- What is the latest record for this goal?
-- What is the latest record for every goal that exists?
+- What is the full event tape for this project?
+- What is the current SoT record for this project?
+- What is the current record for every project that exists?
 
-Whether a goal counts as "active" or "completed", and how goals get
-grouped or sorted for display, is board-building logic, not goal
-identity - see frontend/view_data/goal_overview.py, where the board is
-actually built.
+Whether a project counts as "active" or "completed", and how projects
+get grouped or sorted for display, is board-building logic, not project
+identity.
 
-project_id itself is minted in data_persistence.py (_next_project_id()), not
-here - moving it here would create a circular import between the two
+project_id itself is minted in project_persistence.py (_next_goal_id()),
+not here - moving it here would create a circular import between the two
 modules. See docs/05-decisions.md for why identity is a minted id, not
-the goal's text.
+the project's display name.
 """
 
 from datetime import datetime
 
-from backend.store.data_persistence import (
-    load_history,
+from backend.store.project_persistence import (
+    load_all_currents,
+    load_current,
     load_project_history,
-    record_project_id,
 )
 
 
@@ -59,38 +58,25 @@ def get_history_for_project(project_id: int) -> list[dict]:
     back-and-forth of feedback and replanning for this project.
 
     Parameter name project_id kept this round; matches project_id on disk.
-    Reads that project's file only (data/projects/{id}.jsonl).
+    Reads that project's events tape (data/projects/{id}/events.jsonl).
     """
     return load_project_history(project_id)
 
 
 def get_latest_for_project(project_id: int) -> dict | None:
     """
-    Return the most recent record for one project_id, or None.
+    Return the current SoT record for one project_id, or None.
 
-    Distinct from data_persistence.get_latest_plan(), which answers
+    Distinct from project_persistence.get_latest_plan(), which answers
     "what was touched most recently across every project" - not safe once
     two projects can be active side by side (see docs/06-development.md).
     """
-    history = load_project_history(project_id)
-    return history[-1] if history else None
-
-
-# Read all goals
+    return load_current(project_id)
 
 
 def get_latest_for_all_projects() -> list[dict]:
     """
-    Return the latest record for every project_id in history - one
+    Return the current SoT record for every project_id - one
     project, one record.
-
-    Order is just whatever falls out of scanning history oldest-first
-    and keeping the last record seen per project_id - not meaningful on
-    its own.
     """
-    latest_by_goal: dict[int, dict] = {}
-    for record in load_history():
-        pid = record_project_id(record)
-        if pid is not None:
-            latest_by_goal[pid] = record
-    return list(latest_by_goal.values())
+    return load_all_currents()

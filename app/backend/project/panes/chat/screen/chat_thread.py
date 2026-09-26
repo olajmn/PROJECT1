@@ -9,6 +9,7 @@ nodes under a focus stay in the thread.
 
 from backend.project.panes.create.resolver import get_history_for_project
 from backend.project.timeline import event_name
+from backend.store.project_persistence import surface_from_plan
 
 # Saved lines that are not Talk. Status / timeline own these.
 _NOT_CHAT = frozenset({
@@ -117,22 +118,12 @@ def _ack_line(feedback: str | None) -> str | None:
 
 
 def surface_text(record: dict) -> str:
-    """One sentence about the stored map."""
-    labels = [
-        (step.get("label") or "").strip()
-        for step in _top_steps(record)
-        if isinstance(step, dict) and (step.get("label") or "").strip()
-    ]
-    if not labels:
-        return "The map is empty."
-    listed = ", ".join(labels)
-    name = (record.get("name") or "").strip()
-    return f"{name}: {listed}." if name else f"{listed}."
+    """One sentence about the stored map.
 
-
-def _top_steps(record: dict) -> list:
-    progression = (record.get("plan") or {}).get("progression")
-    if not isinstance(progression, dict):
-        return []
-    steps = progression.get("steps")
-    return steps if isinstance(steps, list) else []
+    Prefers a `surface` string saved on slim events (no full plan on the
+    tape). Falls back to building from `plan` on a current record.
+    """
+    saved = (record.get("surface") or "").strip()
+    if saved:
+        return saved
+    return surface_from_plan(record.get("name") or "", record.get("plan"))

@@ -231,7 +231,7 @@ How the components in Part 2 actually interact.
 
 > LLMs reason and interpret; deterministic software handles what requires determinism, state, persistence, validation, and concrete execution.
 
-Persistence is Infrastructure (see the note above) — `backend/store/data_persistence.py`. Beyond that, concretely, today: validation of LLM output shape (`judgment/ask.py`'s required-key check), deterministic calculations and interpretation where the input is unambiguous (Time, Math Faculties), feedback parsing where the judgment is deliberately kept out of LLM hands (`feedback_parser.py`), and UI manifestation (§ 4 below).
+Persistence is Infrastructure (see the note above) — `backend/store/` (`project_persistence.py`, `users_persistence.py`, `paths.py`). Beyond that, concretely, today: validation of LLM output shape (`judgment/ask.py`'s required-key check), deterministic calculations and interpretation where the input is unambiguous (Time, Math Faculties), feedback parsing where the judgment is deliberately kept out of LLM hands (`feedback_parser.py`), and UI manifestation (§ 4 below).
 
 ### 2. Data flow
 

@@ -17,7 +17,7 @@ Does not touch the Steps-page scratch tree.
 import copy
 import re
 
-from backend.store.data_persistence import save_plan
+from backend.store.project_persistence import save_plan
 from backend.project.panes.canvas.add_folder import folder_tree
 from backend.project.panes.canvas.bead import Step, from_labels, from_nested_labels
 from backend.project.panes.canvas.text_to_tree import parse_outline

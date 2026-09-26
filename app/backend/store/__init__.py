@@ -1,7 +1,10 @@
 """Store — JSON persistence only.
 
-Moves dictionaries to/from data/projects/{id}.jsonl and users.json
-(data_persistence.py for projects and simulated users).
+Project SoT + events: project_persistence.py
+  (data/projects/{id}/current.json + events.jsonl).
+Simulated users: users_persistence.py (data/users.json).
+Shared roots: paths.py.
+
 Does not interpret what it saves. Not a Faculty and not agent/project
 domain logic.
 """

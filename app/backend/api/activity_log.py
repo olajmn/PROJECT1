@@ -3,13 +3,13 @@ The activity log shown in Settings → Logs: every saved change across
 all projects, newest first.
 
 Nothing is recorded for the log. The events come from
-project/timeline.py, which reads the timestamped lines in
-data/projects/{id}.jsonl.
+project/timeline.py, which reads the slim tapes in
+data/projects/{id}/events.jsonl.
 """
 
 from backend.project.timeline import all_events
 
-# Newest entries shown; the rest stay in the per-project JSONL files.
+# Newest entries shown; the rest stay in the per-project events files.
 LOG_LIMIT = 200
 
 

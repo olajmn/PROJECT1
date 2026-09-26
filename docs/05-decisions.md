@@ -413,11 +413,26 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Alternatives considered:** keep `goal` on disk and only rename UI labels; rename `plan.progression` in the same pass; keep old API path aliases forever.
 
-**Why this choice:** The product language is Project / Map / Talk. Keeping `goal` and `/feedback`/`/zoom`/`/progression` in live code forced a constant translation tax. Promoting on load matches how `project_id` was introduced (#29). Renaming API paths in one pass with `api.ts` avoids a half-migrated client. Nested `plan.progression` and event strings are a larger data-shape change deferred to a later pass (Queue 35 / Item 12).
+**Why this choice:** The product language is Project / Map / Talk. Keeping `goal` and `/feedback`/`/zoom`/`/progression` in live code forced a constant translation tax. Promoting on load matches how `project_id` was introduced (#29). Renaming API paths in one pass with `api.ts` avoids a half-migrated client. Nested `plan.progression` and event names stay for a later pass (Item 12); the store shape moved to current+events in #41.
 
 **Trade-off:** Old bookmarks or external clients hitting `/feedback` etc. break; only this app's UI talks to these routes today. Docs that quote old paths in dated history stay as written.
 
 **Reversible?** Yes — reverse the promote, restore symbols/paths from git; disk lines already rewritten to `name` would need a reverse promote.
+
+## 41. 2026-09-26 — Current SoT + slim events tape (model A)
+
+**Decision:** Per project under `data/projects/{id}/`, keep **`current.json`** as the source of truth for map and chat, and **`events.jsonl`** as a slim change tape for Status and Logs. Every save updates current and appends one event without embedding the full map. Do **not** rebuild current by replaying events in v1. Legacy `data/projects/{id}.jsonl` snapshot lines migrate once (last line → current; each line → slim event with `surface` when needed); leftover combined `projects.jsonl` / `plans.jsonl` / `plans.json` still split into the same folder shape.
+
+**Date:** 2026-09-26
+
+**Alternatives considered:** keep full-snapshot jsonl per change (#39); full event-sourcing with a replay engine that rebuilds current from events alone; AI-written commit messages on every event.
+
+**Why this choice:** Matches the product metaphor — current ≈ what is true now; events ≈ the log of what happened. Map/chat need the tree; Status/Logs need the tape. Two cheap writes avoid growing fat snapshot files without inventing a git-style replay machine yet.
+
+**Trade-off:** Current and events can drift if a future writer updates only one; v1 keeps them in one `save_plan()` path. Chat thread rebuilds from events via stored `surface` (or mechanical text), not from full plans on the tape.
+
+**Reversible?** Yes — concatenate current+events back into snapshot lines, or restore `{id}.jsonl` from git/backups.
+
 
 ## See also
 
