@@ -1,9 +1,13 @@
-// Active simulated user (product display: "id"). Wire: sim_user_id.
+// Active simulated account seat. Wire: sim_user_id. Display: Accounts /
+// account#N (see userLabel / accountWireLabel).
 
 const STORAGE_KEY = "activeSimUserId";
 
-/** Top sidebar brand — opens the id overview. */
-export const ID_BRAND = "Manager";
+/** Top sidebar brand — opens the accounts panel. */
+export const ACCOUNTS_BRAND = "Accounts";
+
+/** @deprecated Use ACCOUNTS_BRAND — kept so any stray import still resolves. */
+export const ID_BRAND = ACCOUNTS_BRAND;
 
 export function getActiveUserId(): number | null {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -38,9 +42,14 @@ export function setLastProjectId(userId: number, projectId: number | null): void
   localStorage.setItem(LAST_PROJECT_KEY_PREFIX + userId, String(projectId));
 }
 
-/** Display name for one sim user — label text, or id#N if none. */
+/** Wire id label — always `account#N`, even when a custom name is set. */
+export function accountWireLabel(id: number): string {
+  return `account#${id}`;
+}
+
+/** Display name for one sim user — custom label, or account#N. */
 export function userLabel(user: { id: number; text?: string | null }): string {
   const t = user.text?.trim();
   if (t && t !== "user") return t;
-  return `id#${user.id}`;
+  return accountWireLabel(user.id);
 }

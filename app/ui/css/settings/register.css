@@ -139,3 +139,123 @@
     gap: var(--space-4);
   }
 }
+
+/* 5. Directory — create + rename (account overview) */
+
+.directory-create {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 0 var(--space-3);
+}
+
+.directory-create-label {
+  flex: 0 0 100%;
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.directory-create-input {
+  flex: 1 1 12rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.4rem 0.55rem;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: var(--border);
+  border-radius: var(--radius);
+}
+
+.directory-create-submit {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0.4rem 0.75rem;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  background: transparent;
+  border: var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.directory-create-submit:hover {
+  border-color: var(--color-text-muted);
+}
+
+.directory-hint {
+  margin: 0 0 var(--space-5);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  max-width: 36rem;
+}
+
+.directory-account-actions {
+  margin-top: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.directory-rename-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.directory-rename-form[hidden] {
+  display: none;
+}
+
+.directory-rename {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.directory-rename:hover {
+  color: var(--color-accent);
+}
+
+.directory-delete {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.directory-delete:hover {
+  color: var(--color-accent);
+}
+
+.directory-delete-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.directory-delete-confirm[hidden] {
+  display: none;
+}
+
+.directory-delete-confirm .directory-hint {
+  flex: 0 0 100%;
+  margin: 0;
+}

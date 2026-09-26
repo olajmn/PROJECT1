@@ -274,6 +274,8 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Follow-up (same day):** Backend + UI hard cut done — store `users.json`, API `/api/users`, `POST /api/projects/<id>/user` body `{sim_user_id}`, planner `set_project_user` / `archive_user`. Stub `user_id` unchanged. UI display label shortened to `id#N`. Later same day: ID management moved from a center topbar tab/panel to the Projects **sidebar brand + in-flow menu** (`sidebar/idMenu.ts`); local list ordinals `#1…n (#project_id)` via `projectListOrder.ts` (display only).
 
+**Follow-up (2026-09-26):** Sidebar brand is **Accounts** (was Manager). Seat display is a custom name + quiet **`account#N`**. Wire stays `sim_user_id` / `/api/users`. UI paths renamed from Manager/id menu → `panes/create/accounts/` (`panel.ts`, `accountCard.ts`, `brandButton.ts`), `user/activeAccount.ts`, `css/…/accountsPanel.css`. Account create/rename/delete live in Settings → Directory; sidebar lists seats + projects + project `+` only.
+
 **Reversible?** Promote is one-way on disk once rewritten; restoring Vision copy would be a deliberate rename, not a flip of a switch.
 
 ## 31. 2026-09-20 — Remove free conversation (Conversation / CLI / Node 3)

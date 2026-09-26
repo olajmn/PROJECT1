@@ -19,6 +19,7 @@ export type {
 } from "./types.js";
 
 export {
+  accountGroup,
   idGroup,
   logBlock,
   modelBlock,

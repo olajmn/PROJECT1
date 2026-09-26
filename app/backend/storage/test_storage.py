@@ -67,6 +67,9 @@ try:
     assert user["text"] == "Improve physical health and quality of life"
     assert up.get_user(user["id"]) == user
     assert up.get_user(user["id"] + 999) is None
+    renamed = up.rename_user(user["id"], "Health")
+    assert renamed is not None and renamed["text"] == "Health"
+    assert up.rename_user(user["id"], "  ")["text"] == "user"
 
     second_user = up.save_user("Grow as a musician")
     assert second_user["id"] == user["id"] + 1

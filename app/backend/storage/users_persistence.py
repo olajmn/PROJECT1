@@ -1,5 +1,5 @@
 """
-Simulated users (id#N) — data/users.json (legacy visions.json promoted
+Simulated users (account#N) — data/users.json (legacy visions.json promoted
 on load).
 
 Project current + events live in project_persistence.py. Shared roots
@@ -16,7 +16,7 @@ operator of this app, not the multi-user filter.
 
 # Contents
 #  1. Simulated users (users.json)
-#      - save_user() / load_users() / get_user() / archive_user()
+#      - save_user() / load_users() / get_user() / rename_user() / archive_user()
 
 import json
 
@@ -82,8 +82,6 @@ def save_user(text: str) -> dict:
     optionally reference via sim_user_id.
 
     No history, no revisions: a single mutable fact, not a chain.
-    Editing/deleting is intentionally not built yet - this only ever
-    appends a new one.
 
     Returns the record that was saved.
     """
@@ -108,6 +106,23 @@ def get_user(sim_user_id: int) -> dict | None:
     """Return the simulated user with this id, or None if missing."""
     for user in _load_all_users():
         if user["id"] == sim_user_id:
+            return user
+    return None
+
+
+def rename_user(sim_user_id: int, text: str) -> dict | None:
+    """
+    Set the display label on a simulated user. Empty / whitespace becomes
+    the default "user" so the UI falls back to account#N. Returns the
+    record, or None if id doesn't resolve. Archived users can still be
+    renamed (label only).
+    """
+    label = (text or "").strip() or "user"
+    users = _load_all_users()
+    for user in users:
+        if user["id"] == sim_user_id:
+            user["text"] = label
+            _save_all_users(users)
             return user
     return None
 

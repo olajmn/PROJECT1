@@ -1,12 +1,11 @@
-// Local project order under an active id#N.
-// Global project_id stays the wire identity; sidebar shows #1..#n
-// (oldest = 1) with the real id in parentheses.
+// Project order helpers under an account.
+// Global project_id stays the wire identity; sidebar lists by name only.
 
 // Contents
 //  1. Order
 //      - projectsChronologicalForUser()
 //      - projectsNewestFirst()
-//  2. Labels
+//  2. Labels (Directory / inspect — not everyday sidebar chrome)
 //      - localOrdinal()
 //      - projectListIdLabel()
 
@@ -43,7 +42,7 @@ export function localOrdinal(
   return chronological.findIndex((p) => p.project_id === projectId) + 1;
 }
 
-/** e.g. `#3 (#49)` — local sequence, then wire id. */
+/** e.g. `#3 (#49)` — local sequence, then wire id (inspect surfaces). */
 export function projectListIdLabel(
   chronological: ProjectView[],
   project: ProjectView,

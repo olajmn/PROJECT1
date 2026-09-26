@@ -1,0 +1,201 @@
+/* Accounts panel under the brand.
+ * Mirrors src/panes/create/accounts/. Tokens from css/tokens.css.
+ *
+ * Contents
+ *  1. Panel shell + one-column account stack
+ *  2. Account card (name, wire id, projects)
+ *  3. Foot (claim orphans)
+ */
+
+/* 1. Panel shell + one-column account stack */
+
+.sidebar-accounts-panel {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-2) 0 var(--space-3);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.sidebar-accounts-panel[hidden] {
+  display: none;
+}
+
+.sidebar-accounts-list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: var(--space-4);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* 2. Account card */
+
+.sidebar-account-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  gap: var(--space-1);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.sidebar-account-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.15rem;
+}
+
+.sidebar-account-card-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.sidebar-account-card-name {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-account-card-name:hover {
+  color: var(--color-text);
+}
+
+.sidebar-account-card.is-active .sidebar-account-card-name {
+  color: var(--color-text);
+}
+
+.sidebar-account-card.is-active .sidebar-account-card-name::after {
+  content: "";
+  display: inline-block;
+  width: 0.4em;
+  height: 0.4em;
+  margin-left: 0.45em;
+  border-radius: 50%;
+  background: var(--color-accent);
+  vertical-align: 0.12em;
+  animation: settings-active-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes settings-active-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-account-card.is-active .sidebar-account-card-name::after {
+    animation: none;
+    opacity: 0.85;
+  }
+}
+
+.sidebar-account-card-wire {
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 400;
+}
+
+.sidebar-account-card-projects {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.sidebar-account-card-projects[hidden] {
+  display: none;
+}
+
+.sidebar-account-card-project {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+  width: 100%;
+  margin: 0;
+  padding: 0.25rem 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-account-card-project:hover {
+  color: var(--color-accent);
+}
+
+.sidebar-account-card-project.is-selected {
+  color: var(--color-text);
+}
+
+.sidebar-account-card-project.is-selected .sidebar-account-card-project-goal {
+  font-weight: 600;
+}
+
+.sidebar-account-card-project-goal {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.25;
+}
+
+.sidebar-accounts-empty {
+  margin: 0;
+  padding: 0.15rem 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* 3. Foot (claim orphans) */
+
+.sidebar-accounts-foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+}
+
+.sidebar-accounts-claim {
+  width: 100%;
+  padding: 0.35rem var(--space-2);
+  font: inherit;
+  font-size: var(--font-size-sm);
+}

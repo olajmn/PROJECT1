@@ -81,11 +81,11 @@ export function logBlock(v: LogValues): Block {
 //                     ID        1
 //                     Created   …
 
-export function idGroup(v: IdValues): Group {
+export function accountGroup(v: IdValues): Group {
   const left: Block = [
-    { t: "title", kind: "Id", name: "" },
+    { t: "title", kind: "Account", name: "" },
     { t: "fact", label: "Name", value: v.label },
-    { t: "fact", label: "ID", value: String(v.id) },
+    { t: "fact", label: "Id", value: `account#${v.id}` },
     { t: "fact", label: "Created", created: v.created },
   ];
   return {
@@ -94,6 +94,11 @@ export function idGroup(v: IdValues): Group {
     left,
     right: v.projects.map(projectBlock),
   };
+}
+
+/** @deprecated Use accountGroup */
+export function idGroup(v: IdValues): Group {
+  return accountGroup(v);
 }
 
 export function projectBlock(v: ProjectValues): Block {
@@ -108,9 +113,9 @@ export function projectBlock(v: ProjectValues): Block {
 export function orphanGroup(projects: ProjectValues[]): Group {
   return {
     left: [
-      { t: "title", kind: "Id", name: "" },
+      { t: "title", kind: "Account", name: "" },
       { t: "fact", label: "Name", value: "Unassigned" },
-      { t: "fact", label: "ID", value: "—" },
+      { t: "fact", label: "Id", value: "—" },
     ],
     right: projects.map(projectBlock),
   };

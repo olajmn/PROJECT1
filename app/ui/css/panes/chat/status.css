@@ -2,10 +2,10 @@
  * has happened, as plain text. TS lives in src/panes/chat/statusPanel/.
  *
  * Contents
- *  1. Status button (Manager twin)
+ *  1. Status button (Accounts twin)
  *  2. Panel
  *  3. Summary, history, node names
- *  4. Resize handle (twin of .id-menu-resize)
+ *  4. Resize handle (status height)
  */
 
 /* 1. Status button */

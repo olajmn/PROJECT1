@@ -137,14 +137,13 @@ def _summary(
     rows = []
 
     project = latest.get("name") or "untitled"
-    owner = latest.get("sim_user_id")
     first = next(
         (w for e in work_events if (w := _event_when(e.get("at"))) is not None),
         None,
     )
     started = f", started {_date(first, now)}" if first else ""
     archived = " — archived" if latest.get("cancelled") else ""
-    rows.append(_row("Project", f"{project}{f' (id#{owner})' if owner else ''}{started}{archived}"))
+    rows.append(_row("Project", f"{project}{started}{archived}"))
 
     last = None
     for event in work_events:

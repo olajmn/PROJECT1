@@ -12,7 +12,7 @@
 
 import { createProject } from "../../api.js";
 import { setButtonBusy } from "../../shell/busyButton.js";
-import { getActiveUserId } from "../../user/activeId.js";
+import { getActiveUserId } from "../../user/activeAccount.js";
 import type { ProjectView } from "../../dataShapes.js";
 import { mintFromFolder } from "./projectFromFolder.js";
 import { nextNewProjectName } from "./defaultNames.js";

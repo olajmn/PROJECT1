@@ -1,5 +1,5 @@
 // Height drag on the status panel above the chat — same separator idiom as
-// Manager | Projects (`create/manager/resizeList.ts`).
+// the sidebar / chat column grips (`shell/columnWidths.ts`).
 //
 // Contents
 //  1. Stored height

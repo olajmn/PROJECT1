@@ -11,7 +11,7 @@
 //      - installMapPane()
 
 import { addNode, removeNode, renameProject } from "../../api.js";
-import { getActiveUserId, setLastProjectId } from "../../user/activeId.js";
+import { getActiveUserId, setLastProjectId } from "../../user/activeAccount.js";
 import { displayProjectTitle } from "../create/defaultNames.js";
 import { installTitleRename } from "../create/renameProject.js";
 import type { ChatPane } from "../chat/chatPane.js";

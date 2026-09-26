@@ -1,51 +1,42 @@
-// Manager id#N panel: overview columns (ids + their projects), create id,
-// claim orphans. Opens in-flow under the brand; optional vertical resize
-// caps the scroll area. Closes only via the Manager brand (toggle) — not
-// outside click or Escape.
+// Accounts panel: accounts + nested projects, claim orphans.
+// Opens in-flow under the brand. Closes only via the Accounts brand
+// (toggle) — not outside click or Escape. Create / rename / delete
+// live in Settings → Directory.
 
 // Contents
 //  1. Types
 //  2. Public API
-//      - installIdMenu()
+//      - installAccountsPanel()
 
 import { setButtonBusy } from "../../../shell/busyButton.js";
 import {
   getActiveUserId,
   setActiveUserId,
   userLabel,
-  ID_BRAND,
-} from "../../../user/activeId.js";
+  ACCOUNTS_BRAND,
+} from "../../../user/activeAccount.js";
 import type { ProjectView, UserView } from "../../../dataShapes.js";
-import { buildIdCard } from "./idCard.js";
-import { buildCreateIdButton } from "./newIdButton.js";
-import {
-  claimUnassigned,
-  ensureIdCardMenuCloser,
-  showError,
-} from "./helpers.js";
-import { applyStoredHeight, installResize } from "./resizeList.js";
+import { buildAccountCard } from "./accountCard.js";
+import { claimUnassigned, showError } from "./helpers.js";
 
 // 1. Types
 
-const OPEN_KEY = "projects.idMenuOpen";
+const OPEN_KEY = "accounts.panelOpen";
+const LEGACY_OPEN_KEY = "projects.idMenuOpen";
 
-export type IdMenuOptions = {
+export type AccountsPanelOptions = {
   anchor: HTMLElement;
   host: HTMLElement;
-  /** The Manager | Projects separator — a sibling of `host` in the
-   * sidebar, not a child of the panel, so it can span the sidebar's
-   * full width the same way the column separators do. Shown only while
-   * the panel is open. */
-  resizeHandle: HTMLElement;
   getUsers: () => UserView[];
   getProjects: () => ProjectView[];
+  getSelectedId: () => number | null;
   onUsersChanged: (users: UserView[]) => void;
   onProjectsUpdated: (updated: ProjectView[]) => void;
   onActiveUserChanged: (userId: number | null) => void;
   onSelectProject: (projectId: number) => void;
 };
 
-export type IdMenuApi = {
+export type AccountsPanelApi = {
   open: () => void;
   close: () => void;
   toggle: () => void;
@@ -55,27 +46,37 @@ export type IdMenuApi = {
   restoreIfRemembered: () => void;
 };
 
+function readRememberedOpen(): boolean {
+  try {
+    const next = localStorage.getItem(OPEN_KEY);
+    if (next !== null) return next !== "0";
+    const legacy = localStorage.getItem(LEGACY_OPEN_KEY);
+    if (legacy !== null) return legacy !== "0";
+  } catch {
+    /* ignore */
+  }
+  return true;
+}
+
 // 2. Public API
 
-export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
+export function installAccountsPanel(
+  opts: AccountsPanelOptions,
+): AccountsPanelApi {
   const menu = document.createElement("div");
-  menu.className = "sidebar-id-menu";
+  menu.className = "sidebar-accounts-panel";
   menu.hidden = true;
   menu.setAttribute("role", "region");
-  menu.setAttribute("aria-label", "Ids");
+  menu.setAttribute("aria-label", "Accounts");
   opts.host.appendChild(menu);
 
   const list = document.createElement("div");
-  list.className = "sidebar-id-menu-list";
+  list.className = "sidebar-accounts-list";
   menu.appendChild(list);
 
   const foot = document.createElement("div");
-  foot.className = "sidebar-id-menu-foot";
+  foot.className = "sidebar-accounts-foot";
   menu.appendChild(foot);
-
-  applyStoredHeight(list);
-  installResize(list, opts.resizeHandle);
-  ensureIdCardMenuCloser();
 
   let open = false;
 
@@ -89,16 +90,15 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
 
   const afterChange = (): void => {
     rebuild();
-    opts.anchor.textContent = ID_BRAND;
+    opts.anchor.textContent = ACCOUNTS_BRAND;
   };
 
-  const api: IdMenuApi = {
+  const api: AccountsPanelApi = {
     open: () => {
       if (open) return;
       open = true;
       rebuild();
       menu.hidden = false;
-      opts.resizeHandle.hidden = false;
       opts.anchor.setAttribute("aria-expanded", "true");
       opts.anchor.classList.add("is-active");
       rememberOpen(true);
@@ -107,7 +107,6 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
       if (!open) return;
       open = false;
       menu.hidden = true;
-      opts.resizeHandle.hidden = true;
       opts.anchor.setAttribute("aria-expanded", "false");
       opts.anchor.classList.remove("is-active");
       rememberOpen(false);
@@ -121,11 +120,7 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
       if (open) rebuild();
     },
     restoreIfRemembered: () => {
-      try {
-        if (localStorage.getItem(OPEN_KEY) === "1") api.open();
-      } catch {
-        /* ignore */
-      }
+      if (readRememberedOpen()) api.open();
     },
   };
 
@@ -142,8 +137,7 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
     list.innerHTML = "";
     foot.innerHTML = "";
 
-    const allUsers = opts.getUsers();
-    const users = allUsers.filter((u) => !u.archived);
+    const users = opts.getUsers().filter((u) => !u.archived);
     const projects = opts.getProjects();
     let activeId = getActiveUserId();
     if (activeId !== null && !users.some((u) => u.id === activeId)) {
@@ -153,14 +147,16 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
 
     if (users.length === 0) {
       const empty = document.createElement("p");
-      empty.className = "sidebar-id-menu-empty";
-      empty.textContent = "No ids yet — create one below.";
+      empty.className = "sidebar-accounts-empty";
+      empty.textContent =
+        "No accounts yet — create one in Settings → Directory.";
       list.appendChild(empty);
     } else {
       for (const user of users) {
         list.appendChild(
-          buildIdCard(user, activeId === user.id, projects, {
+          buildAccountCard(user, activeId === user.id, projects, {
             getUsers: opts.getUsers,
+            getSelectedId: opts.getSelectedId,
             onUsersChanged: opts.onUsersChanged,
             onActiveUserChanged: opts.onActiveUserChanged,
             onSelectProject: opts.onSelectProject,
@@ -174,7 +170,7 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
     if (orphans.length > 0 && activeId !== null) {
       const claim = document.createElement("button");
       claim.type = "button";
-      claim.className = "sidebar-id-menu-claim";
+      claim.className = "sidebar-accounts-claim";
       claim.textContent = `Assign ${orphans.length} unowned → ${userLabel(
         users.find((u) => u.id === activeId) ?? { id: activeId },
       )}`;
@@ -193,18 +189,9 @@ export function installIdMenu(opts: IdMenuOptions): IdMenuApi {
       foot.appendChild(claim);
     } else if (orphans.length > 0) {
       const note = document.createElement("p");
-      note.className = "sidebar-id-menu-empty";
-      note.textContent = `${orphans.length} project(s) have no id yet.`;
+      note.className = "sidebar-accounts-empty";
+      note.textContent = `${orphans.length} project(s) have no account yet.`;
       foot.appendChild(note);
     }
-
-    foot.appendChild(
-      buildCreateIdButton(allUsers, projects, {
-        onUsersChanged: opts.onUsersChanged,
-        onProjectsUpdated: opts.onProjectsUpdated,
-        onActiveUserChanged: opts.onActiveUserChanged,
-        afterChange,
-      }),
-    );
   }
 }

@@ -15,7 +15,7 @@ app/ui/src/<area>/…     ↔     app/ui/css/<area>/…
 - Same area names on both sides.
 - Behavior/DOM in `src/`; look in `css/`.
 - A new visual surface gets (or extends) a pair — not a one-sided dump into `style.css` or an unrelated module.
-- Shared tokens live once: `css/tokens.css` (imported by everything). No parallel “theme” in TS except tiny product strings (`ID_BRAND`, etc.).
+- Shared tokens live once: `css/tokens.css` (imported by everything). No parallel “theme” in TS except tiny product strings (`ACCOUNTS_BRAND`, etc.).
 
 ## Target tree
 
@@ -28,7 +28,7 @@ app/ui/
 │   ├── tokens.css            # colors, type, space, radius — the identity
 │   ├── base.css              # reset / body defaults using tokens
 │   ├── shell/                # columns, tabs, busy/spinner, layout chrome
-│   ├── sidebar/              # Manager brand, id menu, project list
+│   ├── panes/create/         # sidebar rail + Accounts panel (was Manager/id)
 │   ├── map/                  # progression canvas (today: canvas/ + map TS)
 │   ├── chat/                 # thread, compose, About-frames
 │   └── pages/

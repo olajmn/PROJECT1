@@ -221,6 +221,17 @@ export async function createUser(text) {
     }
     return (await res.json());
 }
+export async function renameUser(simUserId, text) {
+    const res = await fetch(`/api/users/${simUserId}/rename`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+    });
+    if (!res.ok) {
+        throw new Error(await httpErrorMessage(res));
+    }
+    return (await res.json());
+}
 export async function archiveUser(simUserId) {
     const res = await fetch(`/api/users/${simUserId}/archive`, { method: "POST" });
     if (!res.ok) {

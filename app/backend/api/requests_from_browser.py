@@ -30,7 +30,7 @@ import json
 import re
 from http.server import BaseHTTPRequestHandler
 
-from backend.storage.users_persistence import load_users, save_user
+from backend.storage.users_persistence import load_users, rename_user, save_user
 from backend.project.panes.chat.reply import reply
 from backend.project.panes.create.lifecycle import cancel_project, create_project
 from backend.project.panes.create.rename import rename_project
@@ -86,6 +86,7 @@ _POST_ROUTES = [
     (r"/api/parse-outline-preview", "_handle_parse_outline_preview"),
     (r"/api/choose-folder", "_handle_choose_folder"),
     (r"/api/users", "_handle_create_user"),
+    (r"/api/users/(\d+)/rename", "_handle_rename_user"),
     (r"/api/users/(\d+)/archive", "_handle_archive_user"),
 ]
 _POST_ROUTES = [(re.compile(f"^{path}$"), method) for path, method in _POST_ROUTES]
@@ -310,6 +311,19 @@ class Handler(BaseHTTPRequestHandler):
         if text is None:
             return
         self._send_json(user_view(save_user(text)))
+
+    def _handle_rename_user(self, sim_user_id: int) -> None:
+        body = self._read_json_body()
+        if body is None:
+            return
+        if "text" not in body:
+            self.send_error(400, "missing text")
+            return
+        user = rename_user(sim_user_id, str(body.get("text") or ""))
+        if user is None:
+            self.send_error(404, "no such user")
+            return
+        self._send_json(user_view(user))
 
     def _handle_archive_user(self, sim_user_id: int) -> None:
         user = archive_user(sim_user_id)

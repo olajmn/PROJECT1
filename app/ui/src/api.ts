@@ -295,6 +295,21 @@ export async function createUser(text: string): Promise<UserView> {
   return (await res.json()) as UserView;
 }
 
+export async function renameUser(
+  simUserId: number,
+  text: string,
+): Promise<UserView> {
+  const res = await fetch(`/api/users/${simUserId}/rename`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) {
+    throw new Error(await httpErrorMessage(res));
+  }
+  return (await res.json()) as UserView;
+}
+
 export async function archiveUser(simUserId: number): Promise<UserView> {
   const res = await fetch(`/api/users/${simUserId}/archive`, { method: "POST" });
   if (!res.ok) {

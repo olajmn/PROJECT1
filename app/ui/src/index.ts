@@ -1,5 +1,5 @@
 // Project workspace — Notion-ish shell over Project records.
-// Left (sidebar): id#N menu + create + project list.
+// Left (sidebar): Accounts panel (projects nest under each account) + create.
 // Center: open project map. Close lives in the map's own top bar.
 // Right: conversation for that project. Wire: project_id / /api/projects.
 
@@ -11,23 +11,22 @@
 
 import { fetchProjects, fetchUsers } from "./api.js";
 import { installChatResize, installSidebarResize } from "./shell/columnWidths.js";
-import { installIdMenu } from "./panes/create/manager/manager.js";
-import { renderManagerButton } from "./panes/create/manager/managerButton.js";
-import { installProjectList } from "./panes/create/projectList.js";
+import { installAccountsPanel } from "./panes/create/accounts/panel.js";
+import { renderAccountsBrand } from "./panes/create/accounts/brandButton.js";
 import {
   detachArchivedOwners,
   ensureSelectionInActiveUser,
   projectsForActiveUser,
   syncActiveUser,
   type SelectionState,
-} from "./panes/create/projectsForId.js";
+} from "./panes/create/projectsForAccount.js";
 import { installCreatePanel } from "./panes/create/createForm.js";
 import { installChatPane } from "./panes/chat/chatPane.js";
 import { installCommandMenu } from "./panes/chat/commands/menu.js";
 import { installCommandHighlight } from "./panes/chat/commands/highlight.js";
 import { installSendMessage } from "./panes/chat/sendMessage.js";
 import { installMapPane } from "./panes/canvas/mapPane.js";
-import { getActiveUserId, setActiveUserId } from "./user/activeId.js";
+import { getActiveUserId, setActiveUserId } from "./user/activeAccount.js";
 import { applyStoredTheme } from "./user/theme.js";
 import type { ProjectView, UserView } from "./dataShapes.js";
 
@@ -35,14 +34,10 @@ applyStoredTheme();
 
 // 1. Shell + state
 
-const projectListEl = document.getElementById("project-list") as HTMLDivElement;
-const listEmpty = document.getElementById("list-empty") as HTMLParagraphElement;
-const projectListToggle = document.getElementById(
-  "project-list-toggle",
-) as HTMLButtonElement;
 const sidebarBrand = document.getElementById("sidebar-brand") as HTMLButtonElement;
-const sidebarIdHost = document.getElementById("sidebar-id") as HTMLElement;
-const idMenuResize = document.getElementById("id-menu-resize") as HTMLElement;
+const sidebarAccountsHost = document.getElementById(
+  "sidebar-accounts",
+) as HTMLElement;
 const projectMain = document.getElementById("project-main") as HTMLElement;
 const mainEmpty = document.getElementById("main-empty") as HTMLParagraphElement;
 const projectChat = document.getElementById("project-chat") as HTMLElement;
@@ -78,7 +73,7 @@ function ensureSel(): void {
 }
 
 function renderAll(): void {
-  list.render();
+  accountsPanel.refresh();
   mapPane.render();
 }
 
@@ -116,12 +111,12 @@ for (const id of ["chat-rail-toggle", "chat-rail-grip"]) {
   });
 }
 
-const idMenu = installIdMenu({
+const accountsPanel = installAccountsPanel({
   anchor: sidebarBrand,
-  host: sidebarIdHost,
-  resizeHandle: idMenuResize,
+  host: sidebarAccountsHost,
   getUsers: () => users,
   getProjects: () => projects,
+  getSelectedId: () => selection.selectedId,
   onUsersChanged: (next) => {
     applyUsers(next);
   },
@@ -156,7 +151,7 @@ const idMenu = installIdMenu({
 });
 
 const createPanel = installCreatePanel({
-  onNeedUser: () => idMenu.open(),
+  onNeedUser: () => accountsPanel.open(),
   onChange: () => mapPane.render(),
   getTitles: () => projectsForActiveUser(projects).map((p) => p.name),
   onCreated: (created) => {
@@ -165,22 +160,6 @@ const createPanel = installCreatePanel({
       ...projects.filter((p) => p.project_id !== created.project_id),
     ];
     selection.selectedId = created.project_id;
-    renderAll();
-  },
-});
-
-const list = installProjectList({
-  listEl: projectListEl,
-  emptyEl: listEmpty,
-  toggleEl: projectListToggle,
-  getProjects: () => projects,
-  getSelectedId: () => selection.selectedId,
-  onSelectProject: (projectId) => {
-    selection.selectedId = projectId;
-    selection.selectedNodeId = null;
-    selection.selectedNodeLabel = null;
-    createPanel.close();
-    chatPane.clearIsolate();
     renderAll();
   },
 });
@@ -214,7 +193,8 @@ const mapPane = installMapPane({
     ensureSel();
     renderAll();
   },
-  onBrandRender: () => renderManagerButton(sidebarBrand, idMenu.isOpen()),
+  onBrandRender: () =>
+    renderAccountsBrand(sidebarBrand, accountsPanel.isOpen()),
 });
 
 // 3. Data
@@ -225,7 +205,7 @@ function applyUsers(next: UserView[]): void {
   syncActiveUser(next);
   ensureSel();
   renderAll();
-  idMenu.refresh();
+  accountsPanel.refresh();
 }
 
 function replaceProject(updated: ProjectView): void {
@@ -266,19 +246,19 @@ async function load(): Promise<void> {
     ensureSel();
   }
   renderAll();
-  idMenu.restoreIfRemembered();
+  accountsPanel.restoreIfRemembered();
   if (
     getActiveUserId() === null
     || params.get("tab") === "users"
     || params.get("tab") === "vision"
   ) {
-    idMenu.open();
+    accountsPanel.open();
   }
 }
 
 // 4. Initialization
 
 load().catch((err) => {
-  listEmpty.hidden = false;
-  listEmpty.textContent = `(error: ${(err as Error).message})`;
+  mainEmpty.hidden = false;
+  mainEmpty.textContent = `(error: ${(err as Error).message})`;
 });

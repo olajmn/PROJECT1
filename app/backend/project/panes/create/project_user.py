@@ -1,5 +1,5 @@
 """
-Link a project to an id#N, or archive an id and detach its projects.
+Link a project to an account#N, or archive an account and detach its projects.
 
 Identity writes, not reasoning. Judgment does not own this.
 """

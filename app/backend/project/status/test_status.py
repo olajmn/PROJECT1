@@ -45,7 +45,7 @@ def main() -> None:
     assert status["earlier"] == 0
 
     summary = {row["label"]: row["text"] for row in status["summary"]}
-    assert summary["Project"] == "Home (id#3), started 24 Sep", summary
+    assert summary["Project"] == "Home, started 24 Sep", summary
     assert summary["Map"] == "3 nodes, 2 levels"
     assert "Top level" not in summary
     assert "Recent map work under" not in summary
@@ -54,7 +54,7 @@ def main() -> None:
     assert list(summary) == ["Project", "Last change", "Map"], list(summary)
 
     text = status_text(status)
-    assert text.startswith("Project: Home (id#3), started 24 Sep")
+    assert text.startswith("Project: Home, started 24 Sep")
     assert "Changes (newest first):\n  Today — 3 changes" in text
     assert "Yesterday — 2 changes" in text
     assert "Chat" not in text.split("Changes")[1]

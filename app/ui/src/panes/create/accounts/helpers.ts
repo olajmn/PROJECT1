@@ -1,25 +1,7 @@
-// Shared helpers for the Manager id menu.
+// Shared helpers for the Accounts panel.
 
 import { setProjectUser } from "../../../api.js";
 import type { ProjectView } from "../../../dataShapes.js";
-
-export function closeIdCardMenus(): void {
-  document.querySelectorAll(".sidebar-id-card-menu").forEach((el) => {
-    (el as HTMLElement).hidden = true;
-  });
-  document.querySelectorAll(".sidebar-id-card-menu-toggle").forEach((el) => {
-    el.setAttribute("aria-expanded", "false");
-  });
-}
-
-let idCardMenuCloserInstalled = false;
-
-/** One document listener — close any open id-card ⋯ menu on outside click. */
-export function ensureIdCardMenuCloser(): void {
-  if (idCardMenuCloserInstalled) return;
-  idCardMenuCloserInstalled = true;
-  document.addEventListener("click", () => closeIdCardMenus());
-}
 
 export async function claimUnassigned(
   userId: number,

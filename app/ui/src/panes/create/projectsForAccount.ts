@@ -1,12 +1,12 @@
-// Which projects belong to the active id, and which one to open.
-// Keeps the active id valid when ids are added or deleted.
+// Which projects belong to the active account, and which one to open.
+// Keeps the active account valid when seats are added or deleted.
 
 // Contents
 //  1. Filter
 //      - projectsForActiveUser()
 //  2. Selection
 //      - ensureSelectionInActiveUser()
-//  3. Active id
+//  3. Active account
 //      - syncActiveUser()
 //      - detachArchivedOwners()
 
@@ -15,7 +15,7 @@ import {
   getActiveUserId,
   getLastProjectId,
   setActiveUserId,
-} from "../../user/activeId.js";
+} from "../../user/activeAccount.js";
 import type { ProjectView, UserView } from "../../dataShapes.js";
 
 // 1. Filter
@@ -34,9 +34,9 @@ export type SelectionState = {
 };
 
 /**
- * If the current selection is not under the active id, pick the last
- * project seen under that id (or newest). Clears node focus when the
- * project changes. Mutates `state` in place.
+ * If the current selection is not under the active account, pick the
+ * last project seen under that account (or newest). Clears node focus
+ * when the project changes. Mutates `state` in place.
  */
 export function ensureSelectionInActiveUser(
   projects: ProjectView[],
@@ -61,9 +61,9 @@ export function ensureSelectionInActiveUser(
   state.selectedNodeLabel = null;
 }
 
-// 3. Active id
+// 3. Active account
 
-/** Keep localStorage active id aligned with non-archived users. */
+/** Keep localStorage active account aligned with non-archived users. */
 export function syncActiveUser(nextUsers: UserView[]): void {
   const live = nextUsers.filter((u) => !u.archived);
   const active = getActiveUserId();
@@ -75,7 +75,7 @@ export function syncActiveUser(nextUsers: UserView[]): void {
   setActiveUserId(live.reduce((a, b) => (a.id > b.id ? a : b)).id);
 }
 
-/** Clear sim_user_id on projects whose owner id was archived. */
+/** Clear sim_user_id on projects whose owner account was archived. */
 export function detachArchivedOwners(
   projects: ProjectView[],
   users: UserView[],

@@ -6,7 +6,7 @@ Legacy combined projects.jsonl / plans.jsonl / plans.json, and snapshot
 {id}.jsonl files, migrate into this folder shape on first load.
 
 Identity grouping for display lives in create/resolver.py — project_id
-minting and on-load promotes stay here. Simulated users (id#N) live in
+minting and on-load promotes stay here. Simulated users (account#N) live in
 users_persistence.py and are only referenced via optional sim_user_id.
 """
 
