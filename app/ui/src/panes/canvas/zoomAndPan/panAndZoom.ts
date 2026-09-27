@@ -59,7 +59,12 @@ const LEFT_PAD = 8;
 /** How far past the overview fit the wheel may still pull back. */
 const OUT_PAST_FIT = 0.4;
 
+/** Zoom and vertical pan — what a re-render must carry over. */
+export type CameraPose = { zoom: number; panY: number };
+
 export type MapCameraHandle = {
+  getPose: () => CameraPose;
+  setPose: (pose: CameraPose) => void;
   setEnabled: (on: boolean) => void;
   setContentSize: (w: number, h: number) => void;
   resetOverview: () => void;
@@ -285,6 +290,17 @@ export function installMapCamera(
   viewport.addEventListener("dblclick", onDblClick);
 
   return {
+    getPose: () => ({ zoom, panY }),
+
+    /** Restore a pose from before a re-render, without painting: it
+     *  counts as the user's own view (dirty), so the next paint keeps it
+     *  instead of fitting the overview. */
+    setPose: (pose: CameraPose) => {
+      zoom = pose.zoom;
+      panY = pose.panY;
+      dirty = true;
+    },
+
     setEnabled: (on: boolean) => {
       enabled = on;
       viewport.classList.toggle("is-camera-on", on);

@@ -12,6 +12,7 @@
  * Contents
  *
  * 1. Module State and Types
+ *    - poseByProject
  *    - readSticky()
  *    - writeSticky()
  *
@@ -39,7 +40,7 @@
  * 6. Event Wiring and Public Handle
  */
 
-import { installMapCamera } from "./panAndZoom.js";
+import { installMapCamera, type CameraPose } from "./panAndZoom.js";
 import { measureMapContent } from "../lines/svgHelpers.js";
 import {
   getMapView,
@@ -59,6 +60,10 @@ type Sticky = { grain: Grain; view: MapView; viewPinned: boolean };
 
 /** A row plus the on-screen y it should keep across a relayout. */
 type RowAnchor = { row: HTMLElement; top: number };
+
+/** Per-project zoom + pan, for this page load only: carried across
+ *  re-renders, while a fresh load still opens at the overview. */
+const poseByProject = new Map<number, CameraPose>();
 
 /** Per-project grain/view — `localStorage`-backed, survives page refresh. */
 function readSticky(projectId: number): Sticky | undefined {
@@ -217,9 +222,15 @@ export function installMapScale(
       viewPinned = mapEl.dataset.mapViewPin === "1";
       syncViewChrome();
       remember();
+      poseByProject.set(projectId, camera.getPose());
     },
   });
   camera.setEnabled(true);
+
+  // Every project update (a node added, a chat reply, `/id`) rebuilds the
+  // map and this camera; without this it would come back at 1× zoom.
+  const pose = poseByProject.get(projectId);
+  if (pose) camera.setPose(pose);
 
   // A remembered grain means the map is deliberately not at the auto-overview,
   // so it counts as dirty — `paint()` then keeps it instead of re-picking.
