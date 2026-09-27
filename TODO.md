@@ -15,13 +15,24 @@ deliberately chosen as next.
 
 ## Active
 
-UX problems found in use, taken before the wider UI/UX pass.
+The UI/UX pass, starting with real content to design against.
 
-53. **`/select` needs the full path and exact name** (Step, tier 2) —
-    `/select 1. Planning` fails when it sits under another node, and a
-    typo fails without a hint. Candidates: find a unique name anywhere
-    in the tree, ignore case, suggest the closest name. Rules in
-    `panes/chat/commands/node_path.py`. Split out of 12.
+55. **Realistic demo projects** (Step, first) — the saved data is test
+    content ("ggehh", "1 / 2 / 3 / 4"), which makes spacing, hierarchy,
+    long names, and deep trees hard to judge. The owner builds 2–3
+    projects that together show what the app is for — for example an
+    event plan, a recipe, and a folder from disk — in an account of
+    their own, with some changes over more than one day and a little
+    Talk. They are what the UI is judged against and what a demo
+    opens on. Open: whether the old test projects are archived or
+    kept apart.
+56. **UI/UX pass: how the screen looks** (Step) — presentation only,
+    not new features: hierarchy (loud / quiet / hidden), spacing, type,
+    and the look of the canvas, chat, Current state, and sidebar,
+    judged against the projects from 55. Principles and layout:
+    `docs/ui.md`. Items that may fold in when they come up: 53
+    (`/select` hint), 54 (undo), 45 (copy one branch), 38 (changed
+    nodes on the map).
 
 ## Queue
 
@@ -107,6 +118,14 @@ only). Numbers are stable ids, not rank.
     4. `source` ({project_id, step_id}) is provenance only; a
        cross-project identity belongs with Queue 50.
 
+53. **`/select` gives no hint when it fails** (Step) — matching stays
+    exact on purpose (full path from the top, exact name): a command
+    that guesses could select the wrong node unnoticed. What is
+    missing is a useful reply instead of "No node at path": where a
+    unique name actually sits (`"1. Planning" is under BIRTHDAY PARTY
+    - try /select BIRTHDAY PARTY / 1. Planning`), or the closest name
+    for a typo. Clicking a node stays the main way to select. Rules in
+    `panes/chat/commands/node_path.py`. Split out of 12.
 54. **Undo for map edits (Ctrl+Z)** (Step) — removing a node now asks
     first when it has children (Active 41, closed), but nothing can be
     undone. Likely shape: keep the last 10–20 versions of the tree
