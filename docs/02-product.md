@@ -54,7 +54,8 @@ helps but does not take over.
   without an account can be assigned to the active one from the
   Accounts panel.
 - **Build the map:** add a node (`+` at the end, or ⋯ Add here) and
-  remove one (⋯ Remove). Paste an outline — bullets, a numbered list,
+  remove one (⋯ Remove; a node with children asks first, since its
+  children go with it). Paste an outline — bullets, a numbered list,
   plain lines, or an ASCII tree — with a live preview where single nodes
   can be left out. Add a folder from disk: each file and folder becomes
   a node. A name that already exists among siblings gets `(2)`,

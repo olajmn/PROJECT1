@@ -750,6 +750,19 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Reversible?** Not applicable.
 
 
+## 65. 2026-09-27 — Ask before removing a node that has children
+
+**Decision:** ⋯ Remove on a node with children asks first ("Remove "Planning" and the 4 parts under it?"); a node without children is removed at once, as before. The check sits in `removeBead()` in `panes/canvas/mapPane.ts`, the one place the UI removes a node. The question is the app's own box (`panes/canvas/confirmPopover.ts`), not `window.confirm()`: embedded browsers such as the one inside Cursor skip native dialogs and answer yes silently, which removed nodes without asking. Deleting a saved tree uses the same box. Closes `TODO.md` 41 for now.
+
+**Date:** 2026-09-27
+
+**Why this choice:** Remove takes the whole subtree and there is no undo, so one misclick on a top node emptied most of a project. A confirmation is small and matches deleting a saved tree; undo is the fuller answer and is planned separately (`TODO.md` Queue 54).
+
+**Trade-off:** One more click for every removal of a node with children. Keeping the children while removing their parent is not offered.
+
+**Reversible?** Yes; likely replaced by undo.
+
+
 ## See also
 
 - [[03-architecture]]

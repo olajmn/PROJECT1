@@ -15,7 +15,13 @@ deliberately chosen as next.
 
 ## Active
 
-Nothing active. Pick the next item from the Queue deliberately.
+UX problems found in use, taken before the wider UI/UX pass.
+
+53. **`/select` needs the full path and exact name** (Step, tier 2) —
+    `/select 1. Planning` fails when it sits under another node, and a
+    typo fails without a hint. Candidates: find a unique name anywhere
+    in the tree, ignore case, suggest the closest name. Rules in
+    `panes/chat/commands/node_path.py`. Split out of 12.
 
 ## Queue
 
@@ -35,8 +41,8 @@ only). Numbers are stable ids, not rank.
 
 12. **Decomposition / zoom** (Step) — map is user-steered
     (`plan.progression`); + / × / Paste / Add folder under a selected
-    node write it. Still open: naming a node in chat without selecting
-    it first. Model-proposed children were removed ([[05-decisions]]
+    node write it. Naming a node in chat without the full path is
+    Active 53. Model-proposed children were removed ([[05-decisions]]
     #60, #63); if they return, as an explicit `/suggest` that proposes
     in the chat and leaves adding to the user.
 30. **No written API reference** (Step) — short overview of each
@@ -101,6 +107,18 @@ only). Numbers are stable ids, not rank.
     4. `source` ({project_id, step_id}) is provenance only; a
        cross-project identity belongs with Queue 50.
 
+54. **Undo for map edits (Ctrl+Z)** (Step) — removing a node now asks
+    first when it has children (Active 41, closed), but nothing can be
+    undone. Likely shape: keep the last 10–20 versions of the tree
+    before each map edit (the events tape holds only short texts, not
+    the tree); Undo puts the previous version back as a new saved
+    change. To decide: which edits count (add, remove, paste, folder,
+    insert tree, rename?), whether undo survives a reload, redo,
+    Ctrl+Z only while the map has focus (text fields keep their own
+    undo), and a visible Undo after a remove. With undo in place the
+    remove confirmation may go. Also open from 41: removing a node but
+    keeping its children (moved up a level).
+
 ### Tier 4
 
 9. **A second capability** (Step) — the app can only do Project today.
@@ -140,11 +158,6 @@ only). Numbers are stable ids, not rank.
     the model already gets a slice via `status_text`, but explicit
     commands are optional later. Lives under `panes/chat/commands/`
     when built. Related to model brief (#42 in decisions; was Active 40).
-41. **Delete a node with children** (Question) — today × removes the
-    whole subtree (cascade). Fine while trees are shallow; later may
-    want promote children, forbid-until-empty, or ask. Tree policy
-    (owned with `project/node/`), not only canvas chrome — same rule
-    should apply if Talk ever deletes. Related to 12, 40.
 
 ## Ideas (not decided)
 

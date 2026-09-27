@@ -52,6 +52,9 @@ def send_page_file(handler: BaseHTTPRequestHandler) -> None:
         CONTENT_TYPES.get(file_path.suffix, "application/octet-stream"),
     )
     handler.send_header("Content-Length", str(len(body)))
+    # Ask the browser to fetch again every time: without it, a rebuilt
+    # ui/dist/ module can stay cached behind an up-to-date page.
+    handler.send_header("Cache-Control", "no-cache")
     handler.end_headers()
     handler.wfile.write(body)
 

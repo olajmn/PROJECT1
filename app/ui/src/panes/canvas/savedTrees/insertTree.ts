@@ -20,6 +20,7 @@ import {
 } from "../../../api.js";
 import type { ProjectView, SavedTreeView } from "../../../dataShapes.js";
 import type { NodeMenuContext } from "../nodeMenu.js";
+import { askToConfirm } from "../confirmPopover.js";
 import { placePopover } from "../placePopover.js";
 
 // 1. Public API
@@ -149,7 +150,12 @@ function buildRow(
   remove.textContent = "×";
   remove.title = "Delete from saved trees";
   remove.addEventListener("click", async () => {
-    if (!window.confirm(`Delete saved tree "${tree.name}"?`)) return;
+    const ok = await askToConfirm(
+      remove.getBoundingClientRect(),
+      `Delete saved tree “${tree.name}”?`,
+      "Delete",
+    );
+    if (!ok) return;
     try {
       await deleteSavedTree(tree.id);
       onDeleted(row);

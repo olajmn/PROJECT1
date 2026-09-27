@@ -9,7 +9,7 @@
  *  3. Paste outline (the bar itself is in frame.css)
  *      - .map-paste-* / .outline-preview-*
  *  4. Poles, beads, menus
- *      - .progress-pole* / .progress-bead-* / .progress-menu-*
+ *      - .progress-pole* / .progress-bead-* / .progress-menu-* / .confirm-popover*
  *  5. Add / focus
  *      - .progress-add* / .node-focus-note
  */
@@ -429,6 +429,30 @@
 .progress-menu-item:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+/* The app's own "are you sure?" box (confirmPopover.ts): the menu's box
+   and buttons, with the question above them. */
+.confirm-popover {
+  max-width: 18rem;
+}
+
+.confirm-popover-text {
+  margin: 0;
+  padding: 0.3rem 0.55rem 0.4rem;
+  font-size: var(--font-size-sm);
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.confirm-popover-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}
+
+.confirm-popover-buttons .progress-menu-item {
+  width: auto;
 }
 
 /* 5. Add / focus */

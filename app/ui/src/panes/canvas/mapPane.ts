@@ -7,6 +7,7 @@
 //  2. Helpers
 //      - isProgressionTree()
 //      - stepIdForLabel()
+//      - countUnder()
 //  3. Public API
 //      - installMapPane()
 
@@ -24,8 +25,9 @@ import { treeWordsElement } from "./drawNodes.js";
 import type { NodeMenuActionId } from "./drawNodes.js";
 import { installMapScale } from "./zoomAndPan/index.js";
 import { mountBottomBar } from "./bottomBar.js";
+import { askToConfirm } from "./confirmPopover.js";
 import { handleNodeMenuAction } from "./nodeMenu.js";
-import type { ProjectView } from "../../dataShapes.js";
+import type { MapNode, ProjectView } from "../../dataShapes.js";
 
 // 1. Types
 
@@ -90,6 +92,23 @@ export function stepIdForLabel(
     }
   }
   return null;
+}
+
+/** Every node under `stepId`, at any depth; 0 when it has none or is
+ *  not in the tree. */
+export function countUnder(root: MapNode | null | undefined, stepId: string): number {
+  const all = (n: MapNode): number =>
+    n.children.reduce((sum, c) => sum + 1 + all(c), 0);
+  const find = (n: MapNode): MapNode | null => {
+    if (n.id === stepId) return n;
+    for (const c of n.children) {
+      const hit = find(c);
+      if (hit) return hit;
+    }
+    return null;
+  };
+  const node = root ? find(root) : null;
+  return node ? all(node) : 0;
 }
 
 // 3. Public API
@@ -185,6 +204,21 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
     };
 
     const removeBead = async (stepId: string) => {
+      // Removing takes everything under the node with it and there is
+      // no undo yet (TODO Queue 54), so a node with children asks first.
+      const under = countUnder(project.node, stepId);
+      if (under > 0) {
+        const parts = under === 1 ? "the 1 part" : `the ${under} parts`;
+        const anchor = line
+          .querySelector(`[data-step-id="${CSS.escape(stepId)}"] .progress-menu-toggle`)
+          ?.getBoundingClientRect() ?? null;
+        const ok = await askToConfirm(
+          anchor,
+          `Remove “${nodeLabel(stepId)}” and ${parts} under it?`,
+          "Remove",
+        );
+        if (!ok) return;
+      }
       line.classList.add("plan-busy");
       try {
         const updated = await removeNode(project.project_id, stepId);
