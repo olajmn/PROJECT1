@@ -11,7 +11,6 @@ def now() -> datetime:
     the system clock, so every caller shares the same notion of "now"
     and a later extension (timezone, a frozen/mocked clock for tests,
     etc.) only has to happen here instead of at every call site. Naive/
-    local, same datetime model the rest of this project already uses
-    (see docs/03-architecture.md § Time).
+    local, same datetime model the rest of this project already uses.
     """
     return datetime.now()

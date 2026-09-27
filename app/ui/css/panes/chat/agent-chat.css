@@ -1,5 +1,5 @@
 /* Agent-chat pane (right column; layout grids in shell/layout.css).
- * Tokens + hierarchy ([[visual-principles]]): who = muted meta column,
+ * Tokens + hierarchy ([[ui]] § 3): who = muted meta column,
  * text = primary; About frames stay area-local.
  *
  * Contents

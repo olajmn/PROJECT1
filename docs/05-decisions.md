@@ -1,6 +1,6 @@
 # 05 — Decisions
 
-> Decision log — why we chose what we chose, so we don't re-litigate it in three months. Renamed 2026-08-25 from the original `12-decisions.md` (content unchanged; only cross-references to other renamed docs updated — dated entries otherwise describe the project as it was on that date, including old code paths, same convention this log already followed for itself).
+A log of what was decided, and why. Entries are added, never rewritten: each one describes the project as it was on its date, old code paths included.
 
 ## Template
 
@@ -44,7 +44,7 @@ local model via Ollama.
 
 ## 6. 2026-08-18 — Reframe: the agent is the product, not a planner app
 
-**Why:** Planning is one capability the agent uses, not the product itself. Reframes the hypothesis as testing a continuous loop (goal → plan → action → feedback → replan → memory), not a one-time plan generator. Arrived at independently in a parallel ChatGPT discussion — treated as a useful consistency check. See [[06-development]] § Hypothesis, Refined framing.
+**Why:** Planning is one capability the agent uses, not the product itself. Reframes the hypothesis as testing a continuous loop (goal → plan → action → feedback → replan → memory), not a one-time plan generator. Arrived at independently in a parallel ChatGPT discussion — treated as a useful consistency check. See `06-development` § Hypothesis, Refined framing.
 **Reversible?** Yes — doesn't change any code, only framing/priorities.
 
 ## 7. 2026-08-18 — Testing takes priority over further ideation
@@ -67,14 +67,14 @@ local model via Ollama.
 ## 10. 2026-08-20 — Built an auto-generated architecture diagram anyway, kept outside `backend/`
 
 **Alternatives considered:** keep the architecture diagram fully hand-maintained (matches "don't build it before it's needed" — this log's own recurring principle); build a code-to-diagram generator now.
-**Why this choice:** built specifically in response to the overengineering concern above, with a specific future intent — lift it out of this repo later as an external tool/capability the agent itself could call on (see [[06-development]] § Parking Lot, "Tools / APIs the agent can use"). Built as `tools/architecture_mapper/` (see its own README.md), not inside `backend/`: it only uses Python's `ast` module on the target source, imports nothing from `backend`, and knows nothing project-specific — a deliberate boundary so it stays extractable intact.
+**Why this choice:** built specifically in response to the overengineering concern above, with a specific future intent — lift it out of this repo later as an external tool/capability the agent itself could call on (see `06-development` § Parking Lot, "Tools / APIs the agent can use"). Built as `tools/architecture_mapper/` (see its own README.md), not inside `backend/`: it only uses Python's `ast` module on the target source, imports nothing from `backend`, and knows nothing project-specific — a deliberate boundary so it stays extractable intact.
 **Trade-off:** it's a second thing to maintain, and it only ever describes the NOW section (functions/imports it can see in code) — it has no way to represent `docs/03-architecture.md`'s VISION section, so `docs/03-architecture.drawio` stays hand-maintained as the full source of truth; the generator's output (`tools/architecture_mapper/output/`, git-ignored) is a cross-check, not a replacement.
 **Reversible?** Yes — it's fully self-contained in one folder with no inbound or outbound imports to the rest of the project, by design.
 
 ## 11. 2026-08-19 — Write goals in English, don't switch LLM backend yet
 
 **Alternatives considered:** keep writing goals in Norwegian and accept the failures, switch to Claude API now, write goals in English.
-**Why:** Norwegian goal text causes severe, reproducible hallucination in `llama3.1:8b` (entire responses disconnected from the actual goal — see [[06-development]] § Experiments, 2026-08-19). English phrasing of the identical goal produced grounded, sensible answers. Writing goals in English sidesteps the failure immediately, at zero cost, and doesn't block starting the real usage test that's been the priority all evening.
+**Why:** Norwegian goal text causes severe, reproducible hallucination in `llama3.1:8b` (entire responses disconnected from the actual goal — see `06-development` § Experiments, 2026-08-19). English phrasing of the identical goal produced grounded, sensible answers. Writing goals in English sidesteps the failure immediately, at zero cost, and doesn't block starting the real usage test that's been the priority all evening.
 **Trade-off:** the user thinks/writes naturally in Norwegian; this is a real, felt friction, not a free workaround.
 **Reversible?** Yes, trivially — revisit switching to Claude (better multilingual handling) if English-only friction becomes a real problem, per the already-logged Ollama-vs-Claude decision above.
 
@@ -103,7 +103,7 @@ local model via Ollama.
 
 **Alternatives considered:** blockchain-based consensus for multi-device sync; a conventional server-owns-the-data model; local-first architecture with end-to-end encryption.
 **Why this choice:** the actual problem is two-fold — (1) a new device should be able to get the full agent back (history, context) via just a password/key, without the server operator being able to read the data, and (2) no single company should be able to lock the user out of or control access to their own data. Blockchain solves consensus among mutually-distrusting *strangers* via a public ledger — the wrong tool here both because "public" is the opposite of private, and because the actual problem is ownership/lock-out, not consensus. End-to-end encryption (the Bitwarden/1Password/Signal pattern — key derived locally from password, only the encrypted blob ever uploaded, server never sees plaintext) solves (1). Local-first (the user's own device always holds a complete copy, data stays in an open format, any sync server is a replaceable relay never the owner of the truth) solves (2).
-**Trade-off:** requires a real backend + account system to build at all — not an MVP concern, tracked in [[06-development]] § Parking Lot.
+**Trade-off:** requires a real backend + account system to build at all — not an MVP concern, tracked in `06-development` § Parking Lot.
 **Reversible?** Yes — the project is already 100% local-first today by construction (no server exists yet); this is a design goal to preserve when sync is eventually added, not a commitment already built.
 
 ## 16. 2026-08-24 — Faculty categorization: reuse, understanding, and Infrastructure as a separate category
@@ -147,7 +147,7 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 ## 19. 2026-09-04 — Rename PLAN_KEYS: one_year/one_month/this_week/this_hour/this_minute/right_now → year/month/week/hour/minute/now
 
 **Alternatives considered:** keep the original names; rename only the broadest slot (`one_year`); make PLAN_KEYS dynamic/generated instead of a fixed tuple.
-**Why this choice:** the old names mixed two different things under one vocabulary - literal/deictic time expressions (`one_year`, `this_week`, `right_now`) and the actual role each key plays: a plan-record time level, not a promise about the real span it covers. That mismatch became a concrete problem once a goal's own resolved duration could exceed a level's literal name - a 5-year goal's broadest relevant horizon was still called `one_year`. `year`/`month`/`week`/`hour`/`minute`/`now` name the levels themselves; the actual temporal semantics and concrete durations remain entirely `foundation/time`'s job (`resolve_duration()`/`describe_duration()`/`resolve_span()`), unchanged by this rename. `today` was left as-is - already a plain level name, not a literal or deictic expression needing correction. This also supersedes docs/archive/06-development.md's 2026-08-26 entry, which kept `right_now`/`PLAN_KEYS` unchanged specifically because renaming them "would be a real migration for a purely cosmetic gain" - the motivation here is semantic correctness, not cosmetics, and the migration itself is now done (see Trade-off).
+**Why this choice:** the old names mixed two different things under one vocabulary - literal/deictic time expressions (`one_year`, `this_week`, `right_now`) and the actual role each key plays: a plan-record time level, not a promise about the real span it covers. That mismatch became a concrete problem once a goal's own resolved duration could exceed a level's literal name - a 5-year goal's broadest relevant horizon was still called `one_year`. `year`/`month`/`week`/`hour`/`minute`/`now` name the levels themselves; the actual temporal semantics and concrete durations remain entirely `foundation/time`'s job (`resolve_duration()`/`describe_duration()`/`resolve_span()`), unchanged by this rename. `today` was left as-is - already a plain level name, not a literal or deictic expression needing correction. This also supersedes `06-development`'s 2026-08-26 entry, which kept `right_now`/`PLAN_KEYS` unchanged specifically because renaming them "would be a real migration for a purely cosmetic gain" - the motivation here is semantic correctness, not cosmetics, and the migration itself is now done (see Trade-off).
 **Trade-off:** none identified - `_HORIZON_LENGTH_THRESHOLDS` and `broadest_relevant_horizon()`'s fill/null logic are unchanged in behavior, only in the strings they use. Existing `data/plans.json` records (saved under the old names) are remapped on load via `data_persistence._LEGACY_HORIZON_KEY_RENAMES`, so no stored plan content was lost or needs a manual migration step.
 **Reversible?** Yes - `_LEGACY_HORIZON_KEY_RENAMES` could be reversed the same way it was added; no data was deleted, only remapped on read.
 
@@ -252,7 +252,7 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Alternatives considered:** big-bang rename of every Python symbol and the `goal` text field in the same pass; permanent dual keys on disk; skip API alias and break old bookmarks.
 
-**Why this choice:** Phase A product feel was already settled (#25); wire rename was the parked Phase B in [[goal-to-project-migration]]. Compatibility layer let UI and disk move together without a multi-day symbol sweep.
+**Why this choice:** Phase A product feel was already settled (#25); wire rename was the parked Phase B in `goal-to-project-migration`. Compatibility layer let UI and disk move together without a multi-day symbol sweep.
 
 **Trade-off:** Internal Python still says “goal” in many places; display field `goal` is still the title string.
 
@@ -635,12 +635,31 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Reversible?** Yes — code only; the data format is unchanged except that new saves omit four empty fields.
 
 
+## 57. 2026-09-27 — Short living docs, history in `docs/archive/`
+
+**Decision:** The living docs describe only what is true and intended now, briefly; everything else moves to `docs/archive/`.
+- `00-project-brief`, `01-research`, `02-product`, `03-architecture`, `04-current-state` rewritten short (48–114 lines each, from up to 419). Each old version is kept as `archive/<name>-v1.md`.
+- Also archived: `06-development` (closed log), `goal-to-project-migration` (done), `v4-migration-decision`, `visual-reset` (done).
+- The brief centres on the node as an object with identity and state; the conversation works on the structure. The NFT direction is not in 00 or 02; it was parked in a temporary salvage file until placed.
+- `02-product` splits into the foundation (node model, principles) and the app (screen, every feature).
+- Each doc opens with one sentence saying what it is; references go in "See also".
+- A temporary `TEMP-salvage.md` held the few points from archived docs still waiting for a home, to be deleted when empty.
+- `tools/docs_check.py` knows `ARCHIVED_DOCS` and resolves wikilinks into the archive; `COLLABORATION.md` has an archive row.
+
+**Date:** 2026-09-27
+
+**Alternatives considered:** keep and update every long doc in place — rejected: most of their length was planner-agent history or no longer true, which taught new sessions the wrong system; delete instead of archive — rejected for now: other docs and code point at them, and the archive costs nothing.
+
+**Why this choice:** Map+Talk had outgrown documents written for the planner agent. Short docs that state only the present are cheaper to keep true; history already lives in this file and in git.
+
+**Reversible?** Yes — every old version is in `docs/archive/` and git history.
+
+**Follow-up (same day):** The salvage file was emptied and deleted: its points went into 00, 02, 03, `ui.md`, and `TODO.md` Queue 46. `surfaces` + `visual-principles` merged into `ui.md`; `planning-model` and `concepts` archived (ideas that still fit are in `TODO.md` § Ideas). The NFT direction left this project altogether: it now starts a separate brief for that project, kept outside this repository, which refers back to PROJECT1 (node identity, saved trees, the API boundary). PROJECT1's living docs and TODO no longer mention it.
+
+**Follow-up (same day, archive made deletable):** `docs/archive/` is now optional and unmaintained. Nothing outside it may link or point into it — `tools/docs_check.py` reports that as its own finding (`POINTS INTO ARCHIVE`) and no longer lists archived files; the one relevant point still reached through it (a node's depth is data, not type) lives in `app/backend/project/node/README.md`, and Suggest's one-level rule in `02-product.md` § 2. README and `COLLABORATION.md` no longer mention the folder. Checked by moving the folder out: every check and test stayed green. Deleting it needs no other change.
+
+
 ## See also
 
-
-
-
 - [[03-architecture]]
-- [[06-development]]
 - [[02-product]]
-- [[goal-to-project-migration]]

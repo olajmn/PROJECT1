@@ -6,7 +6,7 @@ Every change is already saved as one timestamped line in
 data/projects/{id}/events.jsonl (storage/project_persistence.py). This file only reads
 those lines back as events; it writes nothing. Used by Settings → Logs
 (api/activity_log.py) and the project timeline address
-(/api/projects/<id>/timeline). See docs/04-current-state.md § 4.
+(/api/projects/<id>/timeline). See docs/04-current-state.md § 2.
 """
 
 # Contents

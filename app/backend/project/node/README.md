@@ -14,7 +14,7 @@ responsibilities; a project node is one position in a project's tree.
 
 One position in a project's tree, with a parent and children. The same
 shape is used at every depth: depth is where a node sits, not what kind
-of node it is (`docs/planning-model.md` § Structural axis). Canvas draws
+of node it is. Canvas draws
 nodes and chat talks about them; neither owns the shape. `node.py`
 (`Step`) defines it, with no model call and no persistence.
 

@@ -1,6 +1,6 @@
 /**
  * Paint nest spines for Text (ticks into beads) or Line (word bars).
- * Same topology — [[surfaces]] § 4; geometry from spacing.ts.
+ * Same topology — [[ui]] § 2; geometry from spacing.ts.
  */
 
 import { NEST_INSET_PX } from "../spacing.js";

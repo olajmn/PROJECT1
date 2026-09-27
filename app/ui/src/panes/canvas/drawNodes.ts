@@ -1,6 +1,6 @@
 /**
  * Write the words on the live project map (DOM rows + controls).
- * Layout: [[surfaces]] § 4 — `#N` → title → spine beads; depth under beads.
+ * Layout: [[ui]] § 2 — `#N` → title → spine beads; depth under beads.
  * Who-under-who from nodeFamily; lines from mapLines; indent from spacing.ts.
  */
 
@@ -338,7 +338,7 @@ function appendAsciiDepth(
 }
 
 /**
- * Project map: `#N` → title → waypoints ([[surfaces]] § 4).
+ * Project map: `#N` → title → waypoints ([[ui]] § 2).
  * Id and title are header beads (same box language as tree beads, but
  * not progression nodes — no ⋯). Middle = root children; nested = depth.
  */

@@ -17,8 +17,7 @@ from backend.storage.project_persistence import save_plan
 
 def set_project_user(project_id: int, sim_user_id: int | None) -> dict | None:
     """
-    Add, move, or remove a project's account link after mint (see
-    docs/planning-model.md, the authority on Vision).
+    Add, move, or remove a project's account link after mint.
     `sim_user_id=None` removes the project from whichever account it
     currently has.
 

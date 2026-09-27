@@ -25,9 +25,9 @@ Technical standards for this codebase. Applies going forward.
 
 ## Documentation neutrality
 
-- Code comments, docstrings, and `docs/` files state the reasoning or consequence itself, not the personal narrative of how/when/by whom it was noticed — "X breaks without Y" instead of naming the real screenshot that happened to reveal it, "the goal was X" instead of framing X as something personally wanted. Already applied to code comments (see git history, "Depersonalize comments: state facts/consequences, not discovery narrative"); the same standard applies to everything in `docs/`, since it's the material most likely to be read by someone outside this project one day. Doesn't apply to genuinely dated, historical log entries where a specific date/event is the actual point (`docs/archive/06-development.md`, `docs/05-decisions.md`'s "Date:" field) — those record when something happened; only the surrounding voice gets depersonalized, not the fact that it happened on a given day.
-- "The user" as a term still refers to the *product's* end-user where that's the actual subject (e.g. "the user's own device holds a complete copy of their data") — this rule is about not narrating this project's own build process as a personal story, not about avoiding the word.
-- The exact, checkable patterns this rule means are defined once, in `tools/docs_lint.py` (`_CONFIRMED_PATTERNS`/`REVIEW_PATTERN`) — not restated here, same as `GOAL_DONE_PHRASES`/`DAY_SEGMENTS` aren't reproduced in prose anywhere outside the code that owns them. Run it (`python3 tools/docs_lint.py`, from the project root — stdlib only, no `.venv/` needed) rather than checking by eye; update the patterns there, not this paragraph, when a new case of the same problem turns up.
+- Code comments, docstrings, and `docs/` files state the reasoning or consequence itself, not the personal narrative of how/when/by whom it was noticed — "X breaks without Y", not the story of the screenshot that revealed it; "the goal was X", not X framed as something personally wanted. Dated entries where the date is the point (the "Date:" field in `docs/05-decisions.md`) keep their dates; only the voice around them stays neutral.
+- "The user" as a term still refers to the *product's* end-user where that's the actual subject (e.g. "the data stays on the user's machine") — this rule is about not narrating this project's own build process as a personal story, not about avoiding the word.
+- The exact, checkable patterns this rule means are defined once, in `tools/docs_lint.py` (`_CONFIRMED_PATTERNS`/`REVIEW_PATTERN`) — not restated here. Run it (`python3 tools/docs_lint.py`, from the project root — stdlib only, no `.venv/` needed) rather than checking by eye; update the patterns there, not this paragraph, when a new case turns up.
 
 ## Code documentation
 
@@ -38,7 +38,7 @@ Source-code Contents (what a file's navigation block should contain, and when on
 **Prefer** giving a **new capability** (feature, helper, pane behavior, policy with its own surface) its **own file** — or a small folder when several closely related files belong together — rather than appending the bulk of it into an existing “nearby” module. This is a default bias for reviewability, not a mandate to split every change.
 
 - Existing files may gain a short import and a thin call site; they should not absorb a large new concern by default.
-- Prefer a named home that matches the concern (`columnRail/collapseRail.ts`, `engine/judgment/…`) when the boundary is real.
+- Prefer a named home that matches the concern (`project/saved_trees/`, `panes/canvas/savedTrees/`) when the boundary is real.
 - Stay in the existing file when the change is clearly the same concern (bugfix, rename, small extension) or would only create a micro-file without a clear boundary.
 - Goal: avoid +500-line dumps into a random open file; do not invent files for ceremony.
 
@@ -67,7 +67,7 @@ Security/privacy by design: every architecture, storage, or sync decision explic
 
 This does not mean gold-plating an MVP — effort should match actual current risk. It means the trade-off is always explicit, never silent.
 
-The long-term principles this implies (local-first, end-to-end encryption for any synced data) are architecture, not a coding convention — see `docs/03-architecture.md` § Architectural principles. Current security status (what's encrypted today, what isn't yet): see `docs/04-current-state.md`.
+The long-term principles this implies (local-first, end-to-end encryption for any synced data) are architecture, not a coding convention — see `docs/03-architecture.md` § 5. Current security status (what's encrypted today, what isn't yet): see `docs/04-current-state.md`.
 
 ## LLM backend
 

@@ -9,7 +9,7 @@ docs/03-architecture.md.
 A season ("this summer", "next winter") is recognized the same way,
 but is a relative, context-dependent concept, not a universal date
 range - which months it names depends on hemisphere, which this
-project has no concept of yet (see docs/03-architecture.md § Time).
+project has no concept of yet.
 resolve_duration()/resolve_span()/describe_duration()
 all take an optional `hemisphere` ("northern"/"southern") for exactly
 this; a season is reported as recognized but not resolved, never
@@ -48,9 +48,7 @@ needs to know its internal shape - `from backend.foundation.time import
 resolve_duration` works regardless of which time_logic/time_data/ file actually
 defines it.
 
-Moved 2026-08-25 into this topic-organized backend/foundation/ - full
-history: docs/archive/06-development.md, 2026-08-25. See docs/03-architecture.md
-§ Faculties for the current design.
+Not used by the app today (TODO.md Queue 21).
 """
 
 from backend.foundation.time.time_logic import now

@@ -2,7 +2,7 @@
 
 Working note for the Projects shell: **what each column is for**, and
 how the canvas should *read*. Not a pixel spec. Product loop:
-[[02-product]]. Vocabulary and on-disk homes: [[04-current-state]]
+[[02-product]]. Vocabulary and on-disk homes: [[04-current-state-v1]]
 § Vocabulary. Look budget: [[visual-principles]].
 
 ## 1. Three columns today

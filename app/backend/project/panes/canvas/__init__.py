@@ -2,7 +2,7 @@
 
 Node shape and tree-as-text live in project/node/ (above panes).
 
-Files (see docs/04-current-state.md § 2.iv):
+Files (see docs/04-current-state.md § 2):
   edit_map.py            — + / × / import / Suggest / chat-suggest
   text_to_tree.py        — pasted text → forest of labels
   add_folder/rules.py    — what a folder walk may see (no walk)

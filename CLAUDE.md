@@ -11,11 +11,10 @@ projects.
 @global-standards/_CONTENT_HIERARCHY.md
 
 Where a general standard above conflicts with this project's own rules or
-settled decisions, the project-specific files take precedence:
+settled decisions, the project-specific files below take precedence:
 
-- `CONVENTIONS.md` — this project's technical conventions
-- `COLLABORATION.md` — how `AI_COLLABORATION_GUIDE.md`'s general model
-  applies concretely in this project
+@CONVENTIONS.md
+@COLLABORATION.md
 
 Apply the standards above to new and modified files; do not rewrite existing
 files or restructure the codebase just to conform to them.

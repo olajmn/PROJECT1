@@ -22,16 +22,16 @@ Different questions about this project are answered by different documents, with
 | What is the project trying to be? | `docs/00-project-brief.md` | Identity/vision — stable, rarely revisited |
 | What's known from outside the project? | `docs/01-research.md` | External evidence — informs product/architecture, not settled itself |
 | What is the product, concretely? | `docs/02-product.md` | Scope/intent — what's being built, not how |
-| How is it meant to be structured? | `docs/03-architecture.md` | Intent, not proof of what's built |
+| How is it built? | `docs/03-architecture.md` | Layers and boundary rules — verify against the code when it matters |
+| How does the screen look, and where is UI code? | `docs/ui.md` | Layout, look, and the `src/` ↔ `css/` mirror — verify against the UI |
 | What is true now? | `docs/04-current-state.md` | Orientation only — verify against relevant code, structure, or runtime behavior when it matters |
 | Why was it done this way? | `docs/05-decisions.md` | Settled, unless explicitly flagged |
-| What happened, and when? | `docs/archive/06-development.md` (to 2026-08-26), then `docs/05-decisions.md` and git history | Accurate for its date — not for today |
-| What might happen? | `docs/concepts.md` | Not decided, not built (moved here from `docs/archive/06-development.md` § Parking Lot 2026-09-11 — see that document's own note) |
-| What was planned or decided before, and is finished? | `docs/archive/` | History — accurate for its date, not today's truth; kept for reference, not maintained |
+| What happened, and when? | `docs/05-decisions.md` and git history | Accurate for its date — not for today |
+| What might happen? | `TODO.md` § Ideas | Not decided, not built |
 
 When judging the reliability of a specific piece of project information, keep fact, hypothesis, decision, and open question separate — see `global-standards/AI_COLLABORATION_GUIDE.md` §5 for the general model.
 
-A well-argued idea in `docs/concepts.md`, or anything marked open there, is not a decision — only `docs/05-decisions.md` holds settled ones, no matter how thorough the speculative version reads.
+An idea in `TODO.md` § Ideas, or anything marked open elsewhere, is not a decision — only `docs/05-decisions.md` holds settled ones, no matter how thorough the speculative version reads.
 
 If a decision in `docs/05-decisions.md` seems wrong, say why and flag it explicitly, rather than quietly working around it.
 
@@ -49,7 +49,7 @@ At the start of a session, run (from the project root, against `app/`'s own venv
 
 then read `docs/04-current-state.md`. The output is what's mechanically observable right now, not proof the project is verified — each script only reports what it actually checks (see `global-standards/AI_COLLABORATION_GUIDE.md` §1).
 
-`/full-check` (`.claude/commands/full-check.md`) runs `project_check.py` plus `app/`'s full test suite (`test_math`, `test_time`, `test_storage`, `test_thread`) in one go, and reports a compact summary rather than raw output — the version of the above actually meant to be typed day to day.
+`/full-check` (`.claude/commands/full-check.md`) runs `project_check.py`, every test suite under `app/backend/`, and the UI type check, then a read-only review for dead code, duplicates, and stale text, and reports a compact summary rather than raw output — the version of the above actually meant to be typed day to day.
 
 Before renaming, moving, or deleting anything another file might reference, grep the vault and the code for the old name first; run `tools/project_check.py` afterward as the mechanical backstop, not a substitute for the grep.
 
@@ -63,10 +63,9 @@ If your changes alter what's true about the project, update
 worse than none).
 
 If the session added or leaned on a **second path** beside an old one
-(UI home, planner SoT, progression vs calendar, etc.), also update
-root `TODO.md` § Parallel paths — dual code is fine; unnamed dual
-code is how the base turns into a mess. See that section's anti-mess
-rule and [[05-decisions]] #25.
+(two ways of doing the same thing), also update root `TODO.md`
+§ Parallel paths — dual code is fine; unnamed dual code is how the base
+turns into a mess.
 
 ## New code placement
 
@@ -77,8 +76,6 @@ same-concern fixes and small extensions stay put; don’t invent micro-files
 for ceremony or park a large new feature in an unrelated open module.
 
 ## Documentation tooling
-
-> Moved from `docs/archive/00-project-brief-v1.md` § How We'll Document the Project, 2026-08-25 — this is operating practice, not project identity.
 
 Several tools, different roles:
 

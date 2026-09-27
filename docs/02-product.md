@@ -57,7 +57,8 @@ helps but does not take over.
   remove one (⋯ Remove). Paste an outline — bullets, a numbered list,
   plain lines, or an ASCII tree — with a live preview where single nodes
   can be left out. Add a folder from disk: each file and folder becomes
-  a node. Ask for suggested children (⋯ Suggest structure). A name that
+  a node. Ask for suggested children (⋯ Suggest structure): one level
+  under one node at a time, only when asked. A name that
   already exists among siblings gets `(2)`, `(3)`, … instead of an
   error.
 - **Reuse structure:** save a node and everything under it (⋯ Save as
@@ -102,7 +103,7 @@ its own.
 ## See also
 
 - [[00-project-brief]]
-- [[surfaces]] — sidebar / canvas / chat roles
+- [[ui]] — the screen: columns, canvas layout, look
 - [[04-current-state]]
 - [[03-architecture]]
 - [[05-decisions]]

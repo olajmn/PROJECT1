@@ -1,9 +1,8 @@
 """
 One level of decomposition, on demand: given a map node and the path
 it sits under, raise the resolution of that one point — never a
-whole sub-tree. This is docs/planning-model.md § Decomposition /
-zoom; that section deliberately does NOT decide whether the finer
-content is persisted, so nothing here writes anything.
+whole sub-tree, and only when asked (docs/02-product.md § 2). This
+module only asks the model; writing the result is edit_map.py's job.
 
 Asking for one flat level is easier for the local model than asking
 for a nested one, not harder: CHILDREN_SCHEMA has no recursion in it,

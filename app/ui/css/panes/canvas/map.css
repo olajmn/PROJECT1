@@ -340,7 +340,7 @@
   padding: 0;
 }
 
-/* Depth quieter than spine ([[surfaces]] § 4). */
+/* Depth quieter than spine ([[ui]] § 2). */
 .progress-depth-row {
   color: var(--color-text-muted);
   font-size: 0.78rem;

@@ -61,8 +61,7 @@ PYTHON = APP_ROOT / ".venv" / "bin" / "python3"
 
 # Areas docs/04-current-state.md actually describes, each an absolute
 # path since docs/ is shared at the project root while backend/ lives
-# under app/ itself. No "frontend" yet - see docs/04-current-state.md
-# § 6 for what app/ hasn't carried over from current/.
+# under app/ itself.
 RELEVANT_AREAS = [APP_ROOT / "backend", DOCS_ROOT]
 
 # .py corpus for stale-path and orphan-import scanning: backend/
@@ -289,7 +288,7 @@ def main() -> int:
         print("  touched file among the areas it describes")
 
     print()
-    print("=== app/backend/ tree (compare against docs/04-current-state.md § 1. Project Structure) ===")
+    print("=== app/backend/ tree (compare against docs/03-architecture.md § 2) ===")
     for line in directory_tree(APP_ROOT / "backend"):
         print(f"  {line}")
 
@@ -335,7 +334,7 @@ def main() -> int:
         print("  no inbound import because it's a command-line entry")
         print("  point (see SMOKE_IMPORT_MODULES above) or a test file,")
         print("  or because it's built but deliberately not yet wired")
-        print("  in (see docs/04-current-state.md § 5); that judgment is")
+        print("  in; that judgment is")
         print("  not this script's.)")
     else:
         print("  none")

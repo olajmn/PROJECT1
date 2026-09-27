@@ -2,7 +2,7 @@
 
 > Working conceptual model for what a Goal's plan actually means in this agent — not a technical specification, a data model, or a system prompt. Concepts below are labeled **fact** (confirmed in the running prototype), **hypothesis** (a working idea, not yet decided), **limitation** (a confirmed gap in current behavior), or **open question** (deliberately unresolved) — the same taxonomy as `global-standards/DOCUMENTATION_STYLE_GUIDE.md` §5. Most of what follows is hypothesis: this document exists to give planning a shared vocabulary to reason with, not to record a settled architecture. Nothing here changes existing code, data, or prompts on its own.
 
-> **Read today:** capability name = **Project**; structural / WHAT axis = **canvas** (`project/panes/canvas/`); Stage 3 / engine judgment / chat plan-note router are **gone**. Chat is Voice and Describe. Wire identity = `project_id` (deprecated `goal_id` mirror — #29). Full label map: [[04-current-state]] § Vocabulary, [[05-decisions]] #28. This file still says Goal/Plan where that is the conceptual vocabulary.
+> **Read today:** capability name = **Project**; structural / WHAT axis = **canvas** (`project/panes/canvas/`); Stage 3 / engine judgment / chat plan-note router are **gone**. Chat is Voice and Describe. Wire identity = `project_id` (deprecated `goal_id` mirror — #29). Full label map: [[04-current-state-v1]] § Vocabulary, [[05-decisions]] #28. This file still says Goal/Plan where that is the conceptual vocabulary.
 
 ## Contents
 
@@ -30,7 +30,7 @@
 
 ## Goal
 
-**Fact.** A Goal (product: **Project**) is the stable, persistent unit of "what the user wants to achieve" — identified by `project_id` on the wire (legacy field/param name `goal_id` still appears in Python and as a deprecated API mirror — see [[05-decisions]] #29); its current truth is always its latest history record (see [[03-architecture]] § Planning, [[04-current-state]]). This document doesn't redefine Goal; it only asks what has to be true about a Goal before "Plan" can mean anything.
+**Fact.** A Goal (product: **Project**) is the stable, persistent unit of "what the user wants to achieve" — identified by `project_id` on the wire (legacy field/param name `goal_id` still appears in Python and as a deprecated API mirror — see [[05-decisions]] #29); its current truth is always its latest history record (see [[03-architecture-v1]] § Planning, [[04-current-state]]). This document doesn't redefine Goal; it only asks what has to be true about a Goal before "Plan" can mean anything.
 
 Fulfilling a Goal means bridging it to something concrete happening in the world. That bridge is Plan — and at each point the agent is about to commit to something more concrete (a first Action, a Plan, a deeper level of a Step), it needs enough understanding to do so responsibly. That assessment is Minimum Planability, below.
 
@@ -59,7 +59,7 @@ The third case is a distinct move from either of the other two — not asking bl
 
 **KNOWN** covers two different sources, not only what this conversation has stated: information the user has explicitly given, and reliable general/background knowledge the agent already has access to (how coffee is typically made, how habits typically form). It never covers anything personal to this specific user that hasn't been stated — a preference, a resource, a constraint, or a personal limitation stays UNKNOWN until the user says otherwise, no matter how common that preference might generally be.
 
-This generalizes something already built: `generate_plan()` already refuses to plan a Goal that's too vague in content, asking a clarifying question instead (`backend/goals/plan/planner.py`; see [[03-architecture]] § Planning). The same three-way distinction applies wherever the necessity test above is met — content, time, state, or any other unknown a deeper level of planning turns out to need — not only at Goal creation. See ASK vs. SUGGEST, below, for what the third state actually means.
+This generalizes something already built: `generate_plan()` already refuses to plan a Goal that's too vague in content, asking a clarifying question instead (`backend/goals/plan/planner.py`; see [[03-architecture-v1]] § Planning). The same three-way distinction applies wherever the necessity test above is met — content, time, state, or any other unknown a deeper level of planning turns out to need — not only at Goal creation. See ASK vs. SUGGEST, below, for what the third state actually means.
 
 ### ASK vs. SUGGEST
 
@@ -154,7 +154,7 @@ Desired State
 
 Where no Current/Desired State exists (most habit/lifestyle Goals), Progression is understood more loosely: movement from having stated the intention toward having fulfilled it, with no named Gap to measure against. Progression does not require an explicit Gap to exist — it is the more general of the two concepts.
 
-Where Progression happens to be quantifiable — a page count against a reading rate, a session count against a weekly frequency — the relationship between Current State, Desired State, Progression, Time, and Capacity can be made explicit and computable rather than left to prose (see [[03-architecture]] § Math). Most Goals' Progression is not quantifiable this way, and nothing here requires it to be.
+Where Progression happens to be quantifiable — a page count against a reading rate, a session count against a weekly frequency — the relationship between Current State, Desired State, Progression, Time, and Capacity can be made explicit and computable rather than left to prose (see [[03-architecture-v1]] § Math). Most Goals' Progression is not quantifiable this way, and nothing here requires it to be.
 
 ## Plan
 
@@ -216,7 +216,7 @@ Deliberately left open here, not decided: whether this finer content is ever per
 
 The underlying mechanism is **fact**; keeping it separate from the structural axis is a **decision**.
 
-`year → month → week → today → now` is already built (`PLAN_KEYS`, the temporal-understanding Faculty — see [[03-architecture]] § Time). It answers *when*, describing the same Goal at different distances in time.
+`year → month → week → today → now` is already built (`PLAN_KEYS`, the temporal-understanding Faculty — see [[03-architecture-v1]] § Time). It answers *when*, describing the same Goal at different distances in time.
 
 **Time is a dimension through which a Plan is organized and interpreted, not a level in the planning hierarchy.** A Step is not a time slot, and a time horizon is not a Step — the two axes may be loosely cross-referenced (a Step might roughly target a given week), but neither is expressed in terms of the other.
 
@@ -274,7 +274,7 @@ At the same time, the UI showed a concrete Action: *"Make a list of your current
 
 ## Relationship to Vision
 
-Vision sits above this entire model, providing optional shared context across Goals — it does not participate in how any single Goal's Plan is built. See [[03-architecture]] § Vision.
+Vision sits above this entire model, providing optional shared context across Goals — it does not participate in how any single Goal's Plan is built. See [[03-architecture-v1]] § Vision.
 
 ## Open questions
 
@@ -291,10 +291,10 @@ Vision sits above this entire model, providing optional shared context across Go
 - Should Verification (see § Reality, Observation, and Verification) ever become an explicit, separately-named phase in the control flow, or does folding it implicitly into feedback handling stay adequate?
 - What counts as sufficient Observation/Evidence for a habit- or process-shaped Step's completion? Deliberately unresolved (see § Completion).
 - How would autonomous, tool- or system-based Observation ever be represented, if the agent starts acting more independently? Not needed while human self-report is the only channel.
-- Whether the agent's need to track its own prior ASK/SUGGEST contribution (`X`) to interpret a reply (`Y`) is a narrow instance of a broader self-model/agent-continuity question — see [[03-architecture]]'s self-model hypothesis under § Long-Term Architecture — left as an open architectural hypothesis there, not decided or extended here.
+- Whether the agent's need to track its own prior ASK/SUGGEST contribution (`X`) to interpret a reply (`Y`) is a narrow instance of a broader self-model/agent-continuity question — see [[03-architecture-v1]]'s self-model hypothesis under § Long-Term Architecture — left as an open architectural hypothesis there, not decided or extended here.
 
 ## See also
 
-- [[03-architecture]] § Planning, § Time, § Math
+- [[03-architecture-v1]] § Planning, § Time, § Math
 - [[04-current-state]]
 - `architecture_foundation/goals/plan/README.md` — flags the same Plan/Action data-model question this document explores conceptually

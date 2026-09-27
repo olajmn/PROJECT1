@@ -1,10 +1,13 @@
 """
 Checks the docs/ vault's structural integrity: the expected files
-exist (living docs in docs/, finished ones in docs/archive/) and
-nothing stray sits alongside them, every [[wikilink]] and
+exist and nothing stray sits alongside them, every [[wikilink]] and
 docs/<name>.md-style reference resolves to a file that actually
 exists, and each numbered doc's own "# NN — Title" heading matches its
 filename.
+
+docs/archive/ is optional and unmaintained: any file may sit there, and
+nothing outside it may link or point into it, so the folder can be
+deleted at any time without breaking a reference.
 
 Deterministic only - no semantic judgment about where content belongs
 (see COLLABORATION.md), no automatic rewriting. Companion to
@@ -23,7 +26,7 @@ Exit code 0 if nothing found, 1 if any problem is reported.
 
 # Contents
 #  1. Configuration
-#      - EXPECTED_DOCS / ARCHIVED_DOCS
+#      - EXPECTED_DOCS
 #      - REFERENCE_SCAN_TARGETS
 #      - SCANNED_SUFFIXES
 #      - WIKILINK_RE / DOC_PATH_RE / H1_NUMBER_RE / FILENAME_NUMBER_RE
@@ -59,49 +62,10 @@ EXPECTED_DOCS = [
     "03-architecture.md",
     "04-current-state.md",
     "05-decisions.md",
-    # Deliberately unnumbered - a working conceptual model for one
-    # subsystem (planning semantics), not one of the seven numbered
-    # vault roles above; exempt from check_h1_numbering() for the same
-    # reason (its filename carries no NN prefix to check against).
-    "planning-model.md",
-    # Deliberately unnumbered, same reasoning - a standalone, ever-
-    # growing conceptual/speculative document, not one of the seven
-    # numbered vault roles (see COLLABORATION.md's doc-role table).
-    "concepts.md",
-    # Deliberately unnumbered - UI design principles draft (hierarchy,
-    # frosted depth, complexity budget).
-    "visual-principles.md",
-    # Deliberately unnumbered - Projects column roles (sidebar / canvas /
-    # chat): what each surface is for vs parked file-folder vision.
-    "surfaces.md",
-    # TEMPORARY - points salvaged from archived docs, waiting to be moved
-    # into their homes. Remove this entry when the file is deleted.
-    "TEMP-salvage.md",
-]
-
-# Finished or historical docs, kept for reference in docs/archive/
-# (COLLABORATION.md's doc-role table: history, not today's truth).
-# [[wikilinks]] to them still resolve - Obsidian links by name, not path.
-ARCHIVED_DOCS = [
-    # The earlier product text (co-build loop, Decide engine), replaced
-    # by a short description of today's product 2026-09-27.
-    "02-product-v1.md",
-    # The original research template (goal-planner competitors, never
-    # filled in), replaced by a short node-focused 01 2026-09-27.
-    "01-research-v1.md",
-    # The original project brief (planner-agent vision), replaced by a
-    # short Map+Talk brief 2026-09-27.
-    "00-project-brief-v1.md",
-    # The original v1->v4 migration decision record (2026-09-11 rename
-    # of architecture-v4.md).
-    "v4-migration-decision.md",
-    # Goal → Project product-then-wire plan; every phase done 2026-09-20.
-    "goal-to-project-migration.md",
-    # UI visual-reset plan + css/src mirror; cleanup items done.
-    "visual-reset.md",
-    # Methodology, hypothesis, development log (closed 2026-08-26) and
-    # experiments from the prototype 0.1 era.
-    "06-development.md",
+    # Deliberately unnumbered - the app's screen: columns, canvas layout,
+    # look, and where UI code lives (merged from surfaces.md +
+    # visual-principles.md 2026-09-27).
+    "ui.md",
 ]
 
 # Files/directories outside docs/ scanned for docs/<name>.md-style
@@ -164,60 +128,69 @@ def _rel(path: Path) -> str:
 
 
 def check_structure() -> list[str]:
-    """Missing expected docs, and any .md file not on its folder's list
-    - catches both a doc that's gone missing and a stray file, in docs/
-    (EXPECTED_DOCS) and docs/archive/ (ARCHIVED_DOCS) alike."""
+    """Missing expected docs, and any docs/*.md file not on the
+    expected list. docs/archive/ is not checked: it is optional and
+    unmaintained."""
     problems = []
-    for folder, listed, name_of_list in (
-        (DOCS, EXPECTED_DOCS, "EXPECTED_DOCS"),
-        (ARCHIVE, ARCHIVED_DOCS, "ARCHIVED_DOCS"),
-    ):
-        where = _rel(folder)
-        actual = {p.name for p in folder.glob("*.md")}
-        for name in listed:
-            if name not in actual:
-                problems.append(f"{where}/: [MISSING] expected doc not found: {where}/{name}")
-        for name in sorted(actual - set(listed)):
-            problems.append(f"{where}/{name}: [UNEXPECTED] not listed (see {name_of_list} in tools/docs_check.py)")
+    actual = {p.name for p in DOCS.glob("*.md")}
+    for name in EXPECTED_DOCS:
+        if name not in actual:
+            problems.append(f"docs/: [MISSING] expected doc not found: docs/{name}")
+    for name in sorted(actual - set(EXPECTED_DOCS)):
+        problems.append(f"docs/{name}: [UNEXPECTED] not one of the expected docs (see EXPECTED_DOCS in tools/docs_check.py)")
     return problems
 
 
 def check_references() -> list[str]:
     """Every [[wikilink]] and docs/<name>.md-style reference in the
-    project resolves to a file that actually exists in docs/. Doesn't
-    distinguish "renamed" from "deleted" from "typo" - all three look
-    identical here (a reference to a file that isn't there); which one
-    it is, and what to do about it, is a human/Claude call."""
+    project resolves to a living doc in docs/. Doesn't distinguish
+    "renamed" from "deleted" from "typo" - all three look identical here
+    (a reference to a file that isn't there); which one it is, and what
+    to do about it, is a human/Claude call.
+
+    A reference into docs/archive/ is its own finding: nothing outside
+    the archive may depend on it. Files inside the archive are not
+    checked - they are unmaintained history."""
     problems = []
-    living = list(DOCS.glob("*.md"))
-    archived = list(ARCHIVE.glob("*.md"))
-    valid_stems = {p.stem for p in living + archived}
-    valid_names = {p.name for p in living} | {f"archive/{p.name}" for p in archived}
+    living_stems = {p.stem for p in DOCS.glob("*.md")}
+    archived = list(ARCHIVE.glob("*.md")) if ARCHIVE.exists() else []
+    archived_stems = {p.stem for p in archived} - living_stems
+    valid_names = {p.name for p in DOCS.glob("*.md")}
+
+    def in_archive(path: Path) -> bool:
+        return ARCHIVE in path.parents
 
     for path in _iter_files(["docs"]):
+        if in_archive(path):
+            continue
         text = path.read_text(encoding="utf-8", errors="replace")
         for line_number, line in enumerate(text.splitlines(), start=1):
             for match in WIKILINK_RE.finditer(line):
                 target = match.group(1)
-                if target not in valid_stems:
-                    problems.append(f"{_rel(path)}:{line_number}: [BROKEN WIKILINK] [[{target}]]")
+                if target in living_stems:
+                    continue
+                kind = "POINTS INTO ARCHIVE" if target in archived_stems else "BROKEN WIKILINK"
+                problems.append(f"{_rel(path)}:{line_number}: [{kind}] [[{target}]]")
 
     for path in _iter_files(REFERENCE_SCAN_TARGETS):
+        if in_archive(path):
+            continue
         text = path.read_text(encoding="utf-8", errors="replace")
         for line_number, line in enumerate(text.splitlines(), start=1):
             for match in DOC_PATH_RE.finditer(line):
                 target = match.group(1)
-                if target not in valid_names:
-                    problems.append(f"{_rel(path)}:{line_number}: [BROKEN REFERENCE] docs/{target}")
+                if target in valid_names:
+                    continue
+                kind = "POINTS INTO ARCHIVE" if target.startswith("archive/") else "BROKEN REFERENCE"
+                problems.append(f"{_rel(path)}:{line_number}: [{kind}] docs/{target}")
     return problems
 
 
 def check_h1_numbering() -> list[str]:
     """Each numbered doc's own "# NN — Title" heading matches its
     filename's number - catches a rename that forgot to update the
-    heading. Unnumbered docs (planning-model.md, v4-migration-
-    decision.md, concepts.md) have nothing to check against and are
-    silently skipped by the filename match below."""
+    heading. Unnumbered docs (ui.md) have nothing to check against and
+    are silently skipped by the filename match below."""
     problems = []
     for path in sorted(DOCS.glob("*.md")):
         filename_match = FILENAME_NUMBER_RE.match(path.name)

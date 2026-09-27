@@ -3,7 +3,7 @@ One project node: the recursive Step shape at every depth of the
 family tree (parent/child). The atom the rest of the system builds from.
 
 Depth is data, not type — where a step sits in the tree, not what
-class it is. See docs/planning-model.md § Structural axis.
+class it is (project/node/README.md).
 
 Pure shape — no model call, no persistence. Stored inside
 plan.progression; leftover plan.steps is not read here. Canvas/chat

@@ -4,8 +4,7 @@ Faculties are established: time/ (temporal understanding) and math.py
 (quantitative reasoning) - a Faculty has to be earned, either through
 demonstrated reuse or by representing a genuine, independently-existing
 reasoning domain, not proposed as a plausible category (see
-architecture_foundation/foundation/README.md and docs/05-decisions.md,
-"Faculty categorization"). Replaces the earlier
+docs/05-decisions.md, "Faculty categorization"). Replaces the earlier
 agent/specialized/ vs agent/distributed/ reuse-based split. agent/ is
 gone entirely as of 2026-08-25: Goal (and, as of 2026-08-27, Plan)
 moved to backend/goals/, a Domain and sibling of this package rather
