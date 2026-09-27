@@ -2,11 +2,8 @@
 You send a message, you get a reply back.
 
 Cases:
-- A slash-command (`/project_summary`, `/add`, …): chat/commands/ runs it; same save
+- A slash-command (`/add`, `/select`, …): chat/commands/ runs it; same save
   path as ordinary Talk (map-writing commands update the tree first).
-- A node is selected and the message asks for ideas ("suggest",
-  "brainstorm", ...): new child nodes are added under it
-  (canvas/edit_map.py does the adding). The reply says what was added.
 - Anything else: the model answers, given what
   model/brief/conversation.py puts together.
 
@@ -18,32 +15,12 @@ from backend.model.brief.conversation import build_messages
 from backend.model.client import send_chat
 from backend.storage.paths import now_utc
 from backend.storage.project_persistence import save_plan
-from backend.project.panes.canvas.edit_map import suggest_map_from_chat
 from backend.project.panes.chat.commands import try_command
 from backend.project.panes.create.resolver import get_history_for_project
-from backend.project.status.build_status import build_status, status_text
-
-# User is asking for ideas / structure under the focused node.
-_STRUCTURE_CUES = (
-    "suggest",
-    "suggestion",
-    "propose",
-    "come up with",
-    "make 3",
-    "make three",
-    "make two",
-    "make 2",
-    "ideas for",
-    "structure under",
-    "break down",
-    "brainstorm",
-    "concepts within",
-    "add concepts",
-    "generate",
-    "what could",
-    "foreslå",
-    "forslag",
-    "ideer",
+from backend.project.status.build_status import (
+    build_status,
+    recent_changes_text,
+    status_text,
 )
 
 
@@ -80,24 +57,11 @@ def reply(
             out["toggle_map_ids"] = True
         return out
 
-    if map_focus and focus_step_id and _asks_for_structure(note):
-        try:
-            record, labels = suggest_map_from_chat(
-                latest,
-                focus_step_id,
-                note,
-                sent_at=sent_at,
-                map_focus=map_focus,
-                focus_step_id=focus_step_id,
-            )
-        except Exception:
-            record, labels = None, []
-        if labels:
-            text = f'Added under "{map_focus}": {", ".join(labels)}.'
-            return {"record": record, "reply": text}
-
     history = get_history_for_project(latest["project_id"])
-    status = status_text(build_status(history, current=latest))
+    status = "\n\n".join(filter(None, [
+        status_text(build_status(history, current=latest)),
+        recent_changes_text(history),
+    ]))
     messages = build_messages(latest, note, history, map_focus, focus_step_id, status)
     text = send_chat(messages).strip()
     record = _save_talk(
@@ -129,7 +93,3 @@ def _save_talk(
         focus_step_id=focus_step_id,
     )
 
-
-def _asks_for_structure(note: str) -> bool:
-    text = (note or "").lower()
-    return any(cue in text for cue in _STRUCTURE_CUES)

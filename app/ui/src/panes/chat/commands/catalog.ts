@@ -5,17 +5,13 @@
  */
 
 export type ChatCommand = {
-  /** Canonical slash, e.g. `/project_summary`. */
+  /** Canonical slash, e.g. `/select`. */
   slash: string;
   /** One short line under the slash in the menu. */
   blurb: string;
 };
 
 export const CHAT_COMMANDS: ChatCommand[] = [
-  {
-    slash: "/project_summary",
-    blurb: "Summarise the project from its structure",
-  },
   {
     slash: "/add",
     blurb: "Add a child: /add name, or /add Parent / Child (spaces around /)",
@@ -32,11 +28,6 @@ export const CHAT_COMMANDS: ChatCommand[] = [
 
 /** Type-only aliases — same set as backend `_ALIASES`. */
 const COMMAND_ALIASES = new Set([
-  "/project-summary",
-  "/map_summary",
-  "/map-summary",
-  "/read_map",
-  "/read-map",
   "/add-node",
   "/focus",
 ]);

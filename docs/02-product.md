@@ -80,9 +80,8 @@ helps but does not take over.
   it select that node on the map. The conversation is given the same
   summary.
 - **Commands:** type `/` or use the `/` button next to Send.
-  `/project_summary` summarises the structure; `/add Name` or
-  `/add Parent / Child` adds a node; `/select Parent / Child` selects
-  one; `/id` shows the selected node's id, or switches the whole map
+  `/add Name` or `/add Parent / Child` adds a node;
+  `/select Parent / Child` selects one; `/id` shows the selected node's id, or switches the whole map
   between ids and names. An unknown command gets a fixed reply.
 - **Look back:** Settings → Logs lists every saved change, across all
   projects or as one project's full timeline. Settings → Archive holds

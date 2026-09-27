@@ -6,7 +6,11 @@ model. Run from app/:
 
 from datetime import datetime, timezone
 
-from backend.project.status.build_status import build_status, status_text
+from backend.project.status.build_status import (
+    build_status,
+    recent_changes_text,
+    status_text,
+)
 
 NOW = datetime(2026, 9, 25, 20, 0, tzinfo=timezone.utc).astimezone()
 
@@ -55,9 +59,8 @@ def main() -> None:
 
     text = status_text(status)
     assert text.startswith("Project: Home, started 24 Sep")
-    assert "Changes (newest first):\n  Today — 3 changes" in text
-    assert "Yesterday — 2 changes" in text
-    assert "Chat" not in text.split("Changes")[1]
+    assert "Last change:" in text
+    assert "changes" not in text  # the day pulse is for the panel only
 
     # Quiet days between first change and now are listed as 0.
     gap = build_status([
@@ -81,7 +84,23 @@ def main() -> None:
     assert old["history"][-1]["changes"] == 2, old["history"]
 
     assert build_status([]) == {"summary": [], "history": [], "earlier": 0}
-    print("OK - project status day pulse")
+
+    # Recent changes: what each one was, newest first, chat left out.
+    tape = [
+        {"feedback": None, "event": "created", "created_at": "2026-09-20T10:00:00"},
+        {"feedback": "Imported 1 step(s)", "event": "pasted", "created_at": "2026-09-20T10:05:00"},
+        {"feedback": "Hello Note: hi", "event": "chat", "created_at": "2026-09-20T11:00:00"},
+        {"feedback": "Renamed: A → B", "event": "renamed", "created_at": "2026-09-20T12:00:00"},
+    ]
+    recent = recent_changes_text(tape, now=NOW).splitlines()
+    assert recent[0] == "Recent changes (newest first):"
+    assert recent[1].endswith("— Renamed: A → B"), recent
+    assert recent[2].endswith("— Imported 1 step(s)")
+    assert recent[3].endswith("— Created")
+    assert len(recent) == 4
+    assert len(recent_changes_text(tape, now=NOW, limit=1).splitlines()) == 2
+    assert recent_changes_text(tape[2:3], now=NOW) == ""
+    print("OK - project status day pulse / recent changes")
 
 
 if __name__ == "__main__":

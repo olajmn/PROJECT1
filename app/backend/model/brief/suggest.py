@@ -55,15 +55,6 @@ CHILDREN_SYSTEM_PROMPT = (
     "however many actually make sense here, not a fixed count."
 )
 
-CHAT_CHILDREN_SYSTEM_PROMPT = (
-    "You propose child nodes under ONE project-map node. The user has "
-    "been talking about this node and asked for suggestions. Ground "
-    "the children in the recent conversation — do not invent a "
-    "generic syllabus that ignores what they said. Go exactly one "
-    "level down. Produce however many make sense (often 2–4), not a "
-    "fixed count. Short labels only."
-)
-
 _GROUNDING = (
     "no fixed timeframe — a few next units of work only, "
     "not a full syllabus"

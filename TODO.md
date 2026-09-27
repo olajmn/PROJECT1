@@ -56,9 +56,11 @@ only). Numbers are stable ids, not rank.
 ### Tier 2
 
 12. **Decomposition / zoom** (Step) — map is user-steered
-    (`plan.progression`); + / × / Paste / Add folder / Suggest /
-    chat-suggest under a selected node write it. Still open: naming a
-    node in chat without selecting it first.
+    (`plan.progression`); + / × / Paste / Add folder / Suggest under a
+    selected node write it. Still open: naming a node in chat without
+    selecting it first; Suggest grounded in the chat (was keyword-driven,
+    removed in [[05-decisions]] #60) could return as an explicit
+    `/suggest` command.
 30. **No written API reference** (Step) — short overview of each
     `/api/...` address.
 44. **Repo cleanup pass** (Step) — what is left of a file review on
@@ -192,5 +194,5 @@ when a path is deleted, rewired, or reclassified.
 | # | Pair | Status | Where |
 |---|---|---|---|
 | P1 | Week grain vs session grain | Time Faculty only | `week_windows()` / `day_windows()`; nothing in the product calls them — Queue 21 |
-| P2 | Even-slice `step_plan` vs dates on the step | Time Faculty only | `frozen_duration.step_plan`; map does not read leftover `plan.steps` |
-| P3 | `plan.progression` vs legacy `plan.steps` | Leftover on disk only | Screen draws `progression` only; older records may still carry `steps` |
+| P2 | Even-slice `step_plan` vs dates on the step | Time Faculty only | `frozen_duration.step_plan`; nothing in the product calls it |
+| P4 | Tree as text: indented labels vs ASCII tree | Deliberate, one per side | `project/node/tree_as_text.py` (`tree_lines()`, for the model) vs `ui/src/panes/canvas/copyAsText.ts` (clipboard); same walk, the model side cannot run in the browser and the clipboard should not need a server round trip |

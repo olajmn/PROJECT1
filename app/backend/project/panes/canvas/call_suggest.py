@@ -30,7 +30,6 @@ Prompts and schemas live in model/brief/suggest.py.
 import json
 
 from backend.model.brief.suggest import (
-    CHAT_CHILDREN_SYSTEM_PROMPT,
     CHILDREN_SCHEMA,
     CHILDREN_SYSTEM_PROMPT,
     COARSENESS_SCHEMA,
@@ -62,30 +61,6 @@ def children_of(label: str, ancestors: list[str]) -> list[str]:
     raw = send_message(
         CHILDREN_SYSTEM_PROMPT,
         describe_position(label, ancestors),
-        schema=CHILDREN_SCHEMA,
-    )
-    children = json.loads(raw)["children"]
-    if len(children) > MAX_SANE_CHILDREN:
-        raise ValueError(f"Model returned a runaway child list: {len(children)}")
-    return [child["label"] for child in children]
-
-
-def children_from_conversation(
-    label: str,
-    ancestors: list[str],
-    conversation: str,
-) -> list[str]:
-    """Propose children under `label`, grounded in chat — used when
-    a focused map node asks for structure ideas. Skips the coarseness
-    gate (the request is explicit)."""
-    user_content = (
-        f"{describe_position(label, ancestors)}\n\n"
-        f"Recent conversation:\n{conversation.strip() or '(none yet)'}\n\n"
-        "Propose children under the node that fit what was discussed."
-    )
-    raw = send_message(
-        CHAT_CHILDREN_SYSTEM_PROMPT,
-        user_content,
         schema=CHILDREN_SCHEMA,
     )
     children = json.loads(raw)["children"]

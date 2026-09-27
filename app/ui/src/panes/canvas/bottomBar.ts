@@ -1,6 +1,5 @@
 // The bar under the map: Copy as ASCII, Paste structure, Add folder,
-// Saved trees, Archive. (Project summary is Talk `/project_summary` —
-// see chat/commands.)
+// Saved trees, Archive.
 
 // Contents
 //  1. Types

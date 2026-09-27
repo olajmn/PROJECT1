@@ -14,7 +14,7 @@ global `project_id` stays the wire identity.
 #      - PROJECTS_DIR / record_project_id()
 #  2. Project records (current.json + events.jsonl)
 #      - project_dir() / current_path() / events_path()
-#      - surface_from_plan() / _slim_event()
+#      - _slim_event()
 #      - _next_project_id() / _next_account_n() / _resolve_account_n()
 #      - load_current() / load_project_events() / save_plan()
 #      - load_history() / load_all_currents() / delete_project()
@@ -87,24 +87,6 @@ def events_path(project_id: int) -> Path:
     return project_dir(project_id) / "events.jsonl"
 
 
-def surface_from_plan(name: str, plan: dict | None) -> str:
-    """One-line map summary for chat without storing the full tree."""
-    progression = (plan or {}).get("progression") if isinstance(plan, dict) else None
-    steps = progression.get("steps") if isinstance(progression, dict) else None
-    if not isinstance(steps, list):
-        return "The map is empty."
-    labels = [
-        (step.get("label") or "").strip()
-        for step in steps
-        if isinstance(step, dict) and (step.get("label") or "").strip()
-    ]
-    if not labels:
-        return "The map is empty."
-    listed = ", ".join(labels)
-    label = (name or "").strip()
-    return f"{label}: {listed}." if label else f"{listed}."
-
-
 def _slim_event(record: dict) -> dict:
     """Drop the full map from a history line; keep tape fields."""
     event: dict = {
@@ -115,15 +97,11 @@ def _slim_event(record: dict) -> dict:
     }
     for key in (
         "event", "feedback", "sent_at", "map_focus", "focus_step_id",
-        "name", "account_id", "surface", "completed", "cancelled",
+        "name", "account_id", "completed", "cancelled",
         "archived_at",
     ):
         if key in record and record[key] is not None:
             event[key] = record[key]
-    if "surface" not in event and "plan" in record:
-        event["surface"] = surface_from_plan(
-            record.get("name") or "", record.get("plan"),
-        )
     return event
 
 
@@ -271,8 +249,8 @@ def save_plan(
     Update the project's current SoT and append one slim event.
 
     Callers still pass the full project fields; only current.json keeps
-    the map. The events tape stores event/feedback/times (and a one-line
-    map surface for chat), not a full plan copy.
+    the map. The events tape stores event/feedback/times, not a full
+    plan copy.
 
     `map_focus` / `focus_step_id` mark this Talk turn as about a selected
     node (About frames + model history). They are not inherited from the
@@ -308,7 +286,6 @@ def save_plan(
         if step:
             record["focus_step_id"] = step
 
-    record["surface"] = surface_from_plan(name, plan)
     _write_json(current_path(pid), record)
     _append_event(pid, _slim_event(record))
     return record

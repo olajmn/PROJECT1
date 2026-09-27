@@ -5,16 +5,17 @@ the pulse counts non-chat events per calendar day — no model, nothing
 saved — so it can never disagree with the tape.
 
 Shown in the UI as the **Current state** panel (`build_status()`) and
-given to the chat's model (`status_text()`). docs/05-decisions.md #36–37, #41.
+given to the chat's model (`status_text()`, `recent_changes_text()`). docs/05-decisions.md #36–37, #41.
 """
 
 # Contents
 #  1. Settings
-#      - HISTORY_DAYS
+#      - HISTORY_DAYS / RECENT_CHANGES
 #      - _CHAT_EVENTS
 #  2. The status
 #      - build_status()
 #      - status_text()
+#      - recent_changes_text()
 #  3. Summary facts / day pulse
 #      - _summary() / _change_pulse() / _map_size()
 
@@ -32,6 +33,10 @@ from backend.project.timeline import to_event
 # Calendar days kept in the change pulse, newest first. Older days are
 # only counted in `earlier`.
 HISTORY_DAYS = 25
+
+# Individual changes the chat's model is told about, newest first. The
+# day pulse only counts them; this says what each one was.
+RECENT_CHANGES = 10
 
 # Talk lines are not "changes" in the Status pulse (map/work only).
 _CHAT_EVENTS = frozenset({"chat", "chat_added_nodes"})
@@ -68,17 +73,32 @@ def build_status(
 
 
 def status_text(status: dict) -> str:
-    """The same status as plain text, for the chat's model."""
-    if not status["summary"]:
+    """The summary rows as plain text, for the chat's model. The day
+    pulse is left out: the model gets the changes themselves from
+    recent_changes_text(), and a count beside the list read as more
+    changes."""
+    return "\n".join(f"{row['label']}: {row['text']}" for row in status["summary"])
+
+
+def recent_changes_text(
+    history: list[dict],
+    now: datetime | None = None,
+    limit: int = RECENT_CHANGES,
+) -> str:
+    """The last `limit` non-chat changes as plain text, newest first,
+    for the chat's model. Empty when there are none. Chat turns are left
+    out: the model already gets them as the conversation."""
+    now = now or datetime.now().astimezone()
+    events = [to_event(record, "") for record in history]
+    work = [e for e in events if e.get("event") not in _CHAT_EVENTS][-limit:]
+    if not work:
         return ""
-    parts = [f"{row['label']}: {row['text']}" for row in status["summary"]]
-    parts.append("")
-    parts.append("Changes (newest first):")
-    for line in status["history"]:
-        parts.append(f"  {line['day']} — {line['text']}")
-    if status["earlier"]:
-        parts.append(f"  … {status['earlier']} earlier days")
-    return "\n".join(parts)
+    lines = ["Recent changes (newest first):"]
+    for event in reversed(work):
+        when = _event_when(event.get("at"))
+        stamp = f"{_day(when, now)} {when:%H:%M}" if when else _day(None, now)
+        lines.append(f"  {stamp} — {event.get('text') or event.get('kind')}")
+    return "\n".join(lines)
 
 
 # ============================================================

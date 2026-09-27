@@ -1,6 +1,6 @@
 /**
  * Greys the leading slash-command in the chat box when it matches a
- * known command (`/add`, `/select`, `/project_summary`, aliases).
+ * known command (`/add`, `/select`, `/id`, aliases).
  *
  * A textarea cannot style part of its text, so a mirror behind it
  * shows the grey token while the real field stays transparent.

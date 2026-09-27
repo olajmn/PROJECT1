@@ -20,10 +20,6 @@ def main() -> None:
     assert unknown is not None and unknown.record is None
     assert unknown.reply.startswith("Unknown command /id¨.")
     assert not unknown.toggle_map_ids
-    msg = "The map is empty — nothing to summarise."
-    assert try_command(empty, "/project_summary").reply == msg
-    assert try_command(empty, "/map_summary").reply == msg
-    assert try_command(empty, "/read_map").reply == msg
 
     # /add parse — no save (missing focus / parent).
     result = try_command(empty, "/add")

@@ -58,13 +58,12 @@ changing the same nodes; neither owns them.
 
 ## 4. Where the model is used
 
-Three places, all behind `backend/model/client.py`:
+Two places, both behind `backend/model/client.py`:
 
 | Use | Code |
 |---|---|
 | A Talk reply | `panes/chat/reply.py` |
 | Suggest children for a node | `panes/canvas/call_suggest.py` |
-| `/project_summary` | `panes/chat/commands/project_summary.py` |
 
 Everything else — adding and removing nodes, paste, folders, saved
 trees, ids, `/add`, `/select`, `/id`, logs — is deterministic.

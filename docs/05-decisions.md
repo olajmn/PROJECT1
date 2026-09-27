@@ -685,6 +685,32 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Reversible?** The code is in git history; the pre-conversion data is in the backup.
 
 
+## 60. 2026-09-27 — Talk no longer adds nodes on keywords
+
+**Decision:** Remove the path where a Talk message with a node selected and a cue word ("suggest", "generate", "what could", "ideer", …) added child nodes instead of getting a reply. Removed: `_STRUCTURE_CUES` in `panes/chat/reply.py`, `suggest_map_from_chat()` / `_recent_conversation()` in `edit_map.py`, `children_from_conversation()` in `call_suggest.py`, and `CHAT_CHILDREN_SYSTEM_PROMPT`. Every Talk message is now either a slash-command or a model reply. Suggest from the node menu is unchanged.
+
+**Date:** 2026-09-27
+
+**Why this choice:** Substring matching took ordinary questions ("what could go wrong here?") as requests to change the map, and it duplicated the node menu's Suggest. One path per message keeps Talk predictable and leaves one reply path to improve (`TODO.md` Active 46).
+
+**Trade-off:** Suggestions grounded in the recent conversation are gone; menu Suggest sees only the node's position. Old `chat_added_nodes` events are still read and shown as Chat (`timeline.py`, `build_status.py`).
+
+**Reversible?** Yes — in git history; an explicit `/suggest` command is the likelier return path (`TODO.md` Queue 12).
+
+
+## 61. 2026-09-27 — Remove `/project_summary`
+
+**Decision:** Remove the `/project_summary` command (and its aliases `/map_summary`, `/read_map`, …), `panes/chat/commands/project_summary.py`, and `model/brief/project_summary.py`. Asking in Talk ("what is this project about?") covers the same question.
+
+**Date:** 2026-09-27
+
+**Why this choice:** Since #60 and the Talk prompt slots (`model/brief/talk_prompt.py`), an ordinary Talk turn answers the same question with the project status and the conversation in view, in the same style as every other reply. The command had its own prompt and saw only names and structure, so it was a second path with no job of its own.
+
+**Trade-off:** No one-keystroke summary. A deeper, deliberate pass over a project stays an idea (`TODO.md` Queue 39) until projects hold more than names and change counts.
+
+**Reversible?** Yes — in git history.
+
+
 ## See also
 
 - [[03-architecture]]

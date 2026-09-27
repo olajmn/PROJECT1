@@ -88,7 +88,7 @@ def cancel_project(project_id: int) -> dict | None:
     planning decision. Preserves `plan` and `account_id` from the
     latest record exactly as they were, so the goal's own data/history
     is never lost, only marked as no longer being pursued (still
-    visible in full on /history, same as any other goal).
+    visible in full in the project's timeline, same as any other goal).
 
     Returns the newly saved record, or None if the change is
     rejected - never partially applied:

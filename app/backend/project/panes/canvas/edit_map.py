@@ -24,8 +24,7 @@ from backend.project.node import (
     unique_sibling_label,
 )
 from backend.project.panes.canvas.text_to_tree import parse_outline
-from backend.project.panes.canvas.call_suggest import children_from_conversation, zoom_into
-from backend.project.panes.create.resolver import get_history_for_project
+from backend.project.panes.canvas.call_suggest import zoom_into
 
 _ID_NUM = re.compile(r"^p(\d+)$")
 
@@ -314,77 +313,6 @@ def suggest_map_children(latest: dict, step_id: str) -> dict:
         account_id=latest.get("account_id"),
         event="suggested",
     )
-
-
-def suggest_map_from_chat(
-    latest: dict,
-    step_id: str,
-    note: str,
-    sent_at: str | None = None,
-    map_focus: str | None = None,
-    focus_step_id: str | None = None,
-) -> tuple[dict, list[str]]:
-    """
-    User asked for structure under a focused map node while chatting.
-    Proposes children grounded in recent conversation + this note.
-    Appends under the node (does not wipe existing children).
-    Returns (saved record, new labels). `sent_at` is when the message
-    was sent (see save_plan()).
-    """
-    plan = copy.deepcopy(latest.get("plan") or {})
-    progression = plan.get("progression")
-    if not isinstance(progression, dict):
-        raise ValueError("project has no nodes to suggest under")
-
-    steps = (plan.get("progression") or {}).get("steps") or []
-    found = _find_step(steps, step_id)
-    if found is None:
-        raise ValueError(f"step not found: {step_id}")
-
-    step, ancestors = found
-    conversation = _recent_conversation(latest["project_id"], note)
-    labels = children_from_conversation(
-        step["label"], ancestors, conversation,
-    )
-    if not labels:
-        return latest, []
-
-    mint = _id_minter(plan)
-    existing = step.get("children")
-    if not isinstance(existing, list):
-        existing = []
-        step["children"] = existing
-    labels = _labels_without_sibling_clash(existing, labels)
-    if not labels:
-        return latest, []
-    existing.extend(s.to_dict() for s in from_labels(labels, mint))
-
-    record = save_plan(
-        latest["name"],
-        plan,
-        feedback=note,
-        project_id=latest["project_id"],
-        account_id=latest.get("account_id"),
-        event="chat_added_nodes",
-        sent_at=sent_at,
-        map_focus=map_focus,
-        focus_step_id=focus_step_id,
-    )
-    return record, labels
-
-
-def _recent_conversation(project_id: int, latest_note: str, limit: int = 8) -> str:
-    """Recent user feedback lines for this project, plus the current note."""
-    lines: list[str] = []
-    for record in get_history_for_project(project_id):
-        feedback = (record.get("feedback") or "").strip()
-        if feedback:
-            lines.append(f"User: {feedback}")
-    lines = lines[-limit:]
-    note = (latest_note or "").strip()
-    if note and (not lines or lines[-1] != f"User: {note}"):
-        lines.append(f"User: {note}")
-    return "\n".join(lines)
 
 
 def _find_step(steps: list, step_id: str) -> tuple[dict, list[str]] | None:

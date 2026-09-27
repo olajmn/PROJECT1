@@ -70,7 +70,7 @@ Stored as plain dicts under `plan.progression.steps` in
 Read them with `steps_of(record)` in `node.py`, the one place that
 knows where they sit on a record; all writes go through
 `panes/canvas/edit_map.py`. `tree_as_text.py` turns a tree into
-indented labels for the model and project summary.
+indented labels for the model.
 
 ## Related and open
 

@@ -11,27 +11,18 @@ from collections.abc import Callable
 
 from backend.project.panes.chat.commands.add import run as run_add
 from backend.project.panes.chat.commands.node_id import run as run_id
-from backend.project.panes.chat.commands.project_summary import (
-    run as run_project_summary,
-)
 from backend.project.panes.chat.commands.result import CommandResult
 from backend.project.panes.chat.commands.select import run as run_select
 
 _Runner = Callable[..., CommandResult]
 
 _COMMANDS: dict[str, _Runner] = {
-    "/project_summary": run_project_summary,
     "/add": run_add,
     "/select": run_select,
     "/id": run_id,
 }
 
 _ALIASES = {
-    "/project-summary": "/project_summary",
-    "/map_summary": "/project_summary",
-    "/map-summary": "/project_summary",
-    "/read_map": "/project_summary",
-    "/read-map": "/project_summary",
     "/add-node": "/add",
     "/focus": "/select",
 }

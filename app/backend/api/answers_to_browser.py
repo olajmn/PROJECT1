@@ -32,15 +32,14 @@ from backend.project.panes.create.resolver import (
 
 def project_view(
     record: dict,
-    reply: str | None = None,
     select: dict | None = None,
     toggle_map_ids: bool = False,
 ) -> dict:
     """One project as the browser gets it after any project action:
     name, state, map tree, chat, and status (the panel above the chat).
 
-    `reply` (a chat reply just made) is placed as the last message in
-    `thread`, not sent as its own field. `select` (optional
+    A chat reply just made is already the last message in `thread`
+    (it is saved before the view is built). `select` (optional
     `{id, label}` from `/select`) tells the UI to focus that node.
     `toggle_map_ids` (from `/id` with no node selected) tells the UI to
     switch the map between ids and labels.
@@ -53,7 +52,7 @@ def project_view(
         print(f"(debug: map_tree() failed for project {pid}: {e})")
         node = None
     history = get_history_for_project(pid) if pid is not None else []
-    thread = thread_for(pid, reply, history) if pid is not None else []
+    thread = thread_for(pid, history) if pid is not None else []
     view = {
         "project_id": pid,
         "name": record["name"],
