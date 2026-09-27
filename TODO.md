@@ -121,6 +121,29 @@ unless noted.
     3. **4–5 demo scenarios** the chat should handle, written down.
     Out of scope: RAG, long-term memory, agent loops, new chat
     architecture. Related to 33 (model sees only labels).
+48. **Rename `sim_user_id` → `account_id`** (Step, before Saved Trees
+    if possible) — the store is already `accounts`, but a project's
+    account reference is still `sim_user_id` ([[05-decisions]]
+    accounts-store follow-up: "Project FK stays `sim_user_id`").
+    Scope checked 2026-09-27: 138 occurrences in 21 code files
+    (backend storage/api/create + UI `dataShapes.ts`, `api.ts`,
+    accounts panel, Directory), the wire (`POST /api/projects/<id>/user`
+    body), 15 doc mentions. Data: 47 projects carry it in
+    `current.json` / `events.jsonl` — promote `sim_user_id` →
+    `account_id` on load rather than rewriting files; new saves write
+    only `account_id`. Backend and UI change together. Dated history
+    in `05-decisions.md` keeps the old name; record the rename as a new
+    decision.
+49. **A proper way to check node ids** (Step, shape open) — node ids
+    are identity ([[05-decisions]] #52) and never reused (`node_id_hi`),
+    but nothing lets you see or verify them. Candidates:
+    1. **Inspect:** show a node's `id` somewhere (node ⋯ menu or a
+       detail line), like Directory shows Local # + Global ID.
+    2. **Verify:** a check (e.g. in `tools/project_check.py` or a test)
+       that walks `data/projects/*/current.json` and reports duplicate
+       ids in one tree, ids above `node_id_hi`, and `focus_step_id` on
+       events pointing at an id that never existed.
+    Rules live in `app/backend/project/node/README.md`.
 
 ### Tier 4
 
