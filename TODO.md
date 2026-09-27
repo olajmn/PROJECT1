@@ -129,7 +129,8 @@ unless noted.
     (backend storage/api/create + UI `dataShapes.ts`, `api.ts`,
     accounts panel, Directory), the wire (`POST /api/projects/<id>/user`
     body), 15 doc mentions. Data: 47 projects carry it in
-    `current.json` / `events.jsonl` — promote `sim_user_id` →
+    `current.json` / `events.jsonl`, and every saved tree carries it in
+    `data/saved_trees.json` (added 2026-09-27) — promote `sim_user_id` →
     `account_id` on load rather than rewriting files; new saves write
     only `account_id`. Backend and UI change together. Dated history
     in `05-decisions.md` keeps the old name; record the rename as a new
