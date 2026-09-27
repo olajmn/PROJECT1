@@ -557,6 +557,40 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Reversible?** Yes — drop the command + restore the old About-label placeholder.
 
 
+## 52. 2026-09-27 — Node identity: id, label, name path
+
+**Decision:** Keep three things separate for a project node (`Step`, `project/node/node.py`):
+
+| Concept | What it is | Where it lives |
+|---|---|---|
+| `id` | The node's identity | Every backend write (`_find_step`, `remove_map_node`, `parent_id`), UI selection, `focus_step_id` on events |
+| `label` | A human-readable attribute; two nodes may in principle share one | Map, Copy as ASCII, model context (`map_context`) |
+| Name path (`Parent / Child`) | An addressing mechanism that resolves to an `id` | `/add`, `/select` (`node_path.id_at_path`, first match per level) |
+
+- A node id is never reused within a project: events, chat focus, and history can refer to nodes that no longer exist, and a reused id would attach them to an unrelated node.
+- Consequence: `_id_minter()` (`edit_map.py`) must not derive the next id only from the nodes that exist now. It needs a monotonic per-project counter, the same pattern as `account_n_hi`. **Not implemented yet:** today it mints `max(existing) + 1`, so removing the highest-numbered node frees its id (`TODO.md` Queue 47).
+- The sibling-label rule from #51 (`sibling_label_clash`) stays, but is reframed: it is an addressing and readability rule (keeps name paths unambiguous and keeps same-named siblings from being indistinguishable to people and to the model), not an identity rule.
+
+**Date:** 2026-09-27
+
+**Why this choice:** Saved Trees (a subtree stored and re-inserted elsewhere, still open) made the question explicit: re-inserting a tree needs fresh ids and may produce a label that already exists. The model already treated `id` as identity in its core; the name-as-identity assumption only lived at the edges (chat addressing, model view, human reading). Naming the three roles keeps later work from quietly treating a label as identity. Ids are unique per project only (`p12` exists in many projects); an identity that crosses projects would need a separate global id, not a change to this one.
+
+**Reversible?** The framing, yes. The never-reuse guarantee should not be relaxed once events reference node ids.
+
+**Follow-up (same day):** Never-reuse implemented. `_id_minter(plan)` keeps `plan["node_id_hi"]` (on the plan, not progression, because removing the last node sets progression to None); `remove_map_node()` stamps it before removing, so a project saved before the mark existed also retires its highest id. Checked: remove `p9` → next is `p10`; empty the map → next continues past the old high.
+
+
+## 53. 2026-09-27 — Number clashing sibling labels instead of refusing them
+
+**Decision:** When a user-written node would get a label a sibling already uses, save it as `label (2)`, `label (3)`, … instead of raising. `unique_sibling_label()` in `project/node/node.py` owns the rule; `add_map_node()`, paste/folder import (`_number_sibling_clashes()` in `edit_map.py`), `/add`, and `Step.add_child()` use it. A label already ending in ` (N)` counts on from N (`Taco (2)` → `Taco (4)` when 2 and 3 exist). `/add`'s reply shows the label actually saved. Model-suggested children (`suggest_map_children()`, `suggest_map_from_chat()`) still drop a label that repeats a sibling.
+
+**Date:** 2026-09-27
+
+**Why this choice:** Supersedes #51's "sibling labels must be unique" refusal. With identity on the id (#52), the rule only exists to keep name paths unambiguous and siblings distinguishable; numbering keeps that and removes the error. Alternative considered: allow identical labels outright — rejected for now because `/add` and `/select` resolve by first label match and the model sees only labels, so identical siblings would be ambiguous in chat. A repeated model suggestion is a repeat, not a request for a second node, so it is not numbered.
+
+**Reversible?** Yes — make `add_map_node()` / `_number_sibling_clashes()` raise on `sibling_label_clash()` again.
+
+
 ## See also
 
 

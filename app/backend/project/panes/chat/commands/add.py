@@ -47,8 +47,11 @@ def run(
 
     parent = find_step(steps_of(latest), parent_id) or {}
     parent_label = (parent.get("label") or parent_id).strip() or parent_id
+    # The saved label may carry a " (2)" suffix if a sibling had `child`.
+    saved = (find_step(steps_of(record), parent_id) or {}).get("children") or []
+    added = saved[-1].get("label", child) if saved else child
     return CommandResult(
-        reply=f'Added under "{parent_label}": {child}.',
+        reply=f'Added under "{parent_label}": {added}.',
         record=record,
     )
 

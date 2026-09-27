@@ -19,7 +19,9 @@ import re
 
 from backend.storage.project_persistence import save_plan
 from backend.project.panes.canvas.add_folder import folder_tree
-from backend.project.node import Step, from_labels, from_nested_labels, sibling_label_clash
+from backend.project.node import (
+    Step, from_labels, from_nested_labels, sibling_label_clash, unique_sibling_label,
+)
 from backend.project.panes.canvas.text_to_tree import parse_outline
 from backend.project.panes.canvas.call_suggest import children_from_conversation, zoom_into
 from backend.project.panes.create.resolver import get_history_for_project
@@ -35,7 +37,7 @@ def add_map_node(
     """
     Append one Step the user named — no model call.
     Creates plan.progression if missing. Empty/whitespace label raises.
-    Duplicate label among siblings raises.
+    A label a sibling already uses gets ` (2)`, ` (3)`, … appended.
     If parent_id is set, append under that step's children; otherwise
     at the progression root.
     """
@@ -67,11 +69,9 @@ def add_map_node(
         parent = None
         siblings = steps
 
-    clash = sibling_label_clash(siblings, text)
-    if clash:
-        raise ValueError(clash)
+    text = unique_sibling_label(siblings, text)
 
-    mint = _id_minter(progression)
+    mint = _id_minter(plan)
     new_step = Step(id=mint(), label=text).to_dict()
     siblings.append(new_step)
     if parent is not None:
@@ -140,7 +140,7 @@ def import_map_outline(
         steps = []
         progression["steps"] = steps
 
-    mint = _id_minter(progression)
+    mint = _id_minter(plan)
     new_steps = [
         step.to_dict() for step in from_nested_labels(forest, mint)
     ]
@@ -162,7 +162,7 @@ def import_map_outline(
     else:
         siblings = steps
         feedback = f"Imported {len(new_steps)} step(s)"
-    _reject_sibling_clashes(siblings, new_steps)
+    _number_sibling_clashes(siblings, new_steps)
     siblings.extend(new_steps)
 
     return save_plan(
@@ -207,6 +207,9 @@ def remove_map_node(latest: dict, step_id: str) -> dict:
     if not isinstance(steps, list):
         raise ValueError("goal has no progression tree")
 
+    # Stamp the high-water mark before the node disappears, so its id
+    # stays retired even on a project saved before the mark existed.
+    _id_minter(plan)
     removed_label = _remove_step(steps, step_id)
     if removed_label is None:
         raise ValueError(f"step not found: {step_id}")
@@ -246,26 +249,29 @@ def _remove_step(steps: list, step_id: str) -> str | None:
     return None
 
 
-def _reject_sibling_clashes(siblings: list, new_steps: list[dict]) -> None:
-    """Raise if any label collides with siblings or among new peers.
+def _number_sibling_clashes(siblings: list, new_steps: list[dict]) -> None:
+    """Rename in place any new label that collides with existing
+    siblings or with an earlier new peer (` (2)`, ` (3)`, …).
 
     Checks this level against existing siblings, then each new node's
     children among themselves (and so on).
     """
     seen: list = list(siblings)
     for step in new_steps:
-        label = (step.get("label") or "").strip()
-        clash = sibling_label_clash(seen, label)
-        if clash:
-            raise ValueError(clash)
+        step["label"] = unique_sibling_label(seen, step.get("label") or "")
         seen.append(step)
         children = step.get("children")
         if isinstance(children, list) and children:
-            _reject_sibling_clashes([], children)
+            _number_sibling_clashes([], children)
 
 
 def _labels_without_sibling_clash(siblings: list, labels: list[str]) -> list[str]:
-    """Keep labels that would not collide at this level (order preserved)."""
+    """Keep labels that would not collide at this level (order preserved).
+
+    Model suggestions only: a suggested child that repeats a sibling is
+    a repeat, not a wish for a second node, so it is dropped rather than
+    numbered like a user-written duplicate.
+    """
     seen: list = list(siblings)
     kept: list[str] = []
     for label in labels:
@@ -306,7 +312,7 @@ def suggest_map_children(latest: dict, step_id: str) -> dict:
     if not labels:
         return latest
 
-    mint = _id_minter(new_plan["progression"])
+    mint = _id_minter(new_plan)
     step["children"] = [
         s.to_dict() for s in from_labels(labels, mint)
     ]
@@ -358,7 +364,7 @@ def suggest_map_from_chat(
     if not labels:
         return latest, []
 
-    mint = _id_minter(plan["progression"])
+    mint = _id_minter(plan)
     existing = step.get("children")
     if not isinstance(existing, list):
         existing = []
@@ -418,8 +424,18 @@ def _find_step(
     return None
 
 
-def _id_minter(progression: dict):
-    used = {0}
+def _id_minter(plan: dict):
+    """Mint `p<N>` ids that are never reused within this project.
+
+    `plan["node_id_hi"]` is a high-water mark (like `account_n_hi`)
+    kept on the plan, not on progression, because removing the last
+    node sets progression to None. Events and chat focus refer to node
+    ids, so a removed node's id must stay retired. Projects saved before
+    the mark existed fall back to the highest id still in the tree.
+    """
+    progression = plan.get("progression") or {}
+    hi = plan.get("node_id_hi")
+    used = {0, hi if isinstance(hi, int) else 0}
 
     def walk(nodes: list) -> None:
         for node in nodes:
@@ -432,9 +448,12 @@ def _id_minter(progression: dict):
 
     walk(progression.get("steps") or [])
     counter = {"n": max(used)}
+    if counter["n"]:
+        plan["node_id_hi"] = counter["n"]
 
     def mint() -> str:
         counter["n"] += 1
+        plan["node_id_hi"] = counter["n"]
         return f"p{counter['n']}"
 
     return mint

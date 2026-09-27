@@ -10,6 +10,7 @@ plan.progression; leftover plan.steps is not read here. Canvas/chat
 are faces of nodes; they do not own the shape.
 """
 
+import re
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 
@@ -37,9 +38,7 @@ class Step:
     resolved: bool = False
 
     def add_child(self, step: "Step") -> None:
-        clash = sibling_label_clash(self.children, step.label)
-        if clash:
-            raise ValueError(clash)
+        step.label = unique_sibling_label(self.children, step.label)
         self.children.append(step)
 
     def walk(self) -> Iterator["Step"]:
@@ -93,6 +92,31 @@ def sibling_label_clash(siblings: list, label: str) -> str | None:
         if existing == wanted:
             return f'A sibling already named "{wanted}".'
     return None
+
+
+_NUMBERED = re.compile(r"^(.*\S) \((\d+)\)$")
+
+
+def unique_sibling_label(siblings: list, label: str) -> str:
+    """`label`, or `label (2)`, `label (3)`, … — the first form no
+    sibling at this level already uses. Accepts Step objects or dict
+    steps.
+
+    Identity is the id (docs/05-decisions.md #52); unique sibling labels
+    only keep name paths (`/add`, `/select`) unambiguous and let people
+    and the model tell siblings apart. So a clash is resolved, not
+    refused. A label that already ends in ` (N)` counts on from N.
+    """
+    wanted = (label or "").strip()
+    if not wanted or not sibling_label_clash(siblings, wanted):
+        return wanted
+    numbered = _NUMBERED.match(wanted)
+    base, n = (numbered.group(1), int(numbered.group(2))) if numbered else (wanted, 1)
+    while True:
+        n += 1
+        candidate = f"{base} ({n})"
+        if not sibling_label_clash(siblings, candidate):
+            return candidate
 
 
 def from_labels(labels: list[str], mint_id: Callable[[], str]) -> list[Step]:

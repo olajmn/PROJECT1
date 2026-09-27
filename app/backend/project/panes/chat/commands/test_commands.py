@@ -81,10 +81,16 @@ def main() -> None:
     assert "Selected:" in selected.reply
     assert try_command(tree, "/focus CLIENT").select_id == "p1"
 
-    # Sibling labels must be unique at the same level.
-    dup = try_command(tree, "/add CLIENT / hey3")
-    assert dup is not None and dup.record is None
-    assert "sibling already named" in dup.reply.lower()
+    # A clashing sibling label is numbered, not refused (decision #52).
+    import backend.project.panes.canvas.edit_map as edit_map
+    real_save = edit_map.save_plan
+    edit_map.save_plan = lambda name, plan, **kw: {"name": name, "plan": plan, **kw}
+    try:
+        dup = try_command(tree, "/add CLIENT / hey3")
+    finally:
+        edit_map.save_plan = real_save
+    assert dup is not None and dup.record is not None
+    assert dup.reply.endswith(": hey3 (2)."), dup.reply
 
     print("OK - try_command dispatch")
 
