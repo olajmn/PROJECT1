@@ -8,8 +8,8 @@ default `New project N` naming, since it only reads what storage holds.
 
 Runs entirely against a temporary directory, never the real data/ -
 this module patches path constants on project_persistence /
-accounts_persistence / paths for the duration of the run and restores them
-afterward.
+legacy_migration / accounts_persistence / paths for the duration of the
+run and restores them afterward.
 
 Run from app/:
     .venv/bin/python -m backend.storage.test_storage
@@ -21,6 +21,7 @@ import tempfile
 from pathlib import Path
 
 from backend.storage import paths as storage_paths
+from backend.storage import legacy_migration as lm
 from backend.storage import project_persistence as pp
 from backend.storage import accounts_persistence as ap
 
@@ -28,9 +29,11 @@ _original_paths_data_dir = storage_paths.DATA_DIR
 _original_pp = {
     "DATA_DIR": pp.DATA_DIR,
     "PROJECTS_DIR": pp.PROJECTS_DIR,
-    "LEGACY_PROJECTS_JSONL": pp.LEGACY_PROJECTS_JSONL,
-    "LEGACY_PLANS_JSONL": pp.LEGACY_PLANS_JSONL,
-    "LEGACY_PLANS_FILE": pp.LEGACY_PLANS_FILE,
+}
+_original_lm = {
+    "LEGACY_PROJECTS_JSONL": lm.LEGACY_PROJECTS_JSONL,
+    "LEGACY_PLANS_JSONL": lm.LEGACY_PLANS_JSONL,
+    "LEGACY_PLANS_FILE": lm.LEGACY_PLANS_FILE,
 }
 _original_ap = {
     "ACCOUNTS_FILE": ap.ACCOUNTS_FILE,
@@ -43,9 +46,9 @@ def _point_at(root: Path) -> None:
     storage_paths.DATA_DIR = root
     pp.DATA_DIR = root
     pp.PROJECTS_DIR = root / "projects"
-    pp.LEGACY_PROJECTS_JSONL = root / "projects.jsonl"
-    pp.LEGACY_PLANS_JSONL = root / "plans.jsonl"
-    pp.LEGACY_PLANS_FILE = root / "plans.json"
+    lm.LEGACY_PROJECTS_JSONL = root / "projects.jsonl"
+    lm.LEGACY_PLANS_JSONL = root / "plans.jsonl"
+    lm.LEGACY_PLANS_FILE = root / "plans.json"
     ap.ACCOUNTS_FILE = root / "accounts.json"
     ap.LEGACY_USERS_FILE = root / "users.json"
     ap.LEGACY_VISIONS_FILE = root / "visions.json"
@@ -131,7 +134,7 @@ try:
             "created_at": "2026-01-01T00:00:00",
         },
     ]
-    pp.LEGACY_PLANS_FILE.write_text(
+    lm.LEGACY_PLANS_FILE.write_text(
         json.dumps(legacy, indent=2), encoding="utf-8",
     )
     history = pp.load_history()
@@ -145,8 +148,8 @@ try:
     assert "goal_id" not in current
     assert "vision_id" not in current
     assert pp.current_path(1).exists()
-    assert not pp.LEGACY_PLANS_FILE.exists()
-    assert pp._bak_path(pp.LEGACY_PLANS_FILE).exists()
+    assert not lm.LEGACY_PLANS_FILE.exists()
+    assert lm._bak_path(lm.LEGACY_PLANS_FILE).exists()
     disk = pp.current_path(1).read_text(encoding="utf-8")
     assert '"project_id"' in disk
     assert '"goal_id"' not in disk
@@ -188,7 +191,7 @@ try:
             "sim_user_id": None,
         },
     ]
-    pp.LEGACY_PROJECTS_JSONL.write_text(
+    lm.LEGACY_PROJECTS_JSONL.write_text(
         "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in lines),
         encoding="utf-8",
     )
@@ -199,15 +202,15 @@ try:
     assert pp.load_current(4)["plan"]["now"] == "z"
     assert pp.current_path(4).exists()
     assert pp.current_path(7).exists()
-    assert not pp.LEGACY_PROJECTS_JSONL.exists()
-    assert pp._bak_path(pp.LEGACY_PROJECTS_JSONL).exists()
+    assert not lm.LEGACY_PROJECTS_JSONL.exists()
+    assert lm._bak_path(lm.LEGACY_PROJECTS_JSONL).exists()
     shutil.rmtree(split_dir, ignore_errors=True)
 
     print("OK - projects.jsonl → projects/{id}/current+events split behaves as expected")
 
     rename_dir = Path(tempfile.mkdtemp(prefix="plans_jsonl_split_test_"))
     _point_at(rename_dir)
-    pp.LEGACY_PLANS_JSONL.write_text(
+    lm.LEGACY_PLANS_JSONL.write_text(
         json.dumps({
             "id": 1,
             "project_id": 4,
@@ -222,16 +225,16 @@ try:
     renamed = pp.load_history()
     assert renamed[0]["project_id"] == 4
     assert pp.current_path(4).exists()
-    assert not pp.LEGACY_PLANS_JSONL.exists()
-    assert pp._bak_path(pp.LEGACY_PLANS_JSONL).exists()
+    assert not lm.LEGACY_PLANS_JSONL.exists()
+    assert lm._bak_path(lm.LEGACY_PLANS_JSONL).exists()
     shutil.rmtree(rename_dir, ignore_errors=True)
 
     print("OK - plans.jsonl → projects/{id}/current+events split behaves as expected")
 
     snap_dir = Path(tempfile.mkdtemp(prefix="snapshot_promote_test_"))
     _point_at(snap_dir)
-    pp._ensure_projects_dir()
-    pp._legacy_snapshot_path(7).write_text(
+    pp.PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
+    lm._legacy_snapshot_path(7).write_text(
         json.dumps({
             "id": 1,
             "goal_id": 7,
@@ -265,16 +268,16 @@ try:
     assert "goal" not in current
     assert pp.current_path(7).exists()
     assert pp.events_path(7).exists()
-    assert not pp._legacy_snapshot_path(7).exists()
-    assert pp._bak_path(pp._legacy_snapshot_path(7)).exists()
+    assert not lm._legacy_snapshot_path(7).exists()
+    assert lm._bak_path(lm._legacy_snapshot_path(7)).exists()
     shutil.rmtree(snap_dir, ignore_errors=True)
 
     print("OK - {id}.jsonl → current+events promotion behaves as expected")
 
     vision_promote_dir = Path(tempfile.mkdtemp(prefix="vision_promote_test_"))
     _point_at(vision_promote_dir)
-    pp._ensure_projects_dir()
-    pp._legacy_snapshot_path(3).write_text(
+    pp.PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
+    lm._legacy_snapshot_path(3).write_text(
         json.dumps({
             "id": 1,
             "project_id": 3,
@@ -392,6 +395,8 @@ finally:
     storage_paths.DATA_DIR = _original_paths_data_dir
     for key, value in _original_pp.items():
         setattr(pp, key, value)
+    for key, value in _original_lm.items():
+        setattr(lm, key, value)
     for key, value in _original_ap.items():
         setattr(ap, key, value)
     shutil.rmtree(_tmp_dir, ignore_errors=True)

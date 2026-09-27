@@ -83,12 +83,8 @@ def add_map_node(
         latest["name"],
         plan,
         feedback=feedback,
-        duration=latest.get("duration"),
         project_id=latest["project_id"],
-        frozen_duration=latest.get("frozen_duration"),
-        current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
-        step_status=latest.get("step_status"),
         event="node_added",
     )
 
@@ -169,12 +165,8 @@ def import_map_outline(
         latest["name"],
         plan,
         feedback=feedback,
-        duration=latest.get("duration"),
         project_id=latest["project_id"],
-        frozen_duration=latest.get("frozen_duration"),
-        current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
-        step_status=latest.get("step_status"),
         event=event,
     )
 
@@ -221,12 +213,8 @@ def remove_map_node(latest: dict, step_id: str) -> dict:
         latest["name"],
         plan,
         feedback=f"Removed step: {removed_label}",
-        duration=latest.get("duration"),
         project_id=latest["project_id"],
-        frozen_duration=latest.get("frozen_duration"),
-        current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
-        step_status=latest.get("step_status"),
         event="node_removed",
     )
 
@@ -321,12 +309,8 @@ def suggest_map_children(latest: dict, step_id: str) -> dict:
         latest["name"],
         new_plan,
         feedback=f"Zoomed into: {step['label']}",
-        duration=latest.get("duration"),
         project_id=latest["project_id"],
-        frozen_duration=latest.get("frozen_duration"),
-        current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
-        step_status=latest.get("step_status"),
         event="suggested",
     )
 
@@ -378,12 +362,8 @@ def suggest_map_from_chat(
         latest["name"],
         plan,
         feedback=note,
-        duration=latest.get("duration"),
         project_id=latest["project_id"],
-        frozen_duration=latest.get("frozen_duration"),
-        current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
-        step_status=latest.get("step_status"),
         event="chat_added_nodes",
         sent_at=sent_at,
         map_focus=map_focus,

@@ -84,13 +84,12 @@ unless noted.
     4. **`app/ui/dist/api.js` is tracked although `app/ui/dist/` is in
        `.gitignore`** — still changes in commits. Untrack with
        `git rm --cached` or adjust the ignore rule.
-    5. **Legacy Goal code in storage** — `project_persistence.py` (740
-       lines, largest file) carries old-format normalization /
-       migration (`_backfill_goal_ids`, `_next_goal_id`,
-       `_migrate_legacy_snapshot_file`, …); `goal_id` still appears
-       ~26 times in backend + UI as the deprecated mirror of
-       `project_id`. Split migration into its own module, or drop it
-       once old data is converted.
+    5. **Legacy Goal code in storage** — split done 2026-09-27
+       ([[05-decisions]] #56): migration lives in
+       `storage/legacy_migration.py`, persistence is 377 lines. Still
+       open (level C, with Queue 48): convert data once, then drop the
+       migration module, `_OLD_FEEDBACK`, the `goal_id` fallback, and
+       remaining Goal naming.
     6. **`requests_from_browser.py` routing** — one long `if/elif` on
        `self.path` per method (445 lines); grows with every endpoint.
        Not urgent. Related to 30.

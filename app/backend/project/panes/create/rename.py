@@ -25,12 +25,8 @@ def rename_project(project_id: int, name: str) -> dict | None:
         label,
         latest.get("plan") or {},
         feedback=f"Renamed: {old} → {label}",
-        duration=latest.get("duration"),
         completed=latest.get("completed", False),
         project_id=latest["project_id"],
-        frozen_duration=latest.get("frozen_duration"),
-        current_step=latest.get("current_step", 0),
         sim_user_id=latest.get("sim_user_id"),
-        step_status=latest.get("step_status"),
         event="renamed",
     )

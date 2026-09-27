@@ -619,6 +619,22 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Follow-up (same day):** Any Talk message starting with `/` is now a command: an unknown one (e.g. mistyped `/id¨`) gets a fixed "Unknown command … Commands: …" reply without a model call (`try_command()` in `panes/chat/commands/__init__.py`). Before, it went to the model as ordinary Talk, which imitated earlier "Map switched…" replies from the thread although nothing ran. Trade-off: a message that merely starts with `/` (e.g. a pasted file path) no longer reaches the model.
 
 
+## 56. 2026-09-27 — Separate legacy migration from current persistence
+
+**Decision:** Controlled removal (level B of the 2026-09-27 Goal/Plan dependency audit), without converting data:
+- Migration-only code moves from `storage/project_persistence.py` (740 → 377 lines) to `storage/legacy_migration.py` (321 lines): old combined files and per-project snapshots → folder shape, and on-load promotion of old fields and shapes (`goal_id`, `goal`, `vision_id`, free-text plan, pre-rename horizon keys, id/user_id backfill). Persistence calls three entry points: `ensure_migrated()`, `normalize_records()`, `normalize_event()`.
+- `save_plan()` and its callers stop passing and writing `duration`, `frozen_duration`, `current_step`, `step_status`. Nothing read them. Older `current.json` files keep them until their next save; reads ignore them.
+- Dead code removed: `get_latest_plan()`, `stamp_map_focus()`, `_stamp_latest_event()`, `project_path()`, `_ensure_projects_dir()`. Renamed `_next_goal_id()` → `_next_project_id()`, UI `getGoalId` → `getProjectId`.
+
+**Date:** 2026-09-27
+
+**Why this choice:** The audit found Map+Talk reads only `plan.progression.steps`; the migration code found nothing to convert in `data/` (no `goal_id` / `goal` / `vision_id`, no old files outside `.bak`), and the four fields were only passed along. Isolating the migration keeps old backups readable while making current persistence read as the current model. Checked: old and new code return identical results for all 48 projects (current, events, map view, thread, status, timeline) on a copy of `data/`.
+
+**Kept on purpose:** the migration path itself; `_OLD_FEEDBACK` in `timeline.py` (248 of 414 tape lines predate the `event` field); the `plan` / `progression` names; `user_id`; `record_project_id()`'s `goal_id` fallback; the `users.json` / `visions.json` promotion in `accounts_persistence.py`. A one-time data conversion (level C) is left for when Queue 48 changes the data format anyway.
+
+**Reversible?** Yes — code only; the data format is unchanged except that new saves omit four empty fields.
+
+
 ## See also
 
 

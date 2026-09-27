@@ -79,7 +79,7 @@ export type PasteTreePanel = {
 export function buildPasteTreePanel(opts: {
   getParentLabel: () => string | null;
   getParentId: () => string | null;
-  getGoalId: () => number;
+  getProjectId: () => number;
   onImported: (updated: ProjectView) => void;
 }): PasteTreePanel {
   const pasteBtn = document.createElement("button");
@@ -215,11 +215,11 @@ export function buildPasteTreePanel(opts: {
     try {
       const updated = workingTree
         ? await pasteNodes(
-            opts.getGoalId(),
+            opts.getProjectId(),
             applyExclusions(workingTree),
             parentId,
           )
-        : await pasteText(opts.getGoalId(), text, parentId);
+        : await pasteText(opts.getProjectId(), text, parentId);
       pasteInput.value = "";
       pasteForm.hidden = true;
       workingTree = null;

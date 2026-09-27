@@ -85,11 +85,10 @@ def cancel_project(project_id: int) -> dict | None:
     """
     Mark a goal as cancelled (abandoned) - a distinct terminal status
     from `completed`, not a UI-level relabeling of it and not a third
-    planning decision. Preserves `plan`, `duration`, `frozen_duration`,
-    `current_step`, and `sim_user_id` from the latest record exactly as
-    they were, so the goal's own data/history is never lost, only
-    marked as no longer being pursued (still visible in full on
-    /history, same as any other goal).
+    planning decision. Preserves `plan` and `sim_user_id` from the
+    latest record exactly as they were, so the goal's own data/history
+    is never lost, only marked as no longer being pursued (still
+    visible in full on /history, same as any other goal).
 
     Returns the newly saved record, or None if the change is
     rejected - never partially applied:
@@ -112,10 +111,9 @@ def cancel_project(project_id: int) -> dict | None:
 
     return save_plan(
         latest["name"], latest["plan"], feedback="Cancelled",
-        duration=latest.get("duration"), project_id=latest["project_id"],
-        frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
+        project_id=latest["project_id"],
         sim_user_id=latest.get("sim_user_id"), cancelled=True,
-        step_status=latest.get("step_status"), event="archived",
+        event="archived",
     )
 
 
@@ -141,11 +139,9 @@ def restore_project(project_id: int) -> dict | None:
 
     return save_plan(
         latest["name"], latest["plan"], feedback="Restored",
-        duration=latest.get("duration"), project_id=latest["project_id"],
-        frozen_duration=latest.get("frozen_duration"),
-        current_step=latest.get("current_step", 0),
+        project_id=latest["project_id"],
         sim_user_id=owner, cancelled=False,
-        completed=False, step_status=latest.get("step_status"),
+        completed=False,
         event="restored",
     )
 

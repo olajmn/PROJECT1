@@ -43,13 +43,13 @@ export function mountBottomBar(opts: BottomBarOpts): BottomBar {
   const paste = buildPasteTreePanel({
     getParentLabel: () => opts.getSelectedNodeLabel(),
     getParentId: () => opts.getSelectedNodeId(),
-    getGoalId: () => project.project_id,
+    getProjectId: () => project.project_id,
     onImported: (updated) => opts.onUpdated(updated),
   });
   const folder = buildAddFolderPanel({
     getParentLabel: () => opts.getSelectedNodeLabel(),
     getParentId: () => opts.getSelectedNodeId(),
-    getGoalId: () => project.project_id,
+    getProjectId: () => project.project_id,
     onImported: (updated) => opts.onUpdated(updated),
   });
 

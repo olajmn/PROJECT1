@@ -12,7 +12,7 @@ Whether a project counts as "active" or "completed", and how projects
 get grouped or sorted for display, is board-building logic, not project
 identity.
 
-project_id itself is minted in project_persistence.py (_next_goal_id()),
+project_id itself is minted in project_persistence.py (_next_project_id()),
 not here - moving it here would create a circular import between the two
 modules. See docs/05-decisions.md for why identity is a minted id, not
 the project's display name.
@@ -34,14 +34,13 @@ def created_at_key(record: dict) -> datetime:
     """
     Make created_at values comparable across old and new formats.
 
-    Records saved before 2026-08-21 stored timezone-aware UTC
-    timestamps (e.g. "...+00:00"); newer records store naive local
-    time. Comparing an aware and a naive datetime raises TypeError, so
-    aware timestamps are converted to local time and stripped of
-    tzinfo here.
+    Records saved since 2026-09-25 hold UTC with an offset ("…+00:00",
+    paths.now_utc()); older ones hold naive local time. Comparing an
+    aware and a naive datetime raises TypeError, so aware timestamps are
+    converted to local time and stripped of tzinfo here.
 
-    Public (not `_`-prefixed) because frontend/view_data/goal_overview.py
-    needs it too, to sort the board it builds from get_latest_for_all_projects().
+    Public (not `_`-prefixed) because timeline.py and
+    api/answers_to_browser.py sort by it.
     """
     parsed = datetime.fromisoformat(record["created_at"])
     if parsed.tzinfo is not None:
@@ -49,28 +48,19 @@ def created_at_key(record: dict) -> datetime:
     return parsed
 
 
-# Read one goal
+# Read one project
 
 
 def get_history_for_project(project_id: int) -> list[dict]:
     """
-    Return every record for one project_id, oldest first - the full
-    back-and-forth of feedback and replanning for this project.
-
-    Parameter name project_id kept this round; matches project_id on disk.
-    Reads that project's events tape (data/projects/{id}/events.jsonl).
+    Return every record for one project_id, oldest first: that
+    project's events tape (data/projects/{id}/events.jsonl).
     """
     return load_project_history(project_id)
 
 
 def get_latest_for_project(project_id: int) -> dict | None:
-    """
-    Return the current SoT record for one project_id, or None.
-
-    Distinct from project_persistence.get_latest_plan(), which answers
-    "what was touched most recently across every project" - not safe once
-    two projects can be active side by side (see docs/06-development.md).
-    """
+    """Return the current SoT record for one project_id, or None."""
     return load_current(project_id)
 
 

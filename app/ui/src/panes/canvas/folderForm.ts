@@ -15,7 +15,7 @@ export type AddFolderPanel = {
 export function buildAddFolderPanel(opts: {
   getParentLabel: () => string | null;
   getParentId: () => string | null;
-  getGoalId: () => number;
+  getProjectId: () => number;
   onImported: (updated: ProjectView) => void;
 }): AddFolderPanel {
   const folderBtn = document.createElement("button");
@@ -95,7 +95,7 @@ export function buildAddFolderPanel(opts: {
     folderSubmit.disabled = true;
     try {
       const updated = await addFolder(
-        opts.getGoalId(),
+        opts.getProjectId(),
         folder,
         opts.getParentId(),
       );

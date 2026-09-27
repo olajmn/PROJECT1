@@ -40,8 +40,8 @@ def set_project_user(project_id: int, sim_user_id: int | None) -> dict | None:
     cancelled goal (see cancel_project()) is also a no-op here — never
     a save_plan() call that could silently revive it.
 
-    Preserves `plan`, `duration`, `frozen_duration`, `current_step`,
-    and `completed` from the latest record exactly as they were -
+    Preserves `plan` and `completed` from the latest record exactly as
+    they were -
     this changes which account the project belongs to, nothing about the
     map itself.
     """
@@ -66,10 +66,9 @@ def set_project_user(project_id: int, sim_user_id: int | None) -> dict | None:
 
     return save_plan(
         latest["name"], latest["plan"], feedback=feedback_text,
-        duration=latest.get("duration"), project_id=latest["project_id"],
-        frozen_duration=latest.get("frozen_duration"), current_step=latest.get("current_step", 0),
+        project_id=latest["project_id"],
         completed=latest.get("completed", False), sim_user_id=sim_user_id,
-        step_status=latest.get("step_status"), event="owner_changed",
+        event="owner_changed",
     )
 
 
@@ -79,8 +78,8 @@ def archive_account(sim_user_id: int) -> dict | None:
     from every currently-active project that references it - an archived
     account is no longer an active seat, so an active project
     shouldn't keep showing a current tie to it. Account and project have
-    independent lifecycles: this never changes a project's plan, duration,
-    current_step, or completed/cancelled status - only which account (if
+    independent lifecycles: this never changes a project's plan or
+    completed/cancelled status - only which account (if
     any) it currently points to.
 
     Completed/cancelled projects keep their sim_user_id unchanged - already
