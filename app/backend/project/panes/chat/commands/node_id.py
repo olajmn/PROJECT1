@@ -7,8 +7,7 @@ and the tree is not dumped into the thread — docs/05-decisions.md #48).
 No model.
 """
 
-from backend.project.node.tree_as_text import find_path
-from backend.project.panes.chat.commands.node_path import steps_of
+from backend.project.node import find_path, steps_of
 from backend.project.panes.chat.commands.result import CommandResult
 
 _TOGGLED = (

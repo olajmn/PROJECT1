@@ -8,6 +8,7 @@ import type { MapNode } from "../../dataShapes.js";
 import { indentRem, NEST_INSET_REM } from "./spacing.js";
 import { installMapLines } from "./lines/addLines.js";
 import { mapShowsIds } from "./idView.js";
+import { placePopover } from "./placePopover.js";
 import {
   applyFamilyAttrs,
   familyById,
@@ -254,20 +255,9 @@ function attachNodeMenu(
       // <body>, where viewport coordinates mean the viewport.
       document.body.appendChild(menu);
       openNodeMenu = { menu, toggle, home: wrap };
-      const rect = toggle.getBoundingClientRect();
-      menu.style.left = `${Math.round(rect.left)}px`;
-      menu.style.top = `${Math.round(rect.bottom + 4)}px`;
       menu.hidden = false;
       toggle.setAttribute("aria-expanded", "true");
-      requestAnimationFrame(() => {
-        const box = menu.getBoundingClientRect();
-        if (box.bottom > window.innerHeight - 8) {
-          menu.style.top = `${Math.max(8, Math.round(rect.top - box.height - 4))}px`;
-        }
-        if (box.right > window.innerWidth - 8) {
-          menu.style.left = `${Math.max(8, Math.round(window.innerWidth - box.width - 8))}px`;
-        }
-      });
+      placePopover(menu, toggle.getBoundingClientRect());
     }
   });
 

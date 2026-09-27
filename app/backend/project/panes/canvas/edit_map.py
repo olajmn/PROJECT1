@@ -1,5 +1,5 @@
 """
-User-authored and zoom writes on a Goal's shadow plan.progression.
+User-authored and suggested writes on a project's nodes (plan.progression).
 
 add_map_node() — one Step the user named (no LLM), at the
 root or under a parent_id.
@@ -20,7 +20,8 @@ import re
 from backend.storage.project_persistence import save_plan
 from backend.project.panes.canvas.add_folder import folder_tree
 from backend.project.node import (
-    Step, from_labels, from_nested_labels, sibling_label_clash, unique_sibling_label,
+    Step, find_path, from_labels, from_nested_labels, sibling_label_clash,
+    unique_sibling_label,
 )
 from backend.project.panes.canvas.text_to_tree import parse_outline
 from backend.project.panes.canvas.call_suggest import children_from_conversation, zoom_into
@@ -56,7 +57,7 @@ def add_map_node(
         progression["steps"] = steps
 
     if parent_id:
-        found = _find_step(steps, parent_id, ancestors=[])
+        found = _find_step(steps, parent_id)
         if found is None:
             raise ValueError(f"parent step not found: {parent_id}")
         parent, _ancestors = found
@@ -142,7 +143,7 @@ def import_map_outline(
     ]
 
     if parent_id:
-        found = _find_step(steps, parent_id, ancestors=[])
+        found = _find_step(steps, parent_id)
         if found is None:
             raise ValueError(f"parent step not found: {parent_id}")
         parent, _ancestors = found
@@ -194,10 +195,10 @@ def remove_map_node(latest: dict, step_id: str) -> dict:
     plan = copy.deepcopy(latest.get("plan") or {})
     progression = plan.get("progression")
     if not isinstance(progression, dict):
-        raise ValueError("goal has no progression tree")
+        raise ValueError("project has no nodes")
     steps = progression.get("steps")
     if not isinstance(steps, list):
-        raise ValueError("goal has no progression tree")
+        raise ValueError("project has no nodes")
 
     # Stamp the high-water mark before the node disappears, so its id
     # stays retired even on a project saved before the mark existed.
@@ -283,11 +284,11 @@ def suggest_map_children(latest: dict, step_id: str) -> dict:
     plan = latest.get("plan") or {}
     progression = plan.get("progression")
     if not isinstance(progression, dict):
-        raise ValueError("goal has no progression tree to zoom")
+        raise ValueError("project has no nodes to suggest under")
 
     new_plan = copy.deepcopy(plan)
     steps = (new_plan.get("progression") or {}).get("steps") or []
-    found = _find_step(steps, step_id, ancestors=[])
+    found = _find_step(steps, step_id)
     if found is None:
         raise ValueError(f"step not found: {step_id}")
 
@@ -333,10 +334,10 @@ def suggest_map_from_chat(
     plan = copy.deepcopy(latest.get("plan") or {})
     progression = plan.get("progression")
     if not isinstance(progression, dict):
-        raise ValueError("goal has no progression tree to suggest under")
+        raise ValueError("project has no nodes to suggest under")
 
     steps = (plan.get("progression") or {}).get("steps") or []
-    found = _find_step(steps, step_id, ancestors=[])
+    found = _find_step(steps, step_id)
     if found is None:
         raise ValueError(f"step not found: {step_id}")
 
@@ -373,7 +374,7 @@ def suggest_map_from_chat(
 
 
 def _recent_conversation(project_id: int, latest_note: str, limit: int = 8) -> str:
-    """Recent user feedback lines for this goal, plus the current note."""
+    """Recent user feedback lines for this project, plus the current note."""
     lines: list[str] = []
     for record in get_history_for_project(project_id):
         feedback = (record.get("feedback") or "").strip()
@@ -386,22 +387,13 @@ def _recent_conversation(project_id: int, latest_note: str, limit: int = 8) -> s
     return "\n".join(lines)
 
 
-def _find_step(
-    steps: list, step_id: str, ancestors: list[str],
-) -> tuple[dict, list[str]] | None:
-    for step in steps:
-        if not isinstance(step, dict):
-            continue
-        if step.get("id") == step_id:
-            return step, list(ancestors)
-        nested = _find_step(
-            step.get("children") or [],
-            step_id,
-            ancestors=[*ancestors, step.get("label") or ""],
-        )
-        if nested is not None:
-            return nested
-    return None
+def _find_step(steps: list, step_id: str) -> tuple[dict, list[str]] | None:
+    """The step with this id and its ancestors' labels (top first), or
+    None. The tree walk itself is node.find_path()."""
+    path = find_path(steps, step_id)
+    if path is None:
+        return None
+    return path[-1], [step.get("label") or "" for step in path[:-1]]
 
 
 def _id_minter(plan: dict):

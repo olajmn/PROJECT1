@@ -63,23 +63,3 @@ def send_chat(messages: list[dict]) -> str:
         messages=messages,
     )
     return response["message"]["content"]
-
-
-def call_with_retry(attempt, attempts: int = 3):
-    """Call zero-arg `attempt()` up to `attempts` times; return the
-    first success.
-
-    `attempt` should send, parse, and validate, raising ValueError on
-    a bad shape (JSONDecodeError is a ValueError). The local model
-    sometimes returns a malformed body and a correctly-shaped one on
-    an unchanged retry (docs/04-current-state.md § 4) - this is
-    bounded insurance, not a guarantee. Persistent failure still
-    re-raises the last error.
-    """
-    last_error: ValueError | None = None
-    for _ in range(attempts):
-        try:
-            return attempt()
-        except ValueError as e:
-            last_error = e
-    raise last_error

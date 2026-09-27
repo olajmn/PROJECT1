@@ -40,11 +40,6 @@ def slash_path_error(args: str) -> str | None:
     return None
 
 
-def steps_of(latest: dict) -> list:
-    steps = ((latest.get("plan") or {}).get("progression") or {}).get("steps")
-    return steps if isinstance(steps, list) else []
-
-
 def id_at_path(steps: list, labels: list[str]) -> str | None:
     """Walk label path from the forest root; first match at each level."""
     level = steps

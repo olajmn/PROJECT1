@@ -76,6 +76,16 @@ class Step:
         )
 
 
+def steps_of(record: dict) -> list:
+    """The top-level nodes stored on a project record
+    (`plan.progression.steps`), or [] when there are none or the shape
+    is unexpected. The one place that knows where nodes sit on a record."""
+    plan = record.get("plan")
+    progression = plan.get("progression") if isinstance(plan, dict) else None
+    steps = progression.get("steps") if isinstance(progression, dict) else None
+    return steps if isinstance(steps, list) else []
+
+
 def sibling_label_clash(siblings: list, label: str) -> str | None:
     """If a sibling already uses this label (same level), return an
     error string; else None. Accepts Step objects or dict steps."""

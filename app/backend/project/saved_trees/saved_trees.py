@@ -6,7 +6,7 @@ through edit_map.import_map_outline(), the same path as Paste, so
 fresh ids and sibling-label numbering come from there.
 """
 
-from backend.project.node import find_step, structure_of
+from backend.project.node import find_step, steps_of, structure_of
 from backend.project.panes.canvas.edit_map import import_map_outline
 from backend.storage.saved_trees_persistence import (
     add_saved_tree,
@@ -16,16 +16,11 @@ from backend.storage.saved_trees_persistence import (
 )
 
 
-def _steps(latest: dict) -> list:
-    steps = ((latest.get("plan") or {}).get("progression") or {}).get("steps")
-    return steps if isinstance(steps, list) else []
-
-
 def save_tree_from_node(latest: dict, step_id: str) -> dict:
     """Store `step_id` and everything under it in the project's account
     library, named after the node. Saving the same node twice makes two
     saved trees: each is a snapshot, not a link."""
-    step = find_step(_steps(latest), step_id)
+    step = find_step(steps_of(latest), step_id)
     if step is None:
         raise ValueError(f"step not found: {step_id}")
     tree = structure_of(step)

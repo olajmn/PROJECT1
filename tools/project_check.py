@@ -40,7 +40,7 @@ section is pure information and never affects the exit code.
 #      - run_tool()
 #      - run_pyflakes()
 #      - CODE_PATH_RE / STALE_PATH_SCAN_TARGETS
-#      - stale_code_path_mentions()
+#      - _is_history() / stale_code_path_mentions()
 #      - modules_with_no_inbound_import()
 #
 #  3. Entry Point
@@ -193,6 +193,12 @@ STALE_PATH_SCAN_TARGETS: list[tuple[Path, str]] = [
 ]
 
 
+def _is_history(path: Path) -> bool:
+    """Dated records whose old paths are expected: the decision log and
+    the optional docs/archive/ folder."""
+    return path == DOCS_ROOT / "05-decisions.md" or (DOCS_ROOT / "archive") in path.parents
+
+
 def stale_code_path_mentions() -> list[str]:
     """Every backend/...-looking (or bare goals/...-looking - see
     CODE_PATH_RE) .py path mentioned anywhere under app/backend/,
@@ -200,16 +206,19 @@ def stale_code_path_mentions() -> list[str]:
     resolve to a real file under app/backend/ (a docs/ mention of
     `backend/...` or `goals/...` means app/backend/... specifically -
     current/backend/ uses the same relative shape but a different tree
-    entirely). Doesn't distinguish a genuine leftover reference from a
-    docstring or doc deliberately narrating "moved from X" as
-    history."""
+    entirely).
+
+    History is skipped: docs/05-decisions.md and docs/archive/ describe
+    the project as it was on their dates, so old paths there are
+    expected, not stale. Elsewhere it doesn't distinguish a genuine
+    leftover reference from a docstring narrating "moved from X"."""
     stale = []
     for area_path, pattern in STALE_PATH_SCAN_TARGETS:
         if not area_path.exists():
             continue
         paths = [area_path] if area_path.is_file() and area_path.match(pattern) else sorted(area_path.rglob(pattern))
         for path in paths:
-            if "__pycache__" in path.parts:
+            if "__pycache__" in path.parts or _is_history(path):
                 continue
             text = path.read_text(encoding="utf-8", errors="replace")
             for line_number, line in enumerate(text.splitlines(), start=1):

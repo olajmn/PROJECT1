@@ -11,7 +11,7 @@ from backend.model.brief.project_summary import (
     PROJECT_SUMMARY_SYSTEM_PROMPT,
 )
 from backend.model.client import send_message
-from backend.project.node.tree_as_text import tree_lines
+from backend.project.node import steps_of, tree_lines
 from backend.project.panes.chat.commands.result import CommandResult
 
 
@@ -22,8 +22,8 @@ def run(
 ) -> CommandResult:
     """Talk saves the turn as usual."""
     del note, focus_step_id  # no args / focus yet
-    steps = ((latest.get("plan") or {}).get("progression") or {}).get("steps")
-    if not isinstance(steps, list) or not steps:
+    steps = steps_of(latest)
+    if not steps:
         return CommandResult("The map is empty — nothing to summarise.")
     summary = _summarise_tree(latest.get("name") or "", steps)
     if summary is None:

@@ -67,8 +67,10 @@ labels (display only — `ui/src/panes/canvas/idView.ts`).
 
 Stored as plain dicts under `plan.progression.steps` in
 `data/projects/{id}/current.json`, with `plan.node_id_hi` beside them.
-All writes go through `panes/canvas/edit_map.py`. `tree_as_text.py`
-turns a tree into indented labels for the model and project summary.
+Read them with `steps_of(record)` in `node.py`, the one place that
+knows where they sit on a record; all writes go through
+`panes/canvas/edit_map.py`. `tree_as_text.py` turns a tree into
+indented labels for the model and project summary.
 
 ## Related and open
 

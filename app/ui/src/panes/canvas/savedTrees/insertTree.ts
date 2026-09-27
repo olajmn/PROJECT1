@@ -11,7 +11,7 @@
 //      - openSavedTreesPicker()
 //  2. Picker
 //      - buildRow()
-//      - placeNear() / closePicker()
+//      - closePicker()
 
 import {
   deleteSavedTree,
@@ -20,6 +20,7 @@ import {
 } from "../../../api.js";
 import type { ProjectView, SavedTreeView } from "../../../dataShapes.js";
 import type { NodeMenuContext } from "../nodeMenu.js";
+import { placePopover } from "../placePopover.js";
 
 // 1. Public API
 
@@ -110,7 +111,7 @@ export async function openSavedTreesPicker(target: PickerTarget): Promise<void> 
   }
 
   document.body.appendChild(picker);
-  placeNear(picker, target.anchor);
+  placePopover(picker, target.anchor?.getBoundingClientRect() ?? null);
   openPicker = picker;
   openAnchor = target.anchorToggles ? target.anchor : null;
   document.addEventListener("click", onOutside, true);
@@ -159,24 +160,6 @@ function buildRow(
 
   row.append(pick, remove);
   return row;
-}
-
-/** Fixed on <body> next to the anchor, as the node menu is — the map
- *  stage is transformed, so fixed positioning inside it would drift.
- *  Flips above the anchor when there is no room below (bottom bar). */
-function placeNear(picker: HTMLElement, anchor: HTMLElement | null): void {
-  const rect = anchor?.getBoundingClientRect();
-  picker.style.left = `${Math.round(rect?.left ?? 16)}px`;
-  picker.style.top = `${Math.round((rect?.bottom ?? 16) + 4)}px`;
-  requestAnimationFrame(() => {
-    const box = picker.getBoundingClientRect();
-    if (rect && box.bottom > window.innerHeight - 8) {
-      picker.style.top = `${Math.max(8, Math.round(rect.top - box.height - 4))}px`;
-    }
-    if (box.right > window.innerWidth - 8) {
-      picker.style.left = `${Math.max(8, Math.round(window.innerWidth - box.width - 8))}px`;
-    }
-  });
 }
 
 /** Outside click closes; a click on the anchor is left to its own

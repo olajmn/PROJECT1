@@ -3,16 +3,13 @@ gets on Send.
 
 Only reads the map, never changes it. No model call."""
 
-from backend.project.node.tree_as_text import (
-    path_lines,
-    tree_lines,
-)
+from backend.project.node import path_lines, steps_of, tree_lines
 
 
 def map_status(latest: dict) -> str:
     """Every stored label as indented tree text. Empty map is said
     plainly."""
-    lines = tree_lines(_steps(latest))
+    lines = tree_lines(steps_of(latest))
     if not lines:
         return "The map is empty."
     return "\n".join(lines)
@@ -26,12 +23,8 @@ def focus_labels(
     """Path from the top down to the selected node, or None when
     nothing is selected."""
     if focus_step_id:
-        lines = path_lines(_steps(latest), focus_step_id)
+        lines = path_lines(steps_of(latest), focus_step_id)
         if lines:
             return "\n".join(lines)
     return (map_focus or "").strip() or None
 
-
-def _steps(latest: dict) -> list:
-    steps = ((latest.get("plan") or {}).get("progression") or {}).get("steps")
-    return steps if isinstance(steps, list) else []

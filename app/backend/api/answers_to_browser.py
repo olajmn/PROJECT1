@@ -15,6 +15,7 @@ no product rules.
 #      - map_tree()
 
 from backend.storage.project_persistence import record_project_id
+from backend.project.node import steps_of
 from backend.project.status.build_status import build_status
 from backend.project.panes.chat.screen.chat_thread import thread_for
 from backend.project.panes.create.resolver import (
@@ -128,10 +129,7 @@ def saved_tree_view(saved: dict) -> dict:
 def map_tree(record: dict) -> dict | None:
     """The map as the browser draws it: {id, label, status, children},
     with the project as the root. None when the map is empty."""
-    progression = (record.get("plan") or {}).get("progression")
-    steps = progression.get("steps") if isinstance(progression, dict) else None
-    if not isinstance(steps, list):
-        return None
+    steps = steps_of(record)
     pid = record["project_id"]
     children = [
         _node(step, fallback_id=f"{pid}-p-{i}")

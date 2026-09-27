@@ -21,6 +21,7 @@ given to the chat's model (`status_text()`). docs/05-decisions.md #36–37, #41.
 from collections import Counter
 from datetime import datetime, timedelta
 
+from backend.project.node import steps_of
 from backend.project.timeline import to_event
 
 
@@ -153,7 +154,7 @@ def _summary(
     if last:
         rows.append(_row("Last change", f"{_day(last, now)} {last:%H:%M}"))
 
-    steps = ((latest.get("plan") or {}).get("progression") or {}).get("steps") or []
+    steps = steps_of(latest)
     count, depth = _map_size(steps)
     if count:
         levels = "level" if depth == 1 else "levels"

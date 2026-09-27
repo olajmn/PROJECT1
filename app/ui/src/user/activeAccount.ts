@@ -6,9 +6,6 @@ const STORAGE_KEY = "activeSimUserId";
 /** Top sidebar brand — opens the accounts panel. */
 export const ACCOUNTS_BRAND = "Accounts";
 
-/** @deprecated Use ACCOUNTS_BRAND — kept so any stray import still resolves. */
-export const ID_BRAND = ACCOUNTS_BRAND;
-
 export function getActiveUserId(): number | null {
   const raw = localStorage.getItem(STORAGE_KEY);
   if (raw == null || raw === "") return null;

@@ -59,8 +59,8 @@ Everything lives in `app/data/` as plain JSON:
 ## 4. The model
 
 - Local **Ollama**, model `qwen3.5:9b`, temperature 0.2
-  (`backend/model/client.py`). A reply with the wrong shape is retried up
-  to 3 times.
+  (`backend/model/client.py`). A reply with the wrong shape is not
+  retried; the caller reports the failure.
 - A Talk turn sends: the project's status, every label on the map, the
   selected node's path, the last 20 turns, and the new message.
 - The model sees labels only — not node ids, file contents, or anything

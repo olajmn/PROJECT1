@@ -4,13 +4,12 @@ No model. Does not change the tree. Reply stamps About-focus; the
 browser also selects the node from the chat response.
 """
 
-from backend.project.node.tree_as_text import find_step
+from backend.project.node import find_step, steps_of
 from backend.project.panes.chat.commands.node_path import (
     args_after_command,
     id_at_path,
     path_segments,
     slash_path_error,
-    steps_of,
 )
 from backend.project.panes.chat.commands.result import CommandResult
 
