@@ -76,6 +76,10 @@ def _check() -> None:
     assert "p1" not in ids and "p2" not in ids and len(set(ids)) == len(ids)
     assert [c["label"] for c in inserted["children"]] == ["Ingredients", "Method"]
 
+    # Top level (no parent) works too.
+    top = insert_saved_tree(target, "t1", None)
+    assert top["plan"]["progression"]["steps"][-1]["label"] == "Pasta Bolognese"
+
     # Another account's tree can't be inserted.
     try:
         insert_saved_tree(_project(4, 8, []), "t1", None)

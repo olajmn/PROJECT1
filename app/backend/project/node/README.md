@@ -26,7 +26,7 @@ nodes and chat talks about them; neither owns the shape. `node.py`
 | `label` | Human-readable name | Shown on the map, in Copy as ASCII, and to the model |
 | `children` | Ordered child nodes | Used |
 | `path` | Absolute path, only on nodes minted from a file or folder | Set by folder import |
-| `ordered` | Whether the children have to happen in order | Stored, not read anywhere yet |
+| `ordered` | Whether the children have to happen in order | Stored and copied by saved trees; drives no behavior yet |
 | `resolved` | Whether the node's claim is realized | Stored, not read anywhere yet |
 
 Display numbering (`1.`, `i.`) is computed from sibling position at
@@ -68,7 +68,16 @@ turns a tree into indented labels for the model and project summary.
 
 ## Related and open
 
-- Saved trees (`../saved_trees/`) copy a node's structure without its
-  ids; see that folder's README. `structure_of()` in `node.py` decides
-  what counts as structure.
+- Saved trees (`../saved_trees/`, `docs/05-decisions.md` #54) copy a
+  node's structure without its identity. `structure_of()` in `node.py`
+  decides what counts as structure:
+
+  | Kept | Dropped | Why dropped |
+  |---|---|---|
+  | `label` | `id` | Identity belongs to the original node; each insert mints fresh ids |
+  | `ordered` | `resolved` | State, not structure; a copy starts unresolved |
+  | `children` | `path` | Points at one file on one disk |
+
+  A saved tree is a snapshot, not a link: inserted nodes and the saved
+  tree never affect each other.
 - What `ordered` and `resolved` will drive is not decided.

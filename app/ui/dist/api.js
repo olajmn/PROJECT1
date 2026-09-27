@@ -314,12 +314,17 @@ export async function fetchSavedTrees(projectId) {
     }
     return (await res.json());
 }
-/** Insert a saved tree under `parentId` as new nodes (fresh ids). */
+/** Insert a saved tree as new nodes (fresh ids) under `parentId`, or
+ *  at the top level when it is null. */
 export async function insertSavedTree(projectId, treeId, parentId) {
+    const body = { tree_id: treeId };
+    if (parentId) {
+        body.parent_id = parentId;
+    }
     const res = await fetch(`/api/projects/${projectId}/map/insert-tree`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tree_id: treeId, parent_id: parentId }),
+        body: JSON.stringify(body),
     });
     if (!res.ok) {
         throw new Error(await httpErrorMessage(res));

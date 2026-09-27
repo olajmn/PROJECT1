@@ -3,7 +3,8 @@ order, children; no ids) in a per-account library, and inserted later
 under any node as new nodes with fresh ids.
 
 Above panes, like project/node/: canvas's ⋯ menu is only one face.
-What a saved tree is and its rules: README.md in this folder.
+What is copied (structure, never ids): structure_of() in project/node/,
+described in project/node/README.md. Decision: docs/05-decisions.md #54.
 
 Files:
   saved_trees.py — save from a node, list, insert, delete

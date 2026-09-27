@@ -144,6 +144,15 @@ unless noted.
        ids in one tree, ids above `node_id_hi`, and `focus_step_id` on
        events pointing at an id that never existed.
     Rules live in `app/backend/project/node/README.md`.
+51. **Saved trees follow-ups** (Step, when needed) — built 2026-09-27
+    ([[05-decisions]] #54). Open:
+    1. Rename a saved tree (name is the node label at save time).
+    2. A library view outside the picker (list, rename, delete), e.g.
+       under Settings or the account.
+    3. Unassigned projects (`sim_user_id` null) share one library.
+    4. `source` ({project_id, step_id}) is provenance only; a
+       cross-project identity / fingerprint for minting belongs with
+       Queue 50.
 
 ### Tier 4
 

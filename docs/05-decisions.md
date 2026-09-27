@@ -593,7 +593,7 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 ## 54. 2026-09-27 — Saved trees
 
-**Decision:** A node's subtree can be saved as bare structure (`label`, `ordered`, `children`; no `id`, `resolved`, or `path` — `structure_of()` in `project/node/node.py`) into a per-account library, `data/saved_trees.json`, and inserted later under any node of that account's projects. Node ⋯ menu: **Save as tree**, **Insert saved tree…** (picker; × deletes from the library). Concept in `backend/project/saved_trees/` (above panes, like `node/`), storage in `backend/storage/saved_trees_persistence.py`, UI in `ui/src/panes/canvas/savedTrees/`. Insert reuses `edit_map.import_map_outline()` (the Paste path), which now also carries `ordered`. Saved-tree ids `t<N>` are never reused (`id_hi` in the file). Details: `backend/project/saved_trees/README.md`.
+**Decision:** A node's subtree can be saved as bare structure (`label`, `ordered`, `children`; no `id`, `resolved`, or `path` — `structure_of()` in `project/node/node.py`) into a per-account library, `data/saved_trees.json`, and inserted later under any node of that account's projects. Node ⋯ menu: **Save as tree**, **Insert saved tree…** (picker; × deletes from the library). Concept in `backend/project/saved_trees/` (above panes, like `node/`), storage in `backend/storage/saved_trees_persistence.py`, UI in `ui/src/panes/canvas/savedTrees/`. Insert reuses `edit_map.import_map_outline()` (the Paste path), which now also carries `ordered`. Saved-tree ids `t<N>` are never reused (`id_hi` in the file). What is kept vs dropped: `project/node/README.md`.
 
 **Date:** 2026-09-27
 
@@ -602,6 +602,8 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Alternatives considered:** a linked template (edits propagate) — rejected: needs sync rules and a different identity model; storing trees inside a project — rejected: reuse is cross-project.
 
 **Reversible?** Yes — remove the two menu items, the routes, and `saved_trees/`; `data/saved_trees.json` is independent of project data.
+
+**Follow-up (same day):** A bottom-bar **Saved trees** button opens the same picker and inserts under the selected node, or at the top level when none is selected. The folder README first added for saved trees was removed: a README in a code folder is kept for foundational concepts (the node), not features; the kept/dropped rule moved to `project/node/README.md`, open work to `TODO.md` Queue 51.
 
 
 ## See also

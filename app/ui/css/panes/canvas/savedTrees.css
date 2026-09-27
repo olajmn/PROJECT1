@@ -1,10 +1,19 @@
-/* Saved-tree picker opened from the node ⋯ menu (panes/canvas/savedTrees/).
+/* Saved-tree picker, opened from the node ⋯ menu or the bottom bar's
+   Saved trees button (panes/canvas/savedTrees/).
    The box itself reuses .progress-menu (map.css); this adds the rows. */
 
 .saved-tree-picker {
   min-width: 12rem;
   max-height: 18rem;
   overflow-y: auto;
+}
+
+.saved-tree-target {
+  margin: 0;
+  padding: 0.2rem 0.55rem 0.35rem;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
 }
 
 .saved-tree-row {

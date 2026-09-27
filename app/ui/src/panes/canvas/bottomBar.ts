@@ -1,5 +1,6 @@
 // The bar under the map: Copy as ASCII, Paste structure, Add folder,
-// Archive. (Project summary is Talk `/project_summary` — see chat/commands.)
+// Saved trees, Archive. (Project summary is Talk `/project_summary` —
+// see chat/commands.)
 
 // Contents
 //  1. Types
@@ -12,6 +13,7 @@ import { projectChromeHash } from "../create/projectOrder.js";
 import { copyAsText } from "./copyAsText.js";
 import { buildAddFolderPanel } from "./folderForm.js";
 import { buildPasteTreePanel } from "./pasteForm.js";
+import { openSavedTreesPicker } from "./savedTrees/insertTree.js";
 import type { MapNode, ProjectView } from "../../dataShapes.js";
 
 // 1. Types
@@ -78,9 +80,33 @@ export function mountBottomBar(opts: BottomBarOpts): BottomBar {
     }
   });
 
+  // Same picker as a node's ⋯ "Insert saved tree…"; here it inserts
+  // under the selected node, or at the top level when none is selected.
+  const savedBtn = document.createElement("button");
+  savedBtn.type = "button";
+  savedBtn.className = "map-copy-button";
+  savedBtn.textContent = "Saved trees";
+  savedBtn.title = "Insert one of your saved trees";
+  savedBtn.addEventListener("click", () => {
+    void openSavedTreesPicker({
+      projectId: project.project_id,
+      parentId: opts.getSelectedNodeId(),
+      parentLabel: opts.getSelectedNodeLabel(),
+      anchor: savedBtn,
+      anchorToggles: true,
+      onUpdated: (updated) => opts.onUpdated(updated),
+      onError: (message) => {
+        const error = document.createElement("p");
+        error.className = "error";
+        error.textContent = `(error: ${message})`;
+        copyRow.appendChild(error);
+      },
+    });
+  });
+
   const copyGroup = document.createElement("div");
   copyGroup.className = "map-copy-group";
-  copyGroup.append(copyBtn, paste.pasteBtn, folder.folderBtn);
+  copyGroup.append(copyBtn, paste.pasteBtn, folder.folderBtn, savedBtn);
 
   const archiveBtn = document.createElement("button");
   archiveBtn.type = "button";
