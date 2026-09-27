@@ -70,10 +70,13 @@ only). Numbers are stable ids, not rank.
     4. **`app/ui/dist/api.js` is tracked although `app/ui/dist/` is in
        `.gitignore`** — still changes in commits. Untrack with
        `git rm --cached` or adjust the ignore rule. One-minute fix.
-    5. **Goal naming in comments** — the legacy storage code is gone
-       (#56, #59); a few docstrings still say "goal" for a project
-       (`panes/create/lifecycle.py`, `project_account.py`,
-       `chat/screen/chat_thread.py`). Wording only.
+    5. **Goal naming** — the legacy storage code is gone (#56, #59); a
+       few names still say "goal" for a project. Docstrings:
+       `panes/create/lifecycle.py`, `project_account.py`. UI: `goals` in
+       `index.ts` `load()`; the `.goal-thread` class (`index.html`,
+       `agent-chat.css`, `columnRail.css`, `resizePanel.ts`);
+       `sidebar-account-card-project-goal` (`accountCard.ts`,
+       `accountsPanel.css`). Renames only.
     6. **`requests_from_browser.py` routing** — one long `if/elif` on
        `self.path` per method; grows with every endpoint. Not urgent.
        Related to 30.
@@ -153,9 +156,11 @@ only). Numbers are stable ids, not rank.
     UI says "Current state"; folders/`status` wire/`build_status` still
     say Status. Optional later (avoid confusing with disk `current.json`).
     Related to 34.
-38. **Click a Changes day → map + chat focus** (Step, parked) —
-    highlight nodes touched that day; isolate talk about those changes
-    (like node About). Needs richer event payload. Related to 34.
+38. **Click a Changes day → map + chat focus** (Step, parked) — the
+    chat part is built ([[05-decisions]] #62): a day in Current state
+    selects that day's changes for Talk, framed like node About. Still
+    open: highlight the nodes touched that day on the map, and richer
+    change text ("Imported 1 step(s)" does not say what). Related to 34.
 39. **Talk commands that force a SoT pass** (Step, keep in mind) —
     e.g. a chat "full check" that deliberately re-reads `current` (+
     events) — the product twin of Cursor `/full-check`, for the *user

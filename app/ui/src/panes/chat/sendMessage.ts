@@ -16,6 +16,7 @@ type SendMessageOpts = {
   getProject: () => ProjectView | null;
   getSelectedNodeId: () => string | null;
   getSelectedNodeLabel: () => string | null;
+  getSelectedDay: () => string | null;
   onUpdated: (updated: ProjectView) => void;
 };
 
@@ -33,6 +34,7 @@ export function installSendMessage(opts: SendMessageOpts): void {
     ) as HTMLButtonElement;
     const selectedNodeId = opts.getSelectedNodeId();
     const selectedNodeLabel = opts.getSelectedNodeLabel();
+    const selectedDay = opts.getSelectedDay();
     opts.input.disabled = true;
     setButtonBusy(sendButton, true);
     opts.errorEl.hidden = true;
@@ -71,6 +73,7 @@ export function installSendMessage(opts: SendMessageOpts): void {
           text,
           selectedNodeLabel,
           selectedNodeId,
+          selectedDay,
         );
       }
       opts.input.value = "";

@@ -204,13 +204,16 @@ export async function addFolder(projectId, folder, parentId) {
     return (await res.json());
 }
 // 3. Chat
-export async function sendChatMessage(projectId, text, focusLabel, focusStepId) {
+export async function sendChatMessage(projectId, text, focusLabel, focusStepId, focusDay) {
     const body = { text };
     if (focusLabel) {
         body.focus_label = focusLabel;
     }
     if (focusStepId) {
         body.focus_step_id = focusStepId;
+    }
+    if (focusDay) {
+        body.focus_day = focusDay;
     }
     const res = await fetch(`/api/projects/${projectId}/chat`, {
         method: "POST",

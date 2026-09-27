@@ -1,6 +1,7 @@
 // The Current state panel above the chat: where the project stands now
 // and what has happened (backend/project/status/). The chat's model gets
-// the same text, so what you see here is what it knows.
+// the same summary rows and the changes themselves, not the per-day
+// counts; a selected day gives it that day's changes.
 //
 // The "Current state" button opens and closes it; open/closed and the
 // height are remembered across projects (localStorage).
@@ -20,8 +21,14 @@ const OPEN_KEY = "projects.statusOpen";
 // 1. Types
 
 export type StatusPanel = {
-  /** Show one project's status. `onNode` runs when a node name is clicked. */
-  fill: (status: ProjectStatus | null, onNode: (label: string) => void) => void;
+  /** Show one project's status. `onNode` runs when a node name is
+   * clicked, `onDay` when a day is picked (null lets it go). */
+  fill: (
+    status: ProjectStatus | null,
+    onNode: (label: string) => void,
+    selectedDay?: string | null,
+    onDay?: (day: string | null) => void,
+  ) => void;
 };
 
 // 2. Public API
@@ -35,6 +42,8 @@ export function createStatusPanel(
 
   let lastStatus: ProjectStatus | null = null;
   let lastOnNode: ((label: string) => void) | null = null;
+  let lastSelectedDay: string | null = null;
+  let lastOnDay: (day: string | null) => void = () => {};
   let open = readOpen();
 
   toggle.hidden = false;
@@ -56,14 +65,16 @@ export function createStatusPanel(
       applyStoredPanelHeight(panel, { clampToContent: false });
       return;
     }
-    panel.appendChild(drawStatus(lastStatus, lastOnNode));
+    panel.appendChild(drawStatus(lastStatus, lastOnNode, lastSelectedDay, lastOnDay));
     applyStoredPanelHeight(panel);
   }
 
   return {
-    fill: (status, onNode) => {
+    fill: (status, onNode, selectedDay = null, onDay = () => {}) => {
       lastStatus = status;
       lastOnNode = onNode;
+      lastSelectedDay = selectedDay;
+      lastOnDay = onDay;
       paint();
     },
   };

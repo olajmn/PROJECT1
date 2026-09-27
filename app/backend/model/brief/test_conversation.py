@@ -66,7 +66,19 @@ def main() -> None:
     assert "what it contains):\nloose" in loose
     empty = build_messages({"plan": {}}, "hi", [])[0]["content"]
     assert "The project has no parts yet." in empty
-    print("OK - build_messages / past_turns / background")
+    # A selected day of changes: listed in the background, tagged on turns.
+    tape = [
+        {"feedback": "Added step: Beds", "event": "node_added", "created_at": "2026-09-20T12:00:00"},
+        {"feedback": "Two beds. Note: what changed?", "event": "chat",
+         "created_at": "2026-09-20T13:00:00", "focus_day": "2026-09-20"},
+    ]
+    day = build_messages(latest, "and?", tape, focus_day="2026-09-20")
+    assert "selected the changes on 20 Sep" in day[0]["content"]
+    assert "Added step: Beds" in day[0]["content"]
+    assert "Nothing is selected" not in day[0]["content"]
+    assert day[1]["content"] == "[about: changes on 20 Sep] what changed?"
+    assert day[-1]["content"] == "[about: changes on 20 Sep] and?"
+    print("OK - build_messages / past_turns / background / selected day")
 
 
 if __name__ == "__main__":

@@ -110,6 +110,27 @@
   color: var(--color-text-muted);
 }
 
+/* A day with changes: click to talk about that day; the selected one
+   reads like a selected node (underlined, accent). */
+.status-panel .status-lines.status-days li.is-selectable {
+  cursor: pointer;
+}
+
+.status-panel .status-lines.status-days li.is-selectable:hover .status-text {
+  color: var(--color-accent);
+}
+
+.status-panel .status-lines.status-days li.is-selected .status-day-label,
+.status-panel .status-lines.status-days li.is-selected .status-text {
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+.status-panel .status-lines.status-days li.is-selected .status-text {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .status-panel .status-text {
   min-width: 0;
   word-break: break-word;

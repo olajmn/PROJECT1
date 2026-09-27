@@ -14,7 +14,7 @@ How the app's screen is laid out, how it should look, and where its code lives.
 |---|---|---|
 | **Sidebar** | Accounts and their projects; create a project; Settings | The map; column widths |
 | **Canvas** | The open project's nodes | Files on disk; old plan fields |
-| **Chat** | The conversation, optionally about one node | The map itself |
+| **Chat** | The conversation, optionally about one node or one day of changes | The map itself |
 
 The canvas is not a file browser: a future files view belongs in the
 sidebar, not the middle column.

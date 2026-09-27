@@ -38,6 +38,11 @@ assert focused[1]["focus"] == "Rooms"
 assert "focus" not in focused[2]
 assert focused[3] == {"role": "agent", "text": "Paint."}
 
+# A turn about a day of changes carries focus_day, not a node focus.
+by_day = thread_messages([{"feedback": "Two edits. Note: what changed?", "focus_day": "2026-09-27"}])
+assert by_day[0] == {"role": "user", "text": "what changed?", "focus_day": "2026-09-27"}
+assert by_day[1]["focus_day"] == "2026-09-27"
+
 # `at`: the user line prefers sent_at, the agent line uses created_at.
 timed = thread_messages([
     {"feedback": "Ok. Note: hi", "sent_at": "t1", "created_at": "t2"},

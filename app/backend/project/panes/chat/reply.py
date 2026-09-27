@@ -29,9 +29,12 @@ def reply(
     note: str,
     map_focus: str | None = None,
     focus_step_id: str | None = None,
+    focus_day: str | None = None,
 ) -> dict:
-    """{"record", "reply"} - the saved project record the screen is
-    rebuilt from, and the reply text to show."""
+    """{"record", "select"?, "toggle_map_ids"?} - the saved project
+    record the screen is rebuilt from (its thread ends with the reply),
+    and what a command asks the UI to do. `focus_day` (YYYY-MM-DD)
+    is a selected day of changes; commands ignore it."""
     # Taken before the model is called: the reply can take a while, and
     # the message was sent now, not when the reply is saved.
     sent_at = now_utc()
@@ -47,7 +50,7 @@ def reply(
             base, note, text, sent_at,
             map_focus=stamp_label, focus_step_id=stamp_id,
         )
-        out = {"record": record, "reply": text}
+        out: dict = {"record": record}
         if commanded.select_id and commanded.select_label:
             out["select"] = {
                 "id": commanded.select_id,
@@ -62,13 +65,16 @@ def reply(
         status_text(build_status(history, current=latest)),
         recent_changes_text(history),
     ]))
-    messages = build_messages(latest, note, history, map_focus, focus_step_id, status)
+    messages = build_messages(
+        latest, note, history, map_focus, focus_step_id, status,
+        focus_day=focus_day,
+    )
     text = send_chat(messages).strip()
     record = _save_talk(
         latest, note, text, sent_at,
-        map_focus=map_focus, focus_step_id=focus_step_id,
+        map_focus=map_focus, focus_step_id=focus_step_id, focus_day=focus_day,
     )
-    return {"record": record, "reply": text}
+    return {"record": record}
 
 
 def _save_talk(
@@ -78,6 +84,7 @@ def _save_talk(
     sent_at: str,
     map_focus: str | None = None,
     focus_step_id: str | None = None,
+    focus_day: str | None = None,
 ) -> dict:
     """Keep the map as it is; store the turn as "<reply> Note: <note>",
     the shape screen/chat_thread.py and model/brief/conversation.py read."""
@@ -91,5 +98,6 @@ def _save_talk(
         sent_at=sent_at,
         map_focus=map_focus,
         focus_step_id=focus_step_id,
+        focus_day=focus_day,
     )
 

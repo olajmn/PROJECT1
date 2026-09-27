@@ -62,6 +62,7 @@ const selection: SelectionState = {
   selectedId: null,
   selectedNodeId: null,
   selectedNodeLabel: null,
+  selectedDay: null,
 };
 
 function selected(): ProjectView | null {
@@ -94,6 +95,7 @@ installSendMessage({
   getProject: () => selected(),
   getSelectedNodeId: () => selection.selectedNodeId,
   getSelectedNodeLabel: () => selection.selectedNodeLabel,
+  getSelectedDay: () => selection.selectedDay,
   onUpdated: (updated) => replaceProject(updated),
 });
 
@@ -144,6 +146,7 @@ const accountsPanel = installAccountsPanel({
     selection.selectedId = projectId;
     selection.selectedNodeId = null;
     selection.selectedNodeLabel = null;
+    selection.selectedDay = null;
     createPanel.close();
     chatPane.clearIsolate();
     renderAll();
@@ -178,11 +181,21 @@ const mapPane = installMapPane({
   setSelectedNode: (stepId, label) => {
     selection.selectedNodeId = stepId;
     selection.selectedNodeLabel = label;
+    if (stepId) selection.selectedDay = null;
+  },
+  getSelectedDay: () => selection.selectedDay,
+  setSelectedDay: (day) => {
+    selection.selectedDay = day;
+    if (day) {
+      selection.selectedNodeId = null;
+      selection.selectedNodeLabel = null;
+    }
   },
   onCloseProject: () => {
     selection.selectedId = null;
     selection.selectedNodeId = null;
     selection.selectedNodeLabel = null;
+    selection.selectedDay = null;
     chatPane.clearIsolate();
     renderAll();
   },
@@ -220,6 +233,7 @@ function replaceProject(updated: ProjectView): void {
   if (updated.select) {
     selection.selectedNodeId = updated.select.id;
     selection.selectedNodeLabel = updated.select.label;
+    selection.selectedDay = null;
   }
   if (updated.toggle_map_ids) toggleMapIds();
   renderAll();

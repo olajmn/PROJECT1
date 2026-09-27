@@ -63,7 +63,9 @@ Everything lives in `app/data/` as plain JSON:
 - A Talk turn sends: fixed instructions (`model/brief/talk_prompt.py`:
   role, task, behavior, limits), the project's status, its last 10
   changes (`recent_changes_text()`), every label on the map, the
-  selected node's path, the last 20 turns, and the new message. The model is told to answer from the project only.
+  selected node's path or every change on the selected day
+  (`changes_on_day_text()`, up to 100), the last 20 turns, and the new
+  message. The model is told to answer from the project only.
 - The model sees labels only — not node ids, file contents, or anything
   outside the project.
 

@@ -17,6 +17,7 @@ import { projectChromeHash } from "../create/projectOrder.js";
 import { installTitleRename } from "../create/renameProject.js";
 import type { ChatPane } from "../chat/chatPane.js";
 import {
+  dayFocusPlaceholder,
   focusPathPlaceholder,
 } from "../chat/focusPath.js";
 import { treeWordsElement } from "./drawNodes.js";
@@ -50,6 +51,9 @@ type MapPaneOpts = {
   getSelectedNodeId: () => string | null;
   getSelectedNodeLabel: () => string | null;
   setSelectedNode: (stepId: string | null, label: string | null) => void;
+  getSelectedDay: () => string | null;
+  /** Select a day of changes (clears the node), or null to let it go. */
+  setSelectedDay: (day: string | null) => void;
   onCloseProject: () => void;
   onUpdated: (updated: ProjectView) => void;
   onArchived: (projectId: number) => void;
@@ -131,7 +135,14 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
     const markSelected = (stepId: string, note: string) => {
       const row = line.querySelector(`[data-step-id="${CSS.escape(stepId)}"]`);
       const label = beadLabel(row) ?? stepId;
+      // Picking a node lets a selected day go; redraw so the Status row
+      // no longer shows as selected.
+      const hadDay = opts.getSelectedDay() !== null;
       opts.setSelectedNode(stepId, label);
+      if (hadDay) {
+        render();
+        return;
+      }
       opts.chatInput.placeholder = focusPathPlaceholder(label);
       line.querySelectorAll(".progress-row.is-selected").forEach((el) => {
         el.classList.remove("is-selected");
@@ -282,6 +293,11 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
 
     opts.chatPane.fillProject({
       project,
+      selectedDay: opts.getSelectedDay(),
+      onSelectDay: (day) => {
+        opts.setSelectedDay(day);
+        render();
+      },
       resolveStepId: (label) => stepIdForLabel(opts.projectMain, label),
       onSelectNode: (stepId, label) => {
         markSelected(stepId, `Looking at: ${label}`);
@@ -290,9 +306,14 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
       },
     });
     const heldId = opts.getSelectedNodeId();
+    const heldDay = opts.getSelectedDay();
     if (heldId) {
       const label = opts.getSelectedNodeLabel() || nodeLabel(heldId) || heldId;
       markSelected(heldId, `Looking at: ${label}`);
+    } else if (heldDay) {
+      opts.chatInput.placeholder = dayFocusPlaceholder(heldDay);
+    } else {
+      opts.chatInput.placeholder = DEFAULT_CHAT_PLACEHOLDER;
     }
   };
 

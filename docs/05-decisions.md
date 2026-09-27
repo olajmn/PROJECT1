@@ -711,6 +711,19 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Reversible?** Yes — in git history.
 
 
+## 62. 2026-09-27 — A day of changes as a Talk focus
+
+**Decision:** A day row with changes in Current state is clickable. It selects that day for Talk the way a node is selected: the model gets every non-chat change that day (`changes_on_day_text()`, up to 100), the turn is saved with `focus_day` (YYYY-MM-DD), and the thread frames it as About "changes on 27 Sep". One focus at a time: picking a day clears the node, picking a node clears the day. Without a selected day Talk still gets the last 10 changes (`recent_changes_text()`).
+
+**Date:** 2026-09-27
+
+**Why this choice:** The last 10 changes are enough for a light overview, not for a busy day or several days back. A deliberate click gives the model a whole day without growing every prompt, and reuses the About-frame pattern the user already knows from nodes, rather than a new command.
+
+**Trade-off:** The answers are only as good as the saved change text, which is thin today (`TODO.md` Queue 38). The day is stored as a calendar date, not "Today", so history tags stay correct later.
+
+**Reversible?** Yes — the field is optional; old turns have none.
+
+
 ## See also
 
 - [[03-architecture]]

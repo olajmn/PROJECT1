@@ -2,7 +2,7 @@
 //
 // Selection state stays in index.ts. This pane only draws the column and
 // calls back when a Status node name or an About-frame should select a map
-// node.
+// node, or a Status day should select that day's changes.
 //
 // Contents
 //  1. Types
@@ -24,6 +24,8 @@ export type ChatPane = {
     project: ProjectView;
     onSelectNode: (stepId: string, label: string) => void;
     resolveStepId: (label: string) => string | null;
+    selectedDay: string | null;
+    onSelectDay: (day: string | null) => void;
   }) => void;
   clearIsolate: () => void;
   readonly threadEl: HTMLDivElement;
@@ -71,16 +73,23 @@ export function installChatPane(opts: ChatPaneOpts): ChatPane {
       fillPlaceholder(placeholder);
       statusPanel.fill(null, () => {});
     },
-    fillProject: ({ project, onSelectNode, resolveStepId }) => {
+    fillProject: ({ project, onSelectNode, resolveStepId, selectedDay, onSelectDay }) => {
       resolveStepIdLive = resolveStepId;
-      isolateChat.fill(project.thread ?? [], (stepId, label) => {
-        onSelectNode(stepId, label);
-      });
-      statusPanel.fill(project.status, (label) => {
-        const stepId = resolveStepId(label);
-        if (!stepId) return;
-        onSelectNode(stepId, label);
-      });
+      isolateChat.fill(
+        project.thread ?? [],
+        (stepId, label) => onSelectNode(stepId, label),
+        (day) => onSelectDay(day),
+      );
+      statusPanel.fill(
+        project.status,
+        (label) => {
+          const stepId = resolveStepId(label);
+          if (!stepId) return;
+          onSelectNode(stepId, label);
+        },
+        selectedDay,
+        onSelectDay,
+      );
     },
   };
 }

@@ -277,17 +277,22 @@ export async function sendChatMessage(
   text: string,
   focusLabel?: string | null,
   focusStepId?: string | null,
+  focusDay?: string | null,
 ): Promise<ProjectView> {
   const body: {
     text: string;
     focus_label?: string;
     focus_step_id?: string;
+    focus_day?: string;
   } = { text };
   if (focusLabel) {
     body.focus_label = focusLabel;
   }
   if (focusStepId) {
     body.focus_step_id = focusStepId;
+  }
+  if (focusDay) {
+    body.focus_day = focusDay;
   }
   const res = await fetch(`/api/projects/${projectId}/chat`, {
     method: "POST",

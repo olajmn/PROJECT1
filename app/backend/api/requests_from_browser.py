@@ -29,6 +29,7 @@ server.py only starts the server; everything it answers is decided here.
 
 import json
 import re
+from datetime import date
 from http.server import BaseHTTPRequestHandler
 
 from backend.storage.accounts_persistence import (
@@ -373,6 +374,7 @@ class Handler(BaseHTTPRequestHandler):
                 note,
                 map_focus=_clean(body.get("focus_label")),
                 focus_step_id=_clean(body.get("focus_step_id")),
+                focus_day=_day(body.get("focus_day")),
             )
         except Exception as e:
             self._model_failed(e)
@@ -499,3 +501,14 @@ def _clean(raw) -> str | None:
     """A trimmed string, or None when missing or blank."""
     text = str(raw).strip() if raw else ""
     return text or None
+
+
+def _day(raw) -> str | None:
+    """A YYYY-MM-DD day, or None when missing or not a date."""
+    text = _clean(raw)
+    if text is None:
+        return None
+    try:
+        return date.fromisoformat(text).isoformat()
+    except ValueError:
+        return None

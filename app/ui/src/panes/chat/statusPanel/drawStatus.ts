@@ -1,6 +1,7 @@
 // Draws a project's status: summary rows, then a day-by-day change
 // pulse (chat excluded). Node names in the summary become buttons that
-// select that node on the map.
+// select that node on the map; a day with changes selects that day for
+// the chat, and a second click on it lets it go.
 //
 // Contents
 //  1. drawStatus()
@@ -14,6 +15,8 @@ import type { ProjectStatus } from "../../../dataShapes.js";
 export function drawStatus(
   status: ProjectStatus,
   onNode: (label: string) => void,
+  selectedDay: string | null,
+  onDay: (day: string | null) => void,
 ): HTMLElement {
   const root = document.createElement("div");
   root.className = "status";
@@ -48,6 +51,22 @@ export function drawStatus(
     text.textContent = line.text;
     if (line.changes === 0) {
       item.classList.add("is-quiet");
+    } else if (line.date) {
+      const selected = line.date === selectedDay;
+      item.classList.add("is-selectable");
+      item.classList.toggle("is-selected", selected);
+      item.tabIndex = 0;
+      item.setAttribute("role", "button");
+      item.setAttribute("aria-pressed", selected ? "true" : "false");
+      item.title = selected ? "Stop talking about this day" : "Talk about this day's changes";
+      const pick = () => onDay(selected ? null : line.date);
+      item.addEventListener("click", pick);
+      item.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          pick();
+        }
+      });
     }
     item.append(day, text);
     list.append(item);

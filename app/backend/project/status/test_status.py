@@ -8,9 +8,15 @@ from datetime import datetime, timezone
 
 from backend.project.status.build_status import (
     build_status,
+    changes_on_day_text,
+    day_name,
     recent_changes_text,
     status_text,
 )
+
+def _local_day(at: str) -> str:
+    return datetime.fromisoformat(at).astimezone().date().isoformat()
+
 
 NOW = datetime(2026, 9, 25, 20, 0, tzinfo=timezone.utc).astimezone()
 
@@ -100,6 +106,16 @@ def main() -> None:
     assert len(recent) == 4
     assert len(recent_changes_text(tape, now=NOW, limit=1).splitlines()) == 2
     assert recent_changes_text(tape[2:3], now=NOW) == ""
+
+    # A selected day: every change that local day, and a fixed date on
+    # each pulse row to select it by.
+    day = _local_day("2026-09-20T12:00:00")
+    picked = changes_on_day_text(tape, day, now=NOW).splitlines()
+    assert picked[0] == "The user has selected the changes on 20 Sep (newest first):", picked
+    assert len(picked) == 4
+    assert changes_on_day_text(tape, "2026-01-01", now=NOW).endswith("none were saved that day.")
+    assert day_name("2026-09-20", NOW) == "20 Sep"
+    assert all("date" in row for row in status["history"])
     print("OK - project status day pulse / recent changes")
 
 

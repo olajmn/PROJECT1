@@ -5,22 +5,24 @@ the pulse counts non-chat events per calendar day — no model, nothing
 saved — so it can never disagree with the tape.
 
 Shown in the UI as the **Current state** panel (`build_status()`) and
-given to the chat's model (`status_text()`, `recent_changes_text()`). docs/05-decisions.md #36–37, #41.
+given to the chat's model (`status_text()`, `recent_changes_text()`,
+`changes_on_day_text()` when a day is selected). docs/05-decisions.md #36–37, #41.
 """
 
 # Contents
 #  1. Settings
-#      - HISTORY_DAYS / RECENT_CHANGES
+#      - HISTORY_DAYS / RECENT_CHANGES / DAY_CHANGES
 #      - _CHAT_EVENTS
 #  2. The status
 #      - build_status()
 #      - status_text()
 #      - recent_changes_text()
+#      - changes_on_day_text() / day_name()
 #  3. Summary facts / day pulse
 #      - _summary() / _change_pulse() / _map_size()
 
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from backend.project.node import steps_of
 from backend.project.timeline import to_event
@@ -38,6 +40,10 @@ HISTORY_DAYS = 25
 # day pulse only counts them; this says what each one was.
 RECENT_CHANGES = 10
 
+# Ceiling for one selected day's changes; a guard for a very busy day,
+# not a target.
+DAY_CHANGES = 100
+
 # Talk lines are not "changes" in the Status pulse (map/work only).
 _CHAT_EVENTS = frozenset({"chat", "chat_added_nodes"})
 
@@ -52,8 +58,8 @@ def build_status(
     now: datetime | None = None,
     current: dict | None = None,
 ) -> dict:
-    """{summary: [{label, text, nodes}], history: [{day, time, text,
-    nodes, changes}], earlier: int} for one project's events, oldest
+    """{summary: [{label, text, nodes}], history: [{day, date, text,
+    changes}], earlier: int} for one project's events, oldest
     first on disk. `history` here is one row per calendar day (change
     count; chat excluded). `current` is the SoT record; when omitted,
     the last history line is used. `now` is only for tests."""
@@ -89,16 +95,58 @@ def recent_changes_text(
     for the chat's model. Empty when there are none. Chat turns are left
     out: the model already gets them as the conversation."""
     now = now or datetime.now().astimezone()
-    events = [to_event(record, "") for record in history]
-    work = [e for e in events if e.get("event") not in _CHAT_EVENTS][-limit:]
+    work = _work_events(history)[-limit:]
     if not work:
         return ""
-    lines = ["Recent changes (newest first):"]
-    for event in reversed(work):
+    return "\n".join(["Recent changes (newest first):", *_change_lines(work, now)])
+
+
+def changes_on_day_text(
+    history: list[dict],
+    day: str,
+    now: datetime | None = None,
+    limit: int = DAY_CHANGES,
+) -> str:
+    """Every non-chat change on one local calendar day (`day` as
+    YYYY-MM-DD, the `date` of a pulse row), newest first, for the chat's
+    model when the user has selected that day."""
+    now = now or datetime.now().astimezone()
+    work = [
+        e for e in _work_events(history)
+        if (when := _event_when(e.get("at"))) and when.date().isoformat() == day
+    ][-limit:]
+    heading = f"The user has selected the changes on {day_name(day, now)}"
+    if not work:
+        return heading + ": none were saved that day."
+    return "\n".join([heading + " (newest first):", *_change_lines(work, now)])
+
+
+def day_name(day: str, now: datetime | None = None) -> str:
+    """"27 Sep" for a YYYY-MM-DD day; the text itself when it is not one.
+    Absolute on purpose: it is stored in the chat history, where "Today"
+    would go stale."""
+    now = now or datetime.now().astimezone()
+    try:
+        parsed = date.fromisoformat(day)
+    except ValueError:
+        return day
+    return _date(datetime(parsed.year, parsed.month, parsed.day), now)
+
+
+def _work_events(history: list[dict]) -> list[dict]:
+    """Saved lines as timeline events, oldest first, chat left out."""
+    events = [to_event(record, "") for record in history]
+    return [e for e in events if e.get("event") not in _CHAT_EVENTS]
+
+
+def _change_lines(events: list[dict], now: datetime) -> list[str]:
+    """One indented line per event, newest first."""
+    lines = []
+    for event in reversed(events):
         when = _event_when(event.get("at"))
         stamp = f"{_day(when, now)} {when:%H:%M}" if when else _day(None, now)
         lines.append(f"  {stamp} — {event.get('text') or event.get('kind')}")
-    return "\n".join(lines)
+    return lines
 
 
 # ============================================================
@@ -142,9 +190,8 @@ def _change_pulse(
         when = datetime(d.year, d.month, d.day, tzinfo=now.tzinfo)
         pulse.append({
             "day": _day(when, now),
-            "time": "",
+            "date": d.isoformat(),
             "text": "1 change" if n == 1 else f"{n} changes",
-            "nodes": [],
             "changes": n,
         })
     return pulse, earlier

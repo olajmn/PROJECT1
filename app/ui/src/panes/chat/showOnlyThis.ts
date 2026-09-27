@@ -1,14 +1,18 @@
 // About-frame isolation for the Projects chat thread: "Show only this"
-// filters to one focus label; leaving isolation restores scroll.
+// filters to one focus (a node label, or a day of changes); leaving
+// isolation restores scroll.
 // Framing (About "…") and filter live here — message rows in messageRow.ts.
 
 // Contents
 //  1. Types
 //      - IsolateChat
 //      - IsolateChatOptions
-//  2. Public API
+//  2. Helpers
+//      - frameOf()
+//  3. Public API
 //      - createIsolateChat()
 
+import { changesDayName } from "./focusPath.js";
 import { messageRow } from "./messageRow.js";
 import type { ChatMessage } from "../../dataShapes.js";
 
@@ -21,6 +25,7 @@ export type IsolateChat = {
   fill: (
     messages: ChatMessage[],
     onFocusClick?: (stepId: string, label: string) => void,
+    onDayClick?: (day: string) => void,
   ) => void;
 };
 
@@ -32,18 +37,32 @@ export type IsolateChatOptions = {
   onChange: () => void;
 };
 
-// 2. Public API
+// 2. Helpers
+
+type Frame = { key: string; name: string; day: string | null };
+
+/** What a message's About-frame is: its node label, or its day of
+ * changes. `key` groups messages; `name` is shown. */
+function frameOf(message: ChatMessage): Frame | null {
+  const focus = message.focus?.trim();
+  if (focus) return { key: focus, name: focus, day: null };
+  const day = message.focus_day?.trim();
+  if (day) return { key: `day:${day}`, name: changesDayName(day), day };
+  return null;
+}
+
+// 3. Public API
 
 export function createIsolateChat(options: IsolateChatOptions): IsolateChat {
   const { threadEl, resolveStepId, onChange } = options;
-  let isolatedFocus: string | null = null;
+  let isolatedFocus: Frame | null = null;
   let preIsolationScrollTop: number | null = null;
 
   function isolationBanner(): HTMLDivElement {
     const banner = document.createElement("div");
     banner.className = "thread-isolation-banner";
     const label = document.createElement("span");
-    label.textContent = `Showing only: About “${isolatedFocus}”`;
+    label.textContent = `Showing only: About “${isolatedFocus?.name}”`;
     const back = document.createElement("button");
     back.type = "button";
     back.className = "thread-isolation-back";
@@ -59,13 +78,14 @@ export function createIsolateChat(options: IsolateChatOptions): IsolateChat {
   function fill(
     messages: ChatMessage[],
     onFocusClick?: (stepId: string, label: string) => void,
+    onDayClick?: (day: string) => void,
   ): void {
     threadEl.innerHTML = "";
 
     if (isolatedFocus) {
       threadEl.appendChild(isolationBanner());
       for (const message of messages) {
-        if ((message.focus?.trim() || null) !== isolatedFocus) continue;
+        if (frameOf(message)?.key !== isolatedFocus.key) continue;
         threadEl.appendChild(messageRow(message));
       }
       threadEl.scrollTop = threadEl.scrollHeight;
@@ -73,19 +93,25 @@ export function createIsolateChat(options: IsolateChatOptions): IsolateChat {
     }
 
     let section: HTMLDivElement | null = null;
-    let sectionFocus: string | null = null;
+    let sectionKey: string | null = null;
 
     for (const message of messages) {
-      const focus = message.focus?.trim() || null;
-      if (focus !== sectionFocus) {
-        sectionFocus = focus;
-        if (focus) {
+      const current = frameOf(message);
+      const focus = current && !current.day ? current.key : null;
+      if ((current?.key ?? null) !== sectionKey) {
+        sectionKey = current?.key ?? null;
+        if (current) {
           const frame = document.createElement("div");
           frame.className = "chat-focus-section";
-          frame.dataset.focusLabel = focus;
           const stepId = message.focus_step_id?.trim();
+          if (focus) frame.dataset.focusLabel = focus;
           if (stepId) frame.dataset.focusStepId = stepId;
-          if (onFocusClick) {
+          if (current.day && onDayClick) {
+            const day = current.day;
+            frame.classList.add("is-clickable");
+            frame.title = `Talk about ${current.name} again`;
+            frame.addEventListener("click", () => onDayClick(day));
+          } else if (focus && onFocusClick) {
             frame.classList.add("is-clickable");
             frame.title = `Select “${focus}” on the map`;
             frame.addEventListener("click", () => {
@@ -101,7 +127,7 @@ export function createIsolateChat(options: IsolateChatOptions): IsolateChat {
           header.className = "chat-focus-header";
           const marker = document.createElement("span");
           marker.className = "chat-focus-marker";
-          marker.textContent = `About “${focus}”`;
+          marker.textContent = `About “${current.name}”`;
           const isolateBtn = document.createElement("button");
           isolateBtn.type = "button";
           isolateBtn.className = "thread-isolate-button";
@@ -109,7 +135,7 @@ export function createIsolateChat(options: IsolateChatOptions): IsolateChat {
           isolateBtn.addEventListener("click", (event) => {
             event.stopPropagation();
             preIsolationScrollTop = threadEl.scrollTop;
-            isolatedFocus = focus;
+            isolatedFocus = current;
             onChange();
           });
           header.append(marker, isolateBtn);

@@ -77,7 +77,8 @@ helps but does not take over.
   and a message of several lines is added as nodes under it.
 - **Current state:** the panel above the chat shows the project, its
   last change, the size of the map, and changes per day; node names in
-  it select that node on the map. The conversation is given the same
+  it select that node on the map, and a day with changes selects that
+  day for the conversation. The conversation is given the same
   summary.
 - **Commands:** type `/` or use the `/` button next to Send.
   `/add Name` or `/add Parent / Child` adds a node;

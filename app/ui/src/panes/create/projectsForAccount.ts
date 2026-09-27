@@ -31,6 +31,8 @@ export type SelectionState = {
   selectedId: number | null;
   selectedNodeId: string | null;
   selectedNodeLabel: string | null;
+  /** A selected day of changes (YYYY-MM-DD); never set with a node. */
+  selectedDay: string | null;
 };
 
 /**
@@ -59,6 +61,7 @@ export function ensureSelectionInActiveUser(
       : null;
   state.selectedNodeId = null;
   state.selectedNodeLabel = null;
+  state.selectedDay = null;
 }
 
 // 3. Active account

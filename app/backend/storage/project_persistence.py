@@ -96,7 +96,7 @@ def _slim_event(record: dict) -> dict:
         "created_at": record.get("created_at"),
     }
     for key in (
-        "event", "feedback", "sent_at", "map_focus", "focus_step_id",
+        "event", "feedback", "sent_at", "map_focus", "focus_step_id", "focus_day",
         "name", "account_id", "completed", "cancelled",
         "archived_at",
     ):
@@ -244,6 +244,7 @@ def save_plan(
     sent_at: str | None = None,
     map_focus: str | None = None,
     focus_step_id: str | None = None,
+    focus_day: str | None = None,
 ) -> dict:
     """
     Update the project's current SoT and append one slim event.
@@ -255,6 +256,8 @@ def save_plan(
     `map_focus` / `focus_step_id` mark this Talk turn as about a selected
     node (About frames + model history). They are not inherited from the
     previous current — pass them only when this save is focused.
+    `focus_day` (YYYY-MM-DD) marks a Talk turn about one day's changes
+    instead, the same way.
 
     Returns the current record that was saved.
     """
@@ -285,6 +288,9 @@ def save_plan(
         step = (focus_step_id or "").strip()
         if step:
             record["focus_step_id"] = step
+    day = (focus_day or "").strip()
+    if day:
+        record["focus_day"] = day
 
     _write_json(current_path(pid), record)
     _append_event(pid, _slim_event(record))

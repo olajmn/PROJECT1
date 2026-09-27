@@ -20,7 +20,8 @@ def thread_messages(history: list[dict]) -> list[dict]:
     When a turn was map-focused (Talk about this / Looking at), both
     lines carry `focus: "<node label>"` (and `focus_step_id` when known)
     so the UI can frame that stretch, show where it ends, and re-select
-    the node from the frame.
+    the node from the frame. A turn about a day of changes carries
+    `focus_day` (YYYY-MM-DD) instead.
 
     Each message carries `at`, when it happened: the agent line the
     record's `created_at`, the user line `sent_at` when saved (chat turns
@@ -34,10 +35,13 @@ def thread_messages(history: list[dict]) -> list[dict]:
         focus = (record.get("map_focus") or "").strip() or None
         step = (record.get("focus_step_id") or "").strip() or None
         extra: dict = {}
+        day = (record.get("focus_day") or "").strip() or None
         if focus:
             extra["focus"] = focus
             if step:
                 extra["focus_step_id"] = step
+        elif day:
+            extra["focus_day"] = day
         created_at = record.get("created_at")
         messages.append({
             "role": "user", "text": note,

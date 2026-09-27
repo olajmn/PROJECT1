@@ -31,6 +31,8 @@ export interface ChatMessage {
   at?: string;
   focus?: string;
   focus_step_id?: string;
+  /** A turn about one day of changes (YYYY-MM-DD) instead of a node. */
+  focus_day?: string;
 }
 
 /** A project's status (backend/project/status/build_status.py): the
@@ -40,9 +42,9 @@ export interface ProjectStatus {
   summary: { label: string; text: string; nodes: string[] }[];
   history: {
     day: string;
-    time: string;
+    /** The row's calendar day, YYYY-MM-DD — what a click selects. */
+    date: string;
     text: string;
-    nodes: string[];
     /** Non-chat events that day (one save = one change). */
     changes?: number;
   }[];
