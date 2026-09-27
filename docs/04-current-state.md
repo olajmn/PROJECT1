@@ -75,7 +75,7 @@ Everything lives in `app/data/` as plain JSON:
   shows as open.
 - Node ids are sequential per project (`p1`, `p2`, …), not globally
   unique (`TODO.md` Queue 50).
-- Talk replies are often weak (`TODO.md` Queue 46).
+- Talk replies are often weak (`TODO.md` Active 46).
 
 ## 6. Open questions
 

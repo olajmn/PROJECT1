@@ -15,10 +15,29 @@ deliberately chosen as next.
 
 ## Active
 
-None right now. **42. Pre-demo clean box** closed 2026-09-27: accounts
-(done 2026-09-26), `architecture_foundation/` deleted, and the docs
-rewritten short ([[05-decisions]] #57).
-Next candidate: Queue 46 (Talk demo polish).
+**46. Talk demo polish** (Step, before a demo) — answers feel weak
+today. Bounded pass so chat reads as a working, deliberate part of the
+product, not a prototype.
+
+1. **Analyse first** — why answers are poor, above all what the model
+   actually receives as context (brief, focus node, history); explain
+   the problem briefly before larger changes.
+2. **Then fix only what's needed:** relevant answers about the project;
+   clear context for the selected project / node; natural, readable
+   thread; tidy loading / error states; input + Send work; existing
+   slash-commands (`panes/chat/commands/`) keep working.
+3. **4–5 demo scenarios** the chat should handle, written down.
+
+Known model behavior to check against (old experiments on
+`llama3.1:8b`): it invented plausible details never given ("chapter
+11", "a friend"); Norwegian input gave answers unrelated to the
+question, 3 of 3 times, while English was fine — re-test on
+`qwen3.5:9b`, since the owner writes Norwegian; with only the latest
+turn it drifted from the goal, and full history fixed it (Talk sends 20
+turns today).
+
+Out of scope: RAG, long-term memory, agent loops, new chat
+architecture. Related to 33 (model sees only labels).
 
 ## Queue
 
@@ -65,26 +84,6 @@ only). Numbers are stable ids, not rank.
     Not a chat `/` command: a dump in the thread is noise, and the
     thread goes back to the model — same reason Print map was dropped
     ([[05-decisions]] #48).
-46. **Talk demo polish** (Step, next candidate for Active, before a demo) —
-    answers feel weak today. Bounded pass so chat reads as a working,
-    deliberate part of the product, not a prototype.
-    1. **Analyse first** — why answers are poor, above all what the
-       model actually receives as context (brief, focus node, history);
-       explain the problem briefly before larger changes.
-    2. **Then fix only what's needed:** relevant answers about the
-       project; clear context for the selected project / node; natural,
-       readable thread; tidy loading / error states; input + Send work;
-       existing slash-commands (`panes/chat/commands/`) keep working.
-    3. **4–5 demo scenarios** the chat should handle, written down.
-    Known model behavior to check against (old experiments on
-    `llama3.1:8b`): it invented plausible details never given ("chapter 11", "a
-    friend"); Norwegian input gave answers unrelated to the question,
-    3 of 3 times, while English was fine — re-test on `qwen3.5:9b`,
-    since the owner writes Norwegian; with only the latest turn it
-    drifted from the goal, and full history fixed it (Talk sends 20
-    turns today).
-    Out of scope: RAG, long-term memory, agent loops, new chat
-    architecture. Related to 33 (model sees only labels).
 49. **A proper way to check node ids** (Step, shape open) — node ids
     are identity ([[05-decisions]] #52) and never reused (`node_id_hi`),
     but nothing lets you see or verify them. Candidates:
