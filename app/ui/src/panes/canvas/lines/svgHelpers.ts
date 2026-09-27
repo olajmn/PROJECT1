@@ -42,9 +42,15 @@ export function beadAnchor(
   origin: DOMRect,
   scale: number,
 ): BeadAnchor {
-  const unit = row.querySelector(
-    ".progress-bead-unit, .progress-add, .progress-header-unit",
-  ) as HTMLElement | null;
+  // First *visible* match: an open add form hides its + button, and a
+  // hidden element measures as a zero rect at the origin, which would
+  // end the spine above where it starts.
+  const units = Array.from(
+    row.querySelectorAll(
+      ".progress-bead-unit, .progress-add, .progress-add-form, .progress-header-unit",
+    ),
+  ) as HTMLElement[];
+  const unit = units.find((u) => u.getClientRects().length > 0);
   const el = unit ?? row;
   const r = el.getBoundingClientRect();
   return {

@@ -100,12 +100,30 @@ function attachAddControl(
   save.type = "submit";
   save.textContent = "Add";
   form.append(input, save);
+  // Keep focus in the input on Add: Safari does not focus a clicked
+  // button, so focusout would cancel the form before submit fires.
+  save.addEventListener("mousedown", (event) => event.preventDefault());
 
   const openForm = () => {
     form.hidden = false;
     add.hidden = true;
     input.focus();
   };
+
+  // Escape, an empty Add, or focus leaving the form cancels — the
+  // form must never trap the user into typing a name.
+  const closeForm = () => {
+    form.hidden = true;
+    if (showButton) add.hidden = false;
+    input.value = "";
+  };
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeForm();
+  });
+  form.addEventListener("focusout", (event) => {
+    const next = event.relatedTarget as Node | null;
+    if (!next || !form.contains(next)) closeForm();
+  });
 
   add.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -114,14 +132,8 @@ function attachAddControl(
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     const label = input.value.trim();
-    if (!label) {
-      input.focus();
-      return;
-    }
-    form.hidden = true;
-    if (showButton) add.hidden = false;
-    input.value = "";
-    onAddStep(label, parentId);
+    closeForm();
+    if (label) onAddStep(label, parentId);
   });
 
   // Menu “Add here” finds this to open the form without a visible +.
