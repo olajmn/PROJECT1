@@ -64,6 +64,15 @@ export function isProgressionTree(
   return node.children.some((child) => PROGRESSION_STEP_ID.test(child.id));
 }
 
+/** A map row's node label — from data-label, not the box text, which
+ *  shows the id instead while `/id` is on. */
+function beadLabel(row: Element | null | undefined): string | null {
+  const bead = row?.querySelector(
+    ".progress-bead-btn, .progress-bead-label",
+  ) as HTMLElement | null;
+  return bead?.dataset.label ?? bead?.textContent ?? null;
+}
+
 export function stepIdForLabel(
   host: ParentNode,
   label: string,
@@ -71,9 +80,7 @@ export function stepIdForLabel(
   const rows = host.querySelectorAll(".progress-row[data-step-id]");
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const text =
-      row.querySelector(".progress-bead-btn, .progress-bead-label")
-        ?.textContent ?? "";
+    const text = beadLabel(row) ?? "";
     if (text === label) {
       return row.getAttribute("data-step-id");
     }
@@ -123,9 +130,7 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
 
     const markSelected = (stepId: string, note: string) => {
       const row = line.querySelector(`[data-step-id="${CSS.escape(stepId)}"]`);
-      const label =
-        row?.querySelector(".progress-bead-btn, .progress-bead-label")
-          ?.textContent ?? stepId;
+      const label = beadLabel(row) ?? stepId;
       opts.setSelectedNode(stepId, label);
       opts.chatInput.placeholder = focusPathPlaceholder(label);
       line.querySelectorAll(".progress-row.is-selected").forEach((el) => {
@@ -147,10 +152,7 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
 
     const nodeLabel = (stepId: string): string => {
       const row = line.querySelector(`[data-step-id="${CSS.escape(stepId)}"]`);
-      return (
-        row?.querySelector(".progress-bead-btn, .progress-bead-label")
-          ?.textContent ?? stepId
-      );
+      return beadLabel(row) ?? stepId;
     };
 
     const addBead = async (trimmed: string, parentId?: string) => {

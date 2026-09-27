@@ -382,6 +382,7 @@ class Handler(BaseHTTPRequestHandler):
                 result["record"],
                 reply=result["reply"],
                 select=result.get("select"),
+                toggle_map_ids=bool(result.get("toggle_map_ids")),
             )
         )
 

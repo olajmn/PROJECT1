@@ -14,7 +14,12 @@ def main() -> None:
         "plan": {"progression": {"steps": []}},
     }
     assert try_command(empty, "hello") is None
-    assert try_command(empty, "/unknown") is None
+    assert try_command(empty, "") is None
+    # Unknown or mistyped commands answer without the model.
+    unknown = try_command(empty, "/id¨")
+    assert unknown is not None and unknown.record is None
+    assert unknown.reply.startswith("Unknown command /id¨.")
+    assert not unknown.toggle_map_ids
     msg = "The map is empty — nothing to summarise."
     assert try_command(empty, "/project_summary").reply == msg
     assert try_command(empty, "/map_summary").reply == msg
@@ -81,7 +86,14 @@ def main() -> None:
     assert "Selected:" in selected.reply
     assert try_command(tree, "/focus CLIENT").select_id == "p1"
 
-    # A clashing sibling label is numbered, not refused (decision #52).
+    # /id: with a node selected, its id and path; without, a map toggle.
+    shown = try_command(tree, "/id", focus_step_id="p2")
+    assert shown.reply == "hey3 → p2 (CLIENT / hey3)", shown.reply
+    assert not shown.toggle_map_ids and shown.record is None
+    toggled = try_command(tree, "/id")
+    assert toggled.toggle_map_ids and toggled.record is None
+
+    # A clashing sibling label is numbered, not refused (decision #53).
     import backend.project.panes.canvas.edit_map as edit_map
     real_save = edit_map.save_plan
     edit_map.save_plan = lambda name, plan, **kw: {"name": name, "plan": plan, **kw}

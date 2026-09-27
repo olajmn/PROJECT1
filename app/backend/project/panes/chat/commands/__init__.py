@@ -10,6 +10,7 @@ Add a command: one module + one entry in `_COMMANDS` below.
 from collections.abc import Callable
 
 from backend.project.panes.chat.commands.add import run as run_add
+from backend.project.panes.chat.commands.node_id import run as run_id
 from backend.project.panes.chat.commands.project_summary import (
     run as run_project_summary,
 )
@@ -22,6 +23,7 @@ _COMMANDS: dict[str, _Runner] = {
     "/project_summary": run_project_summary,
     "/add": run_add,
     "/select": run_select,
+    "/id": run_id,
 }
 
 _ALIASES = {
@@ -40,12 +42,20 @@ def try_command(
     note: str,
     focus_step_id: str | None = None,
 ) -> CommandResult | None:
-    """If `note` starts with a known command, run it. Otherwise None."""
-    token = (note or "").strip().split(None, 1)[0].lower()
+    """If `note` starts with `/`, run that command. Otherwise None.
+
+    An unknown `/…` gets a fixed reply rather than going to the model:
+    a mistyped command (`/id¨`) sent as ordinary Talk made the model
+    imitate earlier command replies in the thread ("Map switched…")
+    although nothing ran.
+    """
+    parts = (note or "").strip().split(None, 1)
+    token = parts[0].lower() if parts else ""
     if not token.startswith("/"):
         return None
     name = _ALIASES.get(token, token)
     runner = _COMMANDS.get(name)
     if runner is None:
-        return None
+        known = ", ".join(_COMMANDS)
+        return CommandResult(f"Unknown command {parts[0]}. Commands: {known}.")
     return runner(latest, note, focus_step_id=focus_step_id)

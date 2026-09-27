@@ -137,13 +137,36 @@ unless noted.
 49. **A proper way to check node ids** (Step, shape open) — node ids
     are identity ([[05-decisions]] #52) and never reused (`node_id_hi`),
     but nothing lets you see or verify them. Candidates:
-    1. **Inspect:** show a node's `id` somewhere (node ⋯ menu or a
-       detail line), like Directory shows Local # + Global ID.
+    1. **Inspect:** partly done — Talk `/id` shows the selected node's
+       id or switches the map to ids ([[05-decisions]] #55). Still
+       open: a flat overview of every node (Settings → Nodes: project,
+       id, label, parent, depth), like Directory shows Local # +
+       Global ID.
     2. **Verify:** a check (e.g. in `tools/project_check.py` or a test)
        that walks `data/projects/*/current.json` and reports duplicate
        ids in one tree, ids above `node_id_hi`, and `focus_step_id` on
        events pointing at an id that never existed.
     Rules live in `app/backend/project/node/README.md`.
+50. **Node ids → globally unique random ids** (Step, before NFT merge,
+    not during mockup) — `p<N>` ids are sequential and unique per
+    project only: they collide when data from several projects,
+    devices, or the NFT app is merged, need one counter
+    (`node_id_hi`), and leak count/order. Target: **UUIDv7** or
+    **ULID** (128 bit: no practical collisions, time-sortable, no
+    counter; fits a `uint256` ERC-721 token id). Not short random
+    digits: 7 digits (10^7) reach ~50 % collision odds at ~3,700 ids.
+    1. Identity stays separate from content (#52): the id is random and
+       stable; a hash of structure can serve as a fingerprint (e.g. a
+       saved tree to mint), never as the id.
+    2. Display a short prefix (6–8 chars, like git); addressing by
+       prefix must be unique within the project.
+    3. Single change point is `_id_minter()` (`edit_map.py`); old `p`
+       ids referenced by `focus_step_id` in `events.jsonl` need a
+       transition (keep them, or map old → new). `node_id_hi` becomes
+       unnecessary.
+    4. Open question: which side mints node identity once the NFT app
+       joins ([[02-product]] § 5 — data comes from outside via API).
+       Only roots/fingerprints on chain, not every node (gas cost).
 51. **Saved trees follow-ups** (Step, when needed) — built 2026-09-27
     ([[05-decisions]] #54). Open:
     1. Rename a saved tree (name is the node label at save time).

@@ -606,6 +606,19 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Follow-up (same day):** A bottom-bar **Saved trees** button opens the same picker and inserts under the selected node, or at the top level when none is selected. The folder README first added for saved trees was removed: a README in a code folder is kept for foundational concepts (the node), not features; the kept/dropped rule moved to `project/node/README.md`, open work to `TODO.md` Queue 51.
 
 
+## 55. 2026-09-27 — Talk `/id`: show node identity
+
+**Decision:** Add `/id` (`panes/chat/commands/node_id.py`). With a node selected it replies `label → id (path)`. With none selected it returns `toggle_map_ids`, and the browser switches the whole map between showing ids and labels (`ui/src/panes/canvas/idView.ts`; per page load, nothing saved). The label stays in each bead's `data-label`, which is what the map reads a node's name from (`beadLabel()` in `mapPane.ts`), so focus, placeholders, and chat About-frames keep using labels while ids are shown.
+
+**Date:** 2026-09-27
+
+**Why this choice:** Makes the id-as-identity model (#52) visible: same-named nodes show different ids. The whole-map case switches the map itself rather than printing the tree into the thread, which would be noise and would go back to the model (#48).
+
+**Reversible?** Yes — remove the command, the toggle module, and the `data-label` reads.
+
+**Follow-up (same day):** Any Talk message starting with `/` is now a command: an unknown one (e.g. mistyped `/id¨`) gets a fixed "Unknown command … Commands: …" reply without a model call (`try_command()` in `panes/chat/commands/__init__.py`). Before, it went to the model as ordinary Talk, which imitated earlier "Map switched…" replies from the thread although nothing ran. Trade-off: a message that merely starts with `/` (e.g. a pasted file path) no longer reaches the model.
+
+
 ## See also
 
 

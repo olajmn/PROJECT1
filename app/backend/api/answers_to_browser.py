@@ -33,6 +33,7 @@ def project_view(
     record: dict,
     reply: str | None = None,
     select: dict | None = None,
+    toggle_map_ids: bool = False,
 ) -> dict:
     """One project as the browser gets it after any project action:
     name, state, map tree, chat, and status (the panel above the chat).
@@ -40,6 +41,8 @@ def project_view(
     `reply` (a chat reply just made) is placed as the last message in
     `thread`, not sent as its own field. `select` (optional
     `{id, label}` from `/select`) tells the UI to focus that node.
+    `toggle_map_ids` (from `/id` with no node selected) tells the UI to
+    switch the map between ids and labels.
     """
     pid = record_project_id(record)
     try:
@@ -67,6 +70,8 @@ def project_view(
             "id": str(select["id"]),
             "label": str(select["label"]),
         }
+    if toggle_map_ids:
+        view["toggle_map_ids"] = True
     return view
 
 

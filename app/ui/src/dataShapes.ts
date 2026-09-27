@@ -65,6 +65,8 @@ export interface ProjectView {
   status: ProjectStatus;
   /** Set by `/select` — UI should focus this map node. */
   select?: { id: string; label: string };
+  /** Set by `/id` with no node selected — switch map ids ↔ labels. */
+  toggle_map_ids?: boolean;
 }
 
 

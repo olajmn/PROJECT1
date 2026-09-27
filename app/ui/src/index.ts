@@ -27,6 +27,7 @@ import { installSendMessage } from "./panes/chat/sendMessage.js";
 import { installMapPane } from "./panes/canvas/mapPane.js";
 import { getActiveUserId, setActiveUserId } from "./user/activeAccount.js";
 import { applyStoredTheme } from "./user/theme.js";
+import { toggleMapIds } from "./panes/canvas/idView.js";
 import type { AccountView, ProjectView } from "./dataShapes.js";
 
 applyStoredTheme();
@@ -220,6 +221,7 @@ function replaceProject(updated: ProjectView): void {
     selection.selectedNodeId = updated.select.id;
     selection.selectedNodeLabel = updated.select.label;
   }
+  if (updated.toggle_map_ids) toggleMapIds();
   renderAll();
 }
 

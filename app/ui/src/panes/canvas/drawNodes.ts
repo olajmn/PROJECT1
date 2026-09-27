@@ -7,6 +7,7 @@
 import type { MapNode } from "../../dataShapes.js";
 import { indentRem, NEST_INSET_REM } from "./spacing.js";
 import { installMapLines } from "./lines/addLines.js";
+import { mapShowsIds } from "./idView.js";
 import {
   applyFamilyAttrs,
   familyById,
@@ -167,19 +168,24 @@ function fillBeadUnit(
   unit.className = "progress-bead-unit";
 
   const canEdit = PROGRESSION_LIKE.test(node.id);
+  // `/id` shows the id in the box; the label stays in data-label, which
+  // is what everything reading a node's name uses (mapPane beadLabel()).
+  const shown = mapShowsIds() ? node.id : node.label;
 
   if (onStepClick) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "progress-bead-btn";
-    button.textContent = node.label;
-    button.title = "Talk about this";
+    button.textContent = shown;
+    button.dataset.label = node.label;
+    button.title = mapShowsIds() ? node.label : "Talk about this";
     button.addEventListener("click", () => onStepClick(node.id));
     unit.appendChild(button);
   } else {
     const label = document.createElement("span");
     label.className = "progress-bead-label";
-    label.textContent = node.label;
+    label.textContent = shown;
+    label.dataset.label = node.label;
     unit.appendChild(label);
   }
 

@@ -76,6 +76,8 @@ def reply(
                 "id": commanded.select_id,
                 "label": commanded.select_label,
             }
+        if commanded.toggle_map_ids:
+            out["toggle_map_ids"] = True
         return out
 
     if map_focus and focus_step_id and _asks_for_structure(note):

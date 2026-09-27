@@ -24,6 +24,10 @@ export const CHAT_COMMANDS: ChatCommand[] = [
     slash: "/select",
     blurb: "Focus a node: /select Name, or /select Parent / Child (spaces around /)",
   },
+  {
+    slash: "/id",
+    blurb: "Selected node: show its id. No selection: map shows ids ↔ names",
+  },
 ];
 
 /** Type-only aliases — same set as backend `_ALIASES`. */
