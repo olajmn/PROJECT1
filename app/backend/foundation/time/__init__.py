@@ -49,7 +49,7 @@ resolve_duration` works regardless of which time_logic/time_data/ file actually
 defines it.
 
 Moved 2026-08-25 into this topic-organized backend/foundation/ - full
-history: docs/06-development.md, 2026-08-25. See docs/03-architecture.md
+history: docs/archive/06-development.md, 2026-08-25. See docs/03-architecture.md
 § Faculties for the current design.
 """
 

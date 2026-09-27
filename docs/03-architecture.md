@@ -1,6 +1,6 @@
 # 03 — Architecture
 
-> How the agent is meant to be structured: what it's made of, how the pieces relate, and what principles guide how it grows. **Intent, not proof of what's built** (see `../COLLABORATION.md`'s doc-role table) — see [[04-current-state]] for what's actually implemented right now, [[05-decisions]] for the reasoning behind specific choices, and `v4-migration-decision.md` for the original decision record this document draws from and supersedes as the living reference (that file stays as the historical record of the v1→v4 decision itself — several code docstrings still cite it by name, so it isn't deleted — this document is where the target architecture is now actively maintained).
+> How the agent is meant to be structured: what it's made of, how the pieces relate, and what principles guide how it grows. **Intent, not proof of what's built** (see `../COLLABORATION.md`'s doc-role table) — see [[04-current-state]] for what's actually implemented right now, [[05-decisions]] for the reasoning behind specific choices, and `archive/v4-migration-decision.md` for the original decision record this document draws from and supersedes as the living reference (that file stays, archived, as the historical record of the v1→v4 decision itself — this document is where the target architecture is now actively maintained).
 
 ## Contents
 
@@ -412,7 +412,7 @@ Deliberately left open — resolved by building and observing, not further desig
 
 ### 9. Related documentation
 
-- `v4-migration-decision.md` — the original v1→v4 decision record this document draws from; kept as several code docstrings cite it directly by name (renamed 2026-09-11 from `architecture-v4.md`, content unchanged, to stop it reading as competing with this document for "the v4 architecture").
+- `archive/v4-migration-decision.md` — the original v1→v4 decision record this document draws from; archived 2026-09-27 as history (renamed 2026-09-11 from `architecture-v4.md`, content unchanged, to stop it reading as competing with this document for "the v4 architecture").
 - [[planning-model.md|planning-model]] — the authority on Planning's own domain concepts (Goal, Minimum Planability, ASK/SUGGEST/PLAN, Progression, Action, Feedback, Replanning, Vision); unchanged and un-redefined by this document.
 - [[04-current-state]] — the authority on what is actually built right now; verify any claim in this document against it.
 - [[05-decisions]] — decision log; entry #21 (the model-swap decision) and the Faculty-categorization entries are the concrete precedents this document builds on.

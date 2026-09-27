@@ -25,8 +25,9 @@ Different questions about this project are answered by different documents, with
 | How is it meant to be structured? | `docs/03-architecture.md` | Intent, not proof of what's built |
 | What is true now? | `docs/04-current-state.md` | Orientation only — verify against relevant code, structure, or runtime behavior when it matters |
 | Why was it done this way? | `docs/05-decisions.md` | Settled, unless explicitly flagged |
-| What happened, and when? | `docs/06-development.md` | Accurate for its date — not for today |
-| What might happen? | `docs/concepts.md` | Not decided, not built (moved here from `docs/06-development.md` § Parking Lot 2026-09-11 — see that document's own note) |
+| What happened, and when? | `docs/archive/06-development.md` (to 2026-08-26), then `docs/05-decisions.md` and git history | Accurate for its date — not for today |
+| What might happen? | `docs/concepts.md` | Not decided, not built (moved here from `docs/archive/06-development.md` § Parking Lot 2026-09-11 — see that document's own note) |
+| What was planned or decided before, and is finished? | `docs/archive/` | History — accurate for its date, not today's truth; kept for reference, not maintained |
 
 When judging the reliability of a specific piece of project information, keep fact, hypothesis, decision, and open question separate — see `global-standards/AI_COLLABORATION_GUIDE.md` §5 for the general model.
 
@@ -77,7 +78,7 @@ for ceremony or park a large new feature in an unrelated open module.
 
 ## Documentation tooling
 
-> Moved from `docs/00-project-brief.md` § How We'll Document the Project, 2026-08-25 — this is operating practice, not project identity.
+> Moved from `docs/archive/00-project-brief-v1.md` § How We'll Document the Project, 2026-08-25 — this is operating practice, not project identity.
 
 Several tools, different roles:
 

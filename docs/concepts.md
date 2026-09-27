@@ -217,7 +217,7 @@ Discussed 2026-08-24: the agent should understand what a duration actually means
 
 ### vi. The agent actually doing things, not just explaining how
 
-Discussed 2026-08-24: distinguishes an agent that tells the user how to do something from one that produces the finished result itself. Concrete example raised: an app that generates Excel files, Word documents, text notes, or recipes, and uploads them to Google Drive. The specific file formats aren't the point — the point is going from a stated intention to an actual completed artifact. Flagged as close to the core definition of "agent" in this project (see [[00-project-brief]] — "Does the system make its own decisions?"). This is the output/action counterpart to § 5.ix below (aggregation / world-data), which is about the agent pulling information in.
+Discussed 2026-08-24: distinguishes an agent that tells the user how to do something from one that produces the finished result itself. Concrete example raised: an app that generates Excel files, Word documents, text notes, or recipes, and uploads them to Google Drive. The specific file formats aren't the point — the point is going from a stated intention to an actual completed artifact. Flagged as close to the core definition of "agent" in this project (see [[00-project-brief-v1]] — "Does the system make its own decisions?"). This is the output/action counterpart to § 5.ix below (aggregation / world-data), which is about the agent pulling information in.
 
 ### vii. Goal ≠ Plan: the goal stays stable, the plan is revisable
 
@@ -284,7 +284,7 @@ Log in on a new device, get the same agent/history back; server never sees plain
 
 ### vii. Low-friction interaction
 
-Voice, short text replies, one-button feedback, "agent only asks when necessary" (see [[00-project-brief]]).
+Voice, short text replies, one-button feedback, "agent only asks when necessary" (see [[00-project-brief-v1]]).
 
 ### viii. Web interface translating portable data into a UI
 

@@ -21,13 +21,15 @@ to demo the loop; this is what’s left before calling it demo-ready.
 1. ~~**User / account**~~ — done 2026-09-26 (accounts, Directory,
    Archive, server-side default names; what exists: `docs/04-current-state.md`
    § 1). Real accounts / wallets are not pre-demo — they come from the
-   NFT app ([[02-product]] § 5).
+   NFT app (parked in `docs/TEMP-salvage.md` § 6).
 2. **`architecture_foundation/`** — decide keep-as-archive vs move vs
    delete; do **not** rewrite it to match Map+Talk (it’s the old
    agent-shape sketch). See Queue 43.
-3. **Docs north star** — keep **02 / 04 / 05** current; demote or stamp
-   outdated **00 / 03** (and closed **06**) so sessions don’t relearn
-   the planner-agent story. Light pass, not a full rewrite.
+3. **Docs north star** — so sessions don’t relearn the planner-agent
+   story. Done 2026-09-27: 00, 01, 02 rewritten short (old versions in
+   `docs/archive/`), 06 archived. Left: rewrite 03, tighten 04, merge
+   `surfaces` + `visual-principles` into a UI doc, archive
+   `planning-model`, empty `docs/TEMP-salvage.md`.
 
 Related to 27, 43. Time Faculty files can stay unused (21).
 
@@ -54,7 +56,7 @@ unless noted.
     node in chat without selecting it first, and remaining data-shape
     questions in [[planning-model.md]]. § 5, § 7, § 9.
 30. **No written API reference** (Step) — short overview of each
-    `/api/...` address. `docs/02-product.md` § 5.
+    `/api/...` address. NFT direction: `docs/TEMP-salvage.md` § 6.
 44. **Repo cleanup pass** (Step) — findings from a file review on
     2026-09-26 (`tools.project_check` + spot reads). Items already
     tracked elsewhere are only cross-referenced: `architecture_foundation/`
@@ -77,10 +79,12 @@ unless noted.
        `docs/04-current-state.md:336` (`backend/goals/plan/action_reader.py`).
        Hits in 05 / 06 / `v4-migration-decision.md` are history and
        can stay.
-    3. **Working notes in `docs/`** — decide done (archive), active, or
-       merge into 02 / 04 for `v4-migration-decision.md`,
-       `goal-to-project-migration.md` (still points at "TODO Active
-       23", which no longer exists), `visual-reset.md`, `surfaces.md`.
+    3. **Working notes in `docs/`** — `v4-migration-decision.md`,
+       `goal-to-project-migration.md`, `visual-reset.md`,
+       `06-development.md` moved to `docs/archive/` 2026-09-27; what
+       still matters from them waits in `docs/TEMP-salvage.md` (delete
+       when emptied). Still to decide: `surfaces.md`,
+       `visual-principles.md`, `planning-model.md`.
     4. **`app/ui/dist/api.js` is tracked although `app/ui/dist/` is in
        `.gitignore`** — still changes in commits. Untrack with
        `git rm --cached` or adjust the ignore rule.
@@ -165,7 +169,8 @@ unless noted.
        transition (keep them, or map old → new). `node_id_hi` becomes
        unnecessary.
     4. Open question: which side mints node identity once the NFT app
-       joins ([[02-product]] § 5 — data comes from outside via API).
+       joins (NFT direction parked in `docs/TEMP-salvage.md` § 6 —
+       data comes from outside via API).
        Only roots/fingerprints on chain, not every node (gas cost).
 51. **Saved trees follow-ups** (Step, when needed) — built 2026-09-27
     ([[05-decisions]] #54). Open:

@@ -125,4 +125,4 @@ ASCII, not pixels. Implementation later against `src/panes/canvas/` + `css/panes
 - [[02-product]] — co-build loop
 - [[04-current-state]] — what is true on disk now
 - [[visual-principles]] — canvas/map may use a high complexity budget
-- [[visual-reset]] — `src/` ↔ `css/` mirror
+- [[visual-reset]] (archived) — `src/` ↔ `css/` mirror

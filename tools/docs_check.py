@@ -1,6 +1,7 @@
 """
 Checks the docs/ vault's structural integrity: the expected files
-exist and nothing stray sits alongside them, every [[wikilink]] and
+exist (living docs in docs/, finished ones in docs/archive/) and
+nothing stray sits alongside them, every [[wikilink]] and
 docs/<name>.md-style reference resolves to a file that actually
 exists, and each numbered doc's own "# NN — Title" heading matches its
 filename.
@@ -22,7 +23,7 @@ Exit code 0 if nothing found, 1 if any problem is reported.
 
 # Contents
 #  1. Configuration
-#      - EXPECTED_DOCS
+#      - EXPECTED_DOCS / ARCHIVED_DOCS
 #      - REFERENCE_SCAN_TARGETS
 #      - SCANNED_SUFFIXES
 #      - WIKILINK_RE / DOC_PATH_RE / H1_NUMBER_RE / FILENAME_NUMBER_RE
@@ -47,6 +48,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DOCS = ROOT / "docs"
+ARCHIVE = DOCS / "archive"
 
 # The vault's fixed shape - update this list deliberately when a doc
 # is genuinely added/renamed, never just to silence a real finding.
@@ -57,33 +59,49 @@ EXPECTED_DOCS = [
     "03-architecture.md",
     "04-current-state.md",
     "05-decisions.md",
-    "06-development.md",
     # Deliberately unnumbered - a working conceptual model for one
     # subsystem (planning semantics), not one of the seven numbered
     # vault roles above; exempt from check_h1_numbering() for the same
     # reason (its filename carries no NN prefix to check against).
     "planning-model.md",
-    # Deliberately unnumbered, same reasoning as planning-model.md -
-    # the original v1->v4 migration decision record, kept as a frozen
-    # historical document several app/ code docstrings still cite by
-    # name (see docs/03-architecture.md § Related documentation).
-    "v4-migration-decision.md",
-    # Deliberately unnumbered - Goal → Project product-then-wire plan
-    # (not the old LLM1/2/3 v4 record). See docs/goal-to-project-migration.md.
-    "goal-to-project-migration.md",
     # Deliberately unnumbered, same reasoning - a standalone, ever-
     # growing conceptual/speculative document, not one of the seven
     # numbered vault roles (see COLLABORATION.md's doc-role table).
     "concepts.md",
-    # Deliberately unnumbered - UI visual-reset plan + css/src mirror
-    # ownership (tokens vs area CSS). Cited from docs/04-current-state.md.
-    "visual-reset.md",
     # Deliberately unnumbered - UI design principles draft (hierarchy,
-    # frosted depth, complexity budget). Pairs with visual-reset.md.
+    # frosted depth, complexity budget).
     "visual-principles.md",
     # Deliberately unnumbered - Projects column roles (sidebar / canvas /
     # chat): what each surface is for vs parked file-folder vision.
     "surfaces.md",
+    # TEMPORARY - points salvaged from archived docs, waiting to be moved
+    # into their homes. Remove this entry when the file is deleted.
+    "TEMP-salvage.md",
+]
+
+# Finished or historical docs, kept for reference in docs/archive/
+# (COLLABORATION.md's doc-role table: history, not today's truth).
+# [[wikilinks]] to them still resolve - Obsidian links by name, not path.
+ARCHIVED_DOCS = [
+    # The earlier product text (co-build loop, Decide engine), replaced
+    # by a short description of today's product 2026-09-27.
+    "02-product-v1.md",
+    # The original research template (goal-planner competitors, never
+    # filled in), replaced by a short node-focused 01 2026-09-27.
+    "01-research-v1.md",
+    # The original project brief (planner-agent vision), replaced by a
+    # short Map+Talk brief 2026-09-27.
+    "00-project-brief-v1.md",
+    # The original v1->v4 migration decision record (2026-09-11 rename
+    # of architecture-v4.md).
+    "v4-migration-decision.md",
+    # Goal → Project product-then-wire plan; every phase done 2026-09-20.
+    "goal-to-project-migration.md",
+    # UI visual-reset plan + css/src mirror; cleanup items done.
+    "visual-reset.md",
+    # Methodology, hypothesis, development log (closed 2026-08-26) and
+    # experiments from the prototype 0.1 era.
+    "06-development.md",
 ]
 
 # Files/directories outside docs/ scanned for docs/<name>.md-style
@@ -112,7 +130,7 @@ REFERENCE_SCAN_TARGETS = [
 SCANNED_SUFFIXES = {".md", ".py"}
 
 WIKILINK_RE = re.compile(r"\[\[([A-Za-z0-9_-]+)\]\]")
-DOC_PATH_RE = re.compile(r"\bdocs/([A-Za-z0-9_-]+\.md)\b")
+DOC_PATH_RE = re.compile(r"\bdocs/((?:archive/)?[A-Za-z0-9_-]+\.md)\b")
 H1_NUMBER_RE = re.compile(r"^#\s+(\d{2})\D")
 FILENAME_NUMBER_RE = re.compile(r"^(\d{2})-")
 
@@ -146,17 +164,21 @@ def _rel(path: Path) -> str:
 
 
 def check_structure() -> list[str]:
-    """Missing expected docs, and any docs/*.md file not on the
-    expected list - catches both a doc that's gone missing and a stray
-    file sitting next to the real ten."""
+    """Missing expected docs, and any .md file not on its folder's list
+    - catches both a doc that's gone missing and a stray file, in docs/
+    (EXPECTED_DOCS) and docs/archive/ (ARCHIVED_DOCS) alike."""
     problems = []
-    actual = {p.name for p in DOCS.glob("*.md")}
-    expected = set(EXPECTED_DOCS)
-    for name in EXPECTED_DOCS:
-        if name not in actual:
-            problems.append(f"docs/: [MISSING] expected doc not found: docs/{name}")
-    for name in sorted(actual - expected):
-        problems.append(f"docs/{name}: [UNEXPECTED] not one of the expected docs (see EXPECTED_DOCS in tools/docs_check.py)")
+    for folder, listed, name_of_list in (
+        (DOCS, EXPECTED_DOCS, "EXPECTED_DOCS"),
+        (ARCHIVE, ARCHIVED_DOCS, "ARCHIVED_DOCS"),
+    ):
+        where = _rel(folder)
+        actual = {p.name for p in folder.glob("*.md")}
+        for name in listed:
+            if name not in actual:
+                problems.append(f"{where}/: [MISSING] expected doc not found: {where}/{name}")
+        for name in sorted(actual - set(listed)):
+            problems.append(f"{where}/{name}: [UNEXPECTED] not listed (see {name_of_list} in tools/docs_check.py)")
     return problems
 
 
@@ -167,8 +189,10 @@ def check_references() -> list[str]:
     identical here (a reference to a file that isn't there); which one
     it is, and what to do about it, is a human/Claude call."""
     problems = []
-    valid_stems = {p.stem for p in DOCS.glob("*.md")}
-    valid_names = {p.name for p in DOCS.glob("*.md")}
+    living = list(DOCS.glob("*.md"))
+    archived = list(ARCHIVE.glob("*.md"))
+    valid_stems = {p.stem for p in living + archived}
+    valid_names = {p.name for p in living} | {f"archive/{p.name}" for p in archived}
 
     for path in _iter_files(["docs"]):
         text = path.read_text(encoding="utf-8", errors="replace")

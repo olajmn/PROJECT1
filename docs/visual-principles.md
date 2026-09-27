@@ -1,6 +1,6 @@
 # Visual principles (draft)
 
-Working direction for the Projects UI — not a pixel spec. Execution and folder mirror live in [[visual-reset]]. Tokens live in `app/ui/css/tokens.css`.
+Working direction for the Projects UI — not a pixel spec. The finished reset plan and folder mirror: [[visual-reset]] (archived). Tokens live in `app/ui/css/tokens.css`.
 
 ## 1. Hierarchy first
 
