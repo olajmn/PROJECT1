@@ -49,12 +49,10 @@ only). Numbers are stable ids, not rank.
     4. **`app/ui/dist/api.js` is tracked although `app/ui/dist/` is in
        `.gitignore`** — still changes in commits. Untrack with
        `git rm --cached` or adjust the ignore rule. One-minute fix.
-    5. **Legacy Goal code in storage** — split done 2026-09-27
-       ([[05-decisions]] #56): migration lives in
-       `storage/legacy_migration.py`, persistence is 377 lines. Still
-       open (level C, with Queue 48): convert data once, then drop the
-       migration module, `_OLD_FEEDBACK`, the `goal_id` fallback, and
-       remaining Goal naming.
+    5. **Goal naming in comments** — the legacy storage code is gone
+       (#56, #59); a few docstrings still say "goal" for a project
+       (`panes/create/lifecycle.py`, `project_account.py`,
+       `chat/screen/chat_thread.py`). Wording only.
     6. **`requests_from_browser.py` routing** — one long `if/elif` on
        `self.path` per method; grows with every endpoint. Not urgent.
        Related to 30.
@@ -87,20 +85,6 @@ only). Numbers are stable ids, not rank.
     turns today).
     Out of scope: RAG, long-term memory, agent loops, new chat
     architecture. Related to 33 (model sees only labels).
-48. **Rename `sim_user_id` → `account_id`** (Step) — the store is
-    already `accounts`, but a project's account reference is still
-    `sim_user_id` ([[05-decisions]] accounts-store follow-up:
-    "Project FK stays `sim_user_id`").
-    Scope checked 2026-09-27: 138 occurrences in 21 code files
-    (backend storage/api/create + UI `dataShapes.ts`, `api.ts`,
-    accounts panel, Directory), the wire (`POST /api/projects/<id>/user`
-    body), 15 doc mentions. Data: 47 projects carry it in
-    `current.json` / `events.jsonl`, and every saved tree carries it in
-    `data/saved_trees.json` (added 2026-09-27) — promote `sim_user_id` →
-    `account_id` on load rather than rewriting files; new saves write
-    only `account_id`. Backend and UI change together. Dated history
-    in `05-decisions.md` keeps the old name; record the rename as a new
-    decision.
 49. **A proper way to check node ids** (Step, shape open) — node ids
     are identity ([[05-decisions]] #52) and never reused (`node_id_hi`),
     but nothing lets you see or verify them. Candidates:
@@ -138,7 +122,7 @@ only). Numbers are stable ids, not rank.
     1. Rename a saved tree (name is the node label at save time).
     2. A library view outside the picker (list, rename, delete), e.g.
        under Settings or the account.
-    3. Unassigned projects (`sim_user_id` null) share one library.
+    3. Unassigned projects (`account_id` null) share one library.
     4. `source` ({project_id, step_id}) is provenance only; a
        cross-project identity belongs with Queue 50.
 

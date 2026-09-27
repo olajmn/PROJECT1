@@ -2,7 +2,7 @@
 Saved trees — data/saved_trees.json.
 
 A per-account library of structures (see project/saved_trees/). Plain
-records, no history: {id, name, sim_user_id, saved_at, source, tree}.
+records, no history: {id, name, account_id, saved_at, source, tree}.
 
 Tree ids (`t1`, `t2`, …) are never reused: the file keeps an `id_hi`
 high-water mark, as project plans keep `node_id_hi` for node ids, so a
@@ -63,7 +63,7 @@ def _save(data: dict) -> None:
 def add_saved_tree(
     name: str,
     tree: dict,
-    sim_user_id: int | None,
+    account_id: int | None,
     source: dict | None = None,
 ) -> dict:
     """Store one structure and return its record. `source` records
@@ -74,7 +74,7 @@ def add_saved_tree(
     record = {
         "id": f"t{data['id_hi']}",
         "name": name,
-        "sim_user_id": sim_user_id,
+        "account_id": account_id,
         "saved_at": now_utc(),
         "source": source or {},
         "tree": tree,

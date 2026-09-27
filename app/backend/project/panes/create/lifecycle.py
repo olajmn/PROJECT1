@@ -35,7 +35,7 @@ from backend.storage.accounts_persistence import get_account
 # ============================================================
 
 
-def create_project(typed_text: str, sim_user_id_value: str) -> dict:
+def create_project(typed_text: str, account_id_value: str) -> dict:
     """
     Mint a project: a name and an empty canvas. No engine.
 
@@ -43,12 +43,12 @@ def create_project(typed_text: str, sim_user_id_value: str) -> dict:
     built by hand, pasted, or walked in from a folder. Empty text gets
     `next_default_name()`, so every client names the same way.
     """
-    sim_user_id = int(sim_user_id_value) if sim_user_id_value else None
-    name = typed_text.strip() or next_default_name(sim_user_id)
+    account_id = int(account_id_value) if account_id_value else None
+    name = typed_text.strip() or next_default_name(account_id)
     return save_plan(
         name,
         {"progression": {"steps": []}},
-        sim_user_id=sim_user_id,
+        account_id=account_id,
         event="created",
     )
 
@@ -57,7 +57,7 @@ def create_project(typed_text: str, sim_user_id_value: str) -> dict:
 _DEFAULT_NAME_RE = re.compile(r"^new project(?: #?(\d+))?$", re.IGNORECASE)
 
 
-def next_default_name(sim_user_id: int | None) -> str:
+def next_default_name(account_id: int | None) -> str:
     """
     Next unused `New project N` among this account's active projects.
 
@@ -66,7 +66,7 @@ def next_default_name(sim_user_id: int | None) -> str:
     """
     highest = 0
     for record in get_latest_for_all_projects():
-        if record.get("sim_user_id") != sim_user_id:
+        if record.get("account_id") != account_id:
             continue
         if record.get("completed") or record.get("cancelled"):
             continue
@@ -85,7 +85,7 @@ def cancel_project(project_id: int) -> dict | None:
     """
     Mark a goal as cancelled (abandoned) - a distinct terminal status
     from `completed`, not a UI-level relabeling of it and not a third
-    planning decision. Preserves `plan` and `sim_user_id` from the
+    planning decision. Preserves `plan` and `account_id` from the
     latest record exactly as they were, so the goal's own data/history
     is never lost, only marked as no longer being pursued (still
     visible in full on /history, same as any other goal).
@@ -112,7 +112,7 @@ def cancel_project(project_id: int) -> dict | None:
     return save_plan(
         latest["name"], latest["plan"], feedback="Cancelled",
         project_id=latest["project_id"],
-        sim_user_id=latest.get("sim_user_id"), cancelled=True,
+        account_id=latest.get("account_id"), cancelled=True,
         event="archived",
     )
 
@@ -133,14 +133,14 @@ def restore_project(project_id: int) -> dict | None:
     if not latest.get("cancelled"):
         return latest
 
-    owner = latest.get("sim_user_id")
+    owner = latest.get("account_id")
     if owner is not None and get_account(owner) is None:
         owner = None
 
     return save_plan(
         latest["name"], latest["plan"], feedback="Restored",
         project_id=latest["project_id"],
-        sim_user_id=owner, cancelled=False,
+        account_id=owner, cancelled=False,
         completed=False,
         event="restored",
     )

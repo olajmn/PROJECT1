@@ -21,7 +21,7 @@ export function projectsChronologicalForUser(
 ): ProjectView[] {
   if (userId === null) return [];
   return projects
-    .filter((p) => p.sim_user_id === userId)
+    .filter((p) => p.account_id === userId)
     .slice()
     .sort((a, b) => {
       const an = a.account_n ?? Number.POSITIVE_INFINITY;

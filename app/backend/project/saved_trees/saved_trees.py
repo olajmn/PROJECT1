@@ -27,15 +27,15 @@ def save_tree_from_node(latest: dict, step_id: str) -> dict:
     return add_saved_tree(
         tree["label"],
         tree,
-        latest.get("sim_user_id"),
+        latest.get("account_id"),
         source={"project_id": latest["project_id"], "step_id": step_id},
     )
 
 
 def saved_trees_for(latest: dict) -> list[dict]:
     """The saved trees of this project's account, newest first."""
-    account = latest.get("sim_user_id")
-    mine = [t for t in load_saved_trees() if t.get("sim_user_id") == account]
+    account = latest.get("account_id")
+    mine = [t for t in load_saved_trees() if t.get("account_id") == account]
     return list(reversed(mine))
 
 
@@ -44,7 +44,7 @@ def insert_saved_tree(latest: dict, tree_id: str, parent_id: str | None) -> dict
     nodes and return the saved project record. Only the project's own
     account library can be used."""
     saved = get_saved_tree(tree_id)
-    if saved is None or saved.get("sim_user_id") != latest.get("sim_user_id"):
+    if saved is None or saved.get("account_id") != latest.get("account_id"):
         raise ValueError(f"saved tree not found: {tree_id}")
     return import_map_outline(
         latest,

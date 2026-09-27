@@ -47,13 +47,13 @@ export async function fetchProjects(): Promise<ProjectView[]> {
 /** Mint a project: `text` is the name, canvas starts empty. */
 export async function createProject(
   text: string,
-  simUserId?: number | null,
+  accountId?: number | null,
 ): Promise<ProjectView> {
-  const body: { text: string; sim_user_id?: number } = {
+  const body: { text: string; account_id?: number } = {
     text,
   };
-  if (simUserId != null) {
-    body.sim_user_id = simUserId;
+  if (accountId != null) {
+    body.account_id = accountId;
   }
   const res = await fetch("/api/projects", {
     method: "POST",
@@ -113,11 +113,11 @@ export async function deleteProject(projectId: number): Promise<void> {
   }
 }
 
-export async function setProjectUser(projectId: number, simUserId: number | null): Promise<ProjectView> {
+export async function setProjectUser(projectId: number, accountId: number | null): Promise<ProjectView> {
   const res = await fetch(`/api/projects/${projectId}/user`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ sim_user_id: simUserId }),
+    body: JSON.stringify({ account_id: accountId }),
   });
   if (!res.ok) {
     throw new Error(await httpErrorMessage(res));
@@ -325,10 +325,10 @@ export async function createAccount(text: string): Promise<AccountView> {
 
 
 export async function renameAccount(
-  simUserId: number,
+  accountId: number,
   text: string,
 ): Promise<AccountView> {
-  const res = await fetch(`/api/accounts/${simUserId}/rename`, {
+  const res = await fetch(`/api/accounts/${accountId}/rename`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text }),
@@ -340,8 +340,8 @@ export async function renameAccount(
 }
 
 
-export async function archiveAccount(simUserId: number): Promise<AccountView> {
-  const res = await fetch(`/api/accounts/${simUserId}/archive`, { method: "POST" });
+export async function archiveAccount(accountId: number): Promise<AccountView> {
+  const res = await fetch(`/api/accounts/${accountId}/archive`, { method: "POST" });
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }
@@ -349,16 +349,16 @@ export async function archiveAccount(simUserId: number): Promise<AccountView> {
 }
 
 
-export async function restoreAccount(simUserId: number): Promise<AccountView> {
-  const res = await fetch(`/api/accounts/${simUserId}/restore`, { method: "POST" });
+export async function restoreAccount(accountId: number): Promise<AccountView> {
+  const res = await fetch(`/api/accounts/${accountId}/restore`, { method: "POST" });
   if (!res.ok) {
     throw new Error(await httpErrorMessage(res));
   }
   return (await res.json()) as AccountView;
 }
 
-export async function deleteAccount(simUserId: number): Promise<AccountView> {
-  const res = await fetch(`/api/accounts/${simUserId}/delete`, { method: "POST" });
+export async function deleteAccount(accountId: number): Promise<AccountView> {
+  const res = await fetch(`/api/accounts/${accountId}/delete`, { method: "POST" });
   if (!res.ok) {
     throw new Error(await httpErrorMessage(res));
   }

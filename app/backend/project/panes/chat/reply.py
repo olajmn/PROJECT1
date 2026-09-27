@@ -122,7 +122,7 @@ def _save_talk(
         latest.get("plan") or {},
         feedback=f"{text} Note: {note}",
         project_id=latest["project_id"],
-        sim_user_id=latest.get("sim_user_id"),
+        account_id=latest.get("account_id"),
         event="chat",
         sent_at=sent_at,
         map_focus=map_focus,

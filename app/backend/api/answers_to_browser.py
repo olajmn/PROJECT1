@@ -59,7 +59,7 @@ def project_view(
         "name": record["name"],
         "completed": bool(record.get("completed")),
         "cancelled": bool(record.get("cancelled")),
-        "sim_user_id": record.get("sim_user_id"),
+        "account_id": record.get("account_id"),
         "account_n": record.get("account_n"),
         "created_at": record.get("created_at"),
         "node": node,

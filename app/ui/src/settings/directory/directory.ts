@@ -104,7 +104,7 @@ export async function mountDirectory(host: HTMLElement): Promise<void> {
       ]);
       const active = users.filter((u) => !u.archived);
       const uiActiveId = getActiveUserId();
-      const orphans = projects.filter((p) => p.sim_user_id === null);
+      const orphans = projects.filter((p) => p.account_id === null);
       empty.hidden = active.length > 0 || orphans.length > 0;
 
       for (const user of active) {

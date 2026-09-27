@@ -93,7 +93,7 @@ export function accountGroup(v: IdValues): Group {
   ];
   return {
     active: v.active,
-    dataSimUserId: String(v.id),
+    dataAccountId: String(v.id),
     left,
     right: v.projects.map(projectBlock),
   };

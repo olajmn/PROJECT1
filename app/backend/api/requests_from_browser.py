@@ -174,9 +174,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         # Empty text is allowed: create_project() picks `New project N`.
         text = (body.get("text") or "").strip()
-        raw_sim = body.get("sim_user_id")
-        sim_user_id = str(int(raw_sim)) if raw_sim is not None else ""
-        self._send_json(project_view(create_project(text, sim_user_id)))
+        raw_account = body.get("account_id")
+        account_id = str(int(raw_account)) if raw_account is not None else ""
+        self._send_json(project_view(create_project(text, account_id)))
 
     def _handle_rename_project(self, project_id: int) -> None:
         text = self._read_text_body()
@@ -209,13 +209,13 @@ class Handler(BaseHTTPRequestHandler):
         self._send_json({"ok": True, "project_id": project_id})
 
     def _handle_set_project_user(self, project_id: int) -> None:
-        """Body is {"sim_user_id": <int>}, or null to unlink."""
+        """Body is {"account_id": <int>}, or null to unlink."""
         body = self._read_json_body()
         if body is None:
             return
-        raw_sim = body.get("sim_user_id")
-        sim_user_id = int(raw_sim) if raw_sim is not None else None
-        record = set_project_user(project_id, sim_user_id)
+        raw_account = body.get("account_id")
+        account_id = int(raw_account) if raw_account is not None else None
+        record = set_project_user(project_id, account_id)
         if record is None:
             self.send_error(404, "no such project or user")
             return
@@ -400,35 +400,35 @@ class Handler(BaseHTTPRequestHandler):
             return
         self._send_json(account_view(save_account(text)))
 
-    def _handle_rename_account(self, sim_user_id: int) -> None:
+    def _handle_rename_account(self, account_id: int) -> None:
         body = self._read_json_body()
         if body is None:
             return
         if "text" not in body:
             self.send_error(400, "missing text")
             return
-        account = rename_account(sim_user_id, str(body.get("text") or ""))
+        account = rename_account(account_id, str(body.get("text") or ""))
         if account is None:
             self.send_error(404, "no such account")
             return
         self._send_json(account_view(account))
 
-    def _handle_archive_account(self, sim_user_id: int) -> None:
-        account = archive_account(sim_user_id)
+    def _handle_archive_account(self, account_id: int) -> None:
+        account = archive_account(account_id)
         if account is None:
             self.send_error(404, "no such account")
             return
         self._send_json(account_view(account))
 
-    def _handle_restore_account(self, sim_user_id: int) -> None:
-        account = restore_account(sim_user_id)
+    def _handle_restore_account(self, account_id: int) -> None:
+        account = restore_account(account_id)
         if account is None:
             self.send_error(404, "no such account")
             return
         self._send_json(account_view(account))
 
-    def _handle_delete_account(self, sim_user_id: int) -> None:
-        account = delete_account(sim_user_id)
+    def _handle_delete_account(self, account_id: int) -> None:
+        account = delete_account(account_id)
         if account is None:
             self.send_error(404, "no such account")
             return

@@ -27,8 +27,8 @@ export function arrangeStack(blocks: Block[]): HTMLElement {
 /** Two-column group (Id left, project blocks right). */
 export function arrangeGroup(group: Group): HTMLElement {
   const article = el("article", "settings-block settings-block-group");
-  if (group.dataSimUserId != null) {
-    article.setAttribute("data-sim-user-id", group.dataSimUserId);
+  if (group.dataAccountId != null) {
+    article.setAttribute("data-account-id", group.dataAccountId);
   }
   if (group.active) article.classList.add("is-active");
 

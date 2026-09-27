@@ -7,7 +7,7 @@ export async function claimUnassigned(
   userId: number,
   projects: ProjectView[],
 ): Promise<ProjectView[]> {
-  const orphans = projects.filter((p) => p.sim_user_id === null);
+  const orphans = projects.filter((p) => p.account_id === null);
   const claimed: ProjectView[] = [];
   for (const orphan of orphans) {
     claimed.push(await setProjectUser(orphan.project_id, userId));

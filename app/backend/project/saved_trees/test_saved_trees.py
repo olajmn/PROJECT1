@@ -20,7 +20,7 @@ def _project(project_id: int, account: int | None, steps: list) -> dict:
     return {
         "name": "P",
         "project_id": project_id,
-        "sim_user_id": account,
+        "account_id": account,
         "plan": {"progression": {"steps": steps}},
     }
 

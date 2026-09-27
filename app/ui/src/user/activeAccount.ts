@@ -1,19 +1,24 @@
-// Active simulated account seat. Wire: sim_user_id. Display: Accounts /
+// Active simulated account seat. Wire: account_id. Display: Accounts /
 // account#N (see userLabel / accountWireLabel).
 
-const STORAGE_KEY = "activeSimUserId";
+const STORAGE_KEY = "activeAccountId";
+// Name before the account_id rename; read once so the choice survives.
+const LEGACY_STORAGE_KEY = "activeSimUserId";
 
 /** Top sidebar brand — opens the accounts panel. */
 export const ACCOUNTS_BRAND = "Accounts";
 
 export function getActiveUserId(): number | null {
-  const raw = localStorage.getItem(STORAGE_KEY);
+  const raw =
+    localStorage.getItem(STORAGE_KEY) ??
+    localStorage.getItem(LEGACY_STORAGE_KEY);
   if (raw == null || raw === "") return null;
   const n = Number(raw);
   return Number.isFinite(n) ? n : null;
 }
 
 export function setActiveUserId(id: number | null): void {
+  localStorage.removeItem(LEGACY_STORAGE_KEY);
   if (id == null) {
     localStorage.removeItem(STORAGE_KEY);
     return;
@@ -23,7 +28,7 @@ export function setActiveUserId(id: number | null): void {
 
 const LAST_PROJECT_KEY_PREFIX = "lastProjectId:";
 
-/** Last project viewed under a given sim user — survives page refresh. */
+/** Last project viewed under a given account — survives page refresh. */
 export function getLastProjectId(userId: number): number | null {
   const raw = localStorage.getItem(LAST_PROJECT_KEY_PREFIX + userId);
   if (raw == null || raw === "") return null;

@@ -15,10 +15,10 @@ from backend.storage.accounts_persistence import (
 from backend.storage.project_persistence import save_plan
 
 
-def set_project_user(project_id: int, sim_user_id: int | None) -> dict | None:
+def set_project_user(project_id: int, account_id: int | None) -> dict | None:
     """
     Add, move, or remove a project's account link after mint.
-    `sim_user_id=None` removes the project from whichever account it
+    `account_id=None` removes the project from whichever account it
     currently has.
 
     Unlike chat's talk() (which takes an already-resolved `latest`
@@ -29,12 +29,12 @@ def set_project_user(project_id: int, sim_user_id: int | None) -> dict | None:
     rejected - never partially applied, and never raises for an
     ordinary bad input:
     - `project_id` doesn't resolve to any goal.
-    - `sim_user_id` is given but no such account exists (a stale/tampered
+    - `account_id` is given but no such account exists (a stale/tampered
       value - the real UI always offers ids from `load_accounts()`, so
       this is a defensive check, not the normal path).
 
     Requesting the account the project is already linked to (or already
-    has none, for `sim_user_id=None`) is a genuine no-op - returns
+    has none, for `account_id=None`) is a genuine no-op - returns
     `latest` unchanged rather than appending an identical record. A
     cancelled goal (see cancel_project()) is also a no-op here — never
     a save_plan() call that could silently revive it.
@@ -50,28 +50,28 @@ def set_project_user(project_id: int, sim_user_id: int | None) -> dict | None:
     if latest.get("cancelled"):
         return latest
 
-    previous_sim_user_id = latest.get("sim_user_id")
-    if sim_user_id == previous_sim_user_id:
+    previous_account_id = latest.get("account_id")
+    if account_id == previous_account_id:
         return latest
 
-    if sim_user_id is None:
+    if account_id is None:
         feedback_text = "Removed from account"
     else:
-        account = get_account(sim_user_id)
+        account = get_account(account_id)
         if account is None:
             return None
-        verb = "Moved to" if previous_sim_user_id is not None else "Added to"
+        verb = "Moved to" if previous_account_id is not None else "Added to"
         feedback_text = f"{verb} account: {account['text']}"
 
     return save_plan(
         latest["name"], latest["plan"], feedback=feedback_text,
         project_id=latest["project_id"],
-        completed=latest.get("completed", False), sim_user_id=sim_user_id,
+        completed=latest.get("completed", False), account_id=account_id,
         event="owner_changed",
     )
 
 
-def archive_account(sim_user_id: int) -> dict | None:
+def archive_account(account_id: int) -> dict | None:
     """
     Archive an account (accounts_persistence.archive_account()) and detach it
     from every currently-active project that references it - an archived
@@ -81,7 +81,7 @@ def archive_account(sim_user_id: int) -> dict | None:
     completed/cancelled status - only which account (if
     any) it currently points to.
 
-    Completed/cancelled projects keep their sim_user_id unchanged - already
+    Completed/cancelled projects keep their account_id unchanged - already
     a closed, historical record, not a claim that the account is still
     active, so there's nothing to detach.
 
@@ -92,14 +92,14 @@ def archive_account(sim_user_id: int) -> dict | None:
     forward) - no existing record is ever mutated or removed.
 
     Returns the archived account record (or the already-archived one,
-    unchanged, on a repeat call), or None if sim_user_id doesn't exist.
+    unchanged, on a repeat call), or None if account_id doesn't exist.
     """
-    account = archive_account_record(sim_user_id)
+    account = archive_account_record(account_id)
     if account is None:
         return None
 
     for latest in get_latest_for_all_projects():
-        if (latest.get("sim_user_id") == sim_user_id
+        if (latest.get("account_id") == account_id
                 and not latest.get("completed")
                 and not latest.get("cancelled")):
             set_project_user(latest["project_id"], None)

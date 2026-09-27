@@ -52,38 +52,13 @@ GROUPS = {
     "archived": "Archived",
 }
 
-# Lines saved before `event` existed are named from their `feedback`
-# text, which each kind of change wrote in a fixed shape.
-_OLD_FEEDBACK = (
-    ("Added step", "node_added"),
-    ("Imported ", "pasted"),
-    ("Removed step:", "node_removed"),
-    ("Zoomed into:", "suggested"),
-    ("Added to Vision", "owner_changed"),
-    ("Moved to Vision", "owner_changed"),
-    ("Removed from Vision", "owner_changed"),
-)
-
 _TEXT_MAX = 160
 
 
 def event_name(record: dict) -> str:
-    """What this saved line was: its `event`, or for older lines, read
-    from its `feedback` text."""
-    if record.get("event"):
-        return record["event"]
-    text = (record.get("feedback") or "").strip()
-    if not text:
-        return "created"
-    if " Note: " in text:
-        return "chat"
-    if text == "Cancelled":
-        return "archived"
-    for prefix, name in _OLD_FEEDBACK:
-        if text.startswith(prefix):
-            return name
-    # Chat that added nodes under a selected node saved the raw message.
-    return "chat_added_nodes"
+    """What this saved line was. Every line carries `event`; lines saved
+    before it existed were given one by the 2026-09-27 conversion (#59)."""
+    return record.get("event") or "other"
 
 
 # ============================================================

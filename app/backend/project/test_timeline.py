@@ -10,21 +10,8 @@ def main() -> None:
     # New lines carry `event`; it wins over the feedback text.
     assert event_name({"event": "renamed", "feedback": "Renamed: a → b"}) == "renamed"
 
-    # Older lines are named from their feedback text.
-    old = {
-        None: "created",
-        "Hi there. Note: hello": "chat",
-        "Cancelled": "archived",
-        "Added step: roof": "node_added",
-        "Added step under Roof: tiles": "node_added",
-        "Imported 3 step(s)": "pasted",
-        "Removed step: roof": "node_removed",
-        "Zoomed into: roof": "suggested",
-        "Moved to Vision: id#2": "owner_changed",
-        "suggest three rooms": "chat_added_nodes",
-    }
-    for feedback, want in old.items():
-        assert event_name({"feedback": feedback}) == want, (feedback, want)
+    # Every saved line carries `event`; one without it is "other".
+    assert event_name({"feedback": "Added step: roof"}) == "other"
 
     chat = to_event(
         {"project_id": 4, "feedback": "Sure. Note: what next?",
@@ -36,7 +23,7 @@ def main() -> None:
         "project": "House", "event": "chat", "kind": "Chat",
         "text": "what next?",
     }
-    created = to_event({"project_id": 4, "feedback": None}, "House")
+    created = to_event({"project_id": 4, "feedback": None, "event": "created"}, "House")
     assert (created["kind"], created["text"]) == ("Created", "")
     renamed = to_event(
         {"project_id": 4, "feedback": "Renamed: Hus → House", "event": "renamed"},

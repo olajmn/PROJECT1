@@ -659,6 +659,32 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Follow-up (same day, archive made deletable):** `docs/archive/` is now optional and unmaintained. Nothing outside it may link or point into it — `tools/docs_check.py` reports that as its own finding (`POINTS INTO ARCHIVE`) and no longer lists archived files; the one relevant point still reached through it (a node's depth is data, not type) lives in `app/backend/project/node/README.md`, and Suggest's one-level rule in `02-product.md` § 2. README and `COLLABORATION.md` no longer mention the folder. Checked by moving the folder out: every check and test stayed green. Deleting it needs no other change.
 
 
+## 58. 2026-09-27 — Rename `sim_user_id` → `account_id`
+
+**Decision:** A project's (and a saved tree's) account reference is `account_id` everywhere: disk, the API between browser and server (request bodies and responses), Python, and TypeScript (`accountId`). The store had been `accounts` since 2026-09-26; only the reference kept the prototype name. Older data is promoted on read by `legacy_migration.promote_account_id()` (`sim_user_id`, before that `vision_id`): a `current.json` is rewritten once on load, `events.jsonl` lines are promoted on read only, saved trees on load and written back on the next save. The browser's active-account key is now `activeAccountId`, reading the old `activeSimUserId` once so the choice survives.
+
+**Date:** 2026-09-27
+
+**Why this choice:** One name for one thing — the UI already said "account"; `sim_user_id` was a leftover from simulated users. Promoting on read reuses the path `vision_id` → `sim_user_id` took, with no bulk rewrite. Checked: old and new code return the same results for all 48 projects, 22 accounts, saved trees, and the activity log on a copy of `data/`, with only the key renamed.
+
+**Reversible?** Yes, in code; data already rewritten keeps `account_id`, which the old code would not read.
+
+
+## 59. 2026-09-27 — Convert data once; drop the legacy-format code
+
+**Decision:** Level C of the Goal/Plan audit (#56). Every file in `data/` was converted once to the current format, then the code that read older formats was deleted:
+- **Data:** `current.json` keeps only current fields (the planner-era `duration` / `frozen_duration` / `current_step` / `step_status` and old `plan` keys are gone; `plan` holds `progression` and `node_id_hi`); every `events.jsonl` line has `account_id` and an explicit `event` (248 older lines were named exactly as the log named them before); saved trees use `account_id`.
+- **Code removed:** `storage/legacy_migration.py`; the `users.json` / `visions.json` promotion in `accounts_persistence.py`; the `goal_id` fallback in `record_project_id()`; `_OLD_FEEDBACK` and feedback-based naming in `timeline.py`; the tests for old formats. `project_persistence.py` is 345 lines (740 in the morning).
+
+**Date:** 2026-09-27
+
+**Why this choice:** Nothing in `data/` needed the old readers once converted, and keeping them meant every load ran migration checks for formats that no longer exist. Checked: on a copy, the new code on converted data shows the same map, chat, status, timeline, activity log, accounts, and saved trees as the old code on unconverted data, for all 48 projects. The conversion was a one-off script, not kept in the repository; a backup of `data/` from before it was kept outside the project.
+
+**Trade-off:** Older backups and the `.bak` files in `data/` can no longer be read by the app.
+
+**Reversible?** The code is in git history; the pre-conversion data is in the backup.
+
+
 ## See also
 
 - [[03-architecture]]

@@ -2,14 +2,9 @@
 Project persistence: current.json (SoT for map/chat) + events.jsonl
 (slim change tape for Status/Logs) under data/projects/{id}/.
 
-Data in older formats (combined projects.jsonl / plans.jsonl /
-plans.json, snapshot {id}.jsonl, goal_id / goal / vision_id fields) is
-read through legacy_migration.py, which this module calls on load; it is
-not part of the current model.
-
 Identity grouping for display lives in create/resolver.py — project_id
 minting stays here. Simulated users (account#N) live in
-accounts_persistence.py and are only referenced via optional sim_user_id.
+accounts_persistence.py and are only referenced via optional account_id.
 Per-account sticky mint `account_n` (map/chrome `#N`) is assigned here;
 global `project_id` stays the wire identity.
 """
@@ -28,7 +23,6 @@ import json
 import shutil
 from pathlib import Path
 
-from backend.storage import legacy_migration
 from backend.storage.paths import DATA_DIR, DEFAULT_USER_ID, now_utc
 
 PROJECTS_DIR = DATA_DIR / "projects"
@@ -40,19 +34,9 @@ PROJECTS_DIR = DATA_DIR / "projects"
 
 
 def record_project_id(record: dict) -> int | None:
-    """Canonical project identity on a history record.
-
-    Prefers project_id; falls back to legacy goal_id for a record that
-    has not been through legacy_migration.normalize_records() (none on
-    disk today). Returns None if neither is set.
-    """
+    """A history record's project id, or None when it has none."""
     pid = record.get("project_id")
-    if pid is not None:
-        return int(pid)
-    gid = record.get("goal_id")
-    if gid is not None:
-        return int(gid)
-    return None
+    return int(pid) if pid is not None else None
 
 
 # ============================================================
@@ -131,7 +115,7 @@ def _slim_event(record: dict) -> dict:
     }
     for key in (
         "event", "feedback", "sent_at", "map_focus", "focus_step_id",
-        "name", "sim_user_id", "surface", "completed", "cancelled",
+        "name", "account_id", "surface", "completed", "cancelled",
         "archived_at",
     ):
         if key in record and record[key] is not None:
@@ -192,7 +176,6 @@ def _iter_current_paths() -> list[tuple[int, Path]]:
 
 def _existing_project_ids() -> list[int]:
     """Numeric project ids that have a current.json (after migration)."""
-    legacy_migration.ensure_migrated()
     return [pid for pid, _ in _iter_current_paths()]
 
 
@@ -201,7 +184,7 @@ def _next_project_id() -> int:
     return max(_existing_project_ids(), default=0) + 1
 
 
-def _next_account_n(sim_user_id: int) -> int:
+def _next_account_n(account_id: int) -> int:
     """Next sticky per-account mint (never reuses gaps after delete/move).
 
     Uses the account's account_n_hi high-water mark only — no full
@@ -209,14 +192,14 @@ def _next_account_n(sim_user_id: int) -> int:
     """
     from backend.storage.accounts_persistence import account_n_hi, note_account_n
 
-    n = account_n_hi(sim_user_id) + 1
-    note_account_n(sim_user_id, n)
+    n = account_n_hi(account_id) + 1
+    note_account_n(account_id, n)
     return n
 
 
 def _resolve_account_n(
     *,
-    sim_user_id: int | None,
+    account_id: int | None,
     existing: dict | None,
 ) -> int | None:
     """Sticky account_n for this save.
@@ -227,12 +210,12 @@ def _resolve_account_n(
     """
     prev_n = existing.get("account_n") if existing else None
     prev_n = prev_n if isinstance(prev_n, int) else None
-    if sim_user_id is None:
+    if account_id is None:
         return prev_n
-    prev_sim = existing.get("sim_user_id") if existing else None
-    if prev_n is not None and prev_sim == sim_user_id:
+    prev_sim = existing.get("account_id") if existing else None
+    if prev_n is not None and prev_sim == account_id:
         return prev_n
-    return _next_account_n(sim_user_id)
+    return _next_account_n(account_id)
 
 
 def _ensure_account_n(record: dict, path: Path) -> dict:
@@ -242,7 +225,7 @@ def _ensure_account_n(record: dict, path: Path) -> dict:
     """
     if record.get("account_n") is not None:
         return record
-    sid = record.get("sim_user_id")
+    sid = record.get("account_id")
     if not isinstance(sid, int):
         return record
     record["account_n"] = _next_account_n(sid)
@@ -252,25 +235,18 @@ def _ensure_account_n(record: dict, path: Path) -> dict:
 
 def load_current(project_id: int) -> dict | None:
     """The project's current SoT record, or None."""
-    legacy_migration.ensure_migrated()
     path = current_path(project_id)
     if not path.exists():
         return None
-    record = _read_json(path)
-    records, needs_rewrite = legacy_migration.normalize_records([record])
-    current = records[0]
-    if needs_rewrite:
-        _write_json(path, current)
-    return _ensure_account_n(current, path)
+    return _ensure_account_n(_read_json(path), path)
 
 
 def load_project_events(project_id: int) -> list[dict]:
     """Slim change tape for one project, oldest first."""
-    legacy_migration.ensure_migrated()
     path = events_path(project_id)
     if not path.exists():
         return []
-    return [legacy_migration.normalize_event(e) for e in _read_jsonl(path)]
+    return _read_jsonl(path)
 
 
 def load_project_history(project_id: int) -> list[dict]:
@@ -285,7 +261,7 @@ def save_plan(
     completed: bool = False,
     cancelled: bool = False,
     project_id: int | None = None,
-    sim_user_id: int | None = None,
+    account_id: int | None = None,
     event: str | None = None,
     sent_at: str | None = None,
     map_focus: str | None = None,
@@ -298,26 +274,21 @@ def save_plan(
     the map. The events tape stores event/feedback/times (and a one-line
     map surface for chat), not a full plan copy.
 
-    The planner-era fields `duration`, `frozen_duration`,
-    `current_step`, and `step_status` are no longer written; older
-    current.json files may still hold them, and nothing reads them.
-
     `map_focus` / `focus_step_id` mark this Talk turn as about a selected
     node (About frames + model history). They are not inherited from the
     previous current — pass them only when this save is focused.
 
     Returns the current record that was saved.
     """
-    legacy_migration.ensure_migrated()
     pid = project_id if project_id is not None else _next_project_id()
     existing = load_current(pid) if project_id is not None else None
-    account_n = _resolve_account_n(sim_user_id=sim_user_id, existing=existing)
+    account_n = _resolve_account_n(account_id=account_id, existing=existing)
     existing_events = load_project_events(pid)
     record = {
         "id": len(existing_events) + 1,
         "user_id": DEFAULT_USER_ID,
         "project_id": pid,
-        "sim_user_id": sim_user_id,
+        "account_id": account_id,
         "account_n": account_n,
         "name": name,
         "plan": plan,
@@ -346,7 +317,6 @@ def save_plan(
 def load_history() -> list[dict]:
     """Every project's events, oldest first within each project
     (projects ordered by id)."""
-    legacy_migration.ensure_migrated()
     all_records: list[dict] = []
     for pid in sorted(_existing_project_ids()):
         all_records.extend(load_project_events(pid))
@@ -355,7 +325,6 @@ def load_history() -> list[dict]:
 
 def load_all_currents() -> list[dict]:
     """Current SoT record for every project."""
-    legacy_migration.ensure_migrated()
     currents: list[dict] = []
     for pid in sorted(_existing_project_ids()):
         current = load_current(pid)
@@ -369,7 +338,6 @@ def delete_project(project_id: int) -> bool:
 
     Returns True if a store was removed, False if none existed.
     """
-    legacy_migration.ensure_migrated()
     path = project_dir(project_id)
     if not path.exists():
         return False

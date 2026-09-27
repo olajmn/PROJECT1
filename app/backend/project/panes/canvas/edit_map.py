@@ -85,7 +85,7 @@ def add_map_node(
         plan,
         feedback=feedback,
         project_id=latest["project_id"],
-        sim_user_id=latest.get("sim_user_id"),
+        account_id=latest.get("account_id"),
         event="node_added",
     )
 
@@ -167,7 +167,7 @@ def import_map_outline(
         plan,
         feedback=feedback,
         project_id=latest["project_id"],
-        sim_user_id=latest.get("sim_user_id"),
+        account_id=latest.get("account_id"),
         event=event,
     )
 
@@ -215,7 +215,7 @@ def remove_map_node(latest: dict, step_id: str) -> dict:
         plan,
         feedback=f"Removed step: {removed_label}",
         project_id=latest["project_id"],
-        sim_user_id=latest.get("sim_user_id"),
+        account_id=latest.get("account_id"),
         event="node_removed",
     )
 
@@ -311,7 +311,7 @@ def suggest_map_children(latest: dict, step_id: str) -> dict:
         new_plan,
         feedback=f"Zoomed into: {step['label']}",
         project_id=latest["project_id"],
-        sim_user_id=latest.get("sim_user_id"),
+        account_id=latest.get("account_id"),
         event="suggested",
     )
 
@@ -364,7 +364,7 @@ def suggest_map_from_chat(
         plan,
         feedback=note,
         project_id=latest["project_id"],
-        sim_user_id=latest.get("sim_user_id"),
+        account_id=latest.get("account_id"),
         event="chat_added_nodes",
         sent_at=sent_at,
         map_focus=map_focus,

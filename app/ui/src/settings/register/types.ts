@@ -34,7 +34,7 @@ export type Block = Line[];
 /** Two-column group (Id | projects). */
 export type Group = {
   active?: boolean;
-  dataSimUserId?: string;
+  dataAccountId?: string;
   left: Block;
   right: Block[];
 };

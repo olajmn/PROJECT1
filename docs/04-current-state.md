@@ -51,10 +51,9 @@ Everything lives in `app/data/` as plain JSON:
 - Ids that are never reused: node ids (per project), saved-tree ids,
   account ids, per-account project numbers. Global `project_id` is
   `max + 1`, so deleting the newest project frees its id.
-- Older `current.json` files still hold unused planner-era fields
-  (`duration`, `current_step`, …); they drop off on the next save.
-- Older formats are read through `storage/legacy_migration.py`; `.bak`
-  files are the originals it converted.
+- Every file is in the current format (converted once, 2026-09-27):
+  there is no code for reading older formats. The `.bak` files in
+  `data/` are leftovers from earlier conversions; nothing reads them.
 
 ## 4. The model
 

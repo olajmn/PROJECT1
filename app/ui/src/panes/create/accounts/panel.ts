@@ -189,7 +189,7 @@ export function installAccountsPanel(
       placeCreateButton(activeCard);
     }
 
-    const orphans = projects.filter((p) => p.sim_user_id === null);
+    const orphans = projects.filter((p) => p.account_id === null);
     if (orphans.length > 0 && activeId !== null) {
       const claim = document.createElement("button");
       claim.type = "button";

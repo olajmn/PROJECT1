@@ -55,7 +55,7 @@ export interface ProjectView {
   name: string;
   completed: boolean;
   cancelled: boolean;
-  sim_user_id: number | null;
+  account_id: number | null;
   /** Sticky per-account mint for map/chrome `#N`. Null when unassigned. */
   account_n?: number | null;
   /** Latest history record timestamp for this project. */

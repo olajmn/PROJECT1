@@ -27,6 +27,6 @@ def rename_project(project_id: int, name: str) -> dict | None:
         feedback=f"Renamed: {old} → {label}",
         completed=latest.get("completed", False),
         project_id=latest["project_id"],
-        sim_user_id=latest.get("sim_user_id"),
+        account_id=latest.get("account_id"),
         event="renamed",
     )

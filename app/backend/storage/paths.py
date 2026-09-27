@@ -14,7 +14,7 @@ from pathlib import Path
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 
 # The only stub operator user_id that exists today (auth deferred).
-# Not the simulated multi-user filter — that is sim_user_id on projects.
+# Not the simulated multi-user filter — that is account_id on projects.
 DEFAULT_USER_ID = 1
 
 

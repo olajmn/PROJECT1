@@ -13,7 +13,7 @@ NOW = datetime(2026, 9, 25, 20, 0, tzinfo=timezone.utc).astimezone()
 
 def line(feedback, at, event=None, focus=None, steps=None, name="House", **extra):
     record = {
-        "project_id": 7, "name": name, "sim_user_id": 3, "feedback": feedback,
+        "project_id": 7, "name": name, "account_id": 3, "feedback": feedback,
         "created_at": at, "plan": {"progression": {"steps": steps or []}},
     }
     if event:
@@ -69,13 +69,14 @@ def main() -> None:
     assert days[-1] == ("20 Sep", 2), days
     assert sum(1 for _, n in days if n == 0) >= 1
 
-    # Old lines (no event, local time) still count; chat-shaped feedback excluded.
+    # Older timestamps (local time, no offset) still count; chat excluded.
     old = build_status([
-        {"project_id": 1, "name": "Old", "feedback": None, "created_at": "2026-09-20T10:00:00"},
+        {"project_id": 1, "name": "Old", "feedback": None, "event": "created",
+         "created_at": "2026-09-20T10:00:00"},
         {"project_id": 1, "name": "Old", "feedback": "Imported 1 step(s)",
-         "created_at": "2026-09-20T10:05:00", "plan": {}},
+         "event": "pasted", "created_at": "2026-09-20T10:05:00", "plan": {}},
         {"project_id": 1, "name": "Old", "feedback": "Hello Note: hi",
-         "created_at": "2026-09-20T11:00:00"},
+         "event": "chat", "created_at": "2026-09-20T11:00:00"},
     ], now=NOW)
     assert old["history"][-1]["changes"] == 2, old["history"]
 

@@ -20,7 +20,7 @@ import type { AccountView, ProjectView } from "../../dataShapes.js";
 
 // 1. Filter
 
-/** Projects owned by the active simulated user (sim_user_id). */
+/** Projects owned by the active simulated user (account_id). */
 export function projectsForActiveUser(projects: ProjectView[]): ProjectView[] {
   return projectsChronologicalForUser(projects, getActiveUserId());
 }
@@ -75,7 +75,7 @@ export function syncActiveUser(nextUsers: AccountView[]): void {
   setActiveUserId(live.reduce((a, b) => (a.id > b.id ? a : b)).id);
 }
 
-/** Clear sim_user_id on projects whose owner account was archived. */
+/** Clear account_id on projects whose owner account was archived. */
 export function detachArchivedOwners(
   projects: ProjectView[],
   users: AccountView[],
@@ -84,8 +84,8 @@ export function detachArchivedOwners(
     users.filter((v) => !v.archived).map((v) => v.id),
   );
   return projects.map((p) =>
-    p.sim_user_id != null && !activeIds.has(p.sim_user_id)
-      ? { ...p, sim_user_id: null }
+    p.account_id != null && !activeIds.has(p.account_id)
+      ? { ...p, account_id: null }
       : p,
   );
 }

@@ -138,8 +138,8 @@ const accountsPanel = installAccountsPanel({
   onSelectProject: (projectId) => {
     const target = projects.find((p) => p.project_id === projectId);
     if (!target) return;
-    if (target.sim_user_id != null) {
-      setActiveUserId(target.sim_user_id);
+    if (target.account_id != null) {
+      setActiveUserId(target.account_id);
     }
     selection.selectedId = projectId;
     selection.selectedNodeId = null;
@@ -238,8 +238,8 @@ async function load(): Promise<void> {
   const want = Number(params.get("id"));
   if (want && projects.some((p) => p.project_id === want)) {
     const wanted = projects.find((p) => p.project_id === want)!;
-    if (wanted.sim_user_id != null) {
-      setActiveUserId(wanted.sim_user_id);
+    if (wanted.account_id != null) {
+      setActiveUserId(wanted.account_id);
     }
     selection.selectedId = want;
   } else {
