@@ -482,5 +482,7 @@ def _validate_forest(raw: list[dict]) -> list[dict]:
         path = node.get("path")
         if isinstance(path, str) and path.strip():
             checked_node["path"] = path
+        if isinstance(node.get("ordered"), bool):
+            checked_node["ordered"] = node["ordered"]
         checked.append(checked_node)
     return checked

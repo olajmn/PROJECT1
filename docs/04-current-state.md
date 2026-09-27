@@ -159,6 +159,7 @@ All under `backend/project/`. WHAT-tree (canvas) lives in `panes/canvas/` (was m
 
 
 | **Node (family tree)** | `project/node/node.py`, `project/node/tree_as_text.py` | Step shape + tree-as-text/path (for program/LLM); above panes — canvas and chat are faces. What a node is, its identity and rules: `project/node/README.md` |
+| **Saved trees** | `project/saved_trees/`, `storage/saved_trees_persistence.py`, `ui/src/panes/canvas/savedTrees/` | A node's subtree saved as structure (no ids) in a per-account library (`data/saved_trees.json`); node ⋯ Save as tree / Insert saved tree… ([[05-decisions]] #54). Rules: `project/saved_trees/README.md` |
 
 | **Canvas (map face)** | `panes/canvas/edit_map.py`, `panes/canvas/text_to_tree.py`, `panes/canvas/add_folder/`, `panes/canvas/call_suggest.py` | Visual map: write (+/×/import/Suggest); paste→tree; folder→beads; Suggest call+parse; Copy as ASCII on the canvas |
 

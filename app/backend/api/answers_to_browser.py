@@ -9,6 +9,7 @@ no product rules.
 #      - project_view()
 #      - active_projects() / archived_projects()
 #      - account_view()
+#      - saved_tree_view()
 #
 #  2. Map tree
 #      - map_tree()
@@ -97,6 +98,20 @@ def account_view(account: dict) -> dict:
     if account.get("archived_at"):
         view["archived_at"] = account["archived_at"]
     return view
+
+
+def saved_tree_view(saved: dict) -> dict:
+    """{id, name, saved_at, node_count} — what the picker lists; the
+    structure itself stays on the server until it is inserted."""
+    def count(node: dict) -> int:
+        return 1 + sum(count(c) for c in node.get("children") or [])
+
+    return {
+        "id": saved["id"],
+        "name": saved["name"],
+        "saved_at": saved["saved_at"],
+        "node_count": count(saved.get("tree") or {}),
+    }
 
 
 

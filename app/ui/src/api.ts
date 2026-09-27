@@ -20,8 +20,10 @@
 //      - fetchModel()
 //  6. Activity log (Settings → Logs)
 //      - fetchLog(), fetchProjectTimeline()
+//  7. Saved trees
+//      - saveTree(), fetchSavedTrees(), insertSavedTree(), deleteSavedTree()
 
-import type { ProjectView, LogEntry, ModelView, PastedNode, PastePreview, AccountView } from "./dataShapes.js";
+import type { ProjectView, LogEntry, ModelView, PastedNode, PastePreview, AccountView, SavedTreeView } from "./dataShapes.js";
 
 async function httpErrorMessage(res: Response): Promise<string> {
   const detail = (await res.text()).trim();
@@ -392,4 +394,59 @@ export async function fetchProjectTimeline(
     throw new Error(await httpErrorMessage(res));
   }
   return (await res.json()) as LogEntry[];
+}
+
+// 7. Saved trees
+
+/** Store this node and everything under it as structure (no ids). */
+export async function saveTree(
+  projectId: number,
+  stepId: string,
+): Promise<SavedTreeView> {
+  const res = await fetch(
+    `/api/projects/${projectId}/map/${encodeURIComponent(stepId)}/save-tree`,
+    { method: "POST" },
+  );
+  if (!res.ok) {
+    throw new Error(await httpErrorMessage(res));
+  }
+  return (await res.json()) as SavedTreeView;
+}
+
+/** The saved trees of this project's account, newest first. */
+export async function fetchSavedTrees(
+  projectId: number,
+): Promise<SavedTreeView[]> {
+  const res = await fetch(`/api/projects/${projectId}/saved-trees`);
+  if (!res.ok) {
+    throw new Error(await httpErrorMessage(res));
+  }
+  return (await res.json()) as SavedTreeView[];
+}
+
+/** Insert a saved tree under `parentId` as new nodes (fresh ids). */
+export async function insertSavedTree(
+  projectId: number,
+  treeId: string,
+  parentId: string,
+): Promise<ProjectView> {
+  const res = await fetch(`/api/projects/${projectId}/map/insert-tree`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ tree_id: treeId, parent_id: parentId }),
+  });
+  if (!res.ok) {
+    throw new Error(await httpErrorMessage(res));
+  }
+  return (await res.json()) as ProjectView;
+}
+
+export async function deleteSavedTree(treeId: string): Promise<void> {
+  const res = await fetch(
+    `/api/saved-trees/${encodeURIComponent(treeId)}/delete`,
+    { method: "POST" },
+  );
+  if (!res.ok) {
+    throw new Error(await httpErrorMessage(res));
+  }
 }

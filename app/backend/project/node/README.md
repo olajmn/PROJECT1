@@ -66,9 +66,9 @@ Stored as plain dicts under `plan.progression.steps` in
 All writes go through `panes/canvas/edit_map.py`. `tree_as_text.py`
 turns a tree into indented labels for the model and project summary.
 
-## Open
+## Related and open
 
-- **Saved Trees** (a subtree stored and re-inserted elsewhere) is
-  discussed, not decided. Inserting one would mint fresh ids and number
-  a clashing top label; where saved trees are stored is not settled.
+- Saved trees (`../saved_trees/`) copy a node's structure without its
+  ids; see that folder's README. `structure_of()` in `node.py` decides
+  what counts as structure.
 - What `ordered` and `resolved` will drive is not decided.

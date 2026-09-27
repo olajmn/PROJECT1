@@ -22,6 +22,7 @@ server.py only starts the server; everything it answers is decided here.
 #      - do_GET() / do_POST()
 #      - projects: create, rename, cancel, set user, timeline
 #      - map: add node, remove node, paste, add folder, suggest
+#      - saved trees: save, list, insert, delete
 #      - chat: message (incl. slash-commands)
 #      - accounts: create, rename, archive
 #      - shared helpers
@@ -56,6 +57,12 @@ from backend.project.panes.canvas.edit_map import (
     remove_map_node,
     suggest_map_children,
 )
+from backend.project.saved_trees import (
+    insert_saved_tree,
+    remove_saved_tree,
+    save_tree_from_node,
+    saved_trees_for,
+)
 from backend.model.client import MODEL, TEMPERATURE
 from backend.api.activity_log import activity_log
 from backend.project.timeline import project_timeline
@@ -65,6 +72,7 @@ from backend.api.answers_to_browser import (
     active_projects,
     archived_projects,
     project_view,
+    saved_tree_view,
 )
 
 
@@ -82,8 +90,8 @@ _MODEL_FAILED = "that took longer than expected - try again in a moment"
 # ============================================================
 
 # Every POST address and the method that answers it. (\d+) is a project
-# or user id, (p\d+) a map node id; both are passed to the method in
-# order. Map, suggest, and chat paths use Project/Map/Talk names.
+# or user id, (p\d+) a map node id, (t\d+) a saved tree id; all are
+# passed to the method in order. Map, suggest, and chat paths use Project/Map/Talk names.
 _POST_ROUTES = [
     (r"/api/projects", "_handle_create_project"),
     (r"/api/projects/(\d+)/name", "_handle_rename_project"),
@@ -96,6 +104,9 @@ _POST_ROUTES = [
     (r"/api/projects/(\d+)/map/import", "_handle_paste_structure"),
     (r"/api/projects/(\d+)/map/folder", "_handle_add_folder"),
     (r"/api/projects/(\d+)/suggest/(p\d+)", "_handle_suggest_children"),
+    (r"/api/projects/(\d+)/map/(p\d+)/save-tree", "_handle_save_tree"),
+    (r"/api/projects/(\d+)/map/insert-tree", "_handle_insert_tree"),
+    (r"/api/saved-trees/(t\d+)/delete", "_handle_delete_saved_tree"),
     (r"/api/projects/(\d+)/chat", "_handle_chat_message"),
     (r"/api/parse-outline-preview", "_handle_parse_outline_preview"),
     (r"/api/choose-folder", "_handle_choose_folder"),
@@ -109,6 +120,9 @@ _POST_ROUTES = [(re.compile(f"^{path}$"), method) for path, method in _POST_ROUT
 
 # One project's history, oldest first (project/timeline.py).
 _TIMELINE_ROUTE = re.compile(r"^/api/projects/(\d+)/timeline$")
+
+# The saved trees of one project's account (project/saved_trees/).
+_SAVED_TREES_ROUTE = re.compile(r"^/api/projects/(\d+)/saved-trees$")
 
 
 # ============================================================
@@ -138,6 +152,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json(activity_log())
         elif match := _TIMELINE_ROUTE.match(self.path):
             self._handle_project_timeline(int(match.group(1)))
+        elif match := _SAVED_TREES_ROUTE.match(self.path):
+            self._handle_list_saved_trees(int(match.group(1)))
         else:
             send_page_file(self)
 
@@ -295,6 +311,48 @@ class Handler(BaseHTTPRequestHandler):
             self.send_error(422, str(e))
             return
         self._send_json({"path": path})
+
+    # --- saved trees ------------------------------------------
+
+    def _handle_save_tree(self, project_id: int, node_id: str) -> None:
+        """This node and everything under it, as structure. No model call."""
+        latest = self._load_project(project_id)
+        if latest is None:
+            return
+        try:
+            saved = save_tree_from_node(latest, node_id)
+        except ValueError as e:
+            self.send_error(422, str(e))
+            return
+        self._send_json(saved_tree_view(saved))
+
+    def _handle_list_saved_trees(self, project_id: int) -> None:
+        latest = self._load_project(project_id)
+        if latest is None:
+            return
+        self._send_json([saved_tree_view(t) for t in saved_trees_for(latest)])
+
+    def _handle_insert_tree(self, project_id: int) -> None:
+        """A saved tree becomes new nodes (fresh ids). No model call."""
+        body = self._read_json_body()
+        if body is None:
+            return
+        latest = self._load_project(project_id)
+        if latest is None:
+            return
+        self._save_map_change(lambda: insert_saved_tree(
+            latest,
+            str(body.get("tree_id") or ""),
+            _parent_id(body),
+        ))
+
+    def _handle_delete_saved_tree(self, tree_id: str) -> None:
+        try:
+            removed = remove_saved_tree(tree_id)
+        except ValueError as e:
+            self.send_error(404, str(e))
+            return
+        self._send_json(saved_tree_view(removed))
 
     # --- chat -------------------------------------------------
 

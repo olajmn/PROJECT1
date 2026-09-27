@@ -297,3 +297,38 @@ export async function fetchProjectTimeline(projectId) {
     }
     return (await res.json());
 }
+// 7. Saved trees
+/** Store this node and everything under it as structure (no ids). */
+export async function saveTree(projectId, stepId) {
+    const res = await fetch(`/api/projects/${projectId}/map/${encodeURIComponent(stepId)}/save-tree`, { method: "POST" });
+    if (!res.ok) {
+        throw new Error(await httpErrorMessage(res));
+    }
+    return (await res.json());
+}
+/** The saved trees of this project's account, newest first. */
+export async function fetchSavedTrees(projectId) {
+    const res = await fetch(`/api/projects/${projectId}/saved-trees`);
+    if (!res.ok) {
+        throw new Error(await httpErrorMessage(res));
+    }
+    return (await res.json());
+}
+/** Insert a saved tree under `parentId` as new nodes (fresh ids). */
+export async function insertSavedTree(projectId, treeId, parentId) {
+    const res = await fetch(`/api/projects/${projectId}/map/insert-tree`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tree_id: treeId, parent_id: parentId }),
+    });
+    if (!res.ok) {
+        throw new Error(await httpErrorMessage(res));
+    }
+    return (await res.json());
+}
+export async function deleteSavedTree(treeId) {
+    const res = await fetch(`/api/saved-trees/${encodeURIComponent(treeId)}/delete`, { method: "POST" });
+    if (!res.ok) {
+        throw new Error(await httpErrorMessage(res));
+    }
+}

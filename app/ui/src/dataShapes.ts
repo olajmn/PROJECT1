@@ -9,6 +9,7 @@
 //  4. Paste
 //  5. Model boundary (Settings → General)
 //  6. Activity log (Settings → Logs)
+//  7. Saved trees
 
 // 1. Map
 
@@ -112,4 +113,15 @@ export interface LogEntry {
   kind: "Created" | "Chat" | "Map" | "Renamed" | "Owner" | "Archived" | "Other";
   text: string;
   focus?: string;
+}
+
+// 7. Saved trees
+
+/** One entry in an account's saved-tree library (saved_tree_view()).
+ * The structure itself stays on the server until it is inserted. */
+export interface SavedTreeView {
+  id: string;
+  name: string;
+  saved_at: string;
+  node_count: number;
 }

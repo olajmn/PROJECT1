@@ -1,5 +1,5 @@
 // What the ⋯ menu on a node does: Add here, Remove, Talk about this,
-// Paste structure, Suggest.
+// Paste structure, Suggest, Save as tree, Insert saved tree.
 
 // Contents
 //  1. Types
@@ -10,6 +10,8 @@
 import { suggestChildren } from "../../api.js";
 import type { MapNode, ProjectView } from "../../dataShapes.js";
 import type { NodeMenuActionId } from "./drawNodes.js";
+import { saveTreeFromNode } from "./savedTrees/saveTree.js";
+import { openInsertTreePicker } from "./savedTrees/insertTree.js";
 
 // 1. Types
 
@@ -81,6 +83,15 @@ export async function handleNodeMenuAction(
   if (action === "paste") {
     ctx.markSelected(stepId, `Will import under: ${label}`);
     ctx.openPaste();
+    return;
+  }
+  if (action === "save_tree") {
+    await saveTreeFromNode(stepId, label, ctx);
+    return;
+  }
+  if (action === "insert_tree") {
+    ctx.markSelected(stepId, `Insert a saved tree under: ${label}`);
+    await openInsertTreePicker(stepId, ctx);
     return;
   }
   // suggest — agent proposes children (old zoom, on request only)

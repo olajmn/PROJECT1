@@ -10,6 +10,7 @@ from backend.project.node.node import (
     from_labels,
     from_nested_labels,
     sibling_label_clash,
+    structure_of,
     unique_sibling_label,
 )
 from backend.project.node.tree_as_text import (
@@ -26,6 +27,7 @@ __all__ = [
     "from_nested_labels",
     "sibling_label_clash",
     "unique_sibling_label",
+    "structure_of",
     "tree_lines",
     "tree_of",
     "find_path",

@@ -119,6 +119,26 @@ def unique_sibling_label(siblings: list, label: str) -> str:
             return candidate
 
 
+def structure_of(step: dict) -> dict:
+    """A stored step dict as bare structure: label, order, children.
+
+    Deliberately drops `id` (identity stays with the original node —
+    docs/05-decisions.md #52), `resolved` (state, not structure; a copy
+    starts unresolved), and `path` (points at one file on one disk).
+    The result is the same {"label", "children"} forest shape Paste
+    imports, plus `ordered`.
+    """
+    return {
+        "label": str(step.get("label") or ""),
+        "ordered": bool(step.get("ordered", True)),
+        "children": [
+            structure_of(child)
+            for child in step.get("children") or []
+            if isinstance(child, dict)
+        ],
+    }
+
+
 def from_labels(labels: list[str], mint_id: Callable[[], str]) -> list[Step]:
     """One flat level of nodes from label strings."""
     return [Step(id=mint_id(), label=label) for label in labels]
@@ -127,7 +147,7 @@ def from_labels(labels: list[str], mint_id: Callable[[], str]) -> list[Step]:
 def from_nested_labels(entries: list[dict], mint_id: Callable[[], str]) -> list[Step]:
     """Build steps from a nested [{"label", "children": [...]}] list,
     recursing to whatever depth that list actually has. Copies `path`
-    when present (folder walk).
+    when present (folder walk) and `ordered` when present (saved tree).
 
     `mint_id` is passed in so ids stay unique across a whole project,
     not just within one call.
@@ -140,6 +160,7 @@ def from_nested_labels(entries: list[dict], mint_id: Callable[[], str]) -> list[
                 id=mint_id(),
                 label=entry["label"],
                 path=path if isinstance(path, str) and path else None,
+                ordered=bool(entry.get("ordered", True)),
                 children=from_nested_labels(entry.get("children", []), mint_id),
             )
         )

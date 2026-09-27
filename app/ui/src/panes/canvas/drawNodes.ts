@@ -23,7 +23,9 @@ export type NodeMenuActionId =
   | "remove"
   | "suggest"
   | "analyze"
-  | "paste";
+  | "paste"
+  | "save_tree"
+  | "insert_tree";
 export type NodeMenuHandler = (action: NodeMenuActionId, stepId: string) => void;
 
 const NODE_MENU_ACTIONS: {
@@ -55,6 +57,16 @@ const NODE_MENU_ACTIONS: {
     id: "paste",
     label: "Paste structure",
     detail: "Import a pasted outline or ASCII tree as children here.",
+  },
+  {
+    id: "save_tree",
+    label: "Save as tree",
+    detail: "Keep this node and everything under it as a reusable structure.",
+  },
+  {
+    id: "insert_tree",
+    label: "Insert saved tree…",
+    detail: "Add one of your saved trees under this node as new nodes.",
   },
 ];
 
@@ -182,7 +194,7 @@ function fillBeadUnit(
   row.appendChild(unit);
 }
 
-/** ⋯ menu: Add here / Remove / Suggest / Talk / Paste. */
+/** ⋯ menu: Add here / Remove / Suggest / Talk / Paste / saved trees. */
 function attachNodeMenu(
   row: HTMLElement,
   stepId: string,

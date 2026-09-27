@@ -1,0 +1,50 @@
+/* Saved-tree picker opened from the node ⋯ menu (panes/canvas/savedTrees/).
+   The box itself reuses .progress-menu (map.css); this adds the rows. */
+
+.saved-tree-picker {
+  min-width: 12rem;
+  max-height: 18rem;
+  overflow-y: auto;
+}
+
+.saved-tree-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.saved-tree-pick {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex: 1 1 auto;
+}
+
+.saved-tree-count {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.saved-tree-delete {
+  flex: 0 0 auto;
+  padding: 0.15rem 0.4rem;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.saved-tree-delete:hover {
+  color: var(--color-error);
+  background: color-mix(in srgb, var(--color-text) 7%, transparent);
+}
+
+.saved-tree-empty {
+  margin: 0;
+  padding: 0.3rem 0.55rem;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}

@@ -591,6 +591,19 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Reversible?** Yes — make `add_map_node()` / `_number_sibling_clashes()` raise on `sibling_label_clash()` again.
 
 
+## 54. 2026-09-27 — Saved trees
+
+**Decision:** A node's subtree can be saved as bare structure (`label`, `ordered`, `children`; no `id`, `resolved`, or `path` — `structure_of()` in `project/node/node.py`) into a per-account library, `data/saved_trees.json`, and inserted later under any node of that account's projects. Node ⋯ menu: **Save as tree**, **Insert saved tree…** (picker; × deletes from the library). Concept in `backend/project/saved_trees/` (above panes, like `node/`), storage in `backend/storage/saved_trees_persistence.py`, UI in `ui/src/panes/canvas/savedTrees/`. Insert reuses `edit_map.import_map_outline()` (the Paste path), which now also carries `ordered`. Saved-tree ids `t<N>` are never reused (`id_hi` in the file). Details: `backend/project/saved_trees/README.md`.
+
+**Date:** 2026-09-27
+
+**Why this choice:** Reuse of a whole structure (a recipe, a design section) without re-typing it. A saved tree is a snapshot, not a template or a link: each insert is a new instance with its own ids (#52), so nothing needs to stay in sync. The library belongs to the account, not a project, because reuse crosses projects. `source` records provenance only — enough for a later cross-project identity (NFT direction) without committing to one now. Going through the Paste path means fresh ids (never reused) and label numbering (#53) come from one place.
+
+**Alternatives considered:** a linked template (edits propagate) — rejected: needs sync rules and a different identity model; storing trees inside a project — rejected: reuse is cross-project.
+
+**Reversible?** Yes — remove the two menu items, the routes, and `saved_trees/`; `data/saved_trees.json` is independent of project data.
+
+
 ## See also
 
 

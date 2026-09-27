@@ -19,6 +19,7 @@
 @import url("panes/canvas/frame.css");
 @import url("panes/canvas/map.css");
 @import url("panes/canvas/skeleton.css");
+@import url("panes/canvas/savedTrees.css");
 @import url("panes/chat/conversation.css");
 @import url("panes/chat/agent-chat.css");
 @import url("panes/chat/status.css");
