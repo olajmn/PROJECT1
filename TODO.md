@@ -120,10 +120,10 @@ unless noted.
     3. **4–5 demo scenarios** the chat should handle, written down.
     Out of scope: RAG, long-term memory, agent loops, new chat
     architecture. Related to 33 (model sees only labels).
-48. **Rename `sim_user_id` → `account_id`** (Step, before Saved Trees
-    if possible) — the store is already `accounts`, but a project's
-    account reference is still `sim_user_id` ([[05-decisions]]
-    accounts-store follow-up: "Project FK stays `sim_user_id`").
+48. **Rename `sim_user_id` → `account_id`** (Step) — the store is
+    already `accounts`, but a project's account reference is still
+    `sim_user_id` ([[05-decisions]] accounts-store follow-up:
+    "Project FK stays `sim_user_id`").
     Scope checked 2026-09-27: 138 occurrences in 21 code files
     (backend storage/api/create + UI `dataShapes.ts`, `api.ts`,
     accounts panel, Directory), the wire (`POST /api/projects/<id>/user`
