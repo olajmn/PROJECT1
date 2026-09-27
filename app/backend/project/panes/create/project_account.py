@@ -28,7 +28,7 @@ def set_project_user(project_id: int, account_id: int | None) -> dict | None:
     Returns the newly saved record, or None if the change is
     rejected - never partially applied, and never raises for an
     ordinary bad input:
-    - `project_id` doesn't resolve to any goal.
+    - `project_id` doesn't resolve to any project.
     - `account_id` is given but no such account exists (a stale/tampered
       value - the real UI always offers ids from `load_accounts()`, so
       this is a defensive check, not the normal path).
@@ -36,7 +36,7 @@ def set_project_user(project_id: int, account_id: int | None) -> dict | None:
     Requesting the account the project is already linked to (or already
     has none, for `account_id=None`) is a genuine no-op - returns
     `latest` unchanged rather than appending an identical record. A
-    cancelled goal (see cancel_project()) is also a no-op here — never
+    cancelled project (see cancel_project()) is also a no-op here — never
     a save_plan() call that could silently revive it.
 
     Preserves `plan` and `completed` from the latest record exactly as

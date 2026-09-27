@@ -29,7 +29,7 @@
   background: var(--color-bg-panel);
 }
 
-.project-chat.is-collapsed .goal-thread,
+.project-chat.is-collapsed .chat-thread,
 .project-chat.is-collapsed .error,
 .project-chat.is-collapsed .chat-brand,
 .project-chat.is-collapsed .status-panel,

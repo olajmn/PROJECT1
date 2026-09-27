@@ -15,29 +15,7 @@ deliberately chosen as next.
 
 ## Active
 
-**46. Talk demo polish** (Step, before a demo) — answers feel weak
-today. Bounded pass so chat reads as a working, deliberate part of the
-product, not a prototype.
-
-1. **Analyse first** — why answers are poor, above all what the model
-   actually receives as context (brief, focus node, history); explain
-   the problem briefly before larger changes.
-2. **Then fix only what's needed:** relevant answers about the project;
-   clear context for the selected project / node; natural, readable
-   thread; tidy loading / error states; input + Send work; existing
-   slash-commands (`panes/chat/commands/`) keep working.
-3. **4–5 demo scenarios** the chat should handle, written down.
-
-Known model behavior to check against (old experiments on
-`llama3.1:8b`): it invented plausible details never given ("chapter
-11", "a friend"); Norwegian input gave answers unrelated to the
-question, 3 of 3 times, while English was fine — re-test on
-`qwen3.5:9b`, since the owner writes Norwegian; with only the latest
-turn it drifted from the goal, and full history fixed it (Talk sends 20
-turns today).
-
-Out of scope: RAG, long-term memory, agent loops, new chat
-architecture. Related to 33 (model sees only labels).
+Nothing active. Pick the next item from the Queue deliberately.
 
 ## Queue
 
@@ -56,11 +34,11 @@ only). Numbers are stable ids, not rank.
 ### Tier 2
 
 12. **Decomposition / zoom** (Step) — map is user-steered
-    (`plan.progression`); + / × / Paste / Add folder / Suggest under a
-    selected node write it. Still open: naming a node in chat without
-    selecting it first; Suggest grounded in the chat (was keyword-driven,
-    removed in [[05-decisions]] #60) could return as an explicit
-    `/suggest` command.
+    (`plan.progression`); + / × / Paste / Add folder under a selected
+    node write it. Still open: naming a node in chat without selecting
+    it first. Model-proposed children were removed ([[05-decisions]]
+    #60, #63); if they return, as an explicit `/suggest` that proposes
+    in the chat and leaves adding to the user.
 30. **No written API reference** (Step) — short overview of each
     `/api/...` address.
 44. **Repo cleanup pass** (Step) — what is left of a file review on
@@ -70,13 +48,6 @@ only). Numbers are stable ids, not rank.
     4. **`app/ui/dist/api.js` is tracked although `app/ui/dist/` is in
        `.gitignore`** — still changes in commits. Untrack with
        `git rm --cached` or adjust the ignore rule. One-minute fix.
-    5. **Goal naming** — the legacy storage code is gone (#56, #59); a
-       few names still say "goal" for a project. Docstrings:
-       `panes/create/lifecycle.py`, `project_account.py`. UI: `goals` in
-       `index.ts` `load()`; the `.goal-thread` class (`index.html`,
-       `agent-chat.css`, `columnRail.css`, `resizePanel.ts`);
-       `sidebar-account-card-project-goal` (`accountCard.ts`,
-       `accountsPanel.css`). Renames only.
     6. **`requests_from_browser.py` routing** — one long `if/elif` on
        `self.path` per method; grows with every endpoint. Not urgent.
        Related to 30.
@@ -160,7 +131,8 @@ only). Numbers are stable ids, not rank.
     chat part is built ([[05-decisions]] #62): a day in Current state
     selects that day's changes for Talk, framed like node About. Still
     open: highlight the nodes touched that day on the map, and richer
-    change text ("Imported 1 step(s)" does not say what). Related to 34.
+    import text ("Imported 1 step(s) under X" does not say what; added
+    and removed steps already say what and where). Related to 34.
 39. **Talk commands that force a SoT pass** (Step, keep in mind) —
     e.g. a chat "full check" that deliberately re-reads `current` (+
     events) — the product twin of Cursor `/full-check`, for the *user
@@ -201,3 +173,4 @@ when a path is deleted, rewired, or reclassified.
 | P1 | Week grain vs session grain | Time Faculty only | `week_windows()` / `day_windows()`; nothing in the product calls them — Queue 21 |
 | P2 | Even-slice `step_plan` vs dates on the step | Time Faculty only | `frozen_duration.step_plan`; nothing in the product calls it |
 | P4 | Tree as text: indented labels vs ASCII tree | Deliberate, one per side | `project/node/tree_as_text.py` (`tree_lines()`, for the model) vs `ui/src/panes/canvas/copyAsText.ts` (clipboard); same walk, the model side cannot run in the browser and the clipboard should not need a server round trip |
+| P5 | Event kind → word: Logs titles vs day tally | Deliberate, different grain | `project/timeline.py` `GROUPS` ("Map") vs `project/status/build_status.py` `_TALLY_WORDS` ("added", "removed", "imported"); a new event type goes in both, or it shows as Other / other |

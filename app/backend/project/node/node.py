@@ -149,11 +149,6 @@ def structure_of(step: dict) -> dict:
     }
 
 
-def from_labels(labels: list[str], mint_id: Callable[[], str]) -> list[Step]:
-    """One flat level of nodes from label strings."""
-    return [Step(id=mint_id(), label=label) for label in labels]
-
-
 def from_nested_labels(entries: list[dict], mint_id: Callable[[], str]) -> list[Step]:
     """Build steps from a nested [{"label", "children": [...]}] list,
     recursing to whatever depth that list actually has. Copies `path`

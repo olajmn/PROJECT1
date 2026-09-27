@@ -159,11 +159,11 @@
   color: var(--color-text);
 }
 
-.sidebar-account-card-project.is-selected .sidebar-account-card-project-goal {
+.sidebar-account-card-project.is-selected .sidebar-account-card-project-name {
   font-weight: 600;
 }
 
-.sidebar-account-card-project-goal {
+.sidebar-account-card-project-name {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;

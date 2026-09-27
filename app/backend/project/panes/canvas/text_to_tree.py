@@ -1,8 +1,7 @@
 """
 Parse a pasted outline or ASCII tree into a forest of Step-shaped
 labels — no model call. For pasting a structure built elsewhere (e.g.
-another LLM's own answer) back into plan.progression, rather than
-this app's own call_suggest being the only way in.
+another LLM's own answer) back into plan.progression.
 
 Tolerant of several styles at once, since a paste's origin is
 unknown: markdown bullets ("-", "*", "•"), numbered lists ("1.",

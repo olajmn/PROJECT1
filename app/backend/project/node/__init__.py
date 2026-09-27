@@ -7,7 +7,6 @@ tree-as-text walk (`tree_as_text.py`). Map UI stays in panes/canvas/.
 
 from backend.project.node.node import (
     Step,
-    from_labels,
     from_nested_labels,
     sibling_label_clash,
     steps_of,
@@ -24,7 +23,6 @@ from backend.project.node.tree_as_text import (
 
 __all__ = [
     "Step",
-    "from_labels",
     "from_nested_labels",
     "sibling_label_clash",
     "unique_sibling_label",

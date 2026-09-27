@@ -60,8 +60,7 @@ labels (display only — `ui/src/panes/canvas/idView.ts`).
 - **Sibling labels stay unique**, as an addressing and readability rule,
   not an identity rule. A user-written clash (+, paste, folder, `/add`,
   `Step.add_child`) is numbered: `Taco`, `Taco (2)`, `Taco (3)`
-  (`unique_sibling_label()`, `docs/05-decisions.md` #53). A
-  model-suggested child that repeats a sibling is dropped instead.
+  (`unique_sibling_label()`, `docs/05-decisions.md` #53).
 
 ## Where nodes live
 

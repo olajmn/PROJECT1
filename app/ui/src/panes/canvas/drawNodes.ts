@@ -23,7 +23,6 @@ export type RemoveStepHandler = (stepId: string) => void;
 export type NodeMenuActionId =
   | "register"
   | "remove"
-  | "suggest"
   | "analyze"
   | "paste"
   | "save_tree"
@@ -44,11 +43,6 @@ const NODE_MENU_ACTIONS: {
     id: "remove",
     label: "Remove",
     detail: "Delete this node from the map.",
-  },
-  {
-    id: "suggest",
-    label: "Suggest structure",
-    detail: "Ask the agent to propose children under this node.",
   },
   {
     id: "analyze",
@@ -201,7 +195,7 @@ function fillBeadUnit(
   row.appendChild(unit);
 }
 
-/** ⋯ menu: Add here / Remove / Suggest / Talk / Paste / saved trees. */
+/** ⋯ menu: Add here / Remove / Talk / Paste / saved trees. */
 function attachNodeMenu(
   row: HTMLElement,
   stepId: string,

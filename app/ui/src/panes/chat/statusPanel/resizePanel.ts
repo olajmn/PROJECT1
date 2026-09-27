@@ -18,7 +18,7 @@ const FALLBACK_MAX_HEIGHT = 360;
 function maxPanelHeight(panel: HTMLElement): number {
   const chat = panel.closest(".project-chat");
   if (!(chat instanceof HTMLElement)) return FALLBACK_MAX_HEIGHT;
-  const thread = chat.querySelector(".goal-thread");
+  const thread = chat.querySelector(".chat-thread");
   const panelH = panel.getBoundingClientRect().height;
   const threadH =
     thread instanceof HTMLElement ? thread.getBoundingClientRect().height : 0;

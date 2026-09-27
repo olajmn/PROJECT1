@@ -8,7 +8,7 @@
 //      - archiveProject(), setProjectUser()
 //      - fetchArchivedProjects(), restoreProject(), deleteProject()
 //  2. Map
-//      - addNode(), removeNode(), suggestChildren()
+//      - addNode(), removeNode()
 //      - pasteText(), previewPaste(), pasteNodes()
 //      - chooseFolder(), addFolder()
 //  3. Chat
@@ -61,7 +61,8 @@ export async function createProject(
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    throw new Error(`request failed: ${res.status}`);
+    // The server puts its plain reason in the status line (send_error).
+    throw new Error(res.statusText || `request failed: ${res.status}`);
   }
   return (await res.json()) as ProjectView;
 }
@@ -155,19 +156,6 @@ export async function removeNode(projectId: number, stepId: string): Promise<Pro
   if (!res.ok) {
     const detail = (await res.text()).trim();
     throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
-  }
-  return (await res.json()) as ProjectView;
-}
-
-export async function suggestChildren(projectId: number, stepId: string): Promise<ProjectView> {
-  const res = await fetch(`/api/projects/${projectId}/suggest/${stepId}`, { method: "POST" });
-  if (!res.ok) {
-    const detail = (await res.text()).trim();
-    // send_error() returns an HTML page; pull the plain reason if present.
-    const plain = detail.match(/no timeframe[\s\S]*?(?=<|$)/i)?.[0]
-      ?? detail.match(/Error code: (\d+)[\s\S]*?<p>([^<]+)/i)?.[2]
-      ?? detail.match(/cannot zoom[^.<]*/i)?.[0];
-    throw new Error((plain || detail || `request failed: ${res.status}`).slice(0, 200));
   }
   return (await res.json()) as ProjectView;
 }
@@ -300,7 +288,8 @@ export async function sendChatMessage(
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    throw new Error(`request failed: ${res.status}`);
+    // The server puts its plain reason in the status line (send_error).
+    throw new Error(res.statusText || `request failed: ${res.status}`);
   }
   return (await res.json()) as ProjectView;
 }

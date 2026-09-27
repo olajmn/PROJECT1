@@ -1,5 +1,5 @@
 """
-User-authored and suggested writes on a project's nodes (plan.progression).
+User-authored writes on a project's nodes (plan.progression). No model.
 
 add_map_node() — one Step the user named (no LLM), at the
 root or under a parent_id.
@@ -8,8 +8,6 @@ parsed by text_to_tree.py (no LLM), appended the same way.
 import_map_folder() — one folder on disk, walked by
 add_folder/walk.py, appended the same way. Each node keeps its path.
 remove_map_node() — drop a Step by id (no LLM).
-suggest_map_children() — expand one Step via call_suggest.py
-(same is_too_coarse / children_of as the Steps workbench).
 
 Does not touch the Steps-page scratch tree.
 """
@@ -20,11 +18,9 @@ import re
 from backend.storage.project_persistence import save_plan
 from backend.project.panes.canvas.add_folder import folder_tree
 from backend.project.node import (
-    Step, find_path, from_labels, from_nested_labels, sibling_label_clash,
-    unique_sibling_label,
+    Step, find_path, from_nested_labels, unique_sibling_label,
 )
 from backend.project.panes.canvas.text_to_tree import parse_outline
-from backend.project.panes.canvas.call_suggest import zoom_into
 
 _ID_NUM = re.compile(r"^p(\d+)$")
 
@@ -202,9 +198,20 @@ def remove_map_node(latest: dict, step_id: str) -> dict:
     # Stamp the high-water mark before the node disappears, so its id
     # stays retired even on a project saved before the mark existed.
     _id_minter(plan)
+    # Where it sat and how much went with it, read before it is gone:
+    # the saved text is all Logs and the chat's model ever see of it.
+    found = _find_step(steps, step_id)
     removed_label = _remove_step(steps, step_id)
-    if removed_label is None:
+    if removed_label is None or found is None:
         raise ValueError(f"step not found: {step_id}")
+    step, ancestors = found
+    below = _count_below(step)
+    feedback = (
+        f"Removed step under {ancestors[-1]}: {removed_label}"
+        if ancestors else f"Removed step: {removed_label}"
+    )
+    if below:
+        feedback += f" (and {below} under it)"
 
     if not steps:
         plan["progression"] = None
@@ -212,11 +219,19 @@ def remove_map_node(latest: dict, step_id: str) -> dict:
     return save_plan(
         latest["name"],
         plan,
-        feedback=f"Removed step: {removed_label}",
+        feedback=feedback,
         project_id=latest["project_id"],
         account_id=latest.get("account_id"),
         event="node_removed",
     )
+
+
+def _count_below(step: dict) -> int:
+    """Every node under `step`, at any depth."""
+    children = step.get("children")
+    if not isinstance(children, list):
+        return 0
+    return sum(1 + _count_below(c) for c in children if isinstance(c, dict))
 
 
 def _remove_step(steps: list, step_id: str) -> str | None:
@@ -251,68 +266,6 @@ def _number_sibling_clashes(siblings: list, new_steps: list[dict]) -> None:
         children = step.get("children")
         if isinstance(children, list) and children:
             _number_sibling_clashes([], children)
-
-
-def _labels_without_sibling_clash(siblings: list, labels: list[str]) -> list[str]:
-    """Keep labels that would not collide at this level (order preserved).
-
-    Model suggestions only: a suggested child that repeats a sibling is
-    a repeat, not a wish for a second node, so it is dropped rather than
-    numbered like a user-written duplicate.
-    """
-    seen: list = list(siblings)
-    kept: list[str] = []
-    for label in labels:
-        text = (label or "").strip()
-        if not text or sibling_label_clash(seen, text):
-            continue
-        kept.append(text)
-        seen.append({"label": text})
-    return kept
-
-
-def suggest_map_children(latest: dict, step_id: str) -> dict:
-    """
-    Expand `step_id` one level under latest["plan"]["progression"].
-    Appends a new history record with the updated tree.
-
-    If the step is already fine enough (zoom_into returns []), returns
-    `latest` unchanged (no save). Raises ValueError if there is no
-    progression or no such step. Leftover stored duration is not read.
-    """
-    plan = latest.get("plan") or {}
-    progression = plan.get("progression")
-    if not isinstance(progression, dict):
-        raise ValueError("project has no nodes to suggest under")
-
-    new_plan = copy.deepcopy(plan)
-    steps = (new_plan.get("progression") or {}).get("steps") or []
-    found = _find_step(steps, step_id)
-    if found is None:
-        raise ValueError(f"step not found: {step_id}")
-
-    step, ancestors = found
-    labels = zoom_into(step["label"], ancestors)
-    if not labels:
-        return latest
-
-    labels = _labels_without_sibling_clash([], labels)
-    if not labels:
-        return latest
-
-    mint = _id_minter(new_plan)
-    step["children"] = [
-        s.to_dict() for s in from_labels(labels, mint)
-    ]
-
-    return save_plan(
-        latest["name"],
-        new_plan,
-        feedback=f"Zoomed into: {step['label']}",
-        project_id=latest["project_id"],
-        account_id=latest.get("account_id"),
-        event="suggested",
-    )
 
 
 def _find_step(steps: list, step_id: str) -> tuple[dict, list[str]] | None:

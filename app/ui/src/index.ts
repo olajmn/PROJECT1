@@ -240,11 +240,11 @@ function replaceProject(updated: ProjectView): void {
 }
 
 async function load(): Promise<void> {
-  const [goals, allUsers] = await Promise.all([
+  const [loaded, allUsers] = await Promise.all([
     fetchProjects(),
     fetchAccounts(),
   ]);
-  projects = goals;
+  projects = loaded;
   users = allUsers;
 
   syncActiveUser(users);

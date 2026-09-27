@@ -83,21 +83,21 @@ def next_default_name(account_id: int | None) -> str:
 
 def cancel_project(project_id: int) -> dict | None:
     """
-    Mark a goal as cancelled (abandoned) - a distinct terminal status
+    Mark a project as cancelled (abandoned) - a distinct terminal status
     from `completed`, not a UI-level relabeling of it and not a third
     planning decision. Preserves `plan` and `account_id` from the
-    latest record exactly as they were, so the goal's own data/history
+    latest record exactly as they were, so the project's own data/history
     is never lost, only marked as no longer being pursued (still
-    visible in full in the project's timeline, same as any other goal).
+    visible in full in the project's timeline, same as any other project).
 
     Returns the newly saved record, or None if the change is
     rejected - never partially applied:
-    - `project_id` doesn't resolve to any goal.
-    - the goal is already completed - a finished goal doesn't also
+    - `project_id` doesn't resolve to any project.
+    - the project is already completed - a finished project doesn't also
       become abandoned; one terminal status wins, and completion,
       already decided, isn't overwritten by a later Cancel click.
 
-    Requesting cancellation on an already-cancelled goal is a genuine
+    Requesting cancellation on an already-cancelled project is a genuine
     no-op - returns `latest` unchanged rather than appending an
     identical record (same idiom as set_project_user()).
     """

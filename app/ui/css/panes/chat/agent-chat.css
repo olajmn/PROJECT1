@@ -24,7 +24,7 @@
   overflow: hidden;
 }
 
-.project-chat .goal-thread {
+.project-chat .chat-thread {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;

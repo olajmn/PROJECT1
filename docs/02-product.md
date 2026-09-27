@@ -20,7 +20,7 @@ up on its own ([[00-project-brief]] § 2).
 
 - **Code owns state and identity; the model only assists.** Storage,
   ids, and structure are deterministic; the model is used for
-  conversation and suggestions.
+  conversation only and never writes to the project.
 - **A clean, self-contained data model**, so it can be built on.
 
 ### ii. Success
@@ -57,10 +57,8 @@ helps but does not take over.
   remove one (⋯ Remove). Paste an outline — bullets, a numbered list,
   plain lines, or an ASCII tree — with a live preview where single nodes
   can be left out. Add a folder from disk: each file and folder becomes
-  a node. Ask for suggested children (⋯ Suggest structure): one level
-  under one node at a time, only when asked. A name that
-  already exists among siblings gets `(2)`, `(3)`, … instead of an
-  error.
+  a node. A name that already exists among siblings gets `(2)`,
+  `(3)`, … instead of an error.
 - **Reuse structure:** save a node and everything under it (⋯ Save as
   tree), then insert it again from ⋯ Insert saved tree… (under that
   node) or **Saved trees** in the bar under the map (under the selected
@@ -73,13 +71,13 @@ helps but does not take over.
 - **Talk:** chat about the whole project, or select a node (click it, or
   ⋯ Talk about this) to talk about that node. Turns about a node are
   framed in the thread, and "Show only this" shows them on their own.
-  With a node selected, asking for structure adds suggested children,
-  and a message of several lines is added as nodes under it.
+  With a node selected, a message of several lines is added as nodes
+  under it.
 - **Current state:** the panel above the chat shows the project, its
   last change, the size of the map, and changes per day; node names in
   it select that node on the map, and a day with changes selects that
   day for the conversation. The conversation is given the same
-  summary.
+  summary rows and the changes themselves.
 - **Commands:** type `/` or use the `/` button next to Send.
   `/add Name` or `/add Parent / Child` adds a node;
   `/select Parent / Child` selects one; `/id` shows the selected node's id, or switches the whole map
@@ -90,11 +88,33 @@ helps but does not take over.
 - **Settings:** General sets light or dark appearance and shows which
   model is used; Directory creates, renames, and archives accounts.
 
-### iii. Not in the app (for now)
+### iii. What Talk should handle
+
+The minimum the conversation must get right. Talk answers from the
+project only: it does not invent details, change the project, or offer
+to (`backend/model/brief/talk_prompt.py`).
+
+1. **A greeting or small talk** ("hi", "cool!", "thanks") gets a short
+   reply: no question back, no summary of the project.
+2. **"What is this project about?"** gets one or two sentences that
+   name its parts.
+3. **With a node selected, "what should I do here?"** gets the parts
+   under that node, without assuming any of them are done.
+4. **A question the project cannot answer** ("how long does this
+   take?", "what have I finished?") gets a plain "the project doesn't
+   say", not a guess.
+5. **"What changed today?"**, or a day selected in Current state, gets
+   the actual changes, not the chat.
+6. **"Can you add …?"** gets a plain no: the user adds parts.
+
+If the model is not running, Send shows "the model is not running -
+start Ollama and try again" and nothing is saved.
+
+### iv. Not in the app (for now)
 
 - Real accounts, login, multi-user, sync, or a mobile app
 
-### iv. Success
+### v. Success
 
 A session succeeds when the user's structure is clearer than when they
 started — not when the conversation has produced something complete on

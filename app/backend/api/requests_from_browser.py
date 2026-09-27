@@ -21,7 +21,7 @@ server.py only starts the server; everything it answers is decided here.
 #  3. Handler
 #      - do_GET() / do_POST()
 #      - projects: create, rename, cancel, set user, timeline
-#      - map: add node, remove node, paste, add folder, suggest
+#      - map: add node, remove node, paste, add folder
 #      - saved trees: save, list, insert, delete
 #      - chat: message (incl. slash-commands)
 #      - accounts: create, rename, archive
@@ -56,7 +56,6 @@ from backend.project.panes.canvas.edit_map import (
     import_map_folder,
     import_map_outline,
     remove_map_node,
-    suggest_map_children,
 )
 from backend.project.saved_trees import (
     insert_saved_tree,
@@ -84,6 +83,7 @@ from backend.api.answers_to_browser import (
 PORT = 8000
 
 _MODEL_FAILED = "that took longer than expected - try again in a moment"
+_MODEL_UNREACHABLE = "the model is not running - start Ollama and try again"
 
 
 # ============================================================
@@ -92,7 +92,7 @@ _MODEL_FAILED = "that took longer than expected - try again in a moment"
 
 # Every POST address and the method that answers it. (\d+) is a project
 # or user id, (p\d+) a map node id, (t\d+) a saved tree id; all are
-# passed to the method in order. Map, suggest, and chat paths use Project/Map/Talk names.
+# passed to the method in order. Map and chat paths use Project/Map/Talk names.
 _POST_ROUTES = [
     (r"/api/projects", "_handle_create_project"),
     (r"/api/projects/(\d+)/name", "_handle_rename_project"),
@@ -104,7 +104,6 @@ _POST_ROUTES = [
     (r"/api/projects/(\d+)/map/(p\d+)/remove", "_handle_remove_node"),
     (r"/api/projects/(\d+)/map/import", "_handle_paste_structure"),
     (r"/api/projects/(\d+)/map/folder", "_handle_add_folder"),
-    (r"/api/projects/(\d+)/suggest/(p\d+)", "_handle_suggest_children"),
     (r"/api/projects/(\d+)/map/(p\d+)/save-tree", "_handle_save_tree"),
     (r"/api/projects/(\d+)/map/insert-tree", "_handle_insert_tree"),
     (r"/api/saved-trees/(t\d+)/delete", "_handle_delete_saved_tree"),
@@ -276,21 +275,6 @@ class Handler(BaseHTTPRequestHandler):
             str(body.get("path") or ""),
             parent_id=_parent_id(body),
         ))
-
-    def _handle_suggest_children(self, project_id: int, node_id: str) -> None:
-        """The model suggests child nodes under one node."""
-        latest = self._load_project(project_id)
-        if latest is None:
-            return
-        try:
-            record = suggest_map_children(latest, node_id)
-        except ValueError as e:
-            self.send_error(422, str(e))
-            return
-        except Exception as e:
-            self._model_failed(e)
-            return
-        self._send_json(project_view(record))
 
     def _handle_parse_outline_preview(self) -> None:
         """Paste structure's preview: the pasted text read both ways
@@ -478,7 +462,9 @@ class Handler(BaseHTTPRequestHandler):
         """One failed model call must not crash the server; the user
         gets a fixed message, the terminal gets the real error."""
         print(f"(debug: {error})")
-        self.send_error(503, _MODEL_FAILED)
+        # ollama raises the builtin ConnectionError when nothing listens.
+        unreachable = isinstance(error, ConnectionError)
+        self.send_error(503, _MODEL_UNREACHABLE if unreachable else _MODEL_FAILED)
 
     def _send_json(self, payload) -> None:
         body = json.dumps(payload).encode("utf-8")

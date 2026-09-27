@@ -1,14 +1,12 @@
 // What the ⋯ menu on a node does: Add here, Remove, Talk about this,
-// Paste structure, Suggest, Save as tree, Insert saved tree.
+// Paste structure, Save as tree, Insert saved tree.
 
 // Contents
 //  1. Types
 //  2. Public API
 //      - handleNodeMenuAction()
-//      - childCountUnder()
 
-import { suggestChildren } from "../../api.js";
-import type { MapNode, ProjectView } from "../../dataShapes.js";
+import type { ProjectView } from "../../dataShapes.js";
 import type { NodeMenuActionId } from "./drawNodes.js";
 import { saveTreeFromNode } from "./savedTrees/saveTree.js";
 import { openInsertTreePicker } from "./savedTrees/insertTree.js";
@@ -28,25 +26,6 @@ export type NodeMenuContext = {
 };
 
 // 2. Public API
-
-/** How many direct children a node has in this tree. */
-export function childCountUnder(
-  root: MapNode | null | undefined,
-  stepId: string,
-): number {
-  const walk = (
-    n: { id: string; children: typeof n[] } | null | undefined,
-  ): number | null => {
-    if (!n) return null;
-    if (n.id === stepId) return n.children.length;
-    for (const c of n.children) {
-      const hit = walk(c);
-      if (hit !== null) return hit;
-    }
-    return null;
-  };
-  return walk(root) ?? 0;
-}
 
 export async function handleNodeMenuAction(
   action: NodeMenuActionId,
@@ -92,30 +71,5 @@ export async function handleNodeMenuAction(
   if (action === "insert_tree") {
     ctx.markSelected(stepId, `Insert a saved tree under: ${label}`);
     await openInsertTreePicker(stepId, ctx);
-    return;
-  }
-  // suggest — agent proposes children (old zoom, on request only)
-  ctx.markSelected(stepId, `Suggesting under: ${label}…`);
-  ctx.line.classList.add("plan-busy");
-  try {
-    const beforeCount = childCountUnder(ctx.project.node, stepId);
-    const updated = await suggestChildren(ctx.project.project_id, stepId);
-    const afterCount = childCountUnder(updated.node, stepId);
-    ctx.onUpdated(updated);
-    if (afterCount <= beforeCount) {
-      const note = document.createElement("p");
-      note.className = "node-focus-note";
-      note.textContent =
-        "Nothing more to suggest under that node — already fine enough.";
-      ctx.projectMain
-        .querySelector(".map-scale-viewport, .progress-line")
-        ?.insertAdjacentElement("afterend", note);
-    }
-  } catch (err) {
-    ctx.line.classList.remove("plan-busy");
-    const error = document.createElement("p");
-    error.className = "error";
-    error.textContent = `(error: ${(err as Error).message})`;
-    ctx.line.appendChild(error);
   }
 }

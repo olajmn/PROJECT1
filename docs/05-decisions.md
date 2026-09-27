@@ -724,6 +724,32 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Reversible?** Yes — the field is optional; old turns have none.
 
 
+## 63. 2026-09-27 — Remove Suggest; the model never writes to the project
+
+**Decision:** Remove ⋯ Suggest structure and everything behind it: the `/api/projects/<id>/suggest/<node>` route, `suggest_map_children()` in `edit_map.py`, `panes/canvas/call_suggest.py`, `model/brief/suggest.py`, `send_message()` in `model/client.py`, and the now-unused `node.from_labels()`. The model is used for Talk replies only. Old `suggested` events are still read and shown as Map in Logs.
+
+**Date:** 2026-09-27
+
+**Why this choice:** Talk now answers from the project only and adds no facts of its own (#60, `model/brief/talk_prompt.py`); Suggest did the opposite, inventing nodes from general knowledge, so the app held two stances on what the model may do. Suggest was also the planner's "zoom" (is a node too coarse to act on?), could return nothing without saying why, and was used 4 times in all saved data.
+
+**Trade-off:** No model help for building structure; every node is written by the user (+, paste, folder, saved trees, `/add`).
+
+**Reversible?** Yes — in git history. A likelier return is an explicit `/suggest` that proposes in the chat and leaves adding to the user (`TODO.md` Queue 12).
+
+
+## 64. 2026-09-27 — Talk demo polish closed (`TODO.md` 46)
+
+**Decision:** Close 46. Talk now answers from the project with fixed prompt slots (`model/brief/talk_prompt.py`), sees recent changes and a selected day (#62), shows only Talk turns in the thread, and has no side paths (#60, #61, #63). What it must handle is written down in [[02-product]] § 2.iii. When the model is not running, the chat says so and nothing is saved.
+
+**Date:** 2026-09-27
+
+**Why this choice:** Every point of 46 is met: the analysis showed the prompt gave data but no behaviour; the fixes cover relevant answers, clear focus, a readable thread, error states, and working commands; the scenarios are written down and pass on `qwen3.5:9b`.
+
+**Trade-off:** A 9B model still sometimes adds a short summary after a specific compliment, and old replies in a thread can carry old wording for up to 20 turns.
+
+**Reversible?** Not applicable.
+
+
 ## See also
 
 - [[03-architecture]]

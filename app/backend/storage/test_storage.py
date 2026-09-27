@@ -65,42 +65,42 @@ try:
     assert second_user["id"] == user["id"] + 1
     assert [u["id"] for u in ap.load_accounts()] == [user["id"], second_user["id"]]
 
-    abs_goal = pp.save_plan("Get visible abs", {"now": "..."}, account_id=user["id"])
-    cardio_goal = pp.save_plan("Improve cardio", {"now": "..."}, account_id=user["id"])
-    assert abs_goal["account_id"] == cardio_goal["account_id"] == user["id"]
-    assert abs_goal["project_id"] != cardio_goal["project_id"]
-    assert abs_goal["account_n"] == 1
-    assert cardio_goal["account_n"] == 2
-    assert "goal_id" not in abs_goal
-    assert "name" in abs_goal
-    assert "goal" not in abs_goal
-    assert "vision_id" not in abs_goal
-    assert pp.current_path(abs_goal["project_id"]).exists()
-    assert pp.current_path(cardio_goal["project_id"]).exists()
+    abs_project = pp.save_plan("Get visible abs", {"now": "..."}, account_id=user["id"])
+    cardio_project = pp.save_plan("Improve cardio", {"now": "..."}, account_id=user["id"])
+    assert abs_project["account_id"] == cardio_project["account_id"] == user["id"]
+    assert abs_project["project_id"] != cardio_project["project_id"]
+    assert abs_project["account_n"] == 1
+    assert cardio_project["account_n"] == 2
+    assert "goal_id" not in abs_project
+    assert "name" in abs_project
+    assert "goal" not in abs_project
+    assert "vision_id" not in abs_project
+    assert pp.current_path(abs_project["project_id"]).exists()
+    assert pp.current_path(cardio_project["project_id"]).exists()
     assert len(pp.load_history()) == 3
-    assert len(pp.load_project_history(abs_goal["project_id"])) == 1
+    assert len(pp.load_project_history(abs_project["project_id"])) == 1
 
     pp.save_plan(
         "Get visible abs",
         {"now": "again"},
-        project_id=abs_goal["project_id"],
+        project_id=abs_project["project_id"],
         account_id=user["id"],
         event="chat",
     )
-    assert pp.events_path(abs_goal["project_id"]).read_text(encoding="utf-8").count("\n") == 2
-    assert pp.events_path(cardio_goal["project_id"]).read_text(encoding="utf-8").count("\n") == 1
-    assert pp.load_current(abs_goal["project_id"])["plan"]["now"] == "again"
-    assert pp.load_current(abs_goal["project_id"])["account_n"] == 1
+    assert pp.events_path(abs_project["project_id"]).read_text(encoding="utf-8").count("\n") == 2
+    assert pp.events_path(cardio_project["project_id"]).read_text(encoding="utf-8").count("\n") == 1
+    assert pp.load_current(abs_project["project_id"])["plan"]["now"] == "again"
+    assert pp.load_current(abs_project["project_id"])["account_n"] == 1
 
     moved = pp.save_plan(
         "Improve cardio",
         {"now": "..."},
-        project_id=cardio_goal["project_id"],
+        project_id=cardio_project["project_id"],
         account_id=second_user["id"],
         event="owner_changed",
     )
     assert moved["account_n"] == 1  # first under second_user
-    assert pp.load_current(abs_goal["project_id"])["account_n"] == 1
+    assert pp.load_current(abs_project["project_id"])["account_n"] == 1
     third = pp.save_plan("Stretch", {"now": "..."}, account_id=user["id"])
     assert third["account_n"] == 3  # gap from moved cardio not reused
 

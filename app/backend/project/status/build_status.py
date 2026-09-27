@@ -118,7 +118,12 @@ def changes_on_day_text(
     heading = f"The user has selected the changes on {day_name(day, now)}"
     if not work:
         return heading + ": none were saved that day."
-    return "\n".join([heading + " (newest first):", *_change_lines(work, now)])
+    # The count leads, so a summary covers every kind of change, not
+    # only the ones that stand out in a long list.
+    return "\n".join([
+        f"{heading}: {_tally(work)}. Each one, newest first:",
+        *_change_lines(work, now),
+    ])
 
 
 def day_name(day: str, now: datetime | None = None) -> str:
@@ -137,6 +142,30 @@ def _work_events(history: list[dict]) -> list[dict]:
     """Saved lines as timeline events, oldest first, chat left out."""
     events = [to_event(record, "") for record in history]
     return [e for e in events if e.get("event") not in _CHAT_EVENTS]
+
+
+# How each saved event is counted in a day's tally.
+_TALLY_WORDS = {
+    "created": "created",
+    "node_added": "added",
+    "node_removed": "removed",
+    "pasted": "imported",
+    "tree_inserted": "imported",
+    "folder_added": "imported",
+    "suggested": "suggested",
+    "renamed": "renamed",
+}
+
+
+def _tally(events: list[dict]) -> str:
+    """ "20 changes (3 added, 11 imported, 6 removed)" — counted per
+    kind, in the order kinds first appear."""
+    counts: Counter = Counter(
+        _TALLY_WORDS.get(e.get("event") or "", "other") for e in events
+    )
+    total = len(events)
+    parts = ", ".join(f"{n} {word}" for word, n in counts.items())
+    return f"{total} change{'s' if total != 1 else ''} ({parts})"
 
 
 def _change_lines(events: list[dict], now: datetime) -> list[str]:

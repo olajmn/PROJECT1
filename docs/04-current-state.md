@@ -24,12 +24,12 @@ The layers and their rules are in [[03-architecture]]. By feature:
 | Create, rename, archive, restore projects | `project/panes/create/` (`lifecycle.py`, `rename.py`) | `ui/src/panes/create/` |
 | Accounts and which one owns a project | `storage/accounts_persistence.py`, `panes/create/project_account.py` | `panes/create/accounts/`, `settings/directory/` |
 | What a node is; ids; sibling names | `project/node/` (see its `README.md`) | — |
-| Add, remove, paste, folder, suggest | `panes/canvas/edit_map.py`, `text_to_tree.py`, `add_folder/`, `call_suggest.py` | `panes/canvas/` |
+| Add, remove, paste, folder | `panes/canvas/edit_map.py`, `text_to_tree.py`, `add_folder/` | `panes/canvas/` |
 | Saved trees | `project/saved_trees/`, `storage/saved_trees_persistence.py` | `panes/canvas/savedTrees/` |
 | The map as drawn | `api/answers_to_browser.py` (`map_tree()`) | `panes/canvas/drawNodes.ts`, `lines/`, `zoomAndPan/` |
 | A Talk turn | `panes/chat/reply.py`, `model/brief/conversation.py`, `talk_prompt.py` | `panes/chat/` |
 | Slash commands | `panes/chat/commands/` | `panes/chat/commands/` |
-| The chat thread and node framing | `panes/chat/screen/chat_thread.py` | `panes/chat/showOnlyThis.ts` |
+| The chat thread and its About frames (node or day) | `panes/chat/screen/chat_thread.py` | `panes/chat/showOnlyThis.ts`, `statusPanel/` |
 | Current state panel | `project/status/` | `panes/chat/statusPanel/` |
 | Logs and a project's timeline | `project/timeline.py`, `api/activity_log.py` | `settings/logs/` |
 | Archive (restore / delete) | `panes/create/lifecycle.py`, `storage/accounts_persistence.py` | `settings/archive/` |
@@ -58,8 +58,8 @@ Everything lives in `app/data/` as plain JSON:
 ## 4. The model
 
 - Local **Ollama**, model `qwen3.5:9b`, temperature 0.2
-  (`backend/model/client.py`). A reply with the wrong shape is not
-  retried; the caller reports the failure.
+  (`backend/model/client.py`), used for Talk replies only. A failed
+  reply is not retried; the chat shows the error.
 - A Talk turn sends: fixed instructions (`model/brief/talk_prompt.py`:
   role, task, behavior, limits), the project's status, its last 10
   changes (`recent_changes_text()`), every label on the map, the
@@ -81,7 +81,7 @@ Everything lives in `app/data/` as plain JSON:
   unique (`TODO.md` Queue 50).
 - Talk answers from the project's names and status only; it gives no
   general advice. It sees the last 10 changes, but their saved text is
-  thin ("Imported 1 step(s)" does not say what) (`TODO.md` Active 46).
+  thin ("Imported 1 step(s)" does not say what) (`TODO.md` Queue 38). What it must handle: [[02-product]] § 2.iii.
 
 ## 6. Open questions
 

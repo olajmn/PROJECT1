@@ -34,7 +34,7 @@ Arrows show who calls whom; every answer returns the same way.
 | `node/` | What a node is: identity, children, rules ([[05-decisions]] #52) |
 | `saved_trees/` | Saving a branch as structure and inserting it again ([[05-decisions]] #54) |
 | `panes/create/` | Creating, naming, archiving projects; which account owns one |
-| `panes/canvas/` | Changing the map: add, remove, paste, folder, suggest |
+| `panes/canvas/` | Changing the map: add, remove, paste, folder |
 | `panes/chat/` | A chat turn, slash commands, and the thread as shown |
 | `status/` | The Current state summary (shown to the user and the model) |
 | `timeline.py` | A project's history, read from its saved events |
@@ -51,19 +51,18 @@ changing the same nodes; neither owns them.
   else, those are the two places that change.
 - **Code owns state and identity; the model only assists.** Ids, the
   structure, saving, and every command are plain code. The model reads
-  and suggests; code writes its suggestions, and only when the user asks.
+  and answers; it never writes to the project.
 - **A role is not a model.** What a model call is for and which model
   answers are separate: the model is chosen in one place
   (`backend/model/client.py`) and can be swapped there.
 
 ## 4. Where the model is used
 
-Two places, both behind `backend/model/client.py`:
+One place, behind `backend/model/client.py`:
 
 | Use | Code |
 |---|---|
 | A Talk reply | `panes/chat/reply.py` |
-| Suggest children for a node | `panes/canvas/call_suggest.py` |
 
 Everything else — adding and removing nodes, paste, folders, saved
 trees, ids, `/add`, `/select`, `/id`, logs — is deterministic.

@@ -131,10 +131,10 @@ function buildProjectGroup(
     if (project.project_id === selectedId) {
       row.classList.add("is-selected");
     }
-    const goal = document.createElement("span");
-    goal.className = "sidebar-account-card-project-goal";
-    goal.textContent = displayProjectTitle(project.name);
-    row.append(goal);
+    const title = document.createElement("span");
+    title.className = "sidebar-account-card-project-name";
+    title.textContent = displayProjectTitle(project.name);
+    row.append(title);
     row.addEventListener("click", (event) => {
       event.stopPropagation();
       // onSelectProject sets the active account from the project — don't

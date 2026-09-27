@@ -111,7 +111,10 @@ def main() -> None:
     # each pulse row to select it by.
     day = _local_day("2026-09-20T12:00:00")
     picked = changes_on_day_text(tape, day, now=NOW).splitlines()
-    assert picked[0] == "The user has selected the changes on 20 Sep (newest first):", picked
+    assert picked[0] == (
+        "The user has selected the changes on 20 Sep: 3 changes "
+        "(1 created, 1 imported, 1 renamed). Each one, newest first:"
+    ), picked
     assert len(picked) == 4
     assert changes_on_day_text(tape, "2026-01-01", now=NOW).endswith("none were saved that day.")
     assert day_name("2026-09-20", NOW) == "20 Sep"

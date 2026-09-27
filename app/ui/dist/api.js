@@ -30,7 +30,8 @@ export async function createProject(text, accountId) {
         body: JSON.stringify(body),
     });
     if (!res.ok) {
-        throw new Error(`request failed: ${res.status}`);
+        // The server puts its plain reason in the status line (send_error).
+        throw new Error(res.statusText || `request failed: ${res.status}`);
     }
     return (await res.json());
 }
@@ -108,18 +109,6 @@ export async function removeNode(projectId, stepId) {
     if (!res.ok) {
         const detail = (await res.text()).trim();
         throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
-    }
-    return (await res.json());
-}
-export async function suggestChildren(projectId, stepId) {
-    const res = await fetch(`/api/projects/${projectId}/suggest/${stepId}`, { method: "POST" });
-    if (!res.ok) {
-        const detail = (await res.text()).trim();
-        // send_error() returns an HTML page; pull the plain reason if present.
-        const plain = detail.match(/no timeframe[\s\S]*?(?=<|$)/i)?.[0]
-            ?? detail.match(/Error code: (\d+)[\s\S]*?<p>([^<]+)/i)?.[2]
-            ?? detail.match(/cannot zoom[^.<]*/i)?.[0];
-        throw new Error((plain || detail || `request failed: ${res.status}`).slice(0, 200));
     }
     return (await res.json());
 }
@@ -221,7 +210,8 @@ export async function sendChatMessage(projectId, text, focusLabel, focusStepId, 
         body: JSON.stringify(body),
     });
     if (!res.ok) {
-        throw new Error(`request failed: ${res.status}`);
+        // The server puts its plain reason in the status line (send_error).
+        throw new Error(res.statusText || `request failed: ${res.status}`);
     }
     return (await res.json());
 }
