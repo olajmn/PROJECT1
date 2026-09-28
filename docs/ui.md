@@ -39,8 +39,9 @@ sidebar, not the middle column.
   `+` under the spine stays visible.
 - **Brightness shows the hierarchy.** Top-level nodes are always bright;
   deeper ones are muted, except the level just above the deepest one
-  shown, which is bright too and moves with − / +. The selected node
-  adds an accent underline and border on top of that.
+  shown, which is bright too and moves with − / +. Line view brightens
+  the same nodes' bars. The selected node adds an accent underline and
+  border on top of that.
 - **One frame, no tabs.** − / + shows fewer or more levels. The scroll
   wheel zooms and dragging pans, vertically; double-click resets to an
   overview. Below ~20% zoom the view switches to **Line** (each bar is a

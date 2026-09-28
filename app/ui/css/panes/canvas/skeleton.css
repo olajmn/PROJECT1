@@ -28,3 +28,9 @@
 .progress-line.is-skeleton .progress-svg-word {
   stroke-width: 1.6;
 }
+
+/* Same nodes Text shows bright: top level and the unfolding level
+   (`is-grain-lead`); set in lines/drawLines.ts paintNode(). */
+.progress-line.is-skeleton .progress-svg-word.is-bright {
+  stroke: var(--color-text);
+}

@@ -20,13 +20,18 @@ const LINE_SPINE = "progress-svg-stroke progress-svg-diagram";
 const LINE_WORD =
   "progress-svg-stroke progress-svg-diagram progress-svg-word";
 
-/** Tick from spine to bead left (Text), or tick + word-bar (Line). */
+/**
+ * Tick from spine to bead left (Text), or tick + word-bar (Line).
+ * `bright`: the bar stands for a node Text shows bright (top level or
+ * `is-grain-lead`), so Line keeps the same hierarchy.
+ */
 function paintNode(
   svg: SVGElement,
   spineX: number,
   y: number,
   box: BeadAnchor,
   mode: LinePaintMode,
+  bright = false,
 ): void {
   if (box.left > spineX) {
     stroke(
@@ -40,7 +45,14 @@ function paintNode(
   }
   if (mode === "line") {
     const bar = Math.max(box.width, MIN_WORD_PX);
-    stroke(svg, box.left, y, box.left + bar, y, LINE_WORD);
+    stroke(
+      svg,
+      box.left,
+      y,
+      box.left + bar,
+      y,
+      bright ? `${LINE_WORD} is-bright` : LINE_WORD,
+    );
   }
 }
 
@@ -116,7 +128,7 @@ export function paintMapNest(
 
   for (let i = 0; i < heads.length; i++) {
     const { row, anchor } = heads[i];
-    paintNode(svg, trunkSpineX, anchor.midY, anchor, mode);
+    paintNode(svg, trunkSpineX, anchor.midY, anchor, mode, true);
     paintNestUnder(svg, origin, blocks[i], row, anchor, scale, mode, cls);
   }
 
@@ -181,7 +193,14 @@ function paintNestUnder(
   }
 
   for (let i = 0; i < childRows.length; i++) {
-    paintNode(svg, nestX, childAnchors[i].midY, childAnchors[i], mode);
+    paintNode(
+      svg,
+      nestX,
+      childAnchors[i].midY,
+      childAnchors[i],
+      mode,
+      childRows[i].classList.contains("is-grain-lead"),
+    );
     paintNestUnder(
       svg,
       origin,
