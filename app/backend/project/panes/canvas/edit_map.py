@@ -8,6 +8,8 @@ parsed by text_to_tree.py (no LLM), appended the same way.
 import_map_folder() — one folder on disk, walked by
 add_folder/walk.py, appended the same way. Each node keeps its path.
 remove_map_node() — drop a Step by id (no LLM).
+move_map_node() — swap a Step with the sibling above or below it,
+keeping its id and everything under it (no LLM).
 
 Does not touch the Steps-page scratch tree.
 """
@@ -136,6 +138,10 @@ def import_map_outline(
     new_steps = [
         step.to_dict() for step in from_nested_labels(forest, mint)
     ]
+    # Every imported node, not just the top level: one paste of a
+    # 95-node tree is one change, but it brought in 95 nodes.
+    imported = len(new_steps) + sum(_count_below(s) for s in new_steps)
+    what = "1 node" if imported == 1 else f"{imported} nodes"
 
     if parent_id:
         found = _find_step(steps, parent_id)
@@ -148,12 +154,12 @@ def import_map_outline(
             parent["children"] = children
         siblings = children
         feedback = (
-            f"Imported {len(new_steps)} step(s) under "
+            f"Imported {what} under "
             f"{parent.get('label') or parent_id}"
         )
     else:
         siblings = steps
-        feedback = f"Imported {len(new_steps)} step(s)"
+        feedback = f"Imported {what}"
     _number_sibling_clashes(siblings, new_steps)
     siblings.extend(new_steps)
 
@@ -223,6 +229,49 @@ def remove_map_node(latest: dict, step_id: str) -> dict:
         project_id=latest["project_id"],
         account_id=latest.get("account_id"),
         event="node_removed",
+    )
+
+
+def move_map_node(latest: dict, step_id: str, direction: str) -> dict:
+    """
+    Move `step_id` one place up or down among its siblings (`direction`
+    is "up" or "down"). Same parent, same id, same children - only the
+    order changes. No model call. Raises if the step is missing or
+    already first/last.
+    """
+    if direction not in ("up", "down"):
+        raise ValueError(f"unknown direction: {direction}")
+    plan = copy.deepcopy(latest.get("plan") or {})
+    steps = (plan.get("progression") or {}).get("steps")
+    if not isinstance(steps, list):
+        raise ValueError("project has no nodes")
+
+    path = find_path(steps, step_id)
+    if path is None:
+        raise ValueError(f"step not found: {step_id}")
+    siblings = path[-2].get("children") if len(path) > 1 else steps
+    i = next(n for n, s in enumerate(siblings) if s is path[-1])
+    j = i - 1 if direction == "up" else i + 1
+    if not 0 <= j < len(siblings):
+        raise ValueError(f"already {'first' if direction == 'up' else 'last'}")
+    siblings[i], siblings[j] = siblings[j], siblings[i]
+
+    # Which neighbour it passed, so Logs and the chat's model can place it.
+    label = path[-1].get("label") or step_id
+    other = siblings[i].get("label") or ""
+    where = "above" if direction == "up" else "below"
+    feedback = (
+        f"Moved step under {path[-2].get('label') or ''}: {label} {where} {other}"
+        if len(path) > 1 else f"Moved step: {label} {where} {other}"
+    )
+
+    return save_plan(
+        latest["name"],
+        plan,
+        feedback=feedback,
+        project_id=latest["project_id"],
+        account_id=latest.get("account_id"),
+        event="node_moved",
     )
 
 

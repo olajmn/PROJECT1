@@ -45,7 +45,7 @@ export interface ProjectStatus {
     /** The row's calendar day, YYYY-MM-DD — what a click selects. */
     date: string;
     text: string;
-    /** Non-chat events that day (one save = one change). */
+    /** Non-chat events that day (one save = one change); creating the project is not counted. */
     changes?: number;
   }[];
   /** Calendar days left out, older than the ones shown. */

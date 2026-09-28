@@ -8,7 +8,7 @@
 //      - archiveProject(), setProjectUser()
 //      - fetchArchivedProjects(), restoreProject(), deleteProject()
 //  2. Map
-//      - addNode(), removeNode()
+//      - addNode(), removeNode(), moveNode()
 //      - pasteText(), previewPaste(), pasteNodes()
 //      - chooseFolder(), addFolder()
 //  3. Chat
@@ -141,6 +141,22 @@ export async function addNode(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const detail = (await res.text()).trim();
+    throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+  }
+  return (await res.json()) as ProjectView;
+}
+
+/** One place up or down among its siblings; id and children go with it. */
+export async function moveNode(
+  projectId: number,
+  stepId: string,
+  direction: "up" | "down",
+): Promise<ProjectView> {
+  const res = await fetch(`/api/projects/${projectId}/map/${stepId}/move-${direction}`, {
+    method: "POST",
   });
   if (!res.ok) {
     const detail = (await res.text()).trim();

@@ -763,6 +763,36 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Reversible?** Yes; likely replaced by undo.
 
 
+## 66. 2026-09-28 — Creating a project is not a change
+
+**Decision:** The `created` event stays in `events.jsonl` and in the change lines the chat's model gets, but it is not counted as a change: not in the day pulse, not in a selected day's tally, and not as Last change (`_NOT_CHANGES` in `project/status/build_status.py`). Current state shows it as its own row instead, **Created**, always with the year ("28 Sep 2026"), in place of the old "started 28 Sep" after the project name. Imports now say how many nodes they brought in ("Imported 95 nodes"), not how many top-level steps ("Imported 1 step(s)"); one import is still one change.
+
+**Date:** 2026-09-28
+
+**Alternatives considered:** stop writing `created` at all; keep counting it.
+
+**Why this choice:** "Changes" means edits to the map. A new project with one paste showed "2 changes" for one action. The event itself is real history and dates the project, so it is kept and shown where it belongs rather than dropped.
+
+**Trade-off:** A project that was only created shows 0 changes and no Last change row.
+
+**Reversible?** Yes; one set in `build_status.py`.
+
+
+## 67. 2026-09-28 — Move a node up or down among its siblings
+
+**Decision:** ⋯ **Move up** / **Move down** swap a node with the sibling above or below it (`move_map_node()` in `panes/canvas/edit_map.py`, route `/map/<pN>/move-up|down`). Same parent, same id, everything under it moves along; one move is one `node_moved` event ("Moved step under Schedule: Friday above Wednesday"). The item is disabled on the first / last sibling. Moving a node under a different parent is not built yet.
+
+**Date:** 2026-09-28
+
+**Alternatives considered:** drag and drop; a `/move` Talk command; moving under another node in the same step.
+
+**Why this choice:** Reordering is the smallest useful move and needs no picker or drop targets: the tree is a list of children per node, so a move is a swap in one list. Drag and drop and moving to another parent can build on the same backend later.
+
+**Trade-off:** Moving a node far takes one click per place, and it cannot yet change parent.
+
+**Reversible?** Yes.
+
+
 ## See also
 
 - [[03-architecture]]

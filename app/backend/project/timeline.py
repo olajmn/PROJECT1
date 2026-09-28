@@ -43,6 +43,7 @@ GROUPS = {
     "chat_added_nodes": "Chat",
     "node_added": "Map",
     "node_removed": "Map",
+    "node_moved": "Map",
     "pasted": "Map",
     "folder_added": "Map",
     "tree_inserted": "Map",

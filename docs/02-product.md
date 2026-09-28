@@ -55,7 +55,8 @@ helps but does not take over.
   Accounts panel.
 - **Build the map:** add a node (`+` at the end, or ⋯ Add here) and
   remove one (⋯ Remove; a node with children asks first, since its
-  children go with it). Paste an outline — bullets, a numbered list,
+  children go with it). Move a node up or down among its siblings
+  (⋯ Move up / Move down; everything under it moves along). Paste an outline — bullets, a numbered list,
   plain lines, or an ASCII tree — with a live preview where single nodes
   can be left out. Add a folder from disk: each file and folder becomes
   a node. A name that already exists among siblings gets `(2)`,
@@ -74,8 +75,9 @@ helps but does not take over.
   framed in the thread, and "Show only this" shows them on their own.
   With a node selected, a message of several lines is added as nodes
   under it.
-- **Current state:** the panel above the chat shows the project, its
-  last change, the size of the map, and changes per day; node names in
+- **Current state:** the panel above the chat shows the project, when
+  it was created, its last change, the size of the map, and changes per
+  day (creating the project is not counted as a change); node names in
   it select that node on the map, and a day with changes selects that
   day for the conversation. The conversation is given the same
   summary rows and the changes themselves.

@@ -62,14 +62,12 @@ only). Numbers are stable ids, not rank.
     2026-09-26; the docs part was done 2026-09-27 (#57). Numbers are
     kept from the original list.
 
-    4. **`app/ui/dist/api.js` is tracked although `app/ui/dist/` is in
-       `.gitignore`** — still changes in commits. Untrack with
-       `git rm --cached` or adjust the ignore rule. One-minute fix.
-    6. **`requests_from_browser.py` routing** — one long `if/elif` on
-       `self.path` per method; grows with every endpoint. Not urgent.
-       Related to 30.
-    7. **Test gaps** — no tests for `requests_from_browser.py`,
-       `edit_map.py` on its own, or any UI TypeScript.
+    6. **`requests_from_browser.py` routing** — POST goes through the
+       `_POST_ROUTES` table, but `do_GET()` is still one `if/elif` on
+       `self.path`. Not urgent. Related to 30.
+    7. **Test gaps** — no tests for `requests_from_browser.py` or any
+       UI TypeScript; `edit_map.py` is covered only for the saved text
+       of remove, import, and move (`test_edit_map.py`).
 45. **Copy one branch as ASCII** (Step, after cleanup) — Copy as ASCII
     (`panes/canvas/copyAsText.ts`) always copies the whole tree. Add
     either a **Copy branch** item in the node ⋯ menu, or let Copy as
@@ -168,7 +166,8 @@ only). Numbers are stable ids, not rank.
     chat part is built ([[05-decisions]] #62): a day in Current state
     selects that day's changes for Talk, framed like node About. Still
     open: highlight the nodes touched that day on the map, and richer
-    import text ("Imported 1 step(s) under X" does not say what; added
+    import text ("Imported 95 nodes under X" counts every node but does not
+    say which; added
     and removed steps already say what and where). Related to 34.
 39. **Talk commands that force a SoT pass** (Step, keep in mind) —
     e.g. a chat "full check" that deliberately re-reads `current` (+

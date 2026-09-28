@@ -356,6 +356,14 @@
   color: var(--color-text);
 }
 
+/* The level just above the deepest shown (frameControls applyGrain()):
+   as bright as the top level, so the unfolding depth stays readable.
+   Colour only, so − / + does not shift the layout. */
+.progress-depth-row.is-grain-lead .progress-bead-btn,
+.progress-depth-row.is-grain-lead .progress-bead-label {
+  color: var(--color-text);
+}
+
 /* Tools stay visible while node layout is still in flux — hover-hide later. */
 
 .progress-menu-wrap {

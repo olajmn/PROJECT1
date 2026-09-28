@@ -47,24 +47,25 @@ def main() -> None:
     ]
     status = build_status(history, now=NOW)
 
-    # Chat excluded; Sep 24: created + node_added = 2; Sep 25: 2 adds + rename = 3.
+    # Chat and "created" excluded; Sep 24: node_added = 1; Sep 25: 2 adds + rename = 3.
     assert [(h["day"], h["changes"], h["text"]) for h in status["history"]] == [
         ("Today", 3, "3 changes"),
-        ("Yesterday", 2, "2 changes"),
+        ("Yesterday", 1, "1 change"),
     ], status["history"]
     assert status["earlier"] == 0
 
     summary = {row["label"]: row["text"] for row in status["summary"]}
-    assert summary["Project"] == "Home, started 24 Sep", summary
+    assert summary["Project"] == "Home", summary
+    assert summary["Created"] == "24 Sep 2026", summary
     assert summary["Map"] == "3 nodes, 2 levels"
     assert "Top level" not in summary
     assert "Recent map work under" not in summary
     assert "Last talked about" not in summary
     assert "Last change" in summary
-    assert list(summary) == ["Project", "Last change", "Map"], list(summary)
+    assert list(summary) == ["Project", "Created", "Last change", "Map"], list(summary)
 
     text = status_text(status)
-    assert text.startswith("Project: Home, started 24 Sep")
+    assert text.startswith("Project: Home\nCreated: 24 Sep 2026")
     assert "Last change:" in text
     assert "changes" not in text  # the day pulse is for the panel only
 
@@ -75,7 +76,7 @@ def main() -> None:
     ], now=NOW)
     days = [(h["day"], h["changes"]) for h in gap["history"]]
     assert days[0] == ("Today", 0), days
-    assert days[-1] == ("20 Sep", 2), days
+    assert days[-1] == ("20 Sep", 1), days
     assert sum(1 for _, n in days if n == 0) >= 1
 
     # Older timestamps (local time, no offset) still count; chat excluded.
@@ -87,7 +88,14 @@ def main() -> None:
         {"project_id": 1, "name": "Old", "feedback": "Hello Note: hi",
          "event": "chat", "created_at": "2026-09-20T11:00:00"},
     ], now=NOW)
-    assert old["history"][-1]["changes"] == 2, old["history"]
+    assert old["history"][-1]["changes"] == 1, old["history"]
+
+    # A project that was only created has had no changes yet, but its
+    # first day still starts the pulse.
+    fresh = build_status([line(None, "2026-09-25T09:00:00.000+00:00", "created")], now=NOW)
+    assert [(h["day"], h["changes"]) for h in fresh["history"]] == [("Today", 0)], fresh["history"]
+    fresh_rows = [row["label"] for row in fresh["summary"]]
+    assert "Created" in fresh_rows and "Last change" not in fresh_rows, fresh_rows
 
     assert build_status([]) == {"summary": [], "history": [], "earlier": 0}
 
@@ -112,8 +120,8 @@ def main() -> None:
     day = _local_day("2026-09-20T12:00:00")
     picked = changes_on_day_text(tape, day, now=NOW).splitlines()
     assert picked[0] == (
-        "The user has selected the changes on 20 Sep: 3 changes "
-        "(1 created, 1 imported, 1 renamed). Each one, newest first:"
+        "The user has selected the changes on 20 Sep: 2 changes "
+        "(1 imported, 1 renamed). Each one, newest first:"
     ), picked
     assert len(picked) == 4
     assert changes_on_day_text(tape, "2026-01-01", now=NOW).endswith("none were saved that day.")

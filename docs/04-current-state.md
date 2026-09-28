@@ -24,7 +24,7 @@ The layers and their rules are in [[03-architecture]]. By feature:
 | Create, rename, archive, restore projects | `project/panes/create/` (`lifecycle.py`, `rename.py`) | `ui/src/panes/create/` |
 | Accounts and which one owns a project | `storage/accounts_persistence.py`, `panes/create/project_account.py` | `panes/create/accounts/`, `settings/directory/` |
 | What a node is; ids; sibling names | `project/node/` (see its `README.md`) | — |
-| Add, remove, paste, folder | `panes/canvas/edit_map.py`, `text_to_tree.py`, `add_folder/` | `panes/canvas/` |
+| Add, remove, move, paste, folder | `panes/canvas/edit_map.py`, `text_to_tree.py`, `add_folder/` | `panes/canvas/` |
 | Saved trees | `project/saved_trees/`, `storage/saved_trees_persistence.py` | `panes/canvas/savedTrees/` |
 | The map as drawn | `api/answers_to_browser.py` (`map_tree()`) | `panes/canvas/drawNodes.ts`, `lines/`, `zoomAndPan/` |
 | A Talk turn | `panes/chat/reply.py`, `model/brief/conversation.py`, `talk_prompt.py` | `panes/chat/` |
@@ -81,7 +81,7 @@ Everything lives in `app/data/` as plain JSON:
   unique (`TODO.md` Queue 50).
 - Talk answers from the project's names and status only; it gives no
   general advice. It sees the last 10 changes, but their saved text is
-  thin ("Imported 1 step(s)" does not say what) (`TODO.md` Queue 38). What it must handle: [[02-product]] § 2.iii.
+  thin ("Imported 95 nodes" counts every node but does not say which) (`TODO.md` Queue 38). What it must handle: [[02-product]] § 2.iii.
 
 ## 6. Open questions
 

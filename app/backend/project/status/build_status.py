@@ -12,7 +12,7 @@ given to the chat's model (`status_text()`, `recent_changes_text()`,
 # Contents
 #  1. Settings
 #      - HISTORY_DAYS / RECENT_CHANGES / DAY_CHANGES
-#      - _CHAT_EVENTS
+#      - _CHAT_EVENTS / _NOT_CHANGES
 #  2. The status
 #      - build_status()
 #      - status_text()
@@ -46,6 +46,10 @@ DAY_CHANGES = 100
 
 # Talk lines are not "changes" in the Status pulse (map/work only).
 _CHAT_EVENTS = frozenset({"chat", "chat_added_nodes"})
+
+# Kept in the tape and the change lines, but not counted as a change:
+# creating a project is its starting point, not an edit to the map.
+_NOT_CHANGES = frozenset({"created"})
 
 
 # ============================================================
@@ -149,6 +153,7 @@ _TALLY_WORDS = {
     "created": "created",
     "node_added": "added",
     "node_removed": "removed",
+    "node_moved": "moved",
     "pasted": "imported",
     "tree_inserted": "imported",
     "folder_added": "imported",
@@ -160,10 +165,11 @@ _TALLY_WORDS = {
 def _tally(events: list[dict]) -> str:
     """ "20 changes (3 added, 11 imported, 6 removed)" — counted per
     kind, in the order kinds first appear."""
+    counted = [e for e in events if e.get("event") not in _NOT_CHANGES]
     counts: Counter = Counter(
-        _TALLY_WORDS.get(e.get("event") or "", "other") for e in events
+        _TALLY_WORDS.get(e.get("event") or "", "other") for e in counted
     )
-    total = len(events)
+    total = len(counted)
     parts = ", ".join(f"{n} {word}" for word, n in counts.items())
     return f"{total} change{'s' if total != 1 else ''} ({parts})"
 
@@ -189,18 +195,23 @@ def _change_pulse(
 ) -> tuple[list[dict], int]:
     """One row per calendar day from first change through today.
 
-    Count = number of non-chat events that day (one save = one change).
-    Quiet days are included as 0. Newest first; trim to HISTORY_DAYS.
+    Count = number of non-chat events that day (one save = one change),
+    minus _NOT_CHANGES. Quiet days are included as 0. Newest first; trim
+    to HISTORY_DAYS.
     """
     counts: Counter = Counter()
+    first = None
     for event in work_events:
         when = _event_when(event.get("at"))
-        if when is not None:
+        if when is None:
+            continue
+        first = min(first, when.date()) if first else when.date()
+        if event.get("event") not in _NOT_CHANGES:
             counts[when.date()] += 1
-    if not counts:
+    if first is None:
         return [], 0
 
-    start = min(counts)
+    start = first
     end = now.date()
     if end < start:
         end = start
@@ -238,12 +249,17 @@ def _summary(
         (w for e in work_events if (w := _event_when(e.get("at"))) is not None),
         None,
     )
-    started = f", started {_date(first, now)}" if first else ""
     archived = " — archived" if latest.get("cancelled") else ""
-    rows.append(_row("Project", f"{project}{started}{archived}"))
+    rows.append(_row("Project", f"{project}{archived}"))
+    if first:
+        # Always with the year: a creation date is a fixed record, not
+        # a recent-activity hint like the pulse and Last change.
+        rows.append(_row("Created", f"{first.day} {first:%b} {first.year}"))
 
     last = None
     for event in work_events:
+        if event.get("event") in _NOT_CHANGES:
+            continue
         when = _event_when(event.get("at"))
         if when is not None:
             last = when

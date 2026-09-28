@@ -23,6 +23,8 @@ export type RemoveStepHandler = (stepId: string) => void;
 export type NodeMenuActionId =
   | "register"
   | "remove"
+  | "move_up"
+  | "move_down"
   | "analyze"
   | "paste"
   | "save_tree"
@@ -43,6 +45,16 @@ const NODE_MENU_ACTIONS: {
     id: "remove",
     label: "Remove",
     detail: "Delete this node from the map.",
+  },
+  {
+    id: "move_up",
+    label: "Move up",
+    detail: "Swap with the node above; everything under it moves along.",
+  },
+  {
+    id: "move_down",
+    label: "Move down",
+    detail: "Swap with the node below; everything under it moves along.",
   },
   {
     id: "analyze",
@@ -158,6 +170,7 @@ function fillBeadUnit(
   onAddStep?: AddStepHandler,
   _onRemoveStep?: RemoveStepHandler,
   onMenuAction?: NodeMenuHandler,
+  layout?: MapFamilyNode,
 ): void {
   const unit = document.createElement("div");
   unit.className = "progress-bead-unit";
@@ -189,17 +202,18 @@ function fillBeadUnit(
   }
 
   if (canEdit && onMenuAction) {
-    attachNodeMenu(unit, node.id, onMenuAction);
+    attachNodeMenu(unit, node.id, onMenuAction, layout);
   }
 
   row.appendChild(unit);
 }
 
-/** ⋯ menu: Add here / Remove / Talk / Paste / saved trees. */
+/** ⋯ menu: Add here / Remove / Move / Talk / Paste / saved trees. */
 function attachNodeMenu(
   row: HTMLElement,
   stepId: string,
   onMenuAction?: NodeMenuHandler,
+  layout?: MapFamilyNode,
 ): void {
   const wrap = document.createElement("div");
   wrap.className = "progress-menu-wrap";
@@ -227,7 +241,12 @@ function attachNodeMenu(
 
     item.textContent = action.label;
 
-    if (!onMenuAction) {
+    // The first node cannot go up, the last cannot go down.
+    const atEdge =
+      (action.id === "move_up" && layout?.siblingIndex === 0) ||
+      (action.id === "move_down" && layout?.isLastSibling === true);
+
+    if (!onMenuAction || atEdge) {
       item.disabled = true;
     } else {
       item.addEventListener("click", (event) => {
@@ -302,6 +321,7 @@ function appendAsciiDepth(
       onAddStep,
       onRemoveStep,
       onMenuAction,
+      layout,
     );
 
     spine.appendChild(row);
@@ -417,6 +437,7 @@ export function treeWordsElement(
       onAddStep,
       onRemoveStep,
       onMenuAction,
+      stepLayout,
     );
 
     block.appendChild(row);

@@ -277,6 +277,9 @@ export function installMapScale(
       const row = node as HTMLElement;
       const d = Number(row.dataset.depth || 0);
       row.classList.toggle("is-grain-hidden", d > limit);
+      // The level just above the deepest one shown reads as headings for
+      // it, so − / + visibly moves where the unfolding stands.
+      row.classList.toggle("is-grain-lead", d === limit - 1);
     });
 
     mapEl.querySelectorAll(".progress-row[data-step-id]").forEach((node) => {

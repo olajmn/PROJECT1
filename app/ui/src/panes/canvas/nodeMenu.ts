@@ -1,5 +1,5 @@
-// What the ⋯ menu on a node does: Add here, Remove, Talk about this,
-// Paste structure, Save as tree, Insert saved tree.
+// What the ⋯ menu on a node does: Add here, Remove, Move up/down,
+// Talk about this, Paste structure, Save as tree, Insert saved tree.
 
 // Contents
 //  1. Types
@@ -8,6 +8,7 @@
 
 import type { ProjectView } from "../../dataShapes.js";
 import type { NodeMenuActionId } from "./drawNodes.js";
+import { moveNode } from "../../api.js";
 import { saveTreeFromNode } from "./savedTrees/saveTree.js";
 import { openInsertTreePicker } from "./savedTrees/insertTree.js";
 
@@ -52,6 +53,18 @@ export async function handleNodeMenuAction(
   }
   if (action === "remove") {
     await ctx.removeBead(stepId);
+    return;
+  }
+  if (action === "move_up" || action === "move_down") {
+    const direction = action === "move_up" ? "up" : "down";
+    try {
+      ctx.onUpdated(await moveNode(ctx.project.project_id, stepId, direction));
+    } catch (err) {
+      const error = document.createElement("p");
+      error.className = "error";
+      error.textContent = `(error: ${(err as Error).message})`;
+      ctx.line.appendChild(error);
+    }
     return;
   }
   if (action === "analyze") {
