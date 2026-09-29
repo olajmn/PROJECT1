@@ -474,6 +474,12 @@
   width: auto;
 }
 
+/* Removing is the one destructive action: red in the ⋯ menu and in the
+   confirmation, so it never reads as the accent. */
+.progress-menu-item[data-action="remove"] {
+  color: var(--color-error);
+}
+
 /* 5. Add / focus */
 
 .node-focus-note {

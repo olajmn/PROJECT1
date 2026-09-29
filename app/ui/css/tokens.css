@@ -34,7 +34,9 @@
   --color-surface: transparent;
   --color-button: #141210;
   --color-button-text: #f3f1ec;
-  --color-accent: #1f4d3a;
+  /* One accent = "selected / active / you can act here" (UI pass):
+     Apple system blue, not the earlier green. */
+  --color-accent: #007aff;
   --color-error: #8f1e18;
   --color-register: #141210;
 
@@ -99,7 +101,7 @@
   --color-surface: transparent;
   --color-button: #f2f3f5;
   --color-button-text: #121316;
-  --color-accent: #6aab8a;
+  --color-accent: #0a84ff;
   --color-error: #e07068;
   --color-register: #f0ece6;
 
