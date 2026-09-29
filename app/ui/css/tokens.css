@@ -120,7 +120,7 @@
   --color-surface: transparent;
   --color-accent: #0a84ff;
   --color-error: #e07068;
-  --color-register: #f0ece6;
+  --color-register: #f2f3f5;
 
   /* 5. Surfaces — dark (Graphite backdrop, cool). */
   --panel-rgb: 18, 19, 22;
