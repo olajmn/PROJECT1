@@ -1,0 +1,24 @@
+/* The faint dot grid behind the map — its own file so it can be tuned
+ * or removed in one place. Strongest in the middle, fading out towards
+ * the edges; painted first in the viewport, so the tree and the top
+ * strip draw over it. Follows pan / zoom through --cam-x / --cam-y /
+ * --cam-zoom, set by placeStage() in
+ * src/panes/canvas/zoomAndPan/panAndZoom.ts (unset = no camera: natural
+ * size). Tokens from css/tokens.css. */
+
+.map-scale-viewport::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Dims as the map zooms out (0.14 at zoom 1, never below 0.06, times
+     --dot-strength per theme) and never packs tighter than 9px, so a
+     zoomed-out map keeps a quiet grid instead of a dense grey texture. */
+  --dot-alpha: calc(var(--dot-strength, 1) * (0.06 + 0.08 * clamp(0, (var(--cam-zoom, 1) - 0.35) / 0.65, 1)));
+  --dot-gap: max(9px, calc(18px * var(--cam-zoom, 1)));
+  background-image: radial-gradient(rgba(var(--ink-rgb), var(--dot-alpha)) 1px, transparent 1.3px);
+  background-size: var(--dot-gap) var(--dot-gap);
+  background-position: var(--cam-x, 0) var(--cam-y, 0);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 45%, #000 20%, transparent 80%);
+  mask-image: radial-gradient(ellipse at 50% 45%, #000 20%, transparent 80%);
+}

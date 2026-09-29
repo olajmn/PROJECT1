@@ -77,6 +77,9 @@
   --glass-alpha: 0.66;
   --glass-blur: 48px;
   --hairline: rgba(var(--ink-rgb), 0.10);
+  /* Dark dots on a light plane read stronger than light on dark, so the
+     map's dot grid (panes/canvas/dotGrid.css) runs weaker here. */
+  --dot-strength: 0.6;
   --shadow-panel: 0 10px 30px rgba(60, 50, 40, 0.12);
   --backdrop:
     radial-gradient(45vw 45vw at 15% 15%, #ffffff 0%, transparent 60%),
@@ -108,6 +111,7 @@
   /* 5. Surfaces — dark (Graphite backdrop, cool). */
   --panel-rgb: 18, 19, 22;
   --ink-rgb: 255, 255, 255;
+  --dot-strength: 1;
   --shadow-panel: 0 10px 30px rgba(0, 0, 0, 0.45);
   --backdrop:
     radial-gradient(45vw 45vw at 15% 15%, #34363b 0%, transparent 60%),

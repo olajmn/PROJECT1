@@ -160,7 +160,8 @@ export function installMapCamera(
   // 3. Paint and Apply
 
   /** Move `stage` to the current pan/zoom, and hand the same numbers to
-   *  CSS so the dot grid behind the map (frame.css) moves with it. */
+   *  CSS so the dot grid behind the map (css/panes/canvas/dotGrid.css)
+   *  moves with it. */
   const placeStage = (): void => {
     stage.style.transformOrigin = "0 0";
     stage.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;

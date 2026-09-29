@@ -17,6 +17,7 @@
 @import url("panes/create/panel.css");
 @import url("panes/canvas/pane.css");
 @import url("panes/canvas/frame.css");
+@import url("panes/canvas/dotGrid.css");
 @import url("panes/canvas/map.css");
 @import url("panes/canvas/skeleton.css");
 @import url("panes/canvas/savedTrees.css");

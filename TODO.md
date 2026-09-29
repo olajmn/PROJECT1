@@ -166,9 +166,9 @@ only). Numbers are stable ids, not rank.
     chat part is built ([[05-decisions]] #62): a day in Current state
     selects that day's changes for Talk, framed like node About. Still
     open: highlight the nodes touched that day on the map, and richer
-    import text ("Imported 95 nodes under X" counts every node but does not
-    say which; added
-    and removed steps already say what and where). Related to 34.
+    import text ("Imported 95 nodes under X" counts every node but does
+    not say which; added and removed steps already say what and where).
+    Related to 34.
 39. **Talk commands that force a SoT pass** (Step, keep in mind) —
     e.g. a chat "full check" that deliberately re-reads `current` (+
     events) — the product twin of Cursor `/full-check`, for the *user
@@ -176,6 +176,16 @@ only). Numbers are stable ids, not rank.
     the model already gets a slice via `status_text`, but explicit
     commands are optional later. Lives under `panes/chat/commands/`
     when built. Related to model brief (#42 in decisions; was Active 40).
+57. **Line the map up with the dot grid** (Step, later) — the dot grid
+    behind the map (`app/ui/css/panes/canvas/dotGrid.css`) and the tree
+    are not aligned: indent and row height (`panes/canvas/spacing.ts`,
+    `map.css`) are set in `rem`, independently of the dot spacing. To
+    align, pick one base unit (e.g. 8–9px) and make the indent step, the
+    row pitch, and the dot spacing whole multiples of it, and offset the
+    grid by the viewport padding so it starts where the tree does. Easy
+    first half: only the vertical spines on dot columns (the indent is
+    already fixed). Does not hold below the grid's 9px minimum spacing
+    (far zoomed out). Layout change, not CSS only.
 
 ## Ideas (not decided)
 
