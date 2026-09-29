@@ -98,16 +98,16 @@
   font-size: 0.72rem;
   font-weight: 500;
   color: var(--color-text-muted);
-  background: transparent;
-  border: var(--border);
-  border-radius: var(--radius);
+  background: var(--fill-control);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
   padding: 0.2rem 0.5rem;
   cursor: pointer;
 }
 
 .map-copy-button:hover {
   color: var(--color-text);
-  border-color: var(--color-border);
+  background: var(--fill-control-hover);
 }
 
 .map-copy-row .map-copy-button + .map-copy-button {

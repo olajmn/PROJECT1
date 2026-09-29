@@ -62,15 +62,15 @@
   min-width: 1.6rem;
   padding: 0.25rem 0.45rem;
   color: var(--color-text-muted);
-  background: transparent;
-  border: var(--border);
-  border-radius: var(--radius);
+  background: var(--fill-control);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
   cursor: pointer;
 }
 
 .map-scale-btn:hover:not(:disabled) {
   color: var(--color-text);
-  border-color: var(--color-border);
+  background: var(--fill-control-hover);
 }
 
 .map-scale-btn:disabled {
@@ -104,8 +104,7 @@
 
 .map-scale-btn.is-active {
   color: var(--color-text);
-  border-color: var(--color-border);
-  background: var(--color-surface-raised, transparent);
+  background: rgba(var(--ink-rgb), 0.18);
 }
 
 

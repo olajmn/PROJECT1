@@ -60,6 +60,10 @@
   /* Floating look: panels and nodes get their own radius. */
   --radius-panel: 14px;
   --radius-node: 6px;
+  --radius-control: 8px;
+  /* Soft filled controls: a tint of the ink colour, stronger on hover. */
+  --fill-control: rgba(var(--ink-rgb), 0.07);
+  --fill-control-hover: rgba(var(--ink-rgb), 0.13);
 
   /* 5. Surfaces — the plane under the columns ("desk") and the panels
    * floating on it. Solid by default; glass is the same panel made
