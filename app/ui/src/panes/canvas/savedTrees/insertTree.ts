@@ -138,6 +138,8 @@ function buildRow(
   remove.type = "button";
   remove.className = "saved-tree-delete";
   remove.textContent = "×";
+  // The browser's own label: the picker scrolls, so a CSS label (tip.ts)
+  // would be clipped inside it.
   remove.title = "Delete from saved trees";
   remove.addEventListener("click", async () => {
     const ok = await askToConfirm(

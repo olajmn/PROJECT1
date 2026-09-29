@@ -285,7 +285,10 @@
 
 /* Compact, like the toolbar buttons: the composer box is the main
    surface, the buttons only sit in its corner. */
-.project-chat .chat-form-actions button {
+/* Only / and Send — not the buttons inside the / menu, which sits in the
+   same actions row (its host is a child of it). */
+.project-chat .chat-form-actions > button,
+.project-chat .chat-command-menu-toggle {
   height: var(--composer-button-h);
   padding: 0 var(--space-3);
   font-size: var(--font-size-xs);
@@ -308,11 +311,13 @@
 /* Quiet until needed: / and Send are grey; / brightens on hover, Send
    turns solid (text colour) once the field has text — :placeholder-shown
    is false as soon as something is typed. */
-.project-chat .chat-form-actions button {
+.project-chat .chat-form-actions > button,
+.project-chat .chat-command-menu-toggle {
   color: var(--color-text-muted);
 }
 
-.project-chat .chat-form-actions button:hover:not(:disabled) {
+.project-chat .chat-form-actions > button:hover:not(:disabled),
+.project-chat .chat-command-menu-toggle:hover {
   color: var(--color-text);
 }
 

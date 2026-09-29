@@ -9,6 +9,7 @@ import { indentRem, NEST_INSET_REM } from "./spacing.js";
 import { installMapLines } from "./lines/addLines.js";
 import { mapShowsIds } from "./idView.js";
 import { placePopover } from "./placePopover.js";
+import { setTip } from "../../shell/tip.js";
 import {
   applyFamilyAttrs,
   familyById,
@@ -103,9 +104,7 @@ function attachAddControl(
   add.type = "button";
   add.className = "progress-add progress-add-inline";
   add.textContent = "+";
-  add.title = parentId
-    ? "Add a node under this one"
-    : "Add a node under the project";
+  setTip(add, "Add node", "below", "start");
   if (!showButton) add.hidden = true;
 
   const form = document.createElement("form");

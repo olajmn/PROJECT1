@@ -12,6 +12,7 @@
 
 import { createProject } from "../../api.js";
 import { setButtonBusy } from "../../shell/busyButton.js";
+import { setTip } from "../../shell/tip.js";
 import { getActiveUserId } from "../../user/activeAccount.js";
 import type { ProjectView } from "../../dataShapes.js";
 import { mintFromFolder } from "./projectFromFolder.js";
@@ -35,6 +36,9 @@ type CreatePanelOpts = {
 
 export function installCreatePanel(opts: CreatePanelOpts): CreatePanelHandle {
   const openBtn = document.getElementById("create-open") as HTMLButtonElement;
+  // Left edge of the sidebar, and its block clips below: the label goes
+  // above and starts at the button.
+  setTip(openBtn, "Create project", "above", "start");
   const panel = document.getElementById("create-panel") as HTMLElement;
   const heading = document.getElementById("create-heading") as HTMLParagraphElement;
   const form = document.getElementById("create-form") as HTMLFormElement;
