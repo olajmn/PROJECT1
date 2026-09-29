@@ -431,7 +431,7 @@ export function installMapScale(
   });
 
   // Wheel here always means "to the top" — stop it before the camera's own
-  // wheel-zoom handler on the viewport sees it.
+  // wheel handler on the viewport sees it.
   topBar.addEventListener(
     "wheel",
     (event) => {

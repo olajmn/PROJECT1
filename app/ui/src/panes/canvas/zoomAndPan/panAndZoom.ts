@@ -1,9 +1,10 @@
 /**
  * Pan + zoom camera inside `.map-frame`.
- * Wheel zoom anchors under the cursor vertically; spine stays left-locked.
+ * Wheel pans; pinch / Ctrl+wheel zooms, anchored under the cursor
+ * vertically; spine stays left-locked.
  * Pan is clamped so a top gap above the tree is not possible.
  * Closest in = 1× (natural bead size). Overview fit is where a reset
- * lands, not a wall — the wheel may pull back past it, so it never sits
+ * lands, not a wall — zoom may pull back past it, so it never sits
  * dead on a tree that already fits the frame.
  */
 
@@ -55,9 +56,16 @@ import {
 
 const ABS_MIN_ZOOM = 0.08;
 const MAX_ZOOM = 1;
+/** Most zoom one wheel event may apply. */
 const WHEEL_STEP = 1.12;
+/** Pinch / Ctrl+wheel zoom sensitivity, per pixel of `deltaY`. */
+const ZOOM_PER_PX = 0.01;
+/** Pixels per line when a wheel reports `deltaMode` in lines. */
+const LINE_PX = 16;
+/** Quiet time after the last wheel-pan before the full repaint. */
+const WHEEL_SETTLE_MS = 120;
 const LEFT_PAD = 8;
-/** How far past the overview fit the wheel may still pull back. */
+/** How far past the overview fit zoom may still pull back. */
 const OUT_PAST_FIT = 0.4;
 
 /** Zoom and vertical pan — what a re-render must carry over. */
@@ -97,6 +105,7 @@ export function installMapCamera(
   let dirty = false;
   let dragging = false;
   let lastY = 0;
+  let wheelSettle: ReturnType<typeof setTimeout> | undefined;
 
   // 2. Geometry and Layout Helpers
 
@@ -121,8 +130,8 @@ export function installMapCamera(
   };
 
   /**
-   * Wheel limit, deliberately below the overview fit. On a tree that
-   * already fits, fit == 1× == max, so a fit-as-wall leaves the wheel
+   * Zoom-out limit, deliberately below the overview fit. On a tree that
+   * already fits, fit == 1× == max, so a fit-as-wall leaves zoom
    * completely dead in both directions, which reads as broken.
    * `fitOverview()` still lands on `overviewFloor()`.
    */
@@ -245,11 +254,40 @@ export function installMapCamera(
     );
   };
 
+  /**
+   * Plain wheel / two-finger scroll pans; Ctrl/Cmd+wheel zooms. A trackpad
+   * pinch arrives as a Ctrl+wheel event, so pinch zooms with no extra
+   * code. Zoom follows the size of `deltaY` (a trackpad sends many tiny
+   * events, a mouse notch one large one), capped at `WHEEL_STEP` per event
+   * so one mouse notch stays a single modest step.
+   */
   const onWheel = (event: WheelEvent): void => {
     if (!enabled) return;
     event.preventDefault();
-    const factor = event.deltaY < 0 ? WHEEL_STEP : 1 / WHEEL_STEP;
-    zoomAt(factor, pointerInFrame(event.clientX, event.clientY).y);
+    const dy =
+      event.deltaMode === WheelEvent.DOM_DELTA_LINE
+        ? event.deltaY * LINE_PX
+        : event.deltaY;
+    if (event.ctrlKey || event.metaKey) {
+      const factor = clamp(
+        Math.exp(-dy * ZOOM_PER_PX),
+        1 / WHEEL_STEP,
+        WHEEL_STEP,
+      );
+      zoomAt(factor, pointerInFrame(event.clientX, event.clientY).y);
+      return;
+    }
+    panY -= dy;
+    panX = LEFT_PAD;
+    dirty = true;
+    applyPanOnly();
+    // No "scroll ended" event exists; rebuild the line nest once the
+    // scroll goes quiet, as onPointerUp() does after a drag.
+    if (wheelSettle !== undefined) clearTimeout(wheelSettle);
+    wheelSettle = setTimeout(() => {
+      wheelSettle = undefined;
+      apply();
+    }, WHEEL_SETTLE_MS);
   };
 
   const onPointerDown = (event: PointerEvent): void => {

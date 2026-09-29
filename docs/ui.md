@@ -48,8 +48,9 @@ drags it back out.
   shown, which is bright too and moves with − / +. Line view brightens
   the same nodes' bars. The selected node adds an accent underline and
   border on top of that.
-- **One frame, no tabs.** − / + shows fewer or more levels. The scroll
-  wheel zooms and dragging pans, vertically; double-click resets to an
+- **One frame, no tabs.** − / + shows fewer or more levels. Scrolling
+  (wheel or two fingers) and dragging pan, vertically; pinch or
+  Ctrl/Cmd+scroll zooms; double-click resets to an
   overview. Below ~20% zoom the view switches to **Line** (each bar is a
   node), above ~26% back to **Text**; the toolbar can pin either.
 - **An empty project** opens at natural size with a short hint, not a

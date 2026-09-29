@@ -67,7 +67,8 @@ helps but does not take over.
   node, or at the top level). Each insert gets new nodes of its own; ×
   in the list deletes a saved tree from the library only.
 - **Read the map:** show fewer or more levels (− / +), switch between
-  Text and Line view, zoom with the scroll wheel, pan by dragging,
+  Text and Line view, pan by scrolling or dragging, zoom by pinching
+  or Ctrl/Cmd+scroll,
   double-click to reset the view, and jump to the top (↑). Copy as
   ASCII copies the whole structure as text.
 - **Talk:** chat about the whole project, or select a node (click it, or
