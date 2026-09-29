@@ -1,4 +1,5 @@
-// Settings register UI — shared by General, Directory, Logs.
+// Settings register UI — shared by Directory and Logs (being replaced by
+// ../rows.ts page by page; TODO.md § Parallel paths).
 //
 //   blocks.ts    — title + fact recipes; edit look here
 //   types.ts     — title | fact | empty, Block, Group
@@ -21,12 +22,10 @@ export type {
 export {
   accountGroup,
   logBlock,
-  modelBlock,
   orphanGroup,
   projectBlock,
   type IdValues,
   type LogValues,
-  type ModelValues,
   type ProjectValues,
 } from "./blocks.js";
 

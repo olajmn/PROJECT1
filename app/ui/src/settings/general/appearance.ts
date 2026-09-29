@@ -1,53 +1,36 @@
-// General — Appearance: light / dark plane (design base before frosted).
+// General — Appearance: the Light / Dark theme.
 
 import { getTheme, setTheme, type Theme } from "../../user/theme.js";
+import { settingsGroup, settingsRow, settingsSection } from "../rows.js";
 
-function el<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  className?: string,
-  text?: string,
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag);
-  if (className) node.className = className;
-  if (text !== undefined) node.textContent = text;
-  return node;
-}
-
-/** Fill `#appearance` with a Light / Dark control. */
+/** Fill `#appearance` with a Theme row and its Light / Dark control. */
 export function mountAppearance(host: HTMLElement): void {
-  host.replaceChildren();
-
-  const title = el("h2", "settings-appearance-title", "Appearance");
-  const hint = el(
-    "p",
-    "settings-appearance-hint",
-    "Base contrast plane. Frosted layers sit on top of either.",
-  );
-
-  const group = el("div", "settings-theme-options");
-  group.setAttribute("role", "group");
-  group.setAttribute("aria-label", "Theme");
+  const control = document.createElement("div");
+  control.className = "settings-segmented";
+  control.setAttribute("role", "group");
+  control.setAttribute("aria-label", "Theme");
 
   const current = getTheme();
   for (const theme of ["light", "dark"] as const) {
-    const btn = el("button", "settings-theme-option", theme === "light" ? "Light" : "Dark");
+    const btn = document.createElement("button");
     btn.type = "button";
+    btn.textContent = theme === "light" ? "Light" : "Dark";
     btn.dataset.theme = theme;
-    if (theme === current) btn.setAttribute("aria-pressed", "true");
-    else btn.setAttribute("aria-pressed", "false");
+    btn.setAttribute("aria-pressed", theme === current ? "true" : "false");
     btn.addEventListener("click", () => {
       setTheme(theme);
-      syncPressed(group, theme);
+      syncPressed(control, theme);
     });
-    group.appendChild(btn);
+    control.appendChild(btn);
   }
 
-  host.append(title, hint, group);
+  host.replaceChildren(
+    settingsSection("Appearance", settingsGroup([settingsRow("Theme", undefined, [control])])),
+  );
 }
 
-function syncPressed(group: HTMLElement, active: Theme): void {
-  Array.from(group.querySelectorAll<HTMLButtonElement>(".settings-theme-option")).forEach((btn) => {
-    const on = btn.dataset.theme === active;
-    btn.setAttribute("aria-pressed", on ? "true" : "false");
+function syncPressed(control: HTMLElement, active: Theme): void {
+  control.querySelectorAll<HTMLButtonElement>("button").forEach((btn) => {
+    btn.setAttribute("aria-pressed", btn.dataset.theme === active ? "true" : "false");
   });
 }

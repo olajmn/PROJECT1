@@ -1,0 +1,99 @@
+/* Settings rows — src/settings/rows.ts.
+ * Quiet on purpose: grey section titles, one soft group per section,
+ * hairlines between rows, text in the normal colour only where it is
+ * the thing you look for. Tokens from css/tokens.css.
+ *
+ * Contents
+ *  1. Section
+ *  2. Group
+ *  3. Row
+ *  4. Segmented control
+ */
+
+/* 1. Section */
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.settings-section-title {
+  margin: 0 0 0 var(--space-1);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+/* 2. Group */
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-popover);
+  background: rgba(var(--ink-rgb), 0.025);
+  overflow: hidden;
+}
+
+/* 3. Row */
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 2.25rem;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.settings-row + .settings-row {
+  border-top: 1px solid var(--hairline);
+}
+
+.settings-row-label {
+  flex: 0 0 9rem;
+  color: var(--color-text-muted);
+}
+
+.settings-row-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--color-text);
+}
+
+.settings-row-end {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+/* 4. Segmented control (e.g. Light | Dark): one soft pill, the chosen
+   segment a step brighter. */
+
+.settings-segmented {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--radius-control);
+  background: var(--fill-control);
+}
+
+.settings-segmented button {
+  padding: 0.2rem 0.75rem;
+  border: none;
+  border-radius: calc(var(--radius-control) - 2px);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.settings-segmented button:hover {
+  color: var(--color-text);
+}
+
+.settings-segmented button[aria-pressed="true"] {
+  background: rgba(var(--ink-rgb), 0.14);
+  color: var(--color-text);
+}

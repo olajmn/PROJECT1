@@ -3,8 +3,7 @@
  * Contents
  *  1. Page shell
  *  2. Content stack
- *  3. Appearance (theme toggle)
- *  4. Logs scope (All activity / one project)
+ *  3. Logs scope (All activity / one project)
  */
 
 /* 1. Page shell — the same floating block as the app (css/shell/layout.css),
@@ -104,48 +103,13 @@ body.settings-body main > nav a[aria-current="page"] {
   max-width: 60rem;
 }
 
-/* 3. Appearance (theme toggle) */
-
-.settings-appearance-title {
-  margin: 0 0 var(--space-2);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--color-text);
+/* General: short label → value rows read calmer in a narrow column; the
+   list pages (Archive, Directory, Logs) keep the wider one. */
+.settings-stack--narrow > * {
+  max-width: 40rem;
 }
 
-.settings-appearance-hint {
-  margin: 0 0 var(--space-3);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  line-height: var(--line-height);
-}
-
-.settings-theme-options {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.settings-theme-option {
-  padding: var(--space-2) var(--space-4);
-  font-size: var(--font-size-sm);
-  background: var(--fill-control);
-  color: var(--color-text-muted);
-  border: none;
-  border-radius: var(--radius-control);
-  cursor: pointer;
-}
-
-.settings-theme-option:hover {
-  color: var(--color-text);
-  background: var(--fill-control-hover);
-}
-
-.settings-theme-option[aria-pressed="true"] {
-  background: rgba(var(--ink-rgb), 0.18);
-  color: var(--color-text);
-}
-
-/* 4. Logs scope (All activity / one project) */
+/* 3. Logs scope (All activity / one project) */
 
 .settings-logs-scope-bar {
   display: flex;

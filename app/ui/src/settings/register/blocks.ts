@@ -1,21 +1,15 @@
 // Register blocks — how a Settings register entry looks (title + facts).
-// Shared by General, Directory, and Logs. Edit fact lists here to steer look.
+// Shared by Directory and Logs (General moved to ../rows.ts; the rest
+// follow — TODO.md § Parallel paths). Edit fact lists here to steer look.
 
 // Contents
 //  1. Value bags
-//  2. Model block (General)
-//  3. Log entry block (Logs)
-//  4. Id group / project / orphan (Directory)
+//  2. Log entry block (Logs)
+//  3. Id group / project / orphan (Directory)
 
 import type { Block, Group } from "./types.js";
 
 // 1. Value bags
-
-export type ModelValues = {
-  model: string;
-  provider: string;
-  temperature: number;
-};
 
 export type LogValues = {
   kind: string;
@@ -41,21 +35,7 @@ export type IdValues = {
   projects: ProjectValues[];
 };
 
-// 2. Model block (General)
-//
-//   Model  gpt-…
-//   Provider      …
-//   Temperature   …
-
-export function modelBlock(v: ModelValues): Block {
-  return [
-    { t: "title", kind: "Model", name: v.model },
-    { t: "fact", label: "Provider", value: v.provider },
-    { t: "fact", label: "Temperature", value: String(v.temperature) },
-  ];
-}
-
-// 3. Log entry block (Logs)
+// 2. Log entry block (Logs)
 //
 //   Chat  nytt bygg
 //   When   …
@@ -71,7 +51,7 @@ export function logBlock(v: LogValues): Block {
   return block;
 }
 
-// 4. Account group / project / orphan (Directory)
+// 3. Account group / project / orphan (Directory)
 //
 //   Account
 //   Name      ai_slop
