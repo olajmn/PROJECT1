@@ -193,9 +193,9 @@
   padding: var(--space-2);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-popover);
-  /* Same colour as the panel: the hairline alone marks the box, unlike
-     menus, which sit on a lifted surface. */
-  background: transparent;
+  /* --surface-input: the panel's own colour in dark (the hairline marks
+     the box), white on the grey plane in light. */
+  background: var(--surface-input);
   box-shadow: var(--shadow-popover);
 }
 

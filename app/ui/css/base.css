@@ -39,6 +39,20 @@ h1 {
   margin: 0 0 var(--space-4);
 }
 
+/* Focus: no ring after a mouse click (the browser's own, in the system
+ * accent — e.g. orange — would linger on whatever was clicked), and one
+ * quiet ring in the app's own style when moving with the keyboard.
+ * :where() keeps it at zero specificity, so a control that styles its
+ * own focus keeps that. */
+:where(:focus:not(:focus-visible)) {
+  outline: none;
+}
+
+:where(:focus-visible) {
+  outline: 2px solid rgba(var(--ink-rgb), 0.35);
+  outline-offset: 2px;
+}
+
 /* Thin, understated scrollbars everywhere something scrolls (sidebar id
  * columns, project list, chat thread, map viewport, …) — the OS default
  * is a wide, high-contrast bar that fights the quiet look

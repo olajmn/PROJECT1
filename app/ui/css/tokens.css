@@ -23,12 +23,12 @@
   /* 1. Color — light
    * Three columns share one plane (--color-bg-workspace) so frosted
    * depth can sit on top later without fighting three paints.
-   * Neutral near-white and Apple-like greys (UI pass), not the earlier
-   * warm stone #e4e0d8. */
-  --color-bg: #f7f7f8;
-  --color-bg-workspace: #f7f7f8;
-  --color-bg-sidebar: #f7f7f8;
-  --color-bg-panel: #f7f7f8;
+   * A light grey plane (Apple's grouped background) with white surfaces
+   * on it (section 5), not the earlier warm stone #e4e0d8. */
+  --color-bg: #f5f5f7;
+  --color-bg-workspace: #f5f5f7;
+  --color-bg-sidebar: #f5f5f7;
+  --color-bg-panel: #f5f5f7;
   --color-text: #1d1d1f;
   --color-text-muted: #6e6e73;
   --color-text-soft: #424245;
@@ -81,7 +81,7 @@
   --bar-height: 2rem;
   /* Height of the / and Send buttons in the chat box. */
   --composer-button-h: 1.6rem;
-  --panel-rgb: 247, 247, 248;
+  --panel-rgb: 245, 245, 247;
   --ink-rgb: 0, 0, 0;
   --glass-alpha: 0.66;
   --glass-blur: 48px;
@@ -93,8 +93,21 @@
   /* Menus, popovers and the chat box: no shadow (flat look); they stand
      out by a slightly lighter surface and the hairline instead. */
   --shadow-popover: none;
-  /* Light: lifted surfaces are plain white on the near-white panel. */
+  /* Surfaces on the plane. Light: white on the grey plane, the way
+   * light system UIs lift cards; dark (below): a touch lighter than the
+   * plane, or the plane itself.
+   *   lifted — menus and popovers
+   *   node   — map nodes
+   *   card   — Settings groups
+   *   input  — the chat box */
   --surface-lifted: #ffffff;
+  --surface-node: #ffffff;
+  --surface-card: #ffffff;
+  --surface-input: #ffffff;
+  /* The chosen segment of a switch (Light | Dark …): white and lifted in
+   * light, a lighter tint in dark. */
+  --surface-segment-on: #ffffff;
+  --shadow-segment-on: 0 1px 2px rgba(0, 0, 0, 0.12);
   --backdrop:
     radial-gradient(45vw 45vw at 15% 15%, #ffffff 0%, transparent 60%),
     radial-gradient(50vw 50vw at 85% 20%, #d8d8dd 0%, transparent 60%),
@@ -123,8 +136,13 @@
   --ink-rgb: 255, 255, 255;
   --dot-strength: 1;
   --shadow-panel: 0 10px 30px rgba(0, 0, 0, 0.45);
-  /* Dark: lifted surfaces are a touch lighter than the panel. */
+  /* Dark surfaces: a touch lighter than the panel, or the panel itself. */
   --surface-lifted: color-mix(in srgb, var(--color-bg-panel), rgb(var(--ink-rgb)) 5%);
+  --surface-node: color-mix(in srgb, var(--color-bg-workspace), rgb(var(--ink-rgb)) 5%);
+  --surface-card: rgba(var(--ink-rgb), 0.025);
+  --surface-input: transparent;
+  --surface-segment-on: rgba(var(--ink-rgb), 0.14);
+  --shadow-segment-on: none;
   --backdrop:
     radial-gradient(45vw 45vw at 15% 15%, #34363b 0%, transparent 60%),
     radial-gradient(50vw 50vw at 85% 20%, #2a2c30 0%, transparent 60%),

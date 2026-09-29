@@ -52,7 +52,7 @@
   flex-direction: column;
   border: 1px solid var(--hairline);
   border-radius: var(--radius-popover);
-  background: rgba(var(--ink-rgb), 0.025);
+  background: var(--surface-card);
   overflow: hidden;
 }
 
@@ -184,7 +184,8 @@
 }
 
 .settings-segmented button[aria-pressed="true"] {
-  background: rgba(var(--ink-rgb), 0.14);
+  background: var(--surface-segment-on);
+  box-shadow: var(--shadow-segment-on);
   color: var(--color-text);
 }
 
