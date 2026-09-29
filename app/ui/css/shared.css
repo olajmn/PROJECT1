@@ -13,11 +13,6 @@
   font-size: var(--font-size-sm);
 }
 
-.empty-state {
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-}
-
 /* Disclosure chevron on the two column headings that open something
  * (Accounts in the sidebar, Current state above the chat): › closed,
  * ⌄ open. Both mark "open" with .is-active. Drawn from two borders so it

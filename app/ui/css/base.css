@@ -8,7 +8,7 @@
  *      - scrollbars
  *  2. Nav
  *  3. Status
- *      - .error / #empty
+ *      - .error
  *  4. Forms & buttons
  *      - form / textarea / button
  */
@@ -104,11 +104,6 @@ nav a[aria-current="page"] {
   margin: var(--space-1) 0 0;
   color: var(--color-error);
   font-size: var(--font-size-sm);
-}
-
-#empty {
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
 }
 
 /* 4. Forms & buttons */
