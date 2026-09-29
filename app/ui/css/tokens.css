@@ -14,6 +14,7 @@
  *  2. Type
  *  3. Space
  *  4. Radius / border
+ *  5. Surfaces (floating panels; solid or glass)
  */
 
 :root,
@@ -55,6 +56,26 @@
   /* 4. Radius / border — near-square, not pill */
   --radius: 0.15rem;
   --border: 1px solid var(--color-border);
+  /* Floating look: panels and nodes get their own radius. */
+  --radius-panel: 14px;
+  --radius-node: 6px;
+
+  /* 5. Surfaces — the plane under the columns ("desk") and the panels
+   * floating on it. Solid by default; glass is the same panel made
+   * translucent (--glass-alpha) with --glass-blur behind it.
+   * *-rgb values are "r, g, b" so rgba() can add an alpha. */
+  --panel-gap: 10px;
+  --panel-rgb: 250, 249, 247;
+  --ink-rgb: 0, 0, 0;
+  --glass-alpha: 0.66;
+  --glass-blur: 48px;
+  --hairline: rgba(var(--ink-rgb), 0.10);
+  --shadow-panel: 0 10px 30px rgba(60, 50, 40, 0.12);
+  --backdrop:
+    radial-gradient(45vw 45vw at 15% 15%, #ffffff 0%, transparent 60%),
+    radial-gradient(50vw 50vw at 85% 20%, #cfcac2 0%, transparent 60%),
+    radial-gradient(55vw 55vw at 65% 95%, #bdb8b0 0%, transparent 60%),
+    #e4e0d8;
 }
 
 [data-theme="dark"] {
@@ -75,4 +96,14 @@
   --color-accent: #6aab8a;
   --color-error: #e07068;
   --color-register: #f0ece6;
+
+  /* 5. Surfaces — dark (Graphite backdrop). */
+  --panel-rgb: 28, 26, 24;
+  --ink-rgb: 255, 255, 255;
+  --shadow-panel: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --backdrop:
+    radial-gradient(45vw 45vw at 15% 15%, #4a4845 0%, transparent 60%),
+    radial-gradient(50vw 50vw at 85% 20%, #3a3937 0%, transparent 60%),
+    radial-gradient(55vw 55vw at 65% 95%, #43413e 0%, transparent 60%),
+    #0e0d0c;
 }
