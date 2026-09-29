@@ -793,6 +793,21 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Reversible?** Yes.
 
 
+## 68. 2026-09-29 — UI pass: one calm block, shape over lines
+
+**Decision:** Restyle the whole UI without changing what it does (`TODO.md` 56). The three columns float as one rounded block on a neutral backdrop; light and dark are neutral (no warm "stone" tint); the font is the system font; nodes, buttons, fields and menus use soft fills and rounded corners instead of outlines, and menus sit on a lighter surface instead of a shadow; one accent (system blue) means selected / active / focused, Remove is red. The map's top and bottom strips hold their actions as plain signs and words (no boxes, hover only brightens; short hover labels via `src/shell/tip.ts`); the bottom bar is **+ Add** (one menu for Paste structure, Add folder, Insert saved tree — `addMenu.ts`) plus Copy and Archive icons. A faint dot grid behind the map follows pan / zoom (`dotGrid.css`, `placeStage()`). The chat box is one box with / and Send inside and grows with the text (`growInput.ts`); the chat is shown and hidden from a bubble pinned to the block's top-right corner (`chatToggle.ts`) and, hidden, leaves a thin double line at the edge to drag it back. All values live in `css/tokens.css`.
+
+**Date:** 2026-09-29
+
+**Alternatives considered:** frosted glass as the main look (sketched first; kept as a later option, tokens exist); keeping outlined controls; a narrow icon rail for the collapsed chat; putting the chat toggle in the map's top strip or bottom bar.
+
+**Why this choice:** The earlier look had many equal-weight outlines and a warm tint, which made hierarchy hard to see; the goal was a calm, Apple-like shell where the map stays the rich part. Built on a separate worktree and branch step by step, each step looked at before the next, so the demo on `architecture-v6` stayed untouched until the whole pass was done. CSS only, except where the browser could not do it alone: the dot grid needs the camera's position, the growing chat field needs to work in Safari, and the Add menu, icon buttons, hover labels and chat toggle are new controls.
+
+**Trade-off:** Selected Text / Line is no longer shown. A hidden chat can only be dragged back from a thin line at the block's edge (the bubble is the main way). The tree and the dot grid are not aligned (`TODO.md` 57).
+
+**Reversible?** Yes; mostly tokens and CSS.
+
+
 ## See also
 
 - [[03-architecture]]

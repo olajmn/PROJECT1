@@ -12,6 +12,7 @@
 @import url("shell/layout.css");
 @import url("shell/columnRail.css");
 @import url("shell/spinner.css");
+@import url("shell/tip.css");
 @import url("panes/create/sidebar.css");
 @import url("panes/create/accountsPanel.css");
 @import url("panes/create/panel.css");
@@ -24,6 +25,7 @@
 @import url("panes/chat/conversation.css");
 @import url("panes/chat/agent-chat.css");
 @import url("panes/chat/status.css");
+@import url("panes/chat/chatToggle.css");
 @import url("shared.css");
 @import url("settings/chrome.css");
 @import url("settings/register.css");

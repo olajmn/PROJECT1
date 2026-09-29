@@ -19,6 +19,12 @@ How the app's screen is laid out, how it should look, and where its code lives.
 The canvas is not a file browser: a future files view belongs in the
 sidebar, not the middle column.
 
+The three columns float as **one block** on the page, with round outer
+corners and one line where two columns meet. The chat can be hidden with
+the bubble in the block's top-right corner (filled while open, hollow
+while hidden); hidden, it leaves a thin double line at the edge, which
+drags it back out.
+
 ## 2. The canvas
 
 ```text
@@ -48,10 +54,15 @@ sidebar, not the middle column.
   node), above ~26% back to **Text**; the toolbar can pin either.
 - **An empty project** opens at natural size with a short hint, not a
   zoomed-out empty frame.
-- **Controls around the map** sit in the bar below it, quieter than
-  the map: **+ Add** opens one menu for the ways to add many nodes
-  (Paste structure, Add folder, Insert saved tree…); Copy as ASCII and
-  Archive are icon buttons with tooltips.
+- **Controls around the map** are stamped into the strips above and
+  below it — signs and words, no boxes; hover only brightens them, and
+  symbol-only ones show a short label. On top: × ↑ − + and Text | Line
+  (not highlighted: the view switches by itself with zoom). Below:
+  **+ Add** opens one menu for the ways to add many nodes (Paste
+  structure, Add folder, Insert saved tree…); Copy as ASCII and Archive
+  are icons.
+- **A faint dot grid** lies behind the map and moves with pan and zoom;
+  it dims as the map zooms out.
 
 Not planned for now: free placement of nodes, panning outside the frame,
 card-style nodes.
@@ -68,10 +79,18 @@ card-style nodes.
 - **Complexity is budgeted.** The canvas may be rich — the tree, menus,
   and lines are the product's own UI. Shell, sidebar, and chat stay calm.
   Add a signal only when it earns a place; prefer removing one.
-- **Two base planes**, light and dark (Settings → General). All three
-  columns share one background so later depth can read as layers.
+- **Two base planes**, light and dark (Settings → General), both
+  neutral (no warm tint). All three columns share one background.
+- **Shape over lines:** soft fills and rounded corners instead of
+  outlines — nodes, buttons, fields, menus. Menus sit on a slightly
+  lighter surface instead of casting a shadow.
+- **One accent** (system blue) means selected, active, or focused;
+  Remove is red. Nothing else is coloured.
+- **System font** (SF Pro on Apple devices); IBM Plex Mono for code and
+  ASCII.
 - **Frosted depth is a direction, not built:** soft translucency that
-  lets you sense what sits behind, without hurting readability.
+  lets you sense what sits behind, without hurting readability. The
+  tokens for it exist (`--glass-alpha`, `--glass-blur`).
 
 ## 4. Where the code lives
 

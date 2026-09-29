@@ -30,9 +30,11 @@ The UI/UX pass, starting with real content to design against.
     not new features: hierarchy (loud / quiet / hidden), spacing, type,
     and the look of the canvas, chat, Current state, and sidebar,
     judged against the projects from 55. Principles and layout:
-    `docs/ui.md`. Items that may fold in when they come up: 53
-    (`/select` hint), 54 (undo), 45 (copy one branch), 38 (changed
-    nodes on the map).
+    `docs/ui.md`. The main pass is done ([[05-decisions]] #68); left:
+    frosted glass as an optional material in Settings (tokens exist),
+    and 57 (tree on the dot grid). Items that may fold in when they come
+    up: 53 (`/select` hint), 54 (undo), 45 (copy one branch), 38
+    (changed nodes on the map).
 
 ## Queue
 

@@ -2,15 +2,14 @@
  * Collapsed, the chat is gone (width 0) and leaves one thin line just
  * inside the block's right edge — with the edge, a double line — as the
  * drag handle to pull it back out.
- * The show / hide button sits in the block's top-right corner
- * (src/panes/chat/chatToggle.ts) and never moves.
+ * The show / hide button that opens and closes it is
+ * src/panes/chat/chatToggle.ts + css/panes/chat/chatToggle.css.
  * Behavior: src/shell/collapseToRail.ts; button wiring: src/index.ts.
  * Numbers (min / rail / expand): src/shell/columnWidths.ts CHAT
  *
  * Contents
  *  1. Workspace rail width
- *  2. Show / hide button
- *  3. Collapsed panel and edge handle
+ *  2. Collapsed panel and edge handle
  */
 
 /* 1. Workspace rail width — keep in sync with CHAT.railWidthPx */
@@ -19,57 +18,7 @@
   --chat-width: 0px;
 }
 
-/* 2. Show / hide button (src/panes/chat/chatToggle.ts): on its own layer
- * over the columns, pinned to the block's top-right corner and centred
- * in the top strip, so it never moves. Filled bubble while the chat is
- * open, hollow while collapsed. With the chat away it sits over the
- * map's top strip, which then leaves room for it on the right. */
-
-.workspace {
-  position: relative;
-}
-
-/* ".workspace >" outranks [data-tip] { position: relative } in
-   css/shared.css (loaded later), which would put the button back into
-   the grid as an extra row. */
-.workspace > .chat-toggle {
-  position: absolute;
-  z-index: 5;
-  top: 0;
-  right: var(--space-2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.75rem;
-  height: var(--bar-height);
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-
-.chat-toggle:hover {
-  color: var(--color-text);
-}
-
-.chat-toggle svg {
-  fill: currentColor;
-}
-
-.workspace.is-chat-collapsed .chat-toggle svg {
-  fill: none;
-}
-
-.workspace:has(#project-chat[hidden]) .chat-toggle {
-  display: none;
-}
-
-.workspace.is-chat-collapsed .map-top-bar {
-  padding-right: calc(var(--space-2) + 1.75rem + var(--space-2));
-}
-
-/* 3. Collapsed panel and edge handle. The map runs to the block's edge
+/* 2. Collapsed panel and edge handle. The map runs to the block's edge
  * (no column rule); the seam's grab area (css/shell/layout.css) moves
  * just inside that edge and shows one thin line, brighter on hover. */
 

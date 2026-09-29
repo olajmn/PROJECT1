@@ -1,5 +1,5 @@
 // The chat show / hide button. It lives on its own layer over the columns,
-// pinned to the block's top-right corner (css/shell/columnRail.css), so it
+// pinned to the block's top-right corner (css/panes/chat/chatToggle.css), so it
 // stays in the same place whether the chat is open or collapsed: over the
 // right end of the chat's top strip, or of the map's when the chat is
 // away. Open vs closed is drawn by CSS from .workspace.is-chat-collapsed:

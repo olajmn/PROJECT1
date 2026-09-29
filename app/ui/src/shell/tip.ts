@@ -1,5 +1,5 @@
 // Quick hover label for buttons that show only a symbol or an icon.
-// Drawn by CSS from data-tip (css/shared.css), so it appears faster and
+// Drawn by CSS from data-tip (css/shell/tip.css), so it appears faster and
 // in the app's own look, unlike the browser's delayed `title` tooltip,
 // which is not set as well (it would show a second label).
 
