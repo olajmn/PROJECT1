@@ -12,16 +12,25 @@
 
 /* 1. Outer shell */
 
+/* The page is the "desk" (--backdrop); the three columns float on it as
+ * one block: a margin of --panel-gap-edge, round outer corners only, and
+ * the columns inside keep touching (one line where they meet). */
 .workspace-body {
-  background: var(--color-bg-workspace);
+  --panel-gap-edge: 10px;
+  background: var(--backdrop);
 }
 
 .app-shell {
   --sidebar-width: 15rem;
   display: grid;
   grid-template-columns: minmax(0, var(--sidebar-width)) 0 minmax(0, 1fr);
-  height: 100vh;
+  height: calc(100vh - 2 * var(--panel-gap-edge));
+  margin: var(--panel-gap-edge);
   overflow: hidden;
+  background: var(--color-bg-workspace);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
 }
 
 /* Sidebar and chat each start with the same empty strip the canvas's own

@@ -81,29 +81,30 @@
 [data-theme="dark"] {
   /* 1. Color — dark (stone on ink); same roles as light.
    * Columns share workspace plane (canvas base) for frosted later. */
-  --color-bg: #141210;
-  --color-bg-workspace: #141210;
-  --color-bg-sidebar: #141210;
-  --color-bg-panel: #141210;
-  --color-text: #f0ece6;
-  --color-text-muted: #9a948c;
-  --color-text-soft: #c4bfb6;
-  --color-border: #3d3934;
-  --color-border-input: #4a4640;
+  /* Cool neutral black (UI pass), not the earlier warm #141210. */
+  --color-bg: #121316;
+  --color-bg-workspace: #121316;
+  --color-bg-sidebar: #121316;
+  --color-bg-panel: #121316;
+  --color-text: #f2f3f5;
+  --color-text-muted: #8d919a;
+  --color-text-soft: #c3c6cc;
+  --color-border: #2a2c31;
+  --color-border-input: #34373d;
   --color-surface: transparent;
-  --color-button: #f0ece6;
-  --color-button-text: #141210;
+  --color-button: #f2f3f5;
+  --color-button-text: #121316;
   --color-accent: #6aab8a;
   --color-error: #e07068;
   --color-register: #f0ece6;
 
-  /* 5. Surfaces — dark (Graphite backdrop). */
-  --panel-rgb: 28, 26, 24;
+  /* 5. Surfaces — dark (Graphite backdrop, cool). */
+  --panel-rgb: 18, 19, 22;
   --ink-rgb: 255, 255, 255;
-  --shadow-panel: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-panel: 0 10px 30px rgba(0, 0, 0, 0.45);
   --backdrop:
-    radial-gradient(45vw 45vw at 15% 15%, #4a4845 0%, transparent 60%),
-    radial-gradient(50vw 50vw at 85% 20%, #3a3937 0%, transparent 60%),
-    radial-gradient(55vw 55vw at 65% 95%, #43413e 0%, transparent 60%),
-    #0e0d0c;
+    radial-gradient(45vw 45vw at 15% 15%, #34363b 0%, transparent 60%),
+    radial-gradient(50vw 50vw at 85% 20%, #2a2c30 0%, transparent 60%),
+    radial-gradient(55vw 55vw at 65% 95%, #303237 0%, transparent 60%),
+    #08090b;
 }
