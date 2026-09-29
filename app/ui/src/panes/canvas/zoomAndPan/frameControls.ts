@@ -173,7 +173,9 @@ export function installMapScale(
   closeBtn.type = "button";
   closeBtn.className = "map-scale-btn";
   closeBtn.textContent = "×";
-  setTip(closeBtn, "Close project", "below");
+  // First in the strip, at the column's clipped left edge: the label
+  // starts at the button instead of centring past that edge.
+  setTip(closeBtn, "Close project", "below", "start");
   closeBtn.hidden = opts.onClose === undefined;
 
   const topBtn = document.createElement("button");

@@ -14,7 +14,7 @@ export function installChatToggle(
   const button = document.createElement("button");
   button.type = "button";
   button.className = "chat-toggle";
-  setTip(button, "Show or hide chat", "below", "end");
+  setTip(button, "Toggle chat", "below", "end");
   button.innerHTML =
     '<svg width="15" height="15" viewBox="0 0 24 24" stroke="currentColor" ' +
     'stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
