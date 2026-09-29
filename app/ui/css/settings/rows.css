@@ -38,7 +38,7 @@
 
 /* 3. Row */
 
-.settings-row {
+.settings-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -47,22 +47,22 @@
   font-size: var(--font-size-sm);
 }
 
-.settings-row + .settings-row {
+.settings-item + .settings-item {
   border-top: 1px solid var(--hairline);
 }
 
-.settings-row-label {
+.settings-item-label {
   flex: 0 0 9rem;
   color: var(--color-text-muted);
 }
 
-.settings-row-value {
+.settings-item-value {
   flex: 1 1 auto;
   min-width: 0;
   color: var(--color-text);
 }
 
-.settings-row-end {
+.settings-item-end {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);

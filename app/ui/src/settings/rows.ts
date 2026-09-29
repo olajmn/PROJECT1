@@ -38,20 +38,20 @@ export function settingsRow(
   end?: Node[],
 ): HTMLElement {
   const row = document.createElement("div");
-  row.className = "settings-row";
+  row.className = "settings-item";
   const labelEl = document.createElement("span");
-  labelEl.className = "settings-row-label";
+  labelEl.className = "settings-item-label";
   labelEl.append(label);
   row.appendChild(labelEl);
   if (value !== undefined) {
     const valueEl = document.createElement("span");
-    valueEl.className = "settings-row-value";
+    valueEl.className = "settings-item-value";
     valueEl.append(value);
     row.appendChild(valueEl);
   }
   if (end && end.length) {
     const endEl = document.createElement("span");
-    endEl.className = "settings-row-end";
+    endEl.className = "settings-item-end";
     endEl.append(...end);
     row.appendChild(endEl);
   }
