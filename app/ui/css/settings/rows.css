@@ -6,7 +6,7 @@
  * Contents
  *  1. Section
  *  2. Group
- *  3. Row (and list row)
+ *  3. Row (list row, child row, active mark, text field)
  *  4. Segmented control
  *  5. Row actions
  */
@@ -40,6 +40,12 @@
 }
 
 /* 2. Group */
+
+/* Several groups in one section (Directory: one per account) sit a bit
+   further apart than the title sits from the first. */
+.settings-group + .settings-group {
+  margin-top: calc(var(--space-3) - var(--space-2));
+}
 
 .settings-group {
   display: flex;
@@ -100,6 +106,45 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* A row under another (a project under its account): indented, a
+   touch quieter. */
+.settings-item.is-child {
+  padding-left: calc(var(--space-3) + 1.25rem);
+  min-height: 2rem;
+}
+
+/* Its number stays grey, so the parent row (the account) leads. */
+.settings-item.is-list.is-child .settings-item-label {
+  color: var(--color-text-muted);
+}
+
+/* The active account: a small static accent dot after its id. */
+.settings-item.is-active .settings-item-label::after {
+  content: "";
+  display: inline-block;
+  width: 0.4em;
+  height: 0.4em;
+  margin-left: 0.45em;
+  border-radius: 50%;
+  background: var(--color-accent);
+  vertical-align: 0.12em;
+}
+
+/* A text field inside a row: no box of its own — the row is the field. */
+.settings-input {
+  width: 100%;
+  padding: 0.2rem 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  outline: none;
+}
+
+.settings-input::placeholder {
+  color: var(--color-text-muted);
 }
 
 /* 4. Segmented control (e.g. Light | Dark): one soft pill, the chosen
