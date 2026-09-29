@@ -7,21 +7,101 @@
  *  4. Logs scope (All activity / one project)
  */
 
-/* 1. Page shell */
+/* 1. Page shell — the same floating block as the app (css/shell/layout.css),
+ * quieter inside: the way back and the tabs share one top strip
+ * (--bar-height, one rule under it), and only the content below
+ * scrolls. Settings is not meant to draw the eye. */
 
-body.settings-body main {
-  /* Wide enough for Directory; General facts stay narrower inside. */
-  max-width: 72rem;
-  width: 100%;
+body.settings-body {
+  background: var(--backdrop);
 }
 
-/* 2. Content stack */
+body.settings-body main {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: var(--bar-height) minmax(0, 1fr);
+  max-width: none;
+  width: auto;
+  height: calc(100vh - 2 * var(--panel-gap));
+  margin: var(--panel-gap);
+  padding: 0;
+  overflow: hidden;
+  background: var(--color-bg-panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
+}
+
+body.settings-body main > .settings-back,
+body.settings-body main > nav {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  border-bottom: var(--border);
+}
+
+/* Back to the projects: a way out, not a tab — a ‹ before it and a short
+   divider after it, stamped in like the map's bar actions. */
+body.settings-body main > .settings-back {
+  position: relative;
+  gap: 0.45em;
+  padding: 0 var(--space-3) 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  text-decoration: none;
+}
+
+body.settings-body main > .settings-back:hover {
+  color: var(--color-text);
+}
+
+body.settings-body main > .settings-back::before {
+  content: "";
+  width: 0.36em;
+  height: 0.36em;
+  border-left: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+
+body.settings-body main > .settings-back::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 30%;
+  bottom: 30%;
+  border-left: 1px solid var(--color-border);
+}
+
+body.settings-body main > nav {
+  gap: var(--space-4);
+  padding: 0 var(--space-4) 0 var(--space-3);
+}
+
+body.settings-body main > nav a:hover {
+  color: var(--color-text);
+}
+
+/* The chosen tab is brighter, not bolder, so the strip stays calm. */
+body.settings-body main > nav a[aria-current="page"] {
+  font-weight: 400;
+}
+
+/* 2. Content stack — the only part that scrolls; a readable width. */
 
 .settings-stack {
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  margin-top: var(--space-5);
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--space-5) var(--space-4) var(--space-5);
+}
+
+.settings-stack > * {
+  max-width: 60rem;
 }
 
 /* 3. Appearance (theme toggle) */
