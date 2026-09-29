@@ -39,7 +39,8 @@
   --color-register: #141210;
 
   /* 2. Type */
-  --font-sans: "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* Apple's system font where available (UI pass); IBM Plex Mono stays for code. */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --font-size-body: 0.9375rem;
   --font-size-sm: 0.8125rem;

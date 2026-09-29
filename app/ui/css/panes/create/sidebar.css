@@ -46,8 +46,6 @@
   font: inherit;
   font-size: var(--font-size-sm);
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   text-align: left;
   color: var(--color-text-muted);
   background: transparent;
