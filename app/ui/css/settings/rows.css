@@ -6,11 +6,25 @@
  * Contents
  *  1. Section
  *  2. Group
- *  3. Row
+ *  3. Row (and list row)
  *  4. Segmented control
+ *  5. Row actions
  */
 
-/* 1. Section */
+/* 1. Section — plus the page's hint line and a stack of sections. */
+
+.settings-hint {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  line-height: var(--line-height);
+}
+
+.settings-lists {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
 
 .settings-section {
   display: flex;
@@ -69,11 +83,31 @@
   margin-left: auto;
 }
 
+/* List rows (Archive, Directory): the name is what you look for, the
+   details stay grey and small. */
+.settings-item.is-list .settings-item-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-item.is-list .settings-item-value {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* 4. Segmented control (e.g. Light | Dark): one soft pill, the chosen
    segment a step brighter. */
 
 .settings-segmented {
   display: inline-flex;
+  align-self: flex-start;
   padding: 2px;
   border-radius: var(--radius-control);
   background: var(--fill-control);
@@ -96,4 +130,26 @@
 .settings-segmented button[aria-pressed="true"] {
   background: rgba(var(--ink-rgb), 0.14);
   color: var(--color-text);
+}
+
+/* 5. Row actions: small text buttons, a soft fill on hover; delete red. */
+
+.settings-action {
+  padding: 0.15rem 0.5rem;
+  border: none;
+  border-radius: var(--radius-node);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
+.settings-action:hover:not(:disabled) {
+  color: var(--color-text);
+  background: var(--fill-control);
+}
+
+.settings-action.is-danger,
+.settings-action.is-danger:hover:not(:disabled) {
+  color: var(--color-error);
 }

@@ -1,5 +1,5 @@
 // Register blocks — how a Settings register entry looks (title + facts).
-// Shared by Directory and Logs (General moved to ../rows.ts; the rest
+// Shared by Directory and Logs (General and Archive moved to ../rows.ts; the rest
 // follow — TODO.md § Parallel paths). Edit fact lists here to steer look.
 
 // Contents

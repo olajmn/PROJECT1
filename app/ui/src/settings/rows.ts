@@ -8,6 +8,10 @@
 //      - settingsSection()
 //      - settingsGroup()
 //      - settingsRow()
+//      - settingsListRow()
+//      - settingsAction()
+//  2. Formatting
+//      - shortDate()
 
 // 1. Builders
 
@@ -56,4 +60,45 @@ export function settingsRow(
     row.appendChild(endEl);
   }
   return row;
+}
+
+/** A list row (Archive, Directory): the item's name in the text colour,
+ *  its details grey after it, actions at the right edge. */
+export function settingsListRow(
+  name: string,
+  details: string,
+  end?: Node[],
+): HTMLElement {
+  const row = settingsRow(name, details, end);
+  row.classList.add("is-list");
+  return row;
+}
+
+/** A small action button for a row's right edge; `danger` makes it red
+ *  (delete). */
+export function settingsAction(
+  label: string,
+  onClick: (button: HTMLButtonElement) => void,
+  danger = false,
+): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = danger ? "settings-action is-danger" : "settings-action";
+  button.textContent = label;
+  button.addEventListener("click", () => onClick(button));
+  return button;
+}
+
+// 2. Formatting
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "28 Sep 2026" — dates in Settings rows, the same shape as Current
+ *  state (backend/project/status/build_status.py). Spelled out here
+ *  rather than toLocaleDateString, which gives "Sept" in some browsers. */
+export function shortDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const when = new Date(iso);
+  if (Number.isNaN(when.getTime())) return "";
+  return `${when.getDate()} ${MONTHS[when.getMonth()]} ${when.getFullYear()}`;
 }

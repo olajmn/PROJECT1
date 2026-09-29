@@ -1,4 +1,4 @@
-/* Shared Settings register (Directory / Logs / Archive), being replaced by
+/* Shared Settings register (Directory / Logs), being replaced by
  * css/settings/rows.css page by page (TODO.md § Parallel paths).
  * Plain register — tokens from css/tokens.css.
  *
@@ -8,7 +8,6 @@
  *  3. Fact rows (label → value)
  *  4. Two-column group (Directory)
  *  5. Directory — create + rename (account overview)
- *  6. Archive — filter
  */
 
 /* 1. Register host / stack */
@@ -266,27 +265,4 @@
 .directory-delete-confirm .directory-hint {
   flex: 0 0 100%;
   margin: 0;
-}
-
-/* 6. Archive — filter */
-
-.archive-filter {
-  display: flex;
-  gap: var(--space-4);
-  margin: 0 0 var(--space-4);
-}
-
-.archive-filter-option {
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-}
-
-.archive-filter-option[aria-pressed="true"] {
-  color: var(--color-text);
-  font-weight: 600;
 }
