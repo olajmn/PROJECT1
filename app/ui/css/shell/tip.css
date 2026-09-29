@@ -14,8 +14,11 @@
   transform: translate(-50%, 2px);
   padding: 0.2rem 0.5rem;
   border-radius: var(--radius-node);
-  background: var(--color-text);
-  color: var(--color-bg);
+  /* One quiet grey in both themes (like the system's own labels), not
+     the inverted theme colours, which made it too loud in light. */
+  background: rgba(58, 58, 60, 0.94);
+  color: #f2f2f7;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
   font-size: var(--font-size-xs);
   font-weight: 500;
   line-height: 1.4;
