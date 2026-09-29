@@ -2,7 +2,7 @@
 // Updates ?project= in the URL so a project tape can be bookmarked.
 
 import { fetchProjects } from "../../api.js";
-import { el } from "../register/dom.js";
+
 
 export type LogScope =
   | { kind: "all" }
@@ -33,9 +33,12 @@ export async function mountLogScope(
 ): Promise<LogScope> {
   host.replaceChildren();
 
-  const label = el("label", "settings-logs-scope-label", "Show");
+  const label = document.createElement("label");
+  label.className = "settings-logs-scope-label";
+  label.textContent = "Show";
   label.htmlFor = "logs-scope";
-  const select = el("select", "settings-logs-scope");
+  const select = document.createElement("select");
+  select.className = "settings-logs-scope";
   select.id = "logs-scope";
   select.setAttribute("aria-label", "Log scope");
 
@@ -85,11 +88,9 @@ export async function mountLogScope(
     onChange(scope);
   });
 
-  const hint = el(
-    "p",
-    "settings-logs-scope-hint",
-    "All activity is the mixed feed (newest first). A project shows its full ungrouped timeline, oldest first.",
-  );
+  const hint = document.createElement("p");
+  hint.className = "settings-logs-scope-hint";
+  hint.textContent = "All activity shows every project, newest first; one project shows its whole timeline, oldest first.";
 
   host.append(label, select, hint);
   return initial;

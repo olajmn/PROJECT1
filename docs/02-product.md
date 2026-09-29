@@ -85,8 +85,9 @@ helps but does not take over.
   `/add Name` or `/add Parent / Child` adds a node;
   `/select Parent / Child` selects one; `/id` shows the selected node's id, or switches the whole map
   between ids and names. An unknown command gets a fixed reply.
-- **Look back:** Settings → Logs lists every saved change, across all
-  projects or as one project's full timeline. Settings → Archive holds
+- **Look back:** Settings → Logs lists every saved change by day,
+  across all projects (the newest 200, then Show more) or as one
+  project's full timeline. Settings → Archive holds
   archived accounts and projects, to restore or delete for good.
 - **Settings:** General sets light or dark appearance and shows which
   model is used; Directory creates, renames, and archives accounts.

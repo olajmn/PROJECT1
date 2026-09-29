@@ -120,6 +120,9 @@ _POST_ROUTES = [
 ]
 _POST_ROUTES = [(re.compile(f"^{path}$"), method) for path, method in _POST_ROUTES]
 
+# The activity log, one page at a time: /api/log or /api/log?offset=N.
+_LOG_ROUTE = re.compile(r"^/api/log(?:\?offset=(\d+))?$")
+
 # One project's history, oldest first (project/timeline.py).
 _TIMELINE_ROUTE = re.compile(r"^/api/projects/(\d+)/timeline$")
 
@@ -150,8 +153,8 @@ class Handler(BaseHTTPRequestHandler):
                 "model": MODEL,
                 "temperature": TEMPERATURE,
             })
-        elif self.path == "/api/log":
-            self._send_json(activity_log())
+        elif match := _LOG_ROUTE.match(self.path):
+            self._send_json(activity_log(int(match.group(1) or 0)))
         elif match := _TIMELINE_ROUTE.match(self.path):
             self._handle_project_timeline(int(match.group(1)))
         elif match := _SAVED_TREES_ROUTE.match(self.path):

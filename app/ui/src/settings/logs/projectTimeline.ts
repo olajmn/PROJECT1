@@ -1,49 +1,24 @@
-// One project's full timeline — every saved change, oldest first,
-// ungrouped. Settings → Logs project scope. Status compresses the same
-// events; this is the raw tape for inspection.
+// One project's full timeline — every saved change, oldest first, in day
+// sections (logList.ts). Settings → Logs project scope. Current state
+// compresses the same events; this is the raw tape for inspection.
 
 import { fetchProjectTimeline } from "../../api.js";
-import type { LogEntry } from "../../dataShapes.js";
-import {
-  arrangeStack,
-  el,
-  logBlock,
-  startAgeClock,
-} from "../register/index.js";
+import { errorLine, hint } from "./activity.js";
+import { logDaySections } from "./logList.js";
 
-function tapeBlock(entry: LogEntry) {
-  // Event name as title (node_added, chat, …); kind as secondary label.
-  return logBlock({
-    kind: entry.event,
-    project: entry.kind,
-    at: entry.at,
-    text: entry.text,
-    focus: entry.focus,
-  });
-}
-
-/** Fill a `.settings-register` host with one project's ungrouped timeline. */
+/** Fill `#logs` with one project's timeline. */
 export async function mountProjectTimeline(
   host: HTMLElement,
   projectId: number,
 ): Promise<void> {
-  host.replaceChildren();
-
-  const empty = el("p", "empty-state", "No saved changes for this project.");
-  empty.hidden = true;
-  const error = el("p", "error");
-  error.hidden = true;
-  host.append(empty, error);
-
   try {
     const entries = await fetchProjectTimeline(projectId);
-    empty.hidden = entries.length > 0;
-    if (entries.length === 0) return;
-
-    host.appendChild(arrangeStack(entries.map(tapeBlock)));
-    startAgeClock(host);
+    if (entries.length === 0) {
+      host.replaceChildren(hint("No saved changes for this project."));
+      return;
+    }
+    host.replaceChildren(...logDaySections(entries, false));
   } catch (err) {
-    error.hidden = false;
-    error.textContent = `(error: ${(err as Error).message})`;
+    host.replaceChildren(errorLine((err as Error).message));
   }
 }

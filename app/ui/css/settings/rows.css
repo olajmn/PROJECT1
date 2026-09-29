@@ -6,7 +6,7 @@
  * Contents
  *  1. Section
  *  2. Group
- *  3. Row (list row, child row, active mark, text field)
+ *  3. Row (list row, child row, log row, active mark, text field)
  *  4. Segmented control
  *  5. Row actions
  */
@@ -120,6 +120,17 @@
   color: var(--color-text-muted);
 }
 
+/* Log rows: a narrow time column, then the change. */
+.settings-item.is-log .settings-item-label {
+  flex: 0 0 3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Grey context inside a value (a log row's project and kind). */
+.settings-muted {
+  color: var(--color-text-muted);
+}
+
 /* The active account: a small static accent dot after its id. */
 .settings-item.is-active .settings-item-label::after {
   content: "";
@@ -197,4 +208,11 @@
 .settings-action.is-danger,
 .settings-action.is-danger:hover:not(:disabled) {
   color: var(--color-error);
+}
+
+/* "Show more" under a long list (Logs): centred, quiet. */
+.settings-action.settings-more {
+  align-self: center;
+  padding: 0.3rem 0.9rem;
+  background: var(--fill-control);
 }

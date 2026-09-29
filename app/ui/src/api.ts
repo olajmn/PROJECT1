@@ -387,8 +387,10 @@ export async function fetchModel(): Promise<ModelView> {
 
 // 6. Activity log (Settings → Logs)
 
-export async function fetchLog(): Promise<LogEntry[]> {
-  const res = await fetch("/api/log");
+/** One page of the activity log, newest first; `offset` = entries
+ *  already shown (backend/api/activity_log.py LOG_LIMIT per page). */
+export async function fetchLog(offset = 0): Promise<LogEntry[]> {
+  const res = await fetch(offset > 0 ? `/api/log?offset=${offset}` : "/api/log");
   if (!res.ok) {
     throw new Error(`request failed: ${res.status}`);
   }

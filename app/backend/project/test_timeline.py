@@ -1,8 +1,10 @@
-"""Checks for event_name() / to_event() - no files, no model. Run from app/:
+"""Checks for event_name() / to_event() / all_events() paging - no files,
+no model. Run from app/:
 
     .venv/bin/python -m backend.project.test_timeline
 """
 
+import backend.project.timeline as timeline
 from backend.project.timeline import event_name, to_event
 
 
@@ -32,7 +34,21 @@ def main() -> None:
     assert (renamed["kind"], renamed["text"]) == ("Renamed", "Renamed: Hus → House")
     long = to_event({"project_id": 4, "feedback": "Added step: " + "x" * 300}, "House")
     assert long["text"].endswith("…") and len(long["text"]) == 161
-    print("OK - timeline events")
+
+    # all_events() pages newest first: offset skips what is already shown.
+    lines = [
+        {"project_id": 1, "event": "node_added", "feedback": f"Added step: {n}",
+         "created_at": f"2026-09-2{n}T10:00:00"}
+        for n in range(1, 6)
+    ]
+    timeline.load_history = lambda: lines
+    timeline.get_latest_for_all_projects = lambda: [{"project_id": 1, "name": "P"}]
+    texts = lambda events: [e["text"] for e in events]
+    assert texts(timeline.all_events(limit=2)) == ["Added step: 5", "Added step: 4"]
+    assert texts(timeline.all_events(limit=2, offset=2)) == ["Added step: 3", "Added step: 2"]
+    assert texts(timeline.all_events(limit=2, offset=4)) == ["Added step: 1"]
+    assert timeline.all_events(limit=2, offset=9) == []
+    print("OK - timeline events and paging")
 
 
 if __name__ == "__main__":

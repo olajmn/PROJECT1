@@ -1,5 +1,5 @@
 // Settings → Directory page entry.
-// Mounts the id / project register (shape in spec.ts).
+// Mounts the accounts and their projects (directory.ts).
 
 import { applyStoredTheme } from "../../user/theme.js";
 import { mountDirectory } from "./directory.js";

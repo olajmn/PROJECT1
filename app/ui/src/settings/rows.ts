@@ -1,7 +1,7 @@
 // Settings rows: a small grey section title over a quiet group of rows,
 // each a label on the left and a value, control, or actions on the right
-// (like system settings). Replaces register/ page by page — see TODO.md
-// § Parallel paths. Styles: css/settings/rows.css
+// (like system settings). Every Settings page is built from these.
+// Styles: css/settings/rows.css
 
 // Contents
 //  1. Builders

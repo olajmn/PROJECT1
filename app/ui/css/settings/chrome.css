@@ -134,6 +134,17 @@ body.settings-body main > nav a[aria-current="page"] {
   max-width: 100%;
 }
 
+/* A select keeps focus after its list closes, so the browser's own ring
+   (the system accent, e.g. orange) would linger. Our own quiet edge
+   instead, still there for keyboard use. */
+.settings-logs-scope:focus {
+  outline: none;
+}
+
+.settings-logs-scope:focus-visible {
+  border-color: var(--hairline);
+}
+
 .settings-logs-scope-hint {
   flex-basis: 100%;
   margin: 0;

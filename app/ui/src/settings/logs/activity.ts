@@ -1,46 +1,57 @@
-// Logs — Settings → Logs page body: every saved change, newest first
-// (All activity scope). One-project tape: projectTimeline.ts.
-// Shape: ../register/blocks.ts (logBlock)
+// Logs — Settings → Logs, All activity: every saved change across
+// projects, newest first, in day sections (logList.ts), one page at a
+// time with "Show more" at the bottom. One project's tape:
+// projectTimeline.ts.
 
 import { fetchLog } from "../../api.js";
-import {
-  arrangeStack,
-  el,
-  logBlock,
-  startAgeClock,
-} from "../register/index.js";
+import type { LogEntry } from "../../dataShapes.js";
+import { settingsAction } from "../rows.js";
+import { logDaySections } from "./logList.js";
 
-/** Fill a `.settings-register` host with the activity log. */
+// Entries per page — the same number as LOG_LIMIT in
+// backend/api/activity_log.py. A full page means there may be more.
+const LOG_PAGE = 200;
+
+/** Fill `#logs` with the activity log. */
 export async function mountLogs(host: HTMLElement): Promise<void> {
-  host.replaceChildren();
+  const entries: LogEntry[] = [];
 
-  const empty = el("p", "empty-state", "Nothing has happened yet.");
-  empty.hidden = true;
-  const error = el("p", "error");
-  error.hidden = true;
-  host.append(empty, error);
+  const more = settingsAction("Show more", (btn) => void loadPage(btn));
+  more.classList.add("settings-more");
 
-  try {
-    const entries = await fetchLog();
-    empty.hidden = entries.length > 0;
-    if (entries.length === 0) return;
+  // Every page redraws all loaded entries, so a day that spans two pages
+  // stays one section.
+  const loadPage = async (btn?: HTMLButtonElement): Promise<void> => {
+    if (btn) btn.disabled = true;
+    try {
+      const page = await fetchLog(entries.length);
+      entries.push(...page);
+      if (entries.length === 0) {
+        host.replaceChildren(hint("Nothing has happened yet."));
+        return;
+      }
+      host.replaceChildren(...logDaySections(entries, true));
+      if (page.length >= LOG_PAGE) host.appendChild(more);
+    } catch (err) {
+      host.appendChild(errorLine((err as Error).message));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  };
 
-    host.appendChild(
-      arrangeStack(
-        entries.map((entry) =>
-          logBlock({
-            kind: entry.kind,
-            project: entry.project,
-            at: entry.at,
-            text: entry.text,
-            focus: entry.focus,
-          }),
-        ),
-      ),
-    );
-    startAgeClock(host);
-  } catch (err) {
-    error.hidden = false;
-    error.textContent = `(error: ${(err as Error).message})`;
-  }
+  await loadPage();
+}
+
+export function hint(text: string): HTMLElement {
+  const p = document.createElement("p");
+  p.className = "settings-hint";
+  p.textContent = text;
+  return p;
+}
+
+export function errorLine(message: string): HTMLElement {
+  const p = document.createElement("p");
+  p.className = "error";
+  p.textContent = `(error: ${message})`;
+  return p;
 }

@@ -38,7 +38,6 @@
      Apple system blue, not the earlier green. */
   --color-accent: #007aff;
   --color-error: #d70015;
-  --color-register: #1d1d1f;
 
   /* 2. Type */
   /* Apple's system font where available (UI pass); IBM Plex Mono stays for code. */
@@ -118,7 +117,6 @@
   --color-border-input: #34373d;
   --color-accent: #0a84ff;
   --color-error: #e07068;
-  --color-register: #f2f3f5;
 
   /* 5. Surfaces — dark (Graphite backdrop, cool). */
   --panel-rgb: 18, 19, 22;
