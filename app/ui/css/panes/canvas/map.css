@@ -255,13 +255,17 @@
   box-sizing: border-box;
   min-height: 1.6rem;
   padding: 0.15rem 0.4rem 0.15rem 0.5rem;
-  border: var(--border);
-  border-radius: var(--radius);
-  background: transparent;
+  /* A soft fill, not an outline (UI pass): fewer lines on the canvas.
+     The border stays, transparent, so box size and line anchors
+     (lines/drawLines.ts) do not move. */
+  border: 1px solid transparent;
+  border-radius: var(--radius-node);
+  background: rgba(var(--ink-rgb), 0.05);
 }
 
 .progress-row.is-selected > .progress-bead-unit {
   border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
 }
 
 /* Hidden by mapScale grain (overview); still in DOM for + to reveal. */
@@ -338,6 +342,13 @@
   text-decoration-thickness: 2px;
   background: transparent;
   padding: 0;
+}
+
+/* Top level a step heavier than the rest: size and weight carry the
+   hierarchy now that boxes have no outline. */
+.progress-bead .progress-bead-btn,
+.progress-bead .progress-bead-label {
+  font-weight: 500;
 }
 
 /* Depth quieter than spine ([[ui]] § 2). */
