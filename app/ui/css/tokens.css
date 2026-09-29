@@ -3,7 +3,7 @@
  * Direction: plain studio tool, neutral greys, one blue accent (UI pass;
  * was “ink on stone”).
  * Themes: light (default) and dark via html[data-theme]. Same roles;
- * only values change. Frosted later sits on top of either plane.
+ * only values change.
  *
  * Ownership
  *  - General look → change HERE (and css/base.css for body/forms/buttons).
@@ -15,15 +15,14 @@
  *  2. Type
  *  3. Space
  *  4. Radius / border
- *  5. Surfaces (floating panels; solid or glass)
+ *  5. Surfaces (the backdrop and what floats on it)
  */
 
 :root,
 [data-theme="light"] {
   /* 1. Color — light
-   * Three columns share one plane (--color-bg-workspace) so frosted
-   * depth can sit on top later without fighting three paints.
-   * A light grey plane (Apple's grouped background) with white surfaces
+   * The three columns share one plane (--color-bg-workspace), so they
+   * read as one block. A light grey plane (Apple's grouped background) with white surfaces
    * on it (section 5), not the earlier warm stone #e4e0d8. */
   --color-bg: #f5f5f7;
   --color-bg-workspace: #f5f5f7;
@@ -71,9 +70,8 @@
   --border-control: 1px solid rgba(var(--ink-rgb), 0.10);
 
   /* 5. Surfaces — the plane under the columns ("desk") and the panels
-   * floating on it. Solid by default; glass is the same panel made
-   * translucent (--glass-alpha) with --glass-blur behind it.
-   * *-rgb values are "r, g, b" so rgba() can add an alpha. */
+   * floating on it. *-rgb values are "r, g, b" so rgba() can add an
+   * alpha. (Frosted glass was tried and parked: TODO.md § Ideas.) */
   /* Space between the floating block and the window edge. */
   --panel-gap: 10px;
   /* Height of the strips at the top of every column and at the foot of
@@ -81,10 +79,7 @@
   --bar-height: 2rem;
   /* Height of the / and Send buttons in the chat box. */
   --composer-button-h: 1.6rem;
-  --panel-rgb: 245, 245, 247;
   --ink-rgb: 0, 0, 0;
-  --glass-alpha: 0.66;
-  --glass-blur: 48px;
   --hairline: rgba(var(--ink-rgb), 0.10);
   /* Dark dots on a light plane read stronger than light on dark, so the
      map's dot grid (panes/canvas/dotGrid.css) runs weaker here. */
@@ -116,8 +111,7 @@
 }
 
 [data-theme="dark"] {
-  /* 1. Color — dark; same roles as light.
-   * Columns share workspace plane (canvas base) for frosted later. */
+  /* 1. Color — dark; same roles as light (the columns share one plane). */
   /* Cool neutral black (UI pass), not the earlier warm #141210. */
   --color-bg: #121316;
   --color-bg-workspace: #121316;
@@ -132,7 +126,6 @@
   --color-error: #e07068;
 
   /* 5. Surfaces — dark (Graphite backdrop, cool). */
-  --panel-rgb: 18, 19, 22;
   --ink-rgb: 255, 255, 255;
   --dot-strength: 1;
   --shadow-panel: 0 10px 30px rgba(0, 0, 0, 0.45);

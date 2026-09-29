@@ -88,9 +88,10 @@ card-style nodes.
   Remove is red. Nothing else is coloured.
 - **System font** (SF Pro on Apple devices); IBM Plex Mono for code and
   ASCII.
-- **Frosted depth is a direction, not built:** soft translucency that
-  lets you sense what sits behind, without hurting readability. The
-  tokens for it exist (`--glass-alpha`, `--glass-blur`).
+- **Frosted glass was tried and parked** (`TODO.md` § Ideas): over a
+  calm backdrop it added little, and text blurring under the map's top
+  strip made the controls there restless. The backdrop's soft gradients
+  stay.
 
 ## 4. Where the code lives
 

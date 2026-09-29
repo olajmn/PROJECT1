@@ -30,11 +30,11 @@ The UI/UX pass, starting with real content to design against.
     not new features: hierarchy (loud / quiet / hidden), spacing, type,
     and the look of the canvas, chat, Current state, and sidebar,
     judged against the projects from 55. Principles and layout:
-    `docs/ui.md`. The main pass is done ([[05-decisions]] #68); left:
-    frosted glass as an optional material in Settings (tokens exist),
-    and 57 (tree on the dot grid). Items that may fold in when they come
-    up: 53 (`/select` hint), 54 (undo), 45 (copy one branch), 38
-    (changed nodes on the map).
+    `docs/ui.md`. The main pass is done ([[05-decisions]] #68), Settings
+    included; left: 57 (tree on the dot grid). Frosted glass is parked
+    (§ Ideas). Items that may fold in when they come up: 53 (`/select`
+    hint), 54 (undo), 45 (copy one branch), 38 (changed nodes on the
+    map).
 
 ## Queue
 
@@ -205,6 +205,14 @@ the Queue is a deliberate choice.
   staying the real one (`docs/03-architecture.md` § 5).
 - **Other front ends on the same data** — the node data is portable, so
   a different interface could read it.
+- **Frosted glass as a material** (tried 2026-09-29, parked) — a Settings
+  switch (Solid | Glass) that made the floating block, the map's top
+  strip and menus translucent with a blur (block alpha 0.66, blur 48px,
+  saturate 160%). Over the calm Graphite backdrop it was barely visible,
+  and the tree blurring under the top strip competed with its controls.
+  Worth trying again only with a livelier backdrop behind the block and
+  a solid top strip; the sketch `glass-sketch.html` (git-excluded, repo
+  root) still has the knobs.
 
 ## Parallel paths
 
