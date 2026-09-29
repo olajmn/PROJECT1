@@ -180,9 +180,14 @@
   height: 8px;
 }
 
-.project-chat .status-resize:hover,
+/* Neutral like the column seams (css/shell/layout.css): lighter on
+   hover, a bit more while dragging; blue is for selected / active. */
+.project-chat .status-resize:hover {
+  border-top-color: rgba(var(--ink-rgb), 0.25);
+}
+
 body.is-resizing-status .status-resize {
-  border-top-color: var(--color-accent);
+  border-top-color: rgba(var(--ink-rgb), 0.4);
 }
 
 body.is-resizing-status {
