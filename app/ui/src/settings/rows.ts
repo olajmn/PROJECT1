@@ -10,6 +10,7 @@
 //      - settingsRow()
 //      - settingsListRow()
 //      - settingsAction()
+//      - settingsHint() / settingsError()
 //  2. Formatting
 //      - shortDate()
 
@@ -87,6 +88,24 @@ export function settingsAction(
   button.textContent = label;
   button.addEventListener("click", () => onClick(button));
   return button;
+}
+
+/** A short grey line of help or an empty-list note. */
+export function settingsHint(text: string): HTMLParagraphElement {
+  const p = document.createElement("p");
+  p.className = "settings-hint";
+  p.textContent = text;
+  return p;
+}
+
+/** An error line, "(error: …)"; pass no message for a hidden one to fill
+ *  later. */
+export function settingsError(message?: string): HTMLParagraphElement {
+  const p = document.createElement("p");
+  p.className = "error";
+  if (message === undefined) p.hidden = true;
+  else p.textContent = `(error: ${message})`;
+  return p;
 }
 
 // 2. Formatting

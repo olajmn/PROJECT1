@@ -5,7 +5,7 @@
 
 import { fetchLog } from "../../api.js";
 import type { LogEntry } from "../../dataShapes.js";
-import { settingsAction } from "../rows.js";
+import { settingsAction, settingsError, settingsHint } from "../rows.js";
 import { logDaySections } from "./logList.js";
 
 // Entries per page — the same number as LOG_LIMIT in
@@ -27,31 +27,17 @@ export async function mountLogs(host: HTMLElement): Promise<void> {
       const page = await fetchLog(entries.length);
       entries.push(...page);
       if (entries.length === 0) {
-        host.replaceChildren(hint("Nothing has happened yet."));
+        host.replaceChildren(settingsHint("Nothing has happened yet."));
         return;
       }
       host.replaceChildren(...logDaySections(entries, true));
       if (page.length >= LOG_PAGE) host.appendChild(more);
     } catch (err) {
-      host.appendChild(errorLine((err as Error).message));
+      host.appendChild(settingsError((err as Error).message));
     } finally {
       if (btn) btn.disabled = false;
     }
   };
 
   await loadPage();
-}
-
-export function hint(text: string): HTMLElement {
-  const p = document.createElement("p");
-  p.className = "settings-hint";
-  p.textContent = text;
-  return p;
-}
-
-export function errorLine(message: string): HTMLElement {
-  const p = document.createElement("p");
-  p.className = "error";
-  p.textContent = `(error: ${message})`;
-  return p;
 }

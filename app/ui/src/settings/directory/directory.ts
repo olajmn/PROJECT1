@@ -6,7 +6,7 @@
 //  1. Helpers
 //  2. Rows
 //      - newAccountSection()
-//      - accountRows() / projectRow()
+//      - accountRows() / childProjectRow()
 //  3. mountDirectory()
 
 import {
@@ -28,7 +28,9 @@ import {
 import type { AccountView, ProjectView } from "../../dataShapes.js";
 import {
   settingsAction,
+  settingsError,
   settingsGroup,
+  settingsHint,
   settingsListRow,
   settingsRow,
   settingsSection,
@@ -74,7 +76,7 @@ function newAccountSection(onCreate: (name: string) => Promise<void>): HTMLEleme
   return settingsSection("New account", settingsGroup([settingsRow("Name", input, [create])]));
 }
 
-function projectRow(project: ProjectView): HTMLElement {
+function childProjectRow(project: ProjectView): HTMLElement {
   const local = project.account_n != null ? `#${project.account_n}` : `#${project.project_id}`;
   const details = [project.name, shortDate(project.created_at)].filter(Boolean).join(" · ");
   const row = settingsListRow(local, details);
@@ -153,7 +155,7 @@ function accountRows(
     input.select();
   };
 
-  return [row, ...projects.map(projectRow)];
+  return [row, ...projects.map(childProjectRow)];
 }
 
 // 3. mountDirectory()
@@ -161,9 +163,7 @@ function accountRows(
 export async function mountDirectory(host: HTMLElement): Promise<void> {
   const lists = document.createElement("div");
   lists.className = "settings-lists";
-  const error = document.createElement("p");
-  error.className = "error";
-  error.hidden = true;
+  const error = settingsError();
   const showError = (message: string): void => {
     error.hidden = false;
     error.textContent = `(error: ${message})`;
@@ -196,24 +196,20 @@ export async function mountDirectory(host: HTMLElement): Promise<void> {
       }
       if (orphans.length > 0) {
         lists.appendChild(
-          settingsSection("Projects without an account", settingsGroup(orphans.map(projectRow))),
+          settingsSection("Projects without an account", settingsGroup(orphans.map(childProjectRow))),
         );
       }
       if (active.length === 0 && orphans.length === 0) {
-        const empty = document.createElement("p");
-        empty.className = "settings-hint";
-        empty.textContent = "No accounts yet — create one above.";
-        lists.appendChild(empty);
+        lists.appendChild(settingsHint("No accounts yet — create one above."));
       }
     } catch (err) {
       showError((err as Error).message);
     }
   };
 
-  const hint = document.createElement("p");
-  hint.className = "settings-hint";
-  hint.textContent =
-    "Accounts are created, renamed, and deleted here; the sidebar only switches between them.";
+  const hint = settingsHint(
+    "Accounts are created, renamed, and deleted here; the sidebar only switches between them.",
+  );
 
   host.replaceChildren(
     newAccountSection(async (name) => {

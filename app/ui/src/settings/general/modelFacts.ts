@@ -1,7 +1,7 @@
 // General — Model: which model answers in Talk, read from the server.
 
 import { fetchModel } from "../../api.js";
-import { settingsGroup, settingsRow, settingsSection } from "../rows.js";
+import { settingsError, settingsGroup, settingsRow, settingsSection } from "../rows.js";
 
 /** Fill `#model-facts` with the model, provider, and temperature. */
 export async function mountModelFacts(host: HTMLElement): Promise<void> {
@@ -18,9 +18,6 @@ export async function mountModelFacts(host: HTMLElement): Promise<void> {
       ),
     );
   } catch (err) {
-    const error = document.createElement("p");
-    error.className = "error";
-    error.textContent = `(error: ${(err as Error).message})`;
-    host.replaceChildren(error);
+    host.replaceChildren(settingsError((err as Error).message));
   }
 }

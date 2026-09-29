@@ -1,15 +1,14 @@
-/* Shared page chrome: body, nav, forms, buttons, errors.
+/* Shared page chrome: body, nav, focus, forms, buttons (error lines:
+ * css/shared.css).
  *
  * Values come from css/tokens.css (imported first via css/style.css).
  *
  * Contents
  *  1. Page frame
  *      - body / main / h1
- *      - scrollbars
+ *      - focus ring / scrollbars
  *  2. Nav
- *  3. Status
- *      - .error
- *  4. Forms & buttons
+ *  3. Forms & buttons
  *      - form / textarea / button
  */
 
@@ -98,15 +97,7 @@ nav a[aria-current="page"] {
   font-weight: 600;
 }
 
-/* 3. Status */
-
-.error {
-  margin: var(--space-1) 0 0;
-  color: var(--color-error);
-  font-size: var(--font-size-sm);
-}
-
-/* 4. Forms & buttons */
+/* 3. Forms & buttons */
 
 form {
   display: flex;

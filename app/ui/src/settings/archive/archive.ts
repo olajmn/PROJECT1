@@ -3,7 +3,7 @@
 
 // Contents
 //  1. Rows
-//      - accountRow() / projectRow()
+//      - accountRow() / closedProjectRow()
 //  2. mountArchive()
 
 import {
@@ -20,7 +20,9 @@ import { accountWireLabel, userLabel } from "../../user/activeAccount.js";
 import type { AccountView, ProjectView } from "../../dataShapes.js";
 import {
   settingsAction,
+  settingsError,
   settingsGroup,
+  settingsHint,
   settingsListRow,
   settingsSection,
   shortDate,
@@ -97,7 +99,7 @@ function projectStatus(project: ProjectView): string {
   return "Closed";
 }
 
-function projectRow(project: ProjectView, repaint: () => Promise<void>): HTMLElement {
+function closedProjectRow(project: ProjectView, repaint: () => Promise<void>): HTMLElement {
   const local = project.account_n != null ? `#${project.account_n}` : `#${project.project_id}`;
   const details = [local, projectStatus(project), shortDate(project.created_at)]
     .filter(Boolean)
@@ -127,9 +129,9 @@ function projectRow(project: ProjectView, repaint: () => Promise<void>): HTMLEle
 type ArchiveFilter = "all" | "accounts" | "projects";
 
 export async function mountArchive(host: HTMLElement): Promise<void> {
-  const hint = document.createElement("p");
-  hint.className = "settings-hint";
-  hint.textContent = "Archived accounts and closed projects. Restore brings one back; delete removes it for good.";
+  const hint = settingsHint(
+    "Archived accounts and closed projects. Restore brings one back; delete removes it for good.",
+  );
 
   const filterBar = document.createElement("div");
   filterBar.className = "settings-segmented";
@@ -138,12 +140,9 @@ export async function mountArchive(host: HTMLElement): Promise<void> {
 
   const lists = document.createElement("div");
   lists.className = "settings-lists";
-  const empty = document.createElement("p");
-  empty.className = "settings-hint";
+  const empty = settingsHint("");
   empty.hidden = true;
-  const error = document.createElement("p");
-  error.className = "error";
-  error.hidden = true;
+  const error = settingsError();
   host.replaceChildren(hint, filterBar, lists, empty, error);
 
   // Survives repaints, so restore / delete keeps the current view.
@@ -210,7 +209,7 @@ export async function mountArchive(host: HTMLElement): Promise<void> {
       lists.appendChild(
         settingsSection(
           "Projects",
-          settingsGroup(projects.map((p) => projectRow(p, paint))),
+          settingsGroup(projects.map((p) => closedProjectRow(p, paint))),
         ),
       );
     }
