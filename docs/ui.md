@@ -63,7 +63,8 @@ drags it back out.
   structure, Add folder, Insert saved tree…); Copy as ASCII and Archive
   are icons.
 - **A faint dot grid** lies behind the map and moves with pan and zoom;
-  it dims as the map zooms out.
+  it dims as the map zooms out, and instead of packing tighter, every
+  other dot fades out, stepping to a wider spacing.
 
 Not planned for now: free placement of nodes, panning outside the frame,
 card-style nodes.

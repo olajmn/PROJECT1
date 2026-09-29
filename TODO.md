@@ -186,8 +186,9 @@ only). Numbers are stable ids, not rank.
     row pitch, and the dot spacing whole multiples of it, and offset the
     grid by the viewport padding so it starts where the tree does. Easy
     first half: only the vertical spines on dot columns (the indent is
-    already fixed). Does not hold below the grid's 9px minimum spacing
-    (far zoomed out). Layout change, not CSS only.
+    already fixed). Holds at every zoom: zoomed out, the grid
+    only drops dots, and every dot left is on the 1× grid. Layout change,
+    not CSS only.
 
 ## Ideas (not decided)
 

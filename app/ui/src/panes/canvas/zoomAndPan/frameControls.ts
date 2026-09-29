@@ -430,18 +430,6 @@ export function installMapScale(
     camera.panToTop();
   });
 
-  // Wheel here always means "to the top" — stop it before the camera's own
-  // wheel handler on the viewport sees it.
-  topBar.addEventListener(
-    "wheel",
-    (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      camera.panToTop();
-    },
-    { passive: false },
-  );
-
   zoomInBtn.addEventListener("click", () => bumpGrain(1));
   zoomOutBtn.addEventListener("click", () => bumpGrain(-1));
 

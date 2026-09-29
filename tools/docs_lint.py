@@ -24,9 +24,11 @@ Exit code 0 if no CONFIRMED hits (REVIEW alone doesn't fail unless
 #  1. Configuration
 #      - ROOT
 #      - DEFAULT_TARGETS
+#      - ARCHIVE
 #      - SCANNED_SUFFIXES
 #      - CONFIRMED_PATTERNS
 #      - REVIEW_PATTERN
+#      - REVIEW_ACCEPTED
 #
 #  2. Helpers
 #      - _iter_files()
@@ -60,8 +62,12 @@ DEFAULT_TARGETS = [
     "app/ui/src",
 ]
 
+# Not walked: optional and unmaintained, same as tools/docs_check.py's
+# ARCHIVE. A file in it passed explicitly is still scanned.
+ARCHIVE = ROOT / "docs" / "archive"
+
 # Extensions scanned inside a directory target.
-SCANNED_SUFFIXES = {".md", ".py"}
+SCANNED_SUFFIXES = {".md", ".py", ".ts"}
 
 # CONFIRMED patterns - flagged regardless of context. Each entry is
 # (pattern, label shown in the report).
@@ -87,6 +93,14 @@ CONFIRMED_PATTERNS = [(re.compile(p, re.IGNORECASE), label) for p, label in _CON
 # the sentence.
 REVIEW_PATTERN = re.compile(r"\bthe user'?s own \w+", re.IGNORECASE)
 
+# REVIEW hits already checked by hand and found fine (the product's
+# end-user), as (file relative to ROOT, matched text) - not line
+# numbers, so an edit elsewhere in the file does not bring them back.
+REVIEW_ACCEPTED = {
+    ("docs/05-decisions.md", "the user's own device"),
+    ("app/ui/src/panes/canvas/zoomAndPan/panAndZoom.ts", "the user's own view"),
+}
+
 # 2. Helpers
 
 
@@ -103,7 +117,7 @@ def _iter_files(targets: list[str]) -> list[Path]:
                 files.append(path)
             continue
         for suffix in SCANNED_SUFFIXES:
-            files.extend(sorted(path.rglob(f"*{suffix}")))
+            files.extend(f for f in path.rglob(f"*{suffix}") if ARCHIVE not in f.parents)
     return sorted(set(files))
 
 
@@ -162,6 +176,7 @@ def main() -> int:
             rel = path
         for line_number, matched, label in confirmed:
             print(f"{rel}:{line_number}: [CONFIRMED - {label}] {matched!r}")
+        review = [(n, m) for n, m in review if (rel.as_posix(), m) not in REVIEW_ACCEPTED]
         for line_number, matched in review:
             print(f"{rel}:{line_number}: [REVIEW - check by hand] {matched!r}")
         total_confirmed += len(confirmed)

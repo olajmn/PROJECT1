@@ -51,6 +51,7 @@ import {
   setMapView,
   syncSkeletonFromZoom,
 } from "../lineView/textOrLine.js";
+import { installDotGrid } from "./dotGrid.js";
 
 // 1. Constants and Types
 
@@ -106,6 +107,7 @@ export function installMapCamera(
   let dragging = false;
   let lastY = 0;
   let wheelSettle: ReturnType<typeof setTimeout> | undefined;
+  const dots = installDotGrid(viewport);
 
   // 2. Geometry and Layout Helpers
 
@@ -177,6 +179,7 @@ export function installMapCamera(
     viewport.style.setProperty("--cam-x", `${panX}px`);
     viewport.style.setProperty("--cam-y", `${panY}px`);
     viewport.style.setProperty("--cam-zoom", String(zoom));
+    dots.place(zoom);
   };
 
   /** Paint the current zoom/pan onto `stage` and rebuild the line nest. */
@@ -365,6 +368,7 @@ export function installMapCamera(
         for (const name of ["--cam-x", "--cam-y", "--cam-zoom"]) {
           viewport.style.removeProperty(name);
         }
+        dots.clear();
         mapEl.dataset.mapScale = "1";
         dirty = false;
       } else {
@@ -419,6 +423,7 @@ export function installMapCamera(
       viewport.removeEventListener("pointercancel", onPointerUp);
       viewport.removeEventListener("dblclick", onDblClick);
       viewport.classList.remove("is-camera-on", "is-panning");
+      dots.clear();
       setMapView(mapEl, "text");
       clearMapViewPin(mapEl);
     },
