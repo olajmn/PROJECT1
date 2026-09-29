@@ -6,10 +6,11 @@ import { chooseFolder, addFolder } from "../../api.js";
 import type { ProjectView } from "../../dataShapes.js";
 
 export type AddFolderPanel = {
-  folderBtn: HTMLButtonElement;
   folderForm: HTMLFormElement;
   updateFolderHint: () => void;
   isOpen: () => boolean;
+  /** Show the form (from the bar's + Add menu). */
+  open: () => void;
 };
 
 export function buildAddFolderPanel(opts: {
@@ -18,12 +19,6 @@ export function buildAddFolderPanel(opts: {
   getProjectId: () => number;
   onImported: (updated: ProjectView) => void;
 }): AddFolderPanel {
-  const folderBtn = document.createElement("button");
-  folderBtn.type = "button";
-  folderBtn.className = "map-copy-button";
-  folderBtn.textContent = "Add folder";
-  folderBtn.title = "Turn a folder on this computer into map nodes";
-
   const folderForm = document.createElement("form");
   folderForm.className = "map-folder-form";
   folderForm.hidden = true;
@@ -75,13 +70,11 @@ export function buildAddFolderPanel(opts: {
       folderChoose.disabled = false;
     }
   });
-  folderBtn.addEventListener("click", () => {
-    folderForm.hidden = !folderForm.hidden;
-    if (!folderForm.hidden) {
-      updateFolderHint();
-      folderInput.focus();
-    }
-  });
+  const open = () => {
+    folderForm.hidden = false;
+    updateFolderHint();
+    folderInput.focus();
+  };
   folderCancel.addEventListener("click", () => {
     folderForm.hidden = true;
     folderInput.value = "";
@@ -111,9 +104,9 @@ export function buildAddFolderPanel(opts: {
   });
 
   return {
-    folderBtn,
     folderForm,
     updateFolderHint,
     isOpen: () => !folderForm.hidden,
+    open,
   };
 }

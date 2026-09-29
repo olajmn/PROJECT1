@@ -34,7 +34,6 @@
   --color-text-soft: #424245;
   --color-border: #dcdce1;
   --color-border-input: #cfcfd4;
-  --color-surface: transparent;
   /* One accent = "selected / active / you can act here" (UI pass):
      Apple system blue, not the earlier green. */
   --color-accent: #007aff;
@@ -117,7 +116,6 @@
   --color-text-soft: #c3c6cc;
   --color-border: #2a2c31;
   --color-border-input: #34373d;
-  --color-surface: transparent;
   --color-accent: #0a84ff;
   --color-error: #e07068;
   --color-register: #f2f3f5;

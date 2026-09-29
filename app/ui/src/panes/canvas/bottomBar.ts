@@ -88,10 +88,10 @@ export function mountBottomBar(opts: BottomBarOpts): BottomBar {
     copyRow.appendChild(error);
   };
 
-  // The paste / folder panels keep their own (now unplaced) toggle
-  // buttons; the menu only opens them. Saved trees is the same picker
-  // as a node's ⋯ "Insert saved tree…", anchored to the Add button: it
-  // inserts under the selected node, or at the top level.
+  // The menu opens the paste / folder forms under the map. Saved trees
+  // is the same picker as a node's ⋯ "Insert saved tree…", anchored to
+  // the Add button: it inserts under the selected node, or at the top
+  // level.
   const addBtn = buildAddMenu([
     {
       label: "Paste structure",
@@ -101,9 +101,7 @@ export function mountBottomBar(opts: BottomBarOpts): BottomBar {
     {
       label: "Add folder",
       detail: "Turn a folder on this computer into map nodes",
-      run: () => {
-        if (!folder.isOpen()) folder.folderBtn.click();
-      },
+      run: () => folder.open(),
     },
     {
       label: "Insert saved tree…",
@@ -114,7 +112,6 @@ export function mountBottomBar(opts: BottomBarOpts): BottomBar {
           parentId: opts.getSelectedNodeId(),
           parentLabel: opts.getSelectedNodeLabel(),
           anchor,
-          anchorToggles: false,
           onUpdated: (updated) => opts.onUpdated(updated),
           onError: showError,
         });

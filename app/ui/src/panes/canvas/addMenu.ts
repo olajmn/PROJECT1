@@ -25,7 +25,7 @@ export type AddMenuItem = {
 export function buildAddMenu(items: AddMenuItem[]): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "map-copy-button map-add-button";
+  button.className = "map-copy-button";
   button.textContent = "+ Add";
   // At the bar's left edge: label starts at the button, not centred.
   setTip(button, "Add many nodes", "above", "start");

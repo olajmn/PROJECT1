@@ -1,5 +1,5 @@
-/* Saved-tree picker, opened from the node ⋯ menu or the bottom bar's
-   Saved trees button (panes/canvas/savedTrees/).
+/* Saved-tree picker, opened from the node ⋯ menu or the bar's
+   + Add → Insert saved tree… (panes/canvas/savedTrees/).
    The box itself reuses .progress-menu (map.css); this adds the rows. */
 
 .saved-tree-picker {

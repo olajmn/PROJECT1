@@ -1,8 +1,8 @@
 // The saved-tree picker: lists the account's saved trees and inserts
 // one as new nodes (fresh ids; a clashing top label is numbered by the
 // server). Opened from a node's ⋯ "Insert saved tree…" (under that node)
-// or the bottom bar's "Saved trees" (under the selected node, or at the
-// top level). × on a row deletes it from the library only — nothing
+// or the bar's + Add → "Insert saved tree…" (under the selected node, or
+// at the top level). × on a row deletes it from the library only — nothing
 // already inserted changes.
 
 // Contents
@@ -31,9 +31,6 @@ export type PickerTarget = {
   parentId: string | null;
   parentLabel: string | null;
   anchor: HTMLElement | null;
-  /** The anchor toggles the picker (bottom-bar button): a click on it
-   *  is left to its own handler instead of closing as "outside". */
-  anchorToggles?: boolean;
   onUpdated: (updated: ProjectView) => void;
   onError: (message: string) => void;
 };
@@ -56,13 +53,8 @@ export async function openInsertTreePicker(
   });
 }
 
-/** Open the picker for `target`. With `anchorToggles`, a second call
- *  from the same anchor while it is open closes it instead. */
+/** Open the picker for `target`, closing one already open. */
 export async function openSavedTreesPicker(target: PickerTarget): Promise<void> {
-  if (openPicker && target.anchorToggles && openAnchor === target.anchor) {
-    closePicker();
-    return;
-  }
   closePicker();
   let trees: SavedTreeView[];
   try {
@@ -114,7 +106,6 @@ export async function openSavedTreesPicker(target: PickerTarget): Promise<void> 
   document.body.appendChild(picker);
   placePopover(picker, target.anchor?.getBoundingClientRect() ?? null);
   openPicker = picker;
-  openAnchor = target.anchorToggles ? target.anchor : null;
   document.addEventListener("click", onOutside, true);
   document.addEventListener("keydown", onKey);
   document.addEventListener("wheel", onWheel, { passive: true });
@@ -124,7 +115,6 @@ export async function openSavedTreesPicker(target: PickerTarget): Promise<void> 
 // 2. Picker
 
 let openPicker: HTMLElement | null = null;
-let openAnchor: HTMLElement | null = null;
 
 function buildRow(
   tree: SavedTreeView,
@@ -168,12 +158,10 @@ function buildRow(
   return row;
 }
 
-/** Outside click closes; a click on the anchor is left to its own
- *  handler, which toggles. */
+/** A click outside the picker closes it. */
 function onOutside(event: MouseEvent): void {
   const target = event.target as Node;
   if (!openPicker || openPicker.contains(target)) return;
-  if (openAnchor?.contains(target)) return;
   closePicker();
 }
 
@@ -190,7 +178,6 @@ function closePicker(): void {
   if (!openPicker) return;
   openPicker.remove();
   openPicker = null;
-  openAnchor = null;
   document.removeEventListener("click", onOutside, true);
   document.removeEventListener("keydown", onKey);
   document.removeEventListener("wheel", onWheel);

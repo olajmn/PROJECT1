@@ -65,7 +65,6 @@ export function previewTreeElement(
 }
 
 export type PasteTreePanel = {
-  pasteBtn: HTMLButtonElement;
   pasteForm: HTMLFormElement;
   updatePasteHint: () => void;
   isOpen: () => boolean;
@@ -73,8 +72,8 @@ export type PasteTreePanel = {
 };
 
 /**
- * Build the Paste structure button + form. Callers wire the button into
- * the map chrome and append the form under the map.
+ * Build the Paste structure form. Callers append it under the map and
+ * open it with `open()` (the bar's + Add menu, a node's ⋯ Paste).
  */
 export function buildPasteTreePanel(opts: {
   getParentLabel: () => string | null;
@@ -82,13 +81,6 @@ export function buildPasteTreePanel(opts: {
   getProjectId: () => number;
   onImported: (updated: ProjectView) => void;
 }): PasteTreePanel {
-  const pasteBtn = document.createElement("button");
-  pasteBtn.type = "button";
-  pasteBtn.className = "map-copy-button";
-  pasteBtn.textContent = "Paste structure";
-  pasteBtn.title =
-    "Import an outline or ASCII tree (e.g. from another LLM) as steps";
-
   const pasteForm = document.createElement("form");
   pasteForm.className = "map-paste-form";
   pasteForm.hidden = true;
@@ -191,13 +183,6 @@ export function buildPasteTreePanel(opts: {
     pasteInput.focus();
   };
 
-  pasteBtn.addEventListener("click", () => {
-    pasteForm.hidden = !pasteForm.hidden;
-    if (!pasteForm.hidden) {
-      updatePasteHint();
-      pasteInput.focus();
-    }
-  });
   pasteCancel.addEventListener("click", () => {
     pasteForm.hidden = true;
     pasteInput.value = "";
@@ -233,7 +218,6 @@ export function buildPasteTreePanel(opts: {
   });
 
   return {
-    pasteBtn,
     pasteForm,
     updatePasteHint,
     isOpen: () => !pasteForm.hidden,
