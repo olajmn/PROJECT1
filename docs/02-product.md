@@ -42,7 +42,7 @@ helps but does not take over.
 | Column | What it holds |
 |---|---|
 | **Sidebar** | Accounts, each with its projects; `+` for a new project; Settings (General, Directory, Archive, Logs) |
-| **Canvas** | The open project's map: nodes under the project title, each with a ⋯ menu; depth (− / +) and Text / Line view on top; Copy as ASCII, Paste structure, Add folder, Saved trees, and Archive below |
+| **Canvas** | The open project's map: nodes under the project title, each with a ⋯ menu; depth (− / +) and Text / Line view on top; below it **+ Add** (Paste structure, Add folder, Insert saved tree…) and icon buttons for Copy as ASCII and Archive |
 | **Chat** | Current state of the project, the conversation thread (turns about a node are framed and can be shown on their own), and the message box with a `/` command menu |
 
 ### ii. What you can do
@@ -63,7 +63,7 @@ helps but does not take over.
   `(3)`, … instead of an error.
 - **Reuse structure:** save a node and everything under it (⋯ Save as
   tree), then insert it again from ⋯ Insert saved tree… (under that
-  node) or **Saved trees** in the bar under the map (under the selected
+  node) or **+ Add → Insert saved tree…** in the bar under the map (under the selected
   node, or at the top level). Each insert gets new nodes of its own; ×
   in the list deletes a saved tree from the library only.
 - **Read the map:** show fewer or more levels (− / +), switch between

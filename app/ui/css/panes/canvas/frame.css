@@ -8,7 +8,7 @@
  *  2. Sticky top bar
  *      - .map-top-bar
  *  3. Bottom action bar
- *      - .map-copy-row / .map-copy-group / .map-copy-button
+ *      - .map-copy-row / .map-copy-group / .map-copy-button / .map-icon-button
  */
 
 /* 1. Viewport & frame */
@@ -112,4 +112,14 @@
 
 .map-copy-row .map-copy-button + .map-copy-button {
   margin-left: 0.4rem;
+}
+
+/* Copy and Archive: square icon-only buttons (bottomBar.ts iconButton()). */
+.map-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.6rem;
+  padding: 0;
 }

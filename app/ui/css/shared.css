@@ -1,4 +1,5 @@
-/* Shared page chrome (entity ids, errors, the heading disclosure chevron). */
+/* Shared page chrome (entity ids, errors, the heading disclosure chevron,
+   hover labels). */
 
 .entity-id {
   color: var(--color-text-muted);
@@ -39,4 +40,63 @@
 .sidebar-brand.is-active::after,
 .project-chat .chat-brand.is-active::after {
   transform: translateY(-0.22em) rotate(45deg);
+}
+
+/* Hover label for symbol / icon buttons, from data-tip (src/shell/tip.ts).
+ * Shows after a short pause, above or below the button, centred or
+ * aligned to one edge so it stays inside the window. */
+[data-tip] {
+  position: relative;
+}
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 60;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translate(-50%, 2px);
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-node);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+[data-tip]:hover::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition-delay: 0.35s;
+}
+
+/* Hidden from the moment the button is pressed until the pointer
+   leaves (tip.ts). */
+[data-tip].tip-off::after {
+  opacity: 0;
+  transition-delay: 0s;
+}
+
+[data-tip-place="below"]::after {
+  bottom: auto;
+  top: calc(100% + 6px);
+  transform: translate(-50%, -2px);
+}
+
+[data-tip-align="start"]::after,
+[data-tip-align="start"]:hover::after {
+  left: 0;
+  transform: none;
+}
+
+[data-tip-align="end"]::after,
+[data-tip-align="end"]:hover::after {
+  left: auto;
+  right: 0;
+  transform: none;
 }

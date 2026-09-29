@@ -48,9 +48,10 @@ sidebar, not the middle column.
   node), above ~26% back to **Text**; the toolbar can pin either.
 - **An empty project** opens at natural size with a short hint, not a
   zoomed-out empty frame.
-- **Controls around the map** — Copy as ASCII, Paste structure, Add
-  folder, Saved trees, Archive — sit in the bar below it, quieter than
-  the map.
+- **Controls around the map** sit in the bar below it, quieter than
+  the map: **+ Add** opens one menu for the ways to add many nodes
+  (Paste structure, Add folder, Insert saved tree…); Copy as ASCII and
+  Archive are icon buttons with tooltips.
 
 Not planned for now: free placement of nodes, panning outside the frame,
 card-style nodes.

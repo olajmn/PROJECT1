@@ -6,6 +6,7 @@
  *      - installCommandMenu()
  */
 
+import { setTip } from "../../../shell/tip.js";
 import { CHAT_COMMANDS } from "./catalog.js";
 
 type CommandMenuOpts = {
@@ -23,7 +24,7 @@ export function installCommandMenu(opts: CommandMenuOpts): void {
   toggle.type = "button";
   toggle.className = "chat-command-menu-toggle";
   toggle.textContent = "/";
-  toggle.title = "Commands";
+  setTip(toggle, "Show commands");
   toggle.setAttribute("aria-haspopup", "listbox");
   toggle.setAttribute("aria-expanded", "false");
 

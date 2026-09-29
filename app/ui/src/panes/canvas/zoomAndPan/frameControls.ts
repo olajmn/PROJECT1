@@ -40,6 +40,7 @@
  * 6. Event Wiring and Public Handle
  */
 
+import { setTip } from "../../../shell/tip.js";
 import { installMapCamera, type CameraPose } from "./panAndZoom.js";
 import { measureMapContent } from "../lines/svgHelpers.js";
 import {
@@ -130,13 +131,13 @@ export function installMapScale(
   zoomOutBtn.type = "button";
   zoomOutBtn.className = "map-scale-btn";
   zoomOutBtn.textContent = "−";
-  zoomOutBtn.title = "Show less depth";
+  setTip(zoomOutBtn, "Show less depth", "below");
 
   const zoomInBtn = document.createElement("button");
   zoomInBtn.type = "button";
   zoomInBtn.className = "map-scale-btn";
   zoomInBtn.textContent = "+";
-  zoomInBtn.title = "Show more depth";
+  setTip(zoomInBtn, "Show more depth", "below");
 
   const viewGroup = document.createElement("div");
   viewGroup.className = "map-scale-view";
@@ -147,13 +148,13 @@ export function installMapScale(
   textBtn.type = "button";
   textBtn.className = "map-scale-btn";
   textBtn.textContent = "Text";
-  textBtn.title = "Bead / text view";
+  setTip(textBtn, "Text view", "below", "end");
 
   const lineBtn = document.createElement("button");
   lineBtn.type = "button";
   lineBtn.className = "map-scale-btn";
   lineBtn.textContent = "Line";
-  lineBtn.title = "Skeleton line view";
+  setTip(lineBtn, "Line view", "below", "end");
 
   viewGroup.append(textBtn, lineBtn);
   toolbar.append(zoomOutBtn, zoomInBtn);
@@ -172,16 +173,14 @@ export function installMapScale(
   closeBtn.type = "button";
   closeBtn.className = "map-scale-btn";
   closeBtn.textContent = "×";
-  closeBtn.title = "Close project";
-  closeBtn.setAttribute("aria-label", "Close project");
+  setTip(closeBtn, "Close project", "below");
   closeBtn.hidden = opts.onClose === undefined;
 
   const topBtn = document.createElement("button");
   topBtn.type = "button";
   topBtn.className = "map-scale-btn";
   topBtn.textContent = "↑";
-  topBtn.title = "Back to top";
-  topBtn.setAttribute("aria-label", "Back to top");
+  setTip(topBtn, "Back to top", "below");
 
   const slot = document.createElement("div");
   slot.className = "map-scale-slot";
