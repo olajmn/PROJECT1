@@ -113,7 +113,11 @@ textarea {
   border-radius: var(--radius);
 }
 
-button {
+/* :where() keeps these at zero specificity, so any button with its own
+   class styling (menu items, the Accounts / Current state headings,
+   text-like buttons) keeps its own look — hover included — and only
+   unstyled buttons get the soft fill. */
+:where(button) {
   font: inherit;
   padding: 0 var(--space-4);
   border: none;
@@ -123,7 +127,7 @@ button {
   cursor: pointer;
 }
 
-button:hover:not(:disabled) {
+:where(button:hover:not(:disabled)) {
   background: var(--fill-control-hover);
 }
 

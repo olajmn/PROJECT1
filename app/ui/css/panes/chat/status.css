@@ -24,6 +24,9 @@
   border: none;
   border-radius: var(--radius);
   padding: var(--space-2) var(--space-4);
+  /* Same drop below the top strip as the Accounts heading, which gets
+     it from .sidebar's gap — so the two headings share one line. */
+  margin-top: var(--space-3);
   cursor: pointer;
 }
 
