@@ -104,13 +104,17 @@ form {
   gap: var(--space-2);
 }
 
-textarea {
+/* Zero specificity like :where(button) below: styled textareas keep
+   their own look. */
+:where(textarea) {
   flex: 1;
   resize: none;
   font: inherit;
   padding: var(--space-2);
-  border: 1px solid var(--color-border-input);
-  border-radius: var(--radius);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: var(--fill-control);
+  color: var(--color-text);
 }
 
 /* :where() keeps these at zero specificity, so any button with its own

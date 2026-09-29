@@ -81,8 +81,12 @@
   justify-content: center;
   align-items: center;
   padding: var(--space-3) var(--space-1) var(--space-4);
+  margin: 0;
+  border: none;
   border-top: none;
+  border-radius: 0;
   background: transparent;
+  box-shadow: none;
   gap: 0;
 }
 
@@ -102,15 +106,15 @@
   padding: 0;
   flex: 0 0 auto;
   color: var(--color-text-muted);
-  background: transparent;
-  border: var(--border);
-  border-radius: var(--radius);
+  background: var(--fill-control);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
   cursor: pointer;
 }
 
 .project-chat.is-collapsed .chat-rail-toggle:hover {
   color: var(--color-text);
-  border-color: var(--color-text);
+  background: var(--fill-control-hover);
 }
 
 .project-chat.is-collapsed .chat-rail-toggle:focus-visible {

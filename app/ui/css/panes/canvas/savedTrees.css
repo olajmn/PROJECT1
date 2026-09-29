@@ -38,7 +38,7 @@
   flex: 0 0 auto;
   padding: 0.15rem 0.4rem;
   border: none;
-  border-radius: var(--radius);
+  border-radius: var(--radius-node);
   background: transparent;
   color: var(--color-text-muted);
   font: inherit;

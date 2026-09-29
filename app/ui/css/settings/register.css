@@ -168,9 +168,14 @@
   font: inherit;
   font-size: var(--font-size-sm);
   color: var(--color-text);
-  background: var(--color-bg);
-  border: var(--border);
-  border-radius: var(--radius);
+  background: var(--fill-control);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+}
+
+.directory-create-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
 }
 
 .directory-create-submit {
@@ -180,14 +185,14 @@
   font: inherit;
   font-size: var(--font-size-sm);
   color: var(--color-text);
-  background: transparent;
-  border: var(--border);
-  border-radius: var(--radius);
+  background: var(--fill-control);
+  border: none;
+  border-radius: var(--radius-control);
   cursor: pointer;
 }
 
 .directory-create-submit:hover {
-  border-color: var(--color-text-muted);
+  background: var(--fill-control-hover);
 }
 
 .directory-hint {

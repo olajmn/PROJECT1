@@ -63,6 +63,7 @@
   --radius-panel: 14px;
   --radius-node: 6px;
   --radius-control: 8px;
+  --radius-popover: 10px;
   /* Soft filled controls: a tint of the ink colour, stronger on hover. */
   --fill-control: rgba(var(--ink-rgb), 0.07);
   --fill-control-hover: rgba(var(--ink-rgb), 0.13);
@@ -81,6 +82,10 @@
      map's dot grid (panes/canvas/dotGrid.css) runs weaker here. */
   --dot-strength: 0.6;
   --shadow-panel: 0 10px 30px rgba(60, 50, 40, 0.12);
+  /* Menus, popovers and the chat box: no shadow (flat look); they stand
+     out by a slightly lighter surface and the hairline instead. */
+  --shadow-popover: none;
+  --surface-lifted: color-mix(in srgb, var(--color-bg-panel), rgb(var(--ink-rgb)) 5%);
   --backdrop:
     radial-gradient(45vw 45vw at 15% 15%, #ffffff 0%, transparent 60%),
     radial-gradient(50vw 50vw at 85% 20%, #cfcac2 0%, transparent 60%),
