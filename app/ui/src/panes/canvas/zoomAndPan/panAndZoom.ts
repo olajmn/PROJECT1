@@ -21,6 +21,7 @@
  *    - layoutSlotForCamera()
  *
  * 3. Paint and Apply
+ *    - placeStage()
  *    - paintFrame()
  *    - apply()
  *    - applyPanOnly()
@@ -158,12 +159,21 @@ export function installMapCamera(
 
   // 3. Paint and Apply
 
+  /** Move `stage` to the current pan/zoom, and hand the same numbers to
+   *  CSS so the dot grid behind the map (frame.css) moves with it. */
+  const placeStage = (): void => {
+    stage.style.transformOrigin = "0 0";
+    stage.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    viewport.style.setProperty("--cam-x", `${panX}px`);
+    viewport.style.setProperty("--cam-y", `${panY}px`);
+    viewport.style.setProperty("--cam-zoom", String(zoom));
+  };
+
   /** Paint the current zoom/pan onto `stage` and rebuild the line nest. */
   const paintFrame = (): void => {
     mapEl.dataset.mapScale = String(zoom);
     syncSkeletonFromZoom(mapEl, zoom);
-    stage.style.transformOrigin = "0 0";
-    stage.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    placeStage();
     installMapLines(mapEl);
     opts.onChange?.();
   };
@@ -185,8 +195,7 @@ export function installMapCamera(
   const applyPanOnly = (): void => {
     if (!enabled) return;
     clampPan();
-    stage.style.transformOrigin = "0 0";
-    stage.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+    placeStage();
     opts.onChange?.();
   };
 
@@ -314,6 +323,9 @@ export function installMapCamera(
         stage.style.left = "0";
         stage.style.top = "0";
         stage.style.transform = "none";
+        for (const name of ["--cam-x", "--cam-y", "--cam-zoom"]) {
+          viewport.style.removeProperty(name);
+        }
         mapEl.dataset.mapScale = "1";
         dirty = false;
       } else {

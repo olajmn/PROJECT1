@@ -4,7 +4,7 @@
  *
  * Contents
  *  1. Viewport & frame
- *      - .map-scale-viewport / .map-frame
+ *      - .map-scale-viewport (+ dot grid) / .map-frame
  *  2. Sticky top bar
  *      - .map-top-bar
  *  3. Bottom action bar
@@ -29,6 +29,28 @@
  * No box: the bars above and below carry the only rules, and those run
  * the full column width.
  */
+/* A faint dot grid behind the map (UI pass), strongest in the middle and
+ * fading out towards the edges. Painted first in the viewport, so the
+ * tree and the top strip draw over it. Follows pan / zoom through
+ * --cam-x / --cam-y / --cam-zoom, set by placeStage() in
+ * zoomAndPan/panAndZoom.ts (unset = no camera: natural size). */
+.map-scale-viewport::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* Dims as the map zooms out (0.14 at zoom 1, never below 0.06) and
+     never packs tighter than 12px, so a zoomed-out map keeps a quiet
+     grid instead of a dense grey texture. */
+  --dot-alpha: calc(0.06 + 0.08 * clamp(0, (var(--cam-zoom, 1) - 0.35) / 0.65, 1));
+  --dot-gap: max(12px, calc(18px * var(--cam-zoom, 1)));
+  background-image: radial-gradient(rgba(var(--ink-rgb), var(--dot-alpha)) 1px, transparent 1.3px);
+  background-size: var(--dot-gap) var(--dot-gap);
+  background-position: var(--cam-x, 0) var(--cam-y, 0);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 45%, #000 20%, transparent 80%);
+  mask-image: radial-gradient(ellipse at 50% 45%, #000 20%, transparent 80%);
+}
+
 .map-frame {
   box-sizing: border-box;
   background: transparent;

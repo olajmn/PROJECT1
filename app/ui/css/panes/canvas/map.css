@@ -256,16 +256,17 @@
   min-height: 1.6rem;
   padding: 0.15rem 0.4rem 0.15rem 0.5rem;
   /* A soft fill, not an outline (UI pass): fewer lines on the canvas.
-     The border stays, transparent, so box size and line anchors
-     (lines/drawLines.ts) do not move. */
+     Opaque (mixed with the canvas colour), so the dot grid behind the
+     map does not show through. The border stays, transparent, so box
+     size and line anchors (lines/drawLines.ts) do not move. */
   border: 1px solid transparent;
   border-radius: var(--radius-node);
-  background: rgba(var(--ink-rgb), 0.05);
+  background: color-mix(in srgb, var(--color-bg-workspace), rgb(var(--ink-rgb)) 5%);
 }
 
 .progress-row.is-selected > .progress-bead-unit {
   border-color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 14%, var(--color-bg-workspace));
 }
 
 /* Hidden by mapScale grain (overview); still in DOM for + to reveal. */
