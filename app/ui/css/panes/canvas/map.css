@@ -447,7 +447,7 @@
 
 .progress-menu-item:hover:not(:disabled),
 .progress-menu-item:focus-visible {
-  /* Tint from the text colour: the stone fills are one value in light. */
+  /* Tint from the text colour, so it works on any surface and theme. */
   background: color-mix(in srgb, var(--color-text) 7%, transparent);
   outline: none;
 }

@@ -21,7 +21,7 @@
   padding: 0.75rem;
   /* Room for .map-top-bar, which overlays the padding box. frameInner()
      subtracts this, so the camera stays clear of the strip on its own. */
-  padding-top: 2.25rem;
+  padding-top: calc(var(--bar-height) + 0.5rem);
 }
 
 /*
@@ -54,7 +54,7 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 1.75rem;
+  height: var(--bar-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -82,7 +82,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.35rem;
-  min-height: 1.75rem;
+  min-height: var(--bar-height);
   margin: 0;
   padding: 0 var(--space-2);
   border-top: 1px solid var(--color-border);
@@ -98,7 +98,8 @@
   font-size: 0.72rem;
   font-weight: 500;
   color: var(--color-text-muted);
-  background: var(--fill-control);
+  /* Stamped into the bar: no fill; hover only brightens it. */
+  background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
   padding: 0.2rem 0.5rem;
@@ -107,7 +108,6 @@
 
 .map-copy-button:hover {
   color: var(--color-text);
-  background: var(--fill-control-hover);
 }
 
 .map-copy-row .map-copy-button + .map-copy-button {

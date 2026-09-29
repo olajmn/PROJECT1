@@ -1,4 +1,5 @@
-// Column resize with TradingView-style snap to a narrow icon rail.
+// Column resize with TradingView-style snap to a collapsed width (the
+// chat collapses to 0 and is reopened from its show / hide button).
 // Used for chat now; same helper can drive the projects sidebar later.
 // Hard min while open; edge-trigger collapse/expand so one drag can go both ways.
 
@@ -25,7 +26,7 @@ export type CollapseRailOpts = {
   maxFraction?: number;
   /** Leave at least this much for the rest of the container. */
   minOther: number;
-  /** Width when snapped to the icon rail. */
+  /** Width when collapsed (0 for the chat). */
   railWidth: number;
   /** Falling across this while open → collapse (~ half of min). */
   snapThreshold: number;

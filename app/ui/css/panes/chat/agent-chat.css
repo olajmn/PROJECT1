@@ -193,7 +193,9 @@
   padding: var(--space-2);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-popover);
-  background: var(--surface-lifted);
+  /* Same colour as the panel: the hairline alone marks the box, unlike
+     menus, which sit on a lifted surface. */
+  background: transparent;
   box-shadow: var(--shadow-popover);
 }
 
@@ -278,13 +280,14 @@
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 /* Compact, like the toolbar buttons: the composer box is the main
    surface, the buttons only sit in its corner. */
 .project-chat .chat-form-actions button {
-  padding: var(--space-1) var(--space-3);
+  height: var(--composer-button-h);
+  padding: 0 var(--space-3);
   font-size: var(--font-size-xs);
 }
 
@@ -294,9 +297,28 @@
 
 .project-chat .chat-command-menu-toggle {
   min-width: 1.75rem;
-  padding: var(--space-1) var(--space-2);
+  padding: 0 var(--space-2);
   font-size: var(--font-size-xs);
   font-weight: 600;
+  /* A plain sign in the box (the box is the control); only Send gets a
+     shape. */
+  background: transparent;
+}
+
+/* Quiet until needed: / and Send are grey; / brightens on hover, Send
+   turns solid (text colour) once the field has text — :placeholder-shown
+   is false as soon as something is typed. */
+.project-chat .chat-form-actions button {
+  color: var(--color-text-muted);
+}
+
+.project-chat .chat-form-actions button:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.project-chat .feedback-form:has(textarea:not(:placeholder-shown)) button[type="submit"] {
+  background: var(--color-text);
+  color: var(--color-bg);
 }
 
 .project-chat .chat-command-menu-panel {

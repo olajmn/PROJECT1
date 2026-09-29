@@ -41,7 +41,7 @@ h1 {
 
 /* Thin, understated scrollbars everywhere something scrolls (sidebar id
  * columns, project list, chat thread, map viewport, …) — the OS default
- * is a wide, high-contrast bar that fights the "ink on stone" identity
+ * is a wide, high-contrast bar that fights the quiet look
  * (css/tokens.css). Applies globally rather than per scroll container,
  * so nothing scrollable is missed or styled inconsistently. */
 * {

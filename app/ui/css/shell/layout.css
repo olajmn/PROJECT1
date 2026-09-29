@@ -13,10 +13,9 @@
 /* 1. Outer shell */
 
 /* The page is the "desk" (--backdrop); the three columns float on it as
- * one block: a margin of --panel-gap-edge, round outer corners only, and
+ * one block: a margin of --panel-gap, round outer corners only, and
  * the columns inside keep touching (one line where they meet). */
 .workspace-body {
-  --panel-gap-edge: 10px;
   background: var(--backdrop);
 }
 
@@ -24,8 +23,8 @@
   --sidebar-width: 15rem;
   display: grid;
   grid-template-columns: minmax(0, var(--sidebar-width)) 0 minmax(0, 1fr);
-  height: calc(100vh - 2 * var(--panel-gap-edge));
-  margin: var(--panel-gap-edge);
+  height: calc(100vh - 2 * var(--panel-gap));
+  margin: var(--panel-gap);
   overflow: hidden;
   background: var(--color-bg-workspace);
   border: 1px solid var(--hairline);
@@ -39,7 +38,7 @@
  * columns. Purely visual for now: no controls live in this strip here. */
 .column-top-bar {
   flex: 0 0 auto;
-  height: 1.75rem;
+  height: var(--bar-height);
   border-bottom: var(--border);
 }
 
@@ -94,16 +93,29 @@
   background: transparent;
 }
 
-body.is-resizing-chat .chat-resize::before,
-body.is-resizing-sidebar .sidebar-resize::before {
-  background: var(--color-accent);
-  opacity: 0.45;
-}
-
+/* A thin neutral line in the middle of the 6px grab area (UI pass): the
+   col-resize cursor is the main cue, the line only a hint, and blue
+   stays for "selected / active". The grab area itself stays 6px wide. */
 .chat-resize:hover::before,
 .sidebar-resize:hover::before {
-  background: var(--color-accent);
-  opacity: 0.35;
+  background: linear-gradient(
+    to right,
+    transparent 2px,
+    rgba(var(--ink-rgb), 0.25) 2px,
+    rgba(var(--ink-rgb), 0.25) 4px,
+    transparent 4px
+  );
+}
+
+body.is-resizing-chat .chat-resize::before,
+body.is-resizing-sidebar .sidebar-resize::before {
+  background: linear-gradient(
+    to right,
+    transparent 2px,
+    rgba(var(--ink-rgb), 0.4) 2px,
+    rgba(var(--ink-rgb), 0.4) 4px,
+    transparent 4px
+  );
 }
 
 body.is-resizing-chat,

@@ -62,15 +62,17 @@
   min-width: 1.6rem;
   padding: 0.25rem 0.45rem;
   color: var(--color-text-muted);
-  background: var(--fill-control);
+  /* Actions (× ↑ − +) and Text / Line are stamped into the bar: no
+     fill, hover only brightens them. */
+  background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-control);
   cursor: pointer;
 }
 
+/* Hover only brightens the sign; no fill, like the chat box's /. */
 .map-scale-btn:hover:not(:disabled) {
   color: var(--color-text);
-  background: var(--fill-control-hover);
 }
 
 .map-scale-btn:disabled {
@@ -78,33 +80,30 @@
   cursor: default;
 }
 
+/* Text / Line: two grey words with a thin divider, no box. The chosen
+   one is not highlighted: the view switches by itself with zoom
+   (lineView/), so the words are for pinning one, not for showing state.
+   Hover brightens the word, like the other bar actions. */
 .map-scale-view {
   display: inline-flex;
-  align-items: stretch;
+  align-items: center;
+  gap: 0.1rem;
   margin-left: 0.25rem;
 }
 
 .map-scale-view .map-scale-btn {
-  min-width: 2.4rem;
+  position: relative; /* anchors the divider below */
+  min-width: 0;
+  background: transparent;
 }
 
-.map-scale-view .map-scale-btn + .map-scale-btn {
-  margin-left: -1px;
-}
-
-.map-scale-view .map-scale-btn:first-child {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.map-scale-view .map-scale-btn:last-child {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
-.map-scale-btn.is-active {
-  color: var(--color-text);
-  background: rgba(var(--ink-rgb), 0.18);
+.map-scale-view .map-scale-btn + .map-scale-btn::before {
+  content: "";
+  position: absolute;
+  left: -0.1rem;
+  top: 25%;
+  bottom: 25%;
+  border-left: 1px solid var(--color-border);
 }
 
 

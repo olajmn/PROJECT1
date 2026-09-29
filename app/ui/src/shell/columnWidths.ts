@@ -50,8 +50,9 @@ const CHAT = {
   maxFraction: 1 / 2,
   /** Leave at least this much for the map. */
   minOtherPx: MAP.minPx,
-  /** Collapsed strip — keep in sync with css/shell/columnRail.css */
-  railWidthPx: 64,
+  /** Collapsed width: 0 — only a double line at the edge is left.
+   *  Keep in sync with css/shell/columnRail.css */
+  railWidthPx: 0,
   /** Rising across this while collapsed → open (nearer rail than snap). */
   expandThresholdPx: 100,
   bodyClass: "is-resizing-chat",

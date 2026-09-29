@@ -24,6 +24,7 @@ import { installChatPane } from "./panes/chat/chatPane.js";
 import { installCommandMenu } from "./panes/chat/commands/menu.js";
 import { installCommandHighlight } from "./panes/chat/commands/highlight.js";
 import { installInputGrow } from "./panes/chat/growInput.js";
+import { installChatToggle } from "./panes/chat/chatToggle.js";
 import { installSendMessage } from "./panes/chat/sendMessage.js";
 import { installMapPane } from "./panes/canvas/mapPane.js";
 import { getActiveUserId, setActiveUserId } from "./user/activeAccount.js";
@@ -109,11 +110,10 @@ installInputGrow(chatInput);
 
 installSidebarResize(appShell, sidebarResize);
 const chatRailApi = installChatResize(workspace, chatResize, projectChat);
-for (const id of ["chat-rail-toggle", "chat-rail-grip"]) {
-  document.getElementById(id)?.addEventListener("click", () => {
-    chatRailApi.expand();
-  });
-}
+installChatToggle(workspace, () => {
+  if (workspace.classList.contains("is-chat-collapsed")) chatRailApi.expand();
+  else chatRailApi.collapse();
+});
 
 const accountsPanel = installAccountsPanel({
   anchor: sidebarBrand,

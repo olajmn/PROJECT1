@@ -75,7 +75,7 @@
   font: inherit;
   font-size: 1rem;
   line-height: 1;
-  border: none;
+  border: var(--border-control);
   border-radius: var(--radius-control);
   background: var(--fill-control);
   color: var(--color-text-muted);
@@ -100,32 +100,36 @@
 
 /* 3. Bottom bar (Settings) */
 
-/* The sidebar's bottom bar. Mirrors .map-copy-row (css/panes/canvas/frame.css) in
- * height and rule so the two columns' footer lines meet across the shell,
- * the way .column-top-bar does at the top — which is why the box bleeds
- * past .sidebar's own padding on three sides and sits flush in the frame,
- * with the inline padding putting Settings back on the sidebar's text
- * inset. Carrying the rule on the box (not a ::before) is what lets the
- * two line up: the border is then the bar's own top edge.
+/* The sidebar's bottom bar: Settings on its own at the foot, with no
+ * rule above it (UI pass — the rule used to meet the map's footer line
+ * across the shell; the chat column no longer has one, so it only
+ * boxed Settings in). Placed from the map's foot strip (--bar-height),
+ * see justify-content below. The negative margins keep the box flush
+ * with the frame, and the inline padding puts Settings back on the
+ * sidebar's text inset.
  *
  * `margin-top: auto` pins Settings to the foot; project "+" stays in the
  * Accounts block and does not share this spacer.
  *
  * Also opts out of the generic `nav` bottom treatment in css/base.css —
  * that rule dresses the Settings pages' top nav, where a rule underneath
- * separates nav from page. Here the nav ends the frame, so that border
- * had nothing to separate and the space it held open below itself was
- * dead. */
+ * separates nav from page. */
 .sidebar-more {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* Settings rests on the middle of the map's foot strip: the strip is
+     --bar-height tall and the word sits in its upper half, bottom edge on
+     the centre line (where + Add and the icons are centred). */
+  justify-content: flex-end;
+  /* Link as wide as its text, not the whole strip: only the word is
+     clickable. */
+  align-items: flex-start;
   gap: var(--space-1);
   flex: 0 0 auto;
-  min-height: 1.75rem;
+  min-height: var(--bar-height);
   margin: auto calc(-1 * var(--space-3)) calc(-1 * var(--space-4));
-  padding: 0 var(--space-3);
-  border-top: var(--border);
+  padding: 0 var(--space-3) calc(var(--bar-height) / 2);
+  border-top: none;
   border-bottom: none;
 }
 
