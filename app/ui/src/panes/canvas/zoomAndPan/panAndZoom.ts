@@ -344,7 +344,7 @@ export function installMapCamera(
     getPose: () => ({ zoom, panY }),
 
     /** Restore a pose from before a re-render, without painting: it
-     *  counts as the user's own view (dirty), so the next paint keeps it
+     *  counts as a view the user set (dirty), so the next paint keeps it
      *  instead of fitting the overview. */
     setPose: (pose: CameraPose) => {
       zoom = pose.zoom;

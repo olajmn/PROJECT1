@@ -28,7 +28,6 @@ Exit code 0 if no CONFIRMED hits (REVIEW alone doesn't fail unless
 #      - SCANNED_SUFFIXES
 #      - CONFIRMED_PATTERNS
 #      - REVIEW_PATTERN
-#      - REVIEW_ACCEPTED
 #
 #  2. Helpers
 #      - _iter_files()
@@ -92,14 +91,6 @@ CONFIRMED_PATTERNS = [(re.compile(p, re.IGNORECASE), label) for p, label in _CON
 # user's own framing"). A human decides which; this only points at
 # the sentence.
 REVIEW_PATTERN = re.compile(r"\bthe user'?s own \w+", re.IGNORECASE)
-
-# REVIEW hits already checked by hand and found fine (the product's
-# end-user), as (file relative to ROOT, matched text) - not line
-# numbers, so an edit elsewhere in the file does not bring them back.
-REVIEW_ACCEPTED = {
-    ("docs/05-decisions.md", "the user's own device"),
-    ("app/ui/src/panes/canvas/zoomAndPan/panAndZoom.ts", "the user's own view"),
-}
 
 # 2. Helpers
 
@@ -176,7 +167,6 @@ def main() -> int:
             rel = path
         for line_number, matched, label in confirmed:
             print(f"{rel}:{line_number}: [CONFIRMED - {label}] {matched!r}")
-        review = [(n, m) for n, m in review if (rel.as_posix(), m) not in REVIEW_ACCEPTED]
         for line_number, matched in review:
             print(f"{rel}:{line_number}: [REVIEW - check by hand] {matched!r}")
         total_confirmed += len(confirmed)

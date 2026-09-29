@@ -34,9 +34,8 @@ report, then offer fixes.
 **Report** compactly:
 - What is clean (one line per step).
 - Findings, each with `file:line`, what it is, and a suggestion: fix now,
-  add to `TODO.md`, or already known (say where). Approved docs_lint
-  REVIEW hits sit in `REVIEW_ACCEPTED` in `tools/docs_lint.py` and are
-  not shown; a new one that is fine goes there.
+  add to `TODO.md`, or already known (say where). A docs_lint REVIEW
+  hit that is fine gets reworded so it no longer matches.
 - Don't dump raw output unless something is actually wrong; retry a
   failing test once before reporting it.
 
