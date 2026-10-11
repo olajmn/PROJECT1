@@ -15,6 +15,10 @@ deliberately chosen as next.
 
 ## Active
 
+58. **Login** (Step, branch `auth`) — one user signs in and manages
+    several accounts; the app looks as it does today. Steps and open
+    questions: `docs/auth-plan.md`; why: [[05-decisions]] #69.
+
 The UI/UX pass, starting with real content to design against.
 
 55. **Realistic demo projects** (Step, first) — the saved data is test

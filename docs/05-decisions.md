@@ -807,6 +807,20 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Reversible?** Yes; mostly tokens and CSS.
 
+## 69. 2026-10-11 — Login: one user owns several accounts, built in Python
+
+**Decision:** Add real login. A user signs in and then manages several accounts, as the sidebar does today; projects and saved trees keep belonging to an account. Built in the existing Python backend with the standard library only: passwords hashed with `hashlib.scrypt`, server-side sessions (a random token in an `HttpOnly`, `SameSite=Strict` cookie, stored in `data/sessions.json`), and one check in front of every `/api/*` route. The existing stub `user_id = 1` on accounts and projects becomes the first real user. The server still listens on localhost only. Steps: [[auth-plan]].
+
+**Date:** 2026-10-11
+
+**Alternatives considered:** Node/Express with Passport and `express-session` in front of the Python backend (two runtimes to start and keep in step); rewriting the backend in Node (about 5600 lines plus tests to port, with no new behavior); account = user (drops several accounts per person).
+
+**Why this choice:** Login only touches the HTTP layer and the account store; the domain code does not need to know about it. Staying in Python keeps one runtime and adds no dependency. The owner field already exists on every account and project, so no data has to be moved.
+
+**Trade-off:** Data is still unencrypted on disk, which #5 accepts only for a single machine. That holds while the server stays on localhost; serving it over a network needs HTTPS and a new decision on #5 and #15.
+
+**Reversible?** Yes; the auth code sits in its own folder and in front of the routes.
+
 
 ## See also
 
