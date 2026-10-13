@@ -1,4 +1,4 @@
-# Fly.io settings for the public demo (docs/public-demo-plan.md § 3.vi).
+# Fly.io settings for the public demo (docs/demo.md).
 # Secrets are not here: set DEMO_PASSWORD and OPENROUTER_API_KEY with
 # `fly secrets set`.
 

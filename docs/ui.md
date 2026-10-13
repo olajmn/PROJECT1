@@ -102,7 +102,8 @@ card-style nodes.
   surface gets or extends a pair, not a dump into `style.css`.
 - **Areas:** `shell/` (column widths, collapse, busy state — glue, not a
   parent), `panes/create/` (sidebar and accounts), `panes/canvas/`,
-  `panes/chat/`, `settings/`.
+  `panes/chat/`, `settings/`, `demo/` (login page and Log out, public
+  demo only).
 - **Tokens:** shared look lives once in `css/tokens.css`. If it should
   look the same everywhere, change a token; don't add a colour in an
   area file.

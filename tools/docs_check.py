@@ -69,9 +69,9 @@ EXPECTED_DOCS = [
     # Temporary - the login work's step plan; moves to docs/archive/
     # when that work is done (decision #69).
     "auth-plan.md",
-    # Temporary - the public demo's step plan; moves to docs/archive/
-    # when the demo is deployed (decision #70).
-    "public-demo-plan.md",
+    # Deliberately unnumbered - how the public demo works and where its
+    # code lives (decision #70).
+    "demo.md",
 ]
 
 # Files/directories outside docs/ scanned for docs/<name>.md-style

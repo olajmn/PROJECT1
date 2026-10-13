@@ -1,6 +1,6 @@
 """
 Demo-mode settings, read once from the environment when the server
-starts (docs/public-demo-plan.md § 3). None of them matter unless
+starts (docs/demo.md). None of them matter unless
 DEMO_MODE is set.
 """
 

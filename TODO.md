@@ -15,30 +15,12 @@ deliberately chosen as next.
 
 ## Active
 
-58. **Login** (Step, branch `auth`, **paused** by [[05-decisions]] #70)
-    — one user signs in and manages several accounts; the app looks as
-    it does today. Steps and open questions: `docs/auth-plan.md`; why:
-    [[05-decisions]] #69.
-59. **Public demo** (Step, branch `public-demo`) — the existing app at
-    a public URL behind one shared demo login; each visitor works in
-    their own sandbox copy of the demo data.
-    Steps: `docs/public-demo-plan.md`; why: [[05-decisions]] #70.
-
 The UI/UX pass, starting with real content to design against.
 
-55. **Realistic demo projects** (Step, first) — the saved data is test
-    content ("ggehh", "1 / 2 / 3 / 4"), which makes spacing, hierarchy,
-    long names, and deep trees hard to judge. The owner builds 2–3
-    projects that together show what the app is for — for example an
-    event plan, a recipe, and a folder from disk — in an account of
-    their own, with some changes over more than one day and a little
-    Talk. They are what the UI is judged against and what a demo
-    opens on. Open: whether the old test projects are archived or
-    kept apart.
 56. **UI/UX pass: how the screen looks** (Step) — presentation only,
     not new features: hierarchy (loud / quiet / hidden), spacing, type,
     and the look of the canvas, chat, Current state, and sidebar,
-    judged against the projects from 55. Principles and layout:
+    judged against the demo projects (`app/demo_seed/`). Principles and layout:
     `docs/ui.md`. The main pass is done ([[05-decisions]] #68), Settings
     included; left: 57 (tree on the dot grid). Frosted glass is parked
     (§ Ideas). Items that may fold in when they come up: 53 (`/select`
@@ -64,7 +46,7 @@ only). Numbers are stable ids, not rank.
 12. **Decomposition / zoom** (Step) — map is user-steered
     (`plan.progression`); + / × / Paste / Add folder under a selected
     node write it. Naming a node in chat without the full path is
-    Active 53. Model-proposed children were removed ([[05-decisions]]
+    Queue 53. Model-proposed children were removed ([[05-decisions]]
     #60, #63); if they return, as an explicit `/suggest` that proposes
     in the chat and leaves adding to the user.
 30. **No written API reference** (Step) — short overview of each
@@ -136,7 +118,7 @@ only). Numbers are stable ids, not rank.
     for a typo. Clicking a node stays the main way to select. Rules in
     `panes/chat/commands/node_path.py`. Split out of 12.
 54. **Undo for map edits (Ctrl+Z)** (Step) — removing a node now asks
-    first when it has children (Active 41, closed), but nothing can be
+    first when it has children (41, closed), but nothing can be
     undone. Likely shape: keep the last 10–20 versions of the tree
     before each map edit (the events tape holds only short texts, not
     the tree); Undo puts the previous version back as a new saved
@@ -146,6 +128,17 @@ only). Numbers are stable ids, not rank.
     undo), and a visible Undo after a remove. With undo in place the
     remove confirmation may go. Also open from 41: removing a node but
     keeping its children (moved up a level).
+
+58. **Login** (Step, branch `auth`, **paused** by [[05-decisions]] #70)
+    — one user signs in and manages several accounts; the app looks as
+    it does today. Steps and open questions: `docs/auth-plan.md`; why:
+    [[05-decisions]] #69.
+60. **Demo limits** (Question) — whether the public demo's caps fit
+    real use: 50 sessions at once; Talk 10 a minute per session, 20 per
+    IP, 500 a day (`app/backend/api/demo/settings.py`, [[demo]]).
+61. **Zero data retention for the demo's Talk** (Question) — whether to
+    require ZDR at OpenRouter; the test calls went to SiliconFlow
+    ([[05-decisions]] #70).
 
 ### Tier 4
 
@@ -237,3 +230,4 @@ when a path is deleted, rewired, or reclassified.
 | P5 | Event kind → word: Logs titles vs day tally | Deliberate, different grain | `project/timeline.py` `GROUPS` ("Map") vs `project/status/build_status.py` `_TALLY_WORDS` ("added", "removed", "imported"); a new event type goes in both, or it shows as Other / other |
 | P7 | Popover dismiss (close on outside click / Esc) | Five copies, all working | The node ⋯ menu (`panes/canvas/drawNodes.ts`), the confirmation (`confirmPopover.ts`), the saved-tree picker (`savedTrees/insertTree.ts`), + Add (`addMenu.ts`, copied from the picker) and the chat / menu (`panes/chat/commands/menu.ts`) each close themselves with their own code. One shared helper next to `placePopover.ts` would let a change (e.g. close on scroll) happen in one place |
 | P8 | Talk model call: local Ollama vs hosted OpenRouter | Deliberate, one per environment | `backend/model/client.py` `send_chat()` picks one by `TALK_PROVIDER`: `ollama.chat()` (default) or `openrouter.chat()` (public demo, [[05-decisions]] #70). Same model, temperature, and no-reasoning setting on both; a change to one (e.g. a new option) must be made in both |
+| P9 | Default theme: page script vs `theme.ts` | Deliberate, the script prevents a light flash | Every page in `app/ui/` (`index.html`, `login.html`, `settings/*.html`) sets `data-theme` in a small inline script before the CSS loads; `src/user/theme.ts` `getTheme()` decides the same default for the code. Dark unless the user chose light: a change to the default goes in both |

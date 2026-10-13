@@ -1,4 +1,4 @@
-# The public demo's image (docs/public-demo-plan.md § 3.vi): the UI built
+# The public demo's image (docs/demo.md): the UI built
 # with tsc, then the Python server with the demo seed. Never app/data/
 # (.dockerignore). Demo settings and secrets come from fly.toml and
 # `fly secrets`, not from this file.

@@ -1,6 +1,6 @@
 """
 The public demo's sandboxes (docs/05-decisions.md #70,
-docs/public-demo-plan.md § 3.iv): one folder per visitor session,
+docs/demo.md): one folder per visitor session,
 holding a fresh copy of the demo seed.
 
 While a request runs in demo mode, current() is that visitor's folder,

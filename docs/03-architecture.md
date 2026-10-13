@@ -19,12 +19,12 @@ Arrows show who calls whom; every answer returns the same way.
 | Layer | Folder | What it does |
 |---|---|---|
 | **UI** | `app/ui/` | TypeScript in the browser: shows the map and chat, sends requests |
-| **API** | `backend/api/` | The only way in: routes each request, shapes each answer, serves the page files |
+| **API** | `backend/api/` | The only way in: routes each request, shapes each answer, serves the page files; in the public demo, `api/demo/` checks every request first ([[demo]]) |
 | **Project** | `backend/project/` | What a project is and what can be done to it |
 | **Storage** | `backend/storage/` | The only code that reads or writes `data/` (plain JSON), or a visitor's sandbox copy of it in the public demo |
 | **Model** | `backend/model/` | Talks to the language model (local Ollama; OpenRouter in the public demo), and packs what it is given |
 
-`app/server.py` only starts the server (localhost). `backend/foundation/`
+`app/server.py` only starts the server (localhost unless `HOST` is set). `backend/foundation/`
 (math, time) is not used by anything today.
 
 ## 2. Inside Project

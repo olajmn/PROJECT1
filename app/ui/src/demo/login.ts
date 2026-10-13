@@ -1,5 +1,5 @@
 // The demo's login page (login.html): one shared password, then on to
-// the app. Only reachable in demo mode (docs/public-demo-plan.md).
+// the app. Only reachable in demo mode (docs/demo.md).
 
 import { logIn } from "../api.js";
 import { applyStoredTheme } from "../user/theme.js";

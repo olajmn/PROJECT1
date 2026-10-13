@@ -28,7 +28,7 @@
 import type { ProjectView, LogEntry, ModelView, PastedNode, PastePreview, AccountView, SavedTreeView, SessionView } from "./dataShapes.js";
 
 /** Every request in this file goes through here. In demo mode a 401
- *  means the session has ended (docs/public-demo-plan.md), so the page
+ *  means the session has ended (docs/demo.md), so the page
  *  goes to the login screen instead of showing an error. */
 function fetch(input: string, init?: RequestInit): Promise<Response> {
   return globalThis.fetch(input, init).then((res) => {

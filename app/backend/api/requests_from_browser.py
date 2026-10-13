@@ -83,7 +83,7 @@ from backend.api.answers_to_browser import (
 # 1. Settings
 # ============================================================
 
-# 8000 locally; a host can set PORT (docs/public-demo-plan.md).
+# 8000 locally; a host can set PORT (docs/demo.md).
 PORT = int(os.environ.get("PORT", "8000"))
 
 _MODEL_FAILED = "that took longer than expected - try again in a moment"

@@ -11,7 +11,7 @@ Then open http://localhost:8000/ in a browser.
 
 HOST is localhost unless set: only this machine can connect. A host
 running the public demo sets HOST=0.0.0.0 behind its HTTPS proxy
-(docs/public-demo-plan.md).
+(docs/demo.md).
 """
 
 import os

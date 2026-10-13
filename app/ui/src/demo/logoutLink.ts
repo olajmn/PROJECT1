@@ -1,5 +1,5 @@
 // "Log out" at the foot of the sidebar, next to Settings — only when the
-// server runs the public demo (docs/public-demo-plan.md).
+// server runs the public demo (docs/demo.md).
 
 import { fetchSession, logOut } from "../api.js";
 

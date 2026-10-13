@@ -20,6 +20,8 @@ environment; locally neither is needed.
 
 ### Demo mode
 
+Overview, settings, and how to deploy: [[demo]].
+
 Set `DEMO_MODE=1` and `DEMO_PASSWORD` to put the public-demo checks in
 front of every request (`backend/api/demo/`, [[05-decisions]] #70). Off by
 default, and then nothing changes. On:
@@ -43,7 +45,7 @@ default, and then nothing changes. On:
 - Deployed at https://ojmn.fly.dev (Fly.io app `ojmn`, one machine in
   `arn`; Talk on OpenRouter) since 2026-10-14. Files: `app/Dockerfile`,
   `app/.dockerignore`, `app/fly.toml`; a later change is `fly deploy`
-  from `app/` (`docs/public-demo-plan.md` § 5).
+  from `app/` ([[demo]] § 4).
 
 ## 2. Where things are
 
