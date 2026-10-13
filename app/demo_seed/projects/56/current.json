@@ -1,0 +1,1172 @@
+{
+  "id": 50,
+  "user_id": 1,
+  "project_id": 56,
+  "account_id": 15,
+  "account_n": 46,
+  "name": "Project #1001",
+  "plan": {
+    "progression": {
+      "steps": [
+        {
+          "id": "p1",
+          "label": "Project #1001",
+          "ordered": true,
+          "resolved": false,
+          "children": [
+            {
+              "id": "p2",
+              "label": "Development",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p3",
+                  "label": "Concept",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p4",
+                      "label": "Site",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p5",
+                          "label": "Context",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p6",
+                              "label": "Surroundings",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p7",
+                                  "label": "Buildings",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": [
+                                    {
+                                      "id": "p8",
+                                      "label": "Existing Conditions",
+                                      "ordered": true,
+                                      "resolved": false,
+                                      "children": [
+                                        {
+                                          "id": "p9",
+                                          "label": "Documentation",
+                                          "ordered": true,
+                                          "resolved": false,
+                                          "children": [
+                                            {
+                                              "id": "p10",
+                                              "label": "Survey",
+                                              "ordered": true,
+                                              "resolved": false,
+                                              "children": []
+                                            },
+                                            {
+                                              "id": "p11",
+                                              "label": "Measurements",
+                                              "ordered": true,
+                                              "resolved": false,
+                                              "children": [
+                                                {
+                                                  "id": "p12",
+                                                  "label": "...",
+                                                  "ordered": true,
+                                                  "resolved": false,
+                                                  "children": []
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "id": "p13",
+                                      "label": "Infrastructure",
+                                      "ordered": true,
+                                      "resolved": false,
+                                      "children": []
+                                    }
+                                  ]
+                                },
+                                {
+                                  "id": "p14",
+                                  "label": "Landscape",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            },
+                            {
+                              "id": "p15",
+                              "label": "Access",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "id": "p16",
+                          "label": "Constraints",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p17",
+                      "label": "Design Principles",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "p18",
+                  "label": "Design",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p19",
+                      "label": "Architecture",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p20",
+                          "label": "Floor Plans",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p21",
+                              "label": "Ground Floor",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p22",
+                                  "label": "Entrance",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": [
+                                    {
+                                      "id": "p23",
+                                      "label": "Lobby",
+                                      "ordered": true,
+                                      "resolved": false,
+                                      "children": [
+                                        {
+                                          "id": "p24",
+                                          "label": "Reception",
+                                          "ordered": true,
+                                          "resolved": false,
+                                          "children": []
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "id": "p25",
+                                      "label": "Stair",
+                                      "ordered": true,
+                                      "resolved": false,
+                                      "children": []
+                                    }
+                                  ]
+                                },
+                                {
+                                  "id": "p26",
+                                  "label": "Offices",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            },
+                            {
+                              "id": "p27",
+                              "label": "First Floor",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "id": "p28",
+                          "label": "Elevations",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p29",
+                      "label": "Materials",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "p30",
+                  "label": "Planning",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p31",
+                      "label": "Application",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p32",
+                          "label": "Documentation",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p33",
+                          "label": "Drawings",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p34",
+                          "label": "Approval",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p35",
+                              "label": "Conditions",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p36",
+                                  "label": "Revisions",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p37",
+                      "label": "Authorities",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "p38",
+              "label": "Documents",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p39",
+                  "label": "Contracts",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p40",
+                      "label": "Architect Agreement",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p41",
+                          "label": "Scope",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p42",
+                              "label": "Services",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p43",
+                                  "label": "Design",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": [
+                                    {
+                                      "id": "p44",
+                                      "label": "Concept",
+                                      "ordered": true,
+                                      "resolved": false,
+                                      "children": [
+                                        {
+                                          "id": "p45",
+                                          "label": "Delivery",
+                                          "ordered": true,
+                                          "resolved": false,
+                                          "children": []
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "id": "p46",
+                                      "label": "Documentation",
+                                      "ordered": true,
+                                      "resolved": false,
+                                      "children": []
+                                    }
+                                  ]
+                                },
+                                {
+                                  "id": "p47",
+                                  "label": "Coordination",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            },
+                            {
+                              "id": "p48",
+                              "label": "Responsibilities",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "id": "p49",
+                          "label": "Fees",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p50",
+                      "label": "Contractor Agreement",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "p51",
+                  "label": "Drawings",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                },
+                {
+                  "id": "p52",
+                  "label": "Reports",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "p53",
+              "label": "Actors",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p119",
+                  "label": "Client",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p120",
+                      "label": "Statsbygg",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p157",
+                          "label": "Organization ID",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p158",
+                          "label": "Client Representative",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p159",
+                          "label": "Project Manager",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p160",
+                          "label": "Responsibilities",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "p121",
+                  "label": "Architect",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p135",
+                      "label": "Snøhetta",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p161",
+                          "label": "Organization ID",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p162",
+                          "label": "Project Architect",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p163",
+                          "label": "Project Manager",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p164",
+                          "label": "Responsibilities",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "p123",
+                  "label": "Engineers",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p124",
+                      "label": "Norconsult",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p165",
+                          "label": "Organization ID",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p166",
+                          "label": "Lead Engineer",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p167",
+                          "label": "Project Manager",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p168",
+                          "label": "Responsibilities",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p125",
+                      "label": "COWI",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p169",
+                          "label": "Organization ID",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p170",
+                          "label": "Lead Engineer",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p171",
+                          "label": "Project Manager",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p172",
+                          "label": "Responsibilities",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "p126",
+                  "label": "Contractor",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p127",
+                      "label": "Veidekke",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p173",
+                          "label": "Organization ID",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p174",
+                          "label": "Site Manager",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p175",
+                          "label": "Project Manager",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p176",
+                          "label": "Responsibilities",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "p128",
+                  "label": "Authorities",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p141",
+                      "label": "Oslo kommune",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p142",
+                          "label": "Organization ID",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p143",
+                          "label": "People",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p144",
+                              "label": "Case Officer",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            },
+                            {
+                              "id": "p145",
+                              "label": "Planning Officer",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "id": "p146",
+                          "label": "Responsibilities",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p147",
+                      "label": "Arbeidstilsynet",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p148",
+                          "label": "Organization ID",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p149",
+                          "label": "People",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p150",
+                              "label": "Inspector",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            },
+                            {
+                              "id": "p151",
+                              "label": "Case Officer",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "id": "p152",
+                          "label": "Responsibilities",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "p199",
+              "label": "BIM Objects",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p200",
+                  "label": "Building Elements",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                },
+                {
+                  "id": "p201",
+                  "label": "Components",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                },
+                {
+                  "id": "p202",
+                  "label": "Systems",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                },
+                {
+                  "id": "p203",
+                  "label": "Equipment",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "p59",
+              "label": "Construction",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p177",
+                  "label": "Building",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p178",
+                      "label": "Structure",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p179",
+                          "label": "Foundations",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p180",
+                          "label": "Columns",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p181",
+                          "label": "Beams",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p182",
+                      "label": "Envelope",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p183",
+                          "label": "Facade",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p184",
+                          "label": "Windows",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p185",
+                          "label": "Roof",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p186",
+                      "label": "Interior",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p187",
+                          "label": "Walls",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p188",
+                          "label": "Doors",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p189",
+                          "label": "Floors",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "p190",
+                  "label": "Systems",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p191",
+                      "label": "HVAC",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p192",
+                      "label": "Electrical",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p193",
+                      "label": "Plumbing",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p194",
+                      "label": "Fire Safety",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "p195",
+                  "label": "Site",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p196",
+                      "label": "Terrain",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p197",
+                      "label": "Roads",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p198",
+                      "label": "Landscaping",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "p75",
+              "label": "Changes",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p76",
+                  "label": "Change Request #001",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p77",
+                      "label": "Reason",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p78",
+                      "label": "Proposal",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p79",
+                      "label": "Cost Impact",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p80",
+                      "label": "Schedule Impact",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p81",
+                      "label": "Review",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p82",
+                      "label": "Client Decision",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p83",
+                      "label": "Implementation",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "p84",
+                  "label": "Change Request #002",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                },
+                {
+                  "id": "p85",
+                  "label": "Design Revision #03",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "p86",
+              "label": "Completion",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p87",
+                  "label": "Inspection",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                },
+                {
+                  "id": "p88",
+                  "label": "Punch List",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                },
+                {
+                  "id": "p89",
+                  "label": "Handover",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                },
+                {
+                  "id": "p90",
+                  "label": "Closeout",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "p91",
+              "label": "Agreements",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p92",
+                  "label": "Agreement #001",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p93",
+                      "label": "Parties",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p94",
+                          "label": "Statsbygg",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p95",
+                          "label": "Snøhetta",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p96",
+                      "label": "Terms",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p97",
+                          "label": "Scope",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p98",
+                          "label": "Responsibilities",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p99",
+                          "label": "Fee",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "p100",
+                  "label": "Agreement #002",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p101",
+                      "label": "Parties",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p102",
+                          "label": "Statsbygg",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p103",
+                          "label": "Skanska",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p104",
+                      "label": "Terms",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p105",
+                          "label": "Scope",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p106",
+                          "label": "Responsibilities",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p107",
+                          "label": "Schedule",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "node_id_hi": 203
+  },
+  "feedback": "Restored",
+  "completed": false,
+  "cancelled": false,
+  "created_at": "2026-10-13T22:28:17.018+00:00",
+  "event": "restored"
+}

@@ -32,8 +32,9 @@ default, and then nothing changes. On:
 - Add folder and the folder chooser answer 403; bodies over 256 KB (chat
   8 KB) answer 413; Talk is limited per session, per IP, and per day
   (429); at most 50 sessions at once.
-- Each login gets its own sandbox: a copy of `app/demo_seed/` (empty
-  until the seed exists) in its own folder under `DEMO_SANDBOX_DIR`
+- Each login gets its own sandbox: a copy of `app/demo_seed/` (the
+  account John Doe with "Project #1001" and "Getting in shape", copied
+  from local data on 2026-10-14) in its own folder under `DEMO_SANDBOX_DIR`
   (default: the system temp directory), never `app/data/`. Storage reads
   and writes there for that session's requests
   (`backend/storage/sandboxes.py`); the folder is deleted when the

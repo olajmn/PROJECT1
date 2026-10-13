@@ -1,0 +1,651 @@
+{
+  "id": 90,
+  "user_id": 1,
+  "project_id": 57,
+  "account_id": 15,
+  "account_n": 47,
+  "name": "Getting in shape",
+  "plan": {
+    "progression": {
+      "steps": [
+        {
+          "id": "p8",
+          "label": "Training Plan",
+          "ordered": true,
+          "resolved": false,
+          "children": [
+            {
+              "id": "p108",
+              "label": "Goals",
+              "ordered": true,
+              "resolved": false,
+              "children": []
+            },
+            {
+              "id": "p39",
+              "label": "Schedule",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p65",
+                  "label": "Monday",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p109",
+                      "label": "18.00-20.00",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "p66",
+                  "label": "Wednesday",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p110",
+                      "label": "14:30-16.00",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    }
+                  ]
+                },
+                {
+                  "id": "p67",
+                  "label": "Friday",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p111",
+                      "label": "14.00-15.00",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "p53",
+              "label": "Exercises",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p87",
+                  "label": "Strength",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p88",
+                      "label": "Upper Body",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p96",
+                          "label": "Compound",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p97",
+                              "label": "Bench Press",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            },
+                            {
+                              "id": "p98",
+                              "label": "Squat",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            },
+                            {
+                              "id": "p99",
+                              "label": "Pull-ups",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            }
+                          ]
+                        },
+                        {
+                          "id": "p100",
+                          "label": "Isolation",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p101",
+                              "label": "Biceps Curl",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            },
+                            {
+                              "id": "p102",
+                              "label": "Triceps Extension",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            },
+                            {
+                              "id": "p103",
+                              "label": "Lateral Raise",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p92",
+                      "label": "Lower Body",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p93",
+                          "label": "Excercises",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p94",
+                              "label": "Squat",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            },
+                            {
+                              "id": "p95",
+                              "label": "Deadlift",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": []
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "p104",
+                  "label": "Condition",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p105",
+                      "label": "Exercises",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p106",
+                          "label": "Intervalls",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        },
+                        {
+                          "id": "p107",
+                          "label": "5 km run",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": []
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "p19",
+          "label": "Training Log",
+          "ordered": true,
+          "resolved": false,
+          "children": [
+            {
+              "id": "p112",
+              "label": "2026",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p113",
+                  "label": "September",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p114",
+                      "label": "Week 1",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p115",
+                          "label": "Monday",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p116",
+                              "label": "Upper Body",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p117",
+                                  "label": "Bench Press",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p118",
+                                  "label": "Pull-ups",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p119",
+                                  "label": "Shoulder Press",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "p120",
+                          "label": "Wednesday",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p121",
+                              "label": "Lower Body",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p122",
+                                  "label": "Squat",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p123",
+                                  "label": "Deadlift",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p124",
+                      "label": "Week 2",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p125",
+                          "label": "Monday",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p126",
+                              "label": "Upper Body",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p127",
+                                  "label": "Bench Press",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p128",
+                                  "label": "Pull-ups",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p129",
+                                  "label": "Biceps Curl",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "p130",
+                          "label": "Wednesday",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p131",
+                              "label": "Lower Body",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p132",
+                                  "label": "Squat",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p133",
+                                  "label": "Leg Press",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "p134",
+                          "label": "Friday",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p135",
+                              "label": "Conditioning",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p136",
+                                  "label": "5 km Run",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p137",
+                      "label": "Week 3",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p138",
+                          "label": "Tuesday",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p139",
+                              "label": "Upper Body",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p140",
+                                  "label": "Bench Press",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p141",
+                                  "label": "Shoulder Press",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p142",
+                                  "label": "Triceps Extension",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "p143",
+                          "label": "Friday",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p144",
+                              "label": "Lower Body",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p145",
+                                  "label": "Squat",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p146",
+                                  "label": "Deadlift",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "id": "p147",
+                      "label": "Week 4",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": [
+                        {
+                          "id": "p148",
+                          "label": "Monday",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p149",
+                              "label": "Upper Body",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p150",
+                                  "label": "Bench Press",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p151",
+                                  "label": "Pull-ups",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p152",
+                                  "label": "Lateral Raise",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "p153",
+                          "label": "Wednesday",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p154",
+                              "label": "Lower Body",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p155",
+                                  "label": "Squat",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p156",
+                                  "label": "Deadlift",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p157",
+                                  "label": "Leg Press",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "p158",
+                          "label": "Friday",
+                          "ordered": true,
+                          "resolved": false,
+                          "children": [
+                            {
+                              "id": "p159",
+                              "label": "Conditioning",
+                              "ordered": true,
+                              "resolved": false,
+                              "children": [
+                                {
+                                  "id": "p160",
+                                  "label": "Intervals",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                },
+                                {
+                                  "id": "p161",
+                                  "label": "5 km Run",
+                                  "ordered": true,
+                                  "resolved": false,
+                                  "children": []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "p163",
+                  "label": "October",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": [
+                    {
+                      "id": "p164",
+                      "label": "Week 1",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p166",
+                      "label": "Week 2",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p167",
+                      "label": "Week 3",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    },
+                    {
+                      "id": "p168",
+                      "label": "Week 4",
+                      "ordered": true,
+                      "resolved": false,
+                      "children": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "node_id_hi": 168
+  },
+  "feedback": "Hi there. How can I help you with the Getting in shape project today? Note: hello",
+  "completed": false,
+  "cancelled": false,
+  "created_at": "2026-10-12T14:06:25.518+00:00",
+  "event": "chat",
+  "sent_at": "2026-10-12T14:06:13.140+00:00"
+}
