@@ -11,6 +11,8 @@ per-account `account_n` high-water mark).
 from datetime import datetime, timezone
 from pathlib import Path
 
+from backend.storage import sandboxes
+
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 
 # The only stub operator user_id that exists today (auth deferred).
@@ -18,9 +20,16 @@ DATA_DIR = Path(__file__).parent.parent.parent / "data"
 DEFAULT_USER_ID = 1
 
 
+def data_dir() -> Path:
+    """data/, or the visitor's sandbox while a public-demo request runs
+    (sandboxes.py)."""
+    return sandboxes.current() or DATA_DIR
+
+
 def ensure_data_dir() -> None:
-    """Create data/ if it doesn't exist yet. Safe to call repeatedly."""
-    DATA_DIR.mkdir(exist_ok=True)
+    """Create data/ (or the sandbox) if it doesn't exist yet. Safe to
+    call repeatedly."""
+    data_dir().mkdir(exist_ok=True)
 
 
 def now_utc() -> str:

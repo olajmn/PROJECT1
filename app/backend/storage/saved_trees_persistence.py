@@ -17,7 +17,9 @@ deleted tree's id stays retired.
 #      - delete_saved_tree()
 
 import json
+from pathlib import Path
 
+from backend.storage import sandboxes
 from backend.storage.paths import DATA_DIR, ensure_data_dir, now_utc
 
 SAVED_TREES_FILE = DATA_DIR / "saved_trees.json"
@@ -28,16 +30,23 @@ SAVED_TREES_FILE = DATA_DIR / "saved_trees.json"
 # ============================================================
 
 
+def _saved_trees_file() -> Path:
+    """SAVED_TREES_FILE, or saved_trees.json in the visitor's demo sandbox."""
+    sandbox = sandboxes.current()
+    return sandbox / "saved_trees.json" if sandbox else SAVED_TREES_FILE
+
+
 def _load() -> dict:
     """{"id_hi": int, "trees": [...]}; empty library if no file yet."""
-    if not SAVED_TREES_FILE.exists():
+    path = _saved_trees_file()
+    if not path.exists():
         return {"id_hi": 0, "trees": []}
     try:
-        with open(SAVED_TREES_FILE, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
     except json.JSONDecodeError as e:
         raise RuntimeError(
-            f"{SAVED_TREES_FILE} is corrupted and can't be read as JSON "
+            f"{path} is corrupted and can't be read as JSON "
             f"({e}). It may have been interrupted mid-write. Restore it "
             "from a backup or fix it by hand before continuing."
         ) from e
@@ -49,10 +58,11 @@ def _load() -> dict:
 def _save(data: dict) -> None:
     """Write the whole library — atomic temp-file rename."""
     ensure_data_dir()
-    tmp_file = SAVED_TREES_FILE.with_suffix(".json.tmp")
+    path = _saved_trees_file()
+    tmp_file = path.with_suffix(".json.tmp")
     with open(tmp_file, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-    tmp_file.replace(SAVED_TREES_FILE)
+    tmp_file.replace(path)
 
 
 # ============================================================

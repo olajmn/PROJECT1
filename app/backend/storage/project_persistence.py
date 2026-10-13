@@ -23,6 +23,7 @@ import json
 import shutil
 from pathlib import Path
 
+from backend.storage import sandboxes
 from backend.storage.paths import DATA_DIR, DEFAULT_USER_ID, now_utc
 
 PROJECTS_DIR = DATA_DIR / "projects"
@@ -74,9 +75,15 @@ def _read_jsonl(path: Path) -> list[dict]:
     return records
 
 
+def _projects_dir() -> Path:
+    """PROJECTS_DIR, or projects/ in the visitor's demo sandbox."""
+    sandbox = sandboxes.current()
+    return sandbox / "projects" if sandbox else PROJECTS_DIR
+
+
 def project_dir(project_id: int) -> Path:
     """data/projects/{id}/ — current + events for one project."""
-    return PROJECTS_DIR / str(int(project_id))
+    return _projects_dir() / str(int(project_id))
 
 
 def current_path(project_id: int) -> Path:
@@ -141,10 +148,11 @@ def _append_event(project_id: int, event: dict) -> None:
 
 def _iter_current_paths() -> list[tuple[int, Path]]:
     """(project_id, current.json path) for every on-disk project folder."""
-    if not PROJECTS_DIR.exists():
+    projects_dir = _projects_dir()
+    if not projects_dir.exists():
         return []
     out: list[tuple[int, Path]] = []
-    for path in PROJECTS_DIR.iterdir():
+    for path in projects_dir.iterdir():
         if path.is_dir() and path.name.isdigit():
             cur = path / "current.json"
             if cur.exists():

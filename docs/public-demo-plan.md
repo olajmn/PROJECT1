@@ -42,7 +42,7 @@ The step plan for putting the existing app at a public URL as a demo; why it is 
 ### iv. Sandboxes
 
 - Seed data lives in the repository, in a folder not named `data/` (`.gitignore` ignores `data/` at any depth), e.g. `app/demo_seed/`. It holds demo projects only and is never written to.
-- A new session copies the seed into its own folder under a sandbox root (`SANDBOX_DIR`, default a folder in the system temp directory, never inside `app/data/`).
+- A new session copies the seed into its own folder under a sandbox root (`DEMO_SANDBOX_DIR`, default a folder in the system temp directory, never inside `app/data/`).
 - Storage reads and writes under the current request's folder. Today the location is fixed when the storage modules load: `DATA_DIR` in `backend/storage/paths.py`, and the paths built from it in `project_persistence.py` (`PROJECTS_DIR`), `accounts_persistence.py` (`ACCOUNTS_FILE`), and `saved_trees_persistence.py` (`SAVED_TREES_FILE`). These become lookups of the current folder, set by `Handler` for each request in demo mode (a context variable). Without demo mode the current folder is `app/data/`, so local use is unchanged. Nothing in storage caches data between requests.
 - Expired sandboxes are deleted when their session ends and in a sweep on each request; on start, the sandbox root is emptied (no session survives a restart).
 - A cap on sandboxes at once (and so on disk use); a login over the cap is refused with a clear message.
@@ -68,7 +68,7 @@ The step plan for putting the existing app at a public URL as a demo; why it is 
 | 2 | `HOST` / `PORT` from the environment. Built | — |
 | 3 | Provider switch in `send_chat()`; local Ollama still default. Built | — |
 | 4 | Demo mode: login and sessions, 401 handling, the two blocked routes, size limits, Talk limits. Built | — |
-| 5 | Sandboxes: storage paths per request, create on login, delete on session end, sweep and cap; tests that two sessions cannot see each other's changes and that local mode still uses `app/data/` | 2–4 h |
+| 5 | Sandboxes: storage paths per request, create on login, delete on session end, sweep and cap; tests that two sessions cannot see each other's changes and that local mode still uses `app/data/`. Built | — |
 | **Checkpoint** | Steps 2–5 work locally with `DEMO_MODE` set: two browsers logged in at once each see only their own changes, and local mode is unchanged. If not, stop and reassess; an unsafe deploy is not the fallback. | |
 | 6 | Seed data: 2–3 demo projects | 1–2 h, mostly content |
 | 7 | `Dockerfile`, `.dockerignore`; host setup: account, secrets, deploy | 2 h |

@@ -1,17 +1,24 @@
-"""Checks for demo mode: sessions, rate limits, and guard() - a fake
-request and a fake clock, no server, no data, no model. Run from app/:
+"""Checks for demo mode: sessions, rate limits, guard(), and sandboxes -
+a fake request, a fake clock, and temporary folders; no server, no real
+data, no model. Run from app/:
 
     .venv/bin/python -m backend.api.demo.test_demo
 """
 
 import io
 import json
+import tempfile
+from pathlib import Path
 from unittest import mock
 
 from backend.api.demo import check as g
 from backend.api.demo import settings
 from backend.api.demo.limits import RateLimit
 from backend.api.demo.sessions import Sessions
+from backend.project.panes.create.lifecycle import create_project
+from backend.project.panes.create.resolver import get_latest_for_all_projects
+from backend.storage import paths, sandboxes
+from backend.storage.accounts_persistence import load_accounts, save_account
 
 
 class Clock:
@@ -53,7 +60,8 @@ class FakeRequest:
 
 def fresh_state(clock):
     """New sessions and limits on the fake clock, with small limits."""
-    g.sessions = Sessions(idle=30 * 60, max_age=8 * 60 * 60, limit=2, clock=clock)
+    g.sessions = Sessions(idle=30 * 60, max_age=8 * 60 * 60, limit=2, clock=clock,
+                          on_end=g._remove_sandbox)
     g.login_attempts = RateLimit(3, 60, clock)
     g.talk_per_session = RateLimit(2, 60, clock)
     g.talk_per_ip = RateLimit(10, 60, clock)
@@ -196,10 +204,77 @@ def check_guard() -> None:
         assert "Secure" not in request.sent_headers["Set-Cookie"]
 
 
+def check_sandboxes() -> None:
+    clock = Clock()
+    fresh_state(clock)
+    with mock.patch.object(settings, "PASSWORD", "secret"), \
+         mock.patch.object(settings, "SECURE_COOKIE", True):
+        # A login gets a copy of the seed; ending the session removes it.
+        _, a = login()
+        _, b = login(ip="5.6.7.8")
+        box_a = sandboxes.ROOT / g.sessions.get(a).sandbox
+        box_b = sandboxes.ROOT / g.sessions.get(b).sandbox
+        assert box_a != box_b
+        assert (box_a / "accounts.json").read_text() == '[{"id": 1, "text": "Demo"}]'
+
+        # Storage follows the request's sandbox: what A does, B never sees.
+        assert g.guard(FakeRequest("/api/projects", cookie=a), "GET") is False
+        assert paths.data_dir() == box_a
+        create_project("Only in A", "1")
+        save_account("Second in A")
+        assert [r["name"] for r in get_latest_for_all_projects()] == ["Only in A"]
+        assert len(load_accounts()) == 2
+
+        assert g.guard(FakeRequest("/api/projects", cookie=b), "GET") is False
+        assert paths.data_dir() == box_b
+        assert get_latest_for_all_projects() == []
+        assert len(load_accounts()) == 1
+
+        # No session: storage points at no sandbox (and the API is 401).
+        request = FakeRequest("/api/projects")
+        assert g.guard(request, "GET") and request.status == 401
+        assert sandboxes.current() is None
+
+        # Logout and idle expiry both delete the folder.
+        g.guard(FakeRequest("/api/logout", b"", cookie=a), "POST")
+        assert not box_a.exists()
+        clock.now += 30 * 60 + 1
+        g.sessions.count()  # any call sweeps expired sessions
+        assert not box_b.exists()
+
+        # A new login starts from the seed again.
+        _, c = login(ip="9.9.9.9")
+        g.guard(FakeRequest("/api/projects", cookie=c), "GET")
+        assert get_latest_for_all_projects() == []
+
+    # clear_all() only touches folders named like a sandbox.
+    keep = sandboxes.ROOT / "not-a-sandbox"
+    keep.mkdir()
+    sandboxes.clear_all()
+    assert keep.exists() and not any(
+        p for p in sandboxes.ROOT.iterdir() if p.name != "not-a-sandbox")
+    for bad in ("../x", "abc", "/etc"):
+        try:
+            sandboxes.use(bad)
+        except ValueError:
+            continue
+        raise AssertionError(f"use({bad!r}) was accepted")
+    sandboxes.use(None)
+    assert paths.data_dir() == paths.DATA_DIR
+
+
 def main() -> None:
     check_sessions_and_limits()
-    check_guard()
-    print("OK - demo sessions / rate limits / guard")
+    with tempfile.TemporaryDirectory() as tmp:
+        seed = Path(tmp) / "seed"
+        seed.mkdir()
+        (seed / "accounts.json").write_text('[{"id": 1, "text": "Demo"}]')
+        with mock.patch.object(sandboxes, "ROOT", Path(tmp) / "boxes"), \
+             mock.patch.object(sandboxes, "SEED_DIR", seed):
+            check_guard()
+            check_sandboxes()
+        sandboxes.use(None)
+    print("OK - demo sessions / rate limits / guard / sandboxes")
 
 
 if __name__ == "__main__":

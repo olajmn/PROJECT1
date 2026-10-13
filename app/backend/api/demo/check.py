@@ -3,12 +3,14 @@ The demo-mode check in front of every request (docs/public-demo-plan.md
 § 3.ii–iii). requests_from_browser.Handler calls guard() first; when it
 returns True, the request has been answered here (login, logout, 401,
 403, 413, 429, or a redirect to the login page) and Handler does
-nothing more.
+nothing more. When it returns False, storage has been pointed at the
+visitor's sandbox (backend/storage/sandboxes.py), or at nothing for a
+request without a session, which never reaches storage.
 """
 
 # Contents
 #  1. State
-#      - sessions, limits
+#      - sessions, limits, sandboxes cleared at start
 #
 #  2. The check
 #      - guard()
@@ -27,7 +29,8 @@ from http.server import BaseHTTPRequestHandler
 
 from backend.api.demo import settings
 from backend.api.demo.limits import RateLimit
-from backend.api.demo.sessions import Sessions
+from backend.api.demo.sessions import Session, Sessions
+from backend.storage import sandboxes
 
 
 # ============================================================
@@ -47,11 +50,24 @@ _BLOCKED = (
     re.compile(r"^/api/choose-folder$"),
 )
 
-sessions = Sessions(settings.IDLE_SECONDS, settings.MAX_SECONDS, settings.MAX_SESSIONS)
+def _remove_sandbox(session: Session) -> None:
+    sandboxes.remove(session.sandbox)
+
+
+sessions = Sessions(
+    settings.IDLE_SECONDS,
+    settings.MAX_SECONDS,
+    settings.MAX_SESSIONS,
+    on_end=_remove_sandbox,
+)
 login_attempts = RateLimit(*settings.LOGIN_ATTEMPTS_PER_IP)
 talk_per_session = RateLimit(*settings.TALK_PER_SESSION)
 talk_per_ip = RateLimit(*settings.TALK_PER_IP)
 talk_per_day = RateLimit(*settings.TALK_PER_DAY)
+
+if settings.ENABLED:
+    # Sessions do not survive a restart, so neither do their sandboxes.
+    sandboxes.clear_all()
 
 
 # ============================================================
@@ -62,6 +78,9 @@ def guard(handler: BaseHTTPRequestHandler, method: str) -> bool:
     """True when the request was answered here; False lets Handler
     answer it as usual."""
     path = handler.path.split("?", 1)[0]
+    # Until a session is found, storage points at no sandbox; this thread
+    # may have answered another visitor before.
+    sandboxes.use(None)
     if method == "POST" and path == "/api/login":
         _login(handler)
         return True
@@ -83,6 +102,11 @@ def guard(handler: BaseHTTPRequestHandler, method: str) -> bool:
         # The login page and the scripts and styles every page loads.
         return False
 
+    if session.sandbox is None:
+        # Never fall back to data/ for a logged-in visitor.
+        handler.send_error(503, "The demo is not ready. Log in again.")
+        return True
+    sandboxes.use(session.sandbox)
     if method != "POST":
         return False
     if any(pattern.match(path) for pattern in _BLOCKED):
@@ -130,6 +154,13 @@ def _login(handler: BaseHTTPRequestHandler) -> None:
     session = sessions.create()
     if session is None:
         handler.send_error(503, "The demo is full right now. Try again later.")
+        return
+    try:
+        session.sandbox = sandboxes.create()
+    except OSError as e:
+        print(f"(debug: sandbox not created: {type(e).__name__})")
+        sessions.end(session.token)
+        handler.send_error(503, "The demo is not available right now. Try again later.")
         return
     _send_json(handler, {"ok": True}, _cookie(session.token, settings.MAX_SECONDS))
 

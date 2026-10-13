@@ -27,7 +27,9 @@ function here.
 #      - account_n_hi() / note_account_n()  (sticky project mint high-water)
 
 import json
+from pathlib import Path
 
+from backend.storage import sandboxes
 from backend.storage.paths import (
     DATA_DIR,
     DEFAULT_USER_ID,
@@ -43,9 +45,15 @@ ACCOUNTS_FILE = DATA_DIR / "accounts.json"
 # ============================================================
 
 
+def _accounts_file() -> Path:
+    """ACCOUNTS_FILE, or accounts.json in the visitor's demo sandbox."""
+    sandbox = sandboxes.current()
+    return sandbox / "accounts.json" if sandbox else ACCOUNTS_FILE
+
+
 def _load_all_accounts() -> list[dict]:
     """Read every saved account (tombstones included)."""
-    path = ACCOUNTS_FILE
+    path = _accounts_file()
     if not path.exists():
         return []
     try:
@@ -63,10 +71,11 @@ def _load_all_accounts() -> list[dict]:
 def _save_all_accounts(accounts: list[dict]) -> None:
     """Write the full list of accounts — atomic temp-file rename."""
     ensure_data_dir()
-    tmp_file = ACCOUNTS_FILE.with_suffix(".json.tmp")
+    path = _accounts_file()
+    tmp_file = path.with_suffix(".json.tmp")
     with open(tmp_file, "w", encoding="utf-8") as f:
         json.dump(accounts, f, indent=2, ensure_ascii=False)
-    tmp_file.replace(ACCOUNTS_FILE)
+    tmp_file.replace(path)
 
 
 def _live(accounts: list[dict]) -> list[dict]:
