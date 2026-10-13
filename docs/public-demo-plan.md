@@ -64,19 +64,32 @@ The step plan for putting the existing app at a public URL as a demo; why it is 
 
 | # | Step | Estimate |
 |---|---|---|
-| 1 | Talk test outside the repository (§ 5). Done | — |
+| 1 | Talk test outside the repository (§ 6). Done | — |
 | 2 | `HOST` / `PORT` from the environment. Built | — |
 | 3 | Provider switch in `send_chat()`; local Ollama still default. Built | — |
 | 4 | Demo mode: login and sessions, 401 handling, the two blocked routes, size limits, Talk limits. Built | — |
 | 5 | Sandboxes: storage paths per request, create on login, delete on session end, sweep and cap; tests that two sessions cannot see each other's changes and that local mode still uses `app/data/`. Built | — |
 | **Checkpoint** | Steps 2–5 work locally with `DEMO_MODE` set: two browsers logged in at once each see only their own changes, and local mode is unchanged. If not, stop and reassess; an unsafe deploy is not the fallback. | |
-| 6 | Seed data: 2–3 demo projects | 1–2 h, mostly content |
-| 7 | `Dockerfile`, `.dockerignore`; host setup: account, secrets, deploy | 2 h |
-| 8 | Public smoke test (§ 7) and docs (`04-current-state.md`, this plan to `archive/`) | 45 min |
+| 6 | Seed data: 2–3 demo projects. Built | — |
+| 7 | `Dockerfile`, `.dockerignore`, `fly.toml` (built); host setup: account, secrets, deploy (§ 5) | 1 h |
+| 8 | Public smoke test (§ 8) and docs (`04-current-state.md`, this plan to `archive/`) | 45 min |
 
 Critical path: 4 → 5 → 7 → 8. Steps 2 and 6 can run beside it.
 
-## 5. Talk test
+## 5. Deploy
+
+The image is `app/Dockerfile` (what goes in: backend, `server.py`, `demo_seed/`, the built UI; never `data/`, see `app/.dockerignore`), and the host settings are `app/fly.toml` (demo mode on, OpenRouter for Talk, one always-on machine in `arn`). Docker is not needed locally: Fly.io builds the image. From `app/`:
+
+1. `brew install flyctl`, then `fly auth signup` (or `fly auth login`); the payment card is added on Fly.io.
+2. `fly apps create <name>`, and put `<name>` as `app` in `fly.toml`.
+3. `fly secrets set DEMO_PASSWORD=... OPENROUTER_API_KEY=...` in your own terminal, so neither value is shown anywhere else.
+4. `fly deploy`.
+5. `fly status`: exactly one machine; if two, `fly scale count 1`.
+6. The smoke test (§ 8) against `https://<name>.fly.dev`.
+
+A later change is the same `fly deploy`; it restarts the server, which logs everyone out.
+
+## 6. Talk test
 
 Before any code depends on a provider, compare candidates on the same input:
 
@@ -87,14 +100,13 @@ Before any code depends on a provider, compare candidates on the same input:
 - The test script and API keys stay outside the repository.
 - **Result (2026-10-13):** OpenRouter `qwen/qwen3.5-9b` with `reasoning: {"enabled": false}`: all 10 calls (5 cases, twice) HTTP 200, 0 reasoning tokens, about 1.2–2.3 s each, about $0.00095 in total, routed to SiliconFlow. Replies matched local Ollama closely, including its mistake on the selected-day case (parts added on 11 Oct named as added on 12 Oct). Chosen for the demo.
 
-## 6. Open questions
+## 7. Open questions
 
-- The client IP header behind the host's proxy, for per-IP limits.
-- The cap on sandboxes at once, and the Talk limits (per session, per IP, per day).
+- Whether the current caps fit real use: 50 sessions at once; Talk 10 a minute per session, 20 per IP, 500 a day (`backend/api/demo/settings.py`).
 - Whether to require zero data retention at OpenRouter (the test calls went to SiliconFlow).
-- The first image build happens on the host's remote builder: Docker is not installed locally.
+- The image has not been built yet: Docker is not installed locally, so the first build is Fly.io's. A local copy laid out like the image (same files in, same left out) ran and served the seed.
 
-## 7. Smoke test
+## 8. Smoke test
 
 Against the public URL:
 

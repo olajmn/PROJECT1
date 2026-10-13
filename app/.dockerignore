@@ -1,0 +1,18 @@
+# What never goes into the demo image. `fly deploy` sends this folder
+# from disk, not from Git, so git-ignored files would be sent too.
+
+# Personal data: never on the host (docs/05-decisions.md #70).
+data/
+*.bak
+
+# Local environments and build output; the image builds its own.
+.venv/
+ui/node_modules/
+ui/dist/
+**/__pycache__/
+**/*.pyc
+
+# Not needed to run the demo.
+**/test_*.py
+README.md
+.DS_Store

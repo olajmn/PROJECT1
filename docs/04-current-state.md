@@ -40,6 +40,8 @@ default, and then nothing changes. On:
   (`backend/storage/sandboxes.py`); the folder is deleted when the
   session ends, and all are cleared at start.
 - Trying it on `http://localhost` needs `DEMO_INSECURE_COOKIE=1`.
+- Deploying it: `app/Dockerfile`, `app/.dockerignore`, `app/fly.toml`;
+  steps in `docs/public-demo-plan.md` § 5. Not deployed yet.
 
 ## 2. Where things are
 
