@@ -28,6 +28,7 @@ server.py only starts the server; everything it answers is decided here.
 #      - shared helpers
 
 import json
+import os
 import re
 from datetime import date
 from http.server import BaseHTTPRequestHandler
@@ -65,6 +66,7 @@ from backend.project.saved_trees import (
     saved_trees_for,
 )
 from backend.model.client import MODEL_IN_USE, PROVIDER, TEMPERATURE
+from backend.api import demo
 from backend.api.activity_log import activity_log
 from backend.project.timeline import project_timeline
 from backend.api.files_to_browser import send_page_file
@@ -81,7 +83,8 @@ from backend.api.answers_to_browser import (
 # 1. Settings
 # ============================================================
 
-PORT = 8000
+# 8000 locally; a host can set PORT (docs/public-demo-plan.md).
+PORT = int(os.environ.get("PORT", "8000"))
 
 _MODEL_FAILED = "that took longer than expected - try again in a moment"
 _MODEL_UNREACHABLE = "the model is not running - start Ollama and try again"
@@ -141,12 +144,16 @@ class Handler(BaseHTTPRequestHandler):
     error_content_type = "text/plain;charset=utf-8"
 
     def do_GET(self) -> None:
+        if demo.ENABLED and demo.guard(self, "GET"):
+            return
         if self.path == "/api/projects":
             self._send_json([project_view(r) for r in active_projects()])
         elif self.path == "/api/projects/archived":
             self._send_json([project_view(r) for r in archived_projects()])
         elif self.path == "/api/accounts":
             self._send_json([account_view(u) for u in load_accounts()])
+        elif self.path == "/api/session":
+            self._send_json({"demo": demo.ENABLED})
         elif self.path == "/api/model":
             self._send_json({
                 "provider": PROVIDER,
@@ -163,6 +170,8 @@ class Handler(BaseHTTPRequestHandler):
             send_page_file(self)
 
     def do_POST(self) -> None:
+        if demo.ENABLED and demo.guard(self, "POST"):
+            return
         for pattern, method in _POST_ROUTES:
             match = pattern.match(self.path)
             if match:

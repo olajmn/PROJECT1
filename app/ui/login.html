@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in</title>
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem("ui.theme");
+    if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="login-body">
+<main class="login-panel">
+  <h1 class="login-title">Map and Talk</h1>
+  <p class="login-text">A demo. Enter the password you were given. What you change stays in your own copy and is gone when you log out.</p>
+  <form id="login-form" class="login-form">
+    <input id="login-password" type="password" autocomplete="current-password" placeholder="Password" required autofocus>
+    <button type="submit">Log in</button>
+  </form>
+  <p id="login-error" class="login-error" role="alert"></p>
+</main>
+<script type="module" src="/dist/demo/login.js"></script>
+</body>
+</html>

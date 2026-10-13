@@ -30,6 +30,7 @@ import { installMapPane } from "./panes/canvas/mapPane.js";
 import { getActiveUserId, setActiveUserId } from "./user/activeAccount.js";
 import { applyStoredTheme } from "./user/theme.js";
 import { toggleMapIds } from "./panes/canvas/idView.js";
+import { installLogoutLink } from "./demo/logoutLink.js";
 import type { AccountView, ProjectView } from "./dataShapes.js";
 
 applyStoredTheme();
@@ -273,6 +274,8 @@ async function load(): Promise<void> {
 }
 
 // 4. Initialization
+
+void installLogoutLink(document.querySelector(".sidebar-more") as HTMLElement);
 
 load().catch((err) => {
   mainEmpty.hidden = false;

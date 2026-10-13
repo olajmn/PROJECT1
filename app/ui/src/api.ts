@@ -22,8 +22,22 @@
 //      - fetchLog(), fetchProjectTimeline()
 //  7. Saved trees
 //      - saveTree(), fetchSavedTrees(), insertSavedTree(), deleteSavedTree()
+//  8. Demo session
+//      - fetchSession(), logIn(), logOut()
 
-import type { ProjectView, LogEntry, ModelView, PastedNode, PastePreview, AccountView, SavedTreeView } from "./dataShapes.js";
+import type { ProjectView, LogEntry, ModelView, PastedNode, PastePreview, AccountView, SavedTreeView, SessionView } from "./dataShapes.js";
+
+/** Every request in this file goes through here. In demo mode a 401
+ *  means the session has ended (docs/public-demo-plan.md), so the page
+ *  goes to the login screen instead of showing an error. */
+function fetch(input: string, init?: RequestInit): Promise<Response> {
+  return globalThis.fetch(input, init).then((res) => {
+    if (res.status === 401 && !input.startsWith("/api/login")) {
+      window.location.assign("/login.html");
+    }
+    return res;
+  });
+}
 
 async function httpErrorMessage(res: Response): Promise<string> {
   const detail = (await res.text()).trim();
@@ -466,4 +480,30 @@ export async function deleteSavedTree(treeId: string): Promise<void> {
   if (!res.ok) {
     throw new Error(await httpErrorMessage(res));
   }
+}
+
+// 8. Demo session
+
+/** Whether the server runs in demo mode (login, sandboxes). */
+export async function fetchSession(): Promise<SessionView> {
+  const res = await fetch("/api/session");
+  if (!res.ok) {
+    throw new Error(`request failed: ${res.status}`);
+  }
+  return (await res.json()) as SessionView;
+}
+
+export async function logIn(password: string): Promise<void> {
+  const res = await fetch("/api/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
+  });
+  if (!res.ok) {
+    throw new Error(await httpErrorMessage(res));
+  }
+}
+
+export async function logOut(): Promise<void> {
+  await fetch("/api/logout", { method: "POST" });
 }

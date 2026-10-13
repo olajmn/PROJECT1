@@ -1,0 +1,51 @@
+/* The demo's login page (login.html): one small panel on the app's
+ * backdrop, built from the same tokens as the rest of the UI. */
+
+body.login-body {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--backdrop);
+}
+
+.login-panel {
+  width: min(22rem, calc(100vw - 2rem));
+  padding: var(--space-5);
+  background: var(--color-bg-panel);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-panel);
+}
+
+.login-title {
+  margin: 0 0 var(--space-2);
+  font-size: 1.125rem;
+}
+
+.login-text {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.login-form input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  padding: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: var(--fill-control);
+  color: var(--color-text);
+}
+
+.login-form button {
+  padding: var(--space-2) var(--space-4);
+}
+
+.login-error {
+  min-height: 1.2em;
+  margin: var(--space-2) 0 0;
+  color: var(--color-error);
+  font-size: var(--font-size-sm);
+}

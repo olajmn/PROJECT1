@@ -10,6 +10,7 @@
 //  5. Model boundary (Settings → General)
 //  6. Activity log (Settings → Logs)
 //  7. Saved trees
+//  8. Demo session
 
 // 1. Map
 
@@ -128,4 +129,11 @@ export interface SavedTreeView {
   name: string;
   saved_at: string;
   node_count: number;
+}
+
+// 8. Demo session
+
+/** GET /api/session: true when the server runs the public demo. */
+export interface SessionView {
+  demo: boolean;
 }

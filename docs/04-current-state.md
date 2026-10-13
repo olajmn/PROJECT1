@@ -15,6 +15,27 @@ From `app/`, with its own `.venv/` (`ollama` is only installed there):
 
 `/full-check` runs the checks and every test suite in one go.
 
+`HOST` (default `localhost`) and `PORT` (default `8000`) can be set in the
+environment; locally neither is needed.
+
+### Demo mode
+
+Set `DEMO_MODE=1` and `DEMO_PASSWORD` to put the public-demo checks in
+front of every request (`backend/api/demo/`, [[05-decisions]] #70). Off by
+default, and then nothing changes. On:
+
+- One shared password; `POST /api/login` gives an in-memory session
+  cookie, which ends on logout (sidebar, next to Settings), after
+  30 minutes idle, or after 8 hours. A restart logs everyone out.
+- Without a session, `/api/*` answers 401 and pages redirect to
+  `ui/login.html`.
+- Add folder and the folder chooser answer 403; bodies over 256 KB (chat
+  8 KB) answer 413; Talk is limited per session, per IP, and per day
+  (429); at most 50 sessions at once.
+- Trying it on `http://localhost` needs `DEMO_INSECURE_COOKIE=1`.
+- Not built yet: the sandbox per visitor (`docs/public-demo-plan.md`
+  step 5). Until then demo mode still works on the shared `app/data/`.
+
 ## 2. Where things are
 
 The layers and their rules are in [[03-architecture]]. By feature:
@@ -34,6 +55,7 @@ The layers and their rules are in [[03-architecture]]. By feature:
 | Logs and a project's timeline | `project/timeline.py`, `api/activity_log.py` | `settings/logs/` |
 | Archive (restore / delete) | `panes/create/lifecycle.py`, `storage/accounts_persistence.py` | `settings/archive/` |
 | Every HTTP route | `api/requests_from_browser.py` | `api.ts` |
+| Demo mode: login, sessions, limits | `api/demo/` | `demo/`, `ui/login.html` |
 
 Backend paths are under `app/backend/`, UI paths under `app/ui/src/`.
 
@@ -77,7 +99,8 @@ Everything lives in `app/data/` as plain JSON:
 
 ## 5. Known limits
 
-- No login; accounts are simulated. The server listens on localhost only.
+- No login outside demo mode; accounts are simulated. The server listens
+  on localhost unless `HOST` is set.
 - Add folder opens a macOS dialog on the server's machine.
 - No written API reference (`TODO.md` Queue 30).
 - `backend/foundation/` (time, math) is not used by anything.

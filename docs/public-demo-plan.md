@@ -65,9 +65,9 @@ The step plan for putting the existing app at a public URL as a demo; why it is 
 | # | Step | Estimate |
 |---|---|---|
 | 1 | Talk test outside the repository (§ 5). Done | — |
-| 2 | `HOST` / `PORT` from the environment | 15 min |
+| 2 | `HOST` / `PORT` from the environment. Built | — |
 | 3 | Provider switch in `send_chat()`; local Ollama still default. Built | — |
-| 4 | Demo mode: login and sessions, 401 handling, the two blocked routes, size limits, Talk limits | 2–2.5 h |
+| 4 | Demo mode: login and sessions, 401 handling, the two blocked routes, size limits, Talk limits. Built | — |
 | 5 | Sandboxes: storage paths per request, create on login, delete on session end, sweep and cap; tests that two sessions cannot see each other's changes and that local mode still uses `app/data/` | 2–4 h |
 | **Checkpoint** | Steps 2–5 work locally with `DEMO_MODE` set: two browsers logged in at once each see only their own changes, and local mode is unchanged. If not, stop and reassess; an unsafe deploy is not the fallback. | |
 | 6 | Seed data: 2–3 demo projects | 1–2 h, mostly content |
