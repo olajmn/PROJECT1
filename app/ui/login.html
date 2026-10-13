@@ -6,18 +6,17 @@
 <title>Log in</title>
 <script>
 (function () {
-  try {
-    var t = localStorage.getItem("ui.theme");
-    if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
-  } catch (e) {}
+  var t = null;
+  try { t = localStorage.getItem("ui.theme"); } catch (e) {}
+  document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
 })();
 </script>
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body class="login-body">
 <main class="login-panel">
-  <h1 class="login-title">Map and Talk</h1>
-  <p class="login-text">A demo. Enter the password you were given. What you change stays in your own copy and is gone when you log out.</p>
+  <p class="login-text">This is a demo. Enter the password you were given.</p>
+  <p class="login-text">Your changes are deleted when you log out, after 30 minutes without activity, or after 8 hours at most.</p>
   <form id="login-form" class="login-form">
     <input id="login-password" type="password" autocomplete="current-password" placeholder="Password" required autofocus>
     <button type="submit">Log in</button>

@@ -9,7 +9,12 @@ body.login-body {
   background: var(--backdrop);
 }
 
+/* `main` in css/base.css is a full-height column for the app pages;
+   the login panel only wraps its content. */
 .login-panel {
+  display: block;
+  height: auto;
+  margin: 0;
   width: min(22rem, calc(100vw - 2rem));
   padding: var(--space-5);
   background: var(--color-bg-panel);
@@ -17,15 +22,14 @@ body.login-body {
   border-radius: var(--radius-panel);
 }
 
-.login-title {
-  margin: 0 0 var(--space-2);
-  font-size: 1.125rem;
-}
-
 .login-text {
-  margin: 0 0 var(--space-4);
+  margin: 0 0 var(--space-3);
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+}
+
+.login-form {
+  margin-top: var(--space-4);
 }
 
 .login-form input {

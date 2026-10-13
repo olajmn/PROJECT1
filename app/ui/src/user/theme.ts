@@ -4,9 +4,10 @@ const STORAGE_KEY = "ui.theme";
 
 export type Theme = "light" | "dark";
 
+/** Dark unless the user chose light in Settings. */
 export function getTheme(): Theme {
   const raw = localStorage.getItem(STORAGE_KEY);
-  return raw === "dark" ? "dark" : "light";
+  return raw === "light" ? "light" : "dark";
 }
 
 export function applyTheme(theme: Theme = getTheme()): void {

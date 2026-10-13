@@ -6,10 +6,9 @@
 <title>Settings — Archive</title>
 <script>
 (function () {
-  try {
-    var t = localStorage.getItem("ui.theme");
-    if (t === "dark" || t === "light") document.documentElement.setAttribute("data-theme", t);
-  } catch (e) {}
+  var t = null;
+  try { t = localStorage.getItem("ui.theme"); } catch (e) {}
+  document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
 })();
 </script>
 <link rel="stylesheet" href="/css/style.css">

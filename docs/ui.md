@@ -81,8 +81,8 @@ card-style nodes.
 - **Complexity is budgeted.** The canvas may be rich — the tree, menus,
   and lines are the product's own UI. Shell, sidebar, and chat stay calm.
   Add a signal only when it earns a place; prefer removing one.
-- **Two base planes**, light and dark (Settings → General), both
-  neutral (no warm tint). All three columns share one background.
+- **Two base planes**, dark (the default) and light (Settings →
+  General), both neutral (no warm tint). All three columns share one background.
 - **Shape over lines:** soft fills and rounded corners instead of
   outlines — nodes, buttons, fields, menus. Menus sit on a slightly
   lighter surface instead of casting a shadow.
