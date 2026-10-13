@@ -2,7 +2,7 @@
 # Secrets are not here: set DEMO_PASSWORD and OPENROUTER_API_KEY with
 # `fly secrets set`.
 
-app = "CHANGE-ME"           # the app name chosen when it is created on Fly.io
+app = "ojmn"
 primary_region = "arn"      # Stockholm; check with `fly platform regions`
 
 [env]

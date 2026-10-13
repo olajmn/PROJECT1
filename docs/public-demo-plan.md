@@ -71,7 +71,7 @@ The step plan for putting the existing app at a public URL as a demo; why it is 
 | 5 | Sandboxes: storage paths per request, create on login, delete on session end, sweep and cap; tests that two sessions cannot see each other's changes and that local mode still uses `app/data/`. Built | — |
 | **Checkpoint** | Steps 2–5 work locally with `DEMO_MODE` set: two browsers logged in at once each see only their own changes, and local mode is unchanged. If not, stop and reassess; an unsafe deploy is not the fallback. | |
 | 6 | Seed data: 2–3 demo projects. Built | — |
-| 7 | `Dockerfile`, `.dockerignore`, `fly.toml` (built); host setup: account, secrets, deploy (§ 5) | 1 h |
+| 7 | `Dockerfile`, `.dockerignore`, `fly.toml`; host setup: account, secrets, deploy (§ 5). Done: https://ojmn.fly.dev | — |
 | 8 | Public smoke test (§ 8) and docs (`04-current-state.md`, this plan to `archive/`) | 45 min |
 
 Critical path: 4 → 5 → 7 → 8. Steps 2 and 6 can run beside it.
@@ -104,7 +104,7 @@ Before any code depends on a provider, compare candidates on the same input:
 
 - Whether the current caps fit real use: 50 sessions at once; Talk 10 a minute per session, 20 per IP, 500 a day (`backend/api/demo/settings.py`).
 - Whether to require zero data retention at OpenRouter (the test calls went to SiliconFlow).
-- The image has not been built yet: Docker is not installed locally, so the first build is Fly.io's. A local copy laid out like the image (same files in, same left out) ran and served the seed.
+- **Smoke test (2026-10-14), against https://ojmn.fly.dev:** HTTP redirects to HTTPS; without a session `/` goes to the login page and `/api/projects` is 401; a wrong password is 401; the cookie is `HttpOnly; SameSite=Strict; Secure`; the seed shows; `map/folder` and `choose-folder` are 403; a 300 KB body and a 9 KB chat are 413; a rename in one session is not seen in another; Talk answered through OpenRouter in about 3 s; logout ends the session (401 after). Not run publicly: the idle and maximum-lifetime expiry (covered by `test_demo.py`).
 
 ## 8. Smoke test
 
