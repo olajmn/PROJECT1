@@ -15,9 +15,13 @@ deliberately chosen as next.
 
 ## Active
 
-58. **Login** (Step, branch `auth`) — one user signs in and manages
-    several accounts; the app looks as it does today. Steps and open
-    questions: `docs/auth-plan.md`; why: [[05-decisions]] #69.
+58. **Login** (Step, branch `auth`, **paused** by [[05-decisions]] #70)
+    — one user signs in and manages several accounts; the app looks as
+    it does today. Steps and open questions: `docs/auth-plan.md`; why:
+    [[05-decisions]] #69.
+59. **Public demo** (Step, branch `public-demo`) — the existing app at
+    a public URL behind one shared demo login, with seeded demo data.
+    Steps: `docs/public-demo-plan.md`; why: [[05-decisions]] #70.
 
 The UI/UX pass, starting with real content to design against.
 

@@ -821,6 +821,20 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Reversible?** Yes; the auth code sits in its own folder and in front of the routes.
 
+## 70. 2026-10-13 — Public demo: one shared login, shared seeded data; #69 paused
+
+**Decision:** Deploy a public demo of the existing app from the `public-demo` branch, behind a deliberately limited access model: one shared demo password (a hosting secret), one in-memory session per visitor (manual logout, 30 minutes of inactivity, 8 hours at most), and one shared demo dataset seeded from the repository and restored by a manual reset that leaves sessions alone. A demo mode, off by default, adds the login, an allowlist of API routes, request size limits, and limits on Talk. Storage stays JSON/JSONL on one instance with a persistent volume. Talk uses a hosted model only in demo mode, chosen after a separate test; local Ollama stays the default. #69 (one user owning several accounts) is paused, not dropped: its plan stays on `auth`. Steps: [[public-demo-plan]].
+
+**Date:** 2026-10-13
+
+**Alternatives considered:** building #69 first (real users, per-user ownership: more than a day and not needed to show the app); no login with a public URL (anyone could use up the model budget and edit the shared data); one dataset per visitor (`DATA_DIR` in `backend/storage/paths.py` is one module-level path, so isolation reaches through all of storage); a database or Supabase (storage rewrite, moves data off the machine).
+
+**Why this choice:** The goal is a working URL to show the app, not a multi-user product. A shared password limits who can reach the API and the model; separate sessions let each visitor log out and time out on their own; shared data keeps storage as it is. Keeping the demo behind a mode flag leaves local use unchanged.
+
+**Trade-off:** This is the network case #5 and #15 deferred. It is accepted for the demo copy only, because the demo volume holds seed data and never personal data. Visitors share one dataset: they see each other's edits and chat until the next reset, and two saves of the same project at the same moment keep only the last (no file locking). Sessions and rate limits live in memory, so a restart logs everyone out and resets the limits. Talk text passes through the chosen model provider.
+
+**Reversible?** Yes; demo mode is off unless set, and the demo code sits in its own folder in front of the routes.
+
 
 ## See also
 

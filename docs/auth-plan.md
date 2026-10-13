@@ -2,6 +2,8 @@
 
 The step-by-step plan for adding login: one user signs in and manages several accounts, and the app looks as it does today. Why it is built this way: [[05-decisions]] #69. Moves to `docs/archive/` when the work is done.
 
+**Status: paused** by [[05-decisions]] #70. The public demo uses a limited shared login instead ([[public-demo-plan]]); nothing below is being built until this plan is resumed.
+
 ## 1. Target
 
 - Before login: a login screen, nothing else.
