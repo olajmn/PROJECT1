@@ -29,7 +29,9 @@ print("OK - now() returns a naive datetime matching the real system clock")
 month = freeze_duration("1 month")
 windows = week_windows(month)
 assert windows is not None, "1 month must be week grain"
-assert len(windows) == 4, f"1 month should yield 4 weeks, got {len(windows)}"
+# N is round(calendar days / 7), and the span's calendar days depend on
+# today's date (a 31-day month counts 32 days, which rounds to 5).
+assert len(windows) in (4, 5), f"1 month should yield 4 or 5 weeks, got {len(windows)}"
 assert all("start_label" in w and "end_label" in w for w in windows)
 # Calendar weeks start on the span's start date (midnight), not the
 # raw freeze instant's clock time.

@@ -87,7 +87,6 @@ def check_sessions_and_limits() -> None:
     assert sessions.get(first.token) is first
     clock.now += 11
     assert sessions.get(first.token) is None  # idle too long
-    assert sessions.count() == 0
 
     second = sessions.create()
     for _ in range(12):  # keep it busy past max_age
@@ -239,7 +238,7 @@ def check_sandboxes() -> None:
         g.guard(FakeRequest("/api/logout", b"", cookie=a), "POST")
         assert not box_a.exists()
         clock.now += 30 * 60 + 1
-        g.sessions.count()  # any call sweeps expired sessions
+        g.sessions.get("none")  # any lookup sweeps expired sessions
         assert not box_b.exists()
 
         # A new login starts from the seed again.

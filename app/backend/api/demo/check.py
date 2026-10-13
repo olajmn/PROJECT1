@@ -1,6 +1,6 @@
 """
-The demo-mode check in front of every request (docs/public-demo-plan.md
-§ 3.ii–iii). requests_from_browser.Handler calls guard() first; when it
+The demo-mode check in front of every request (docs/demo.md).
+requests_from_browser.Handler calls guard() first; when it
 returns True, the request has been answered here (login, logout, 401,
 403, 413, 429, or a redirect to the login page) and Handler does
 nothing more. When it returns False, storage has been pointed at the
@@ -10,7 +10,7 @@ request without a session, which never reaches storage.
 
 # Contents
 #  1. State
-#      - sessions, limits, sandboxes cleared at start
+#      - _BLOCKED, sessions, limits; sandboxes cleared at start
 #
 #  2. The check
 #      - guard()
@@ -19,7 +19,7 @@ request without a session, which never reaches storage.
 #      - _login(), _logout()
 #
 #  4. Helpers
-#      - client_ip(), _token(), _content_length(), _send_json()
+#      - client_ip(), _token(), _content_length(), _cookie(), _send_json()
 
 import hmac
 import json
@@ -49,6 +49,7 @@ _BLOCKED = (
     re.compile(r"^/api/projects/\d+/map/folder$"),
     re.compile(r"^/api/choose-folder$"),
 )
+
 
 def _remove_sandbox(session: Session) -> None:
     sandboxes.remove(session.sandbox)

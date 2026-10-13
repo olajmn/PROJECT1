@@ -56,10 +56,11 @@ class Sessions:
         if not token:
             return None
         with self._lock:
-            ended = self._sweep(self._clock())
+            now = self._clock()
+            ended = self._sweep(now)
             session = self._by_token.get(token)
             if session is not None:
-                session.last_seen = self._clock()
+                session.last_seen = now
         self._ended(ended)
         return session
 
@@ -67,13 +68,6 @@ class Sessions:
         with self._lock:
             session = self._by_token.pop(token or "", None)
         self._ended([session] if session else [])
-
-    def count(self) -> int:
-        with self._lock:
-            ended = self._sweep(self._clock())
-            count = len(self._by_token)
-        self._ended(ended)
-        return count
 
     def _expired(self, session: Session, now: float) -> bool:
         return (
