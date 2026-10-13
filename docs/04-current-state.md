@@ -60,6 +60,12 @@ Everything lives in `app/data/` as plain JSON:
 - Local **Ollama**, model `qwen3.5:9b`, temperature 0.2
   (`backend/model/client.py`), used for Talk replies only. A failed
   reply is not retried; the chat shows the error.
+- `TALK_PROVIDER=openrouter` sends Talk to the same model hosted on
+  OpenRouter (`qwen/qwen3.5-9b`, reasoning off, at most 400 output
+  tokens; `backend/model/openrouter.py`), with the key from
+  `OPENROUTER_API_KEY`. Meant for the public demo only ([[05-decisions]]
+  #70); unset, Talk uses Ollama. An unknown value stops the server at
+  start. `GET /api/model` shows the provider in use.
 - A Talk turn sends: fixed instructions (`model/brief/talk_prompt.py`:
   role, task, behavior, limits), the project's status, its last 10
   changes (`recent_changes_text()`), every label on the map, the

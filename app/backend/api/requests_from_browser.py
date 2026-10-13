@@ -64,7 +64,7 @@ from backend.project.saved_trees import (
     save_tree_from_node,
     saved_trees_for,
 )
-from backend.model.client import MODEL, TEMPERATURE
+from backend.model.client import MODEL_IN_USE, PROVIDER, TEMPERATURE
 from backend.api.activity_log import activity_log
 from backend.project.timeline import project_timeline
 from backend.api.files_to_browser import send_page_file
@@ -149,8 +149,8 @@ class Handler(BaseHTTPRequestHandler):
             self._send_json([account_view(u) for u in load_accounts()])
         elif self.path == "/api/model":
             self._send_json({
-                "provider": "ollama",
-                "model": MODEL,
+                "provider": PROVIDER,
+                "model": MODEL_IN_USE,
                 "temperature": TEMPERATURE,
             })
         elif match := _LOG_ROUTE.match(self.path):

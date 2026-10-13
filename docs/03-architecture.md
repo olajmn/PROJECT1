@@ -22,7 +22,7 @@ Arrows show who calls whom; every answer returns the same way.
 | **API** | `backend/api/` | The only way in: routes each request, shapes each answer, serves the page files |
 | **Project** | `backend/project/` | What a project is and what can be done to it |
 | **Storage** | `backend/storage/` | The only code that reads or writes `data/` (plain JSON) |
-| **Model** | `backend/model/` | Talks to the language model (local Ollama), and packs what it is given |
+| **Model** | `backend/model/` | Talks to the language model (local Ollama; OpenRouter in the public demo), and packs what it is given |
 
 `app/server.py` only starts the server (localhost). `backend/foundation/`
 (math, time) is not used by anything today.
