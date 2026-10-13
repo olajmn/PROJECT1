@@ -20,7 +20,8 @@ deliberately chosen as next.
     it does today. Steps and open questions: `docs/auth-plan.md`; why:
     [[05-decisions]] #69.
 59. **Public demo** (Step, branch `public-demo`) — the existing app at
-    a public URL behind one shared demo login, with seeded demo data.
+    a public URL behind one shared demo login; each visitor works in
+    their own sandbox copy of the demo data.
     Steps: `docs/public-demo-plan.md`; why: [[05-decisions]] #70.
 
 The UI/UX pass, starting with real content to design against.

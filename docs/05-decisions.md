@@ -835,6 +835,8 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Reversible?** Yes; demo mode is off unless set, and the demo code sits in its own folder in front of the routes.
 
+**Follow-up (2026-10-13, sandbox per visitor):** Replaces the shared dataset. Each login gets its own sandbox: a fresh copy of the demo seed in its own folder, used for every request in that session and deleted when the session ends (logout, 30 minutes of inactivity, or 8 hours). Visitors never see each other's changes and nothing they do outlasts their session, so no reset command is needed. Storage keeps its JSON/JSONL format; it reads and writes under the current request's sandbox instead of one fixed `data/` folder, and outside demo mode that is `app/data/` as before. Because a sandbox only affects its own visitor, every route is allowed in demo mode except the two that reach the server's own file system (`map/folder`, `choose-folder`). A cap on sandboxes at once bounds disk use. Sandboxes are not kept across a restart, so the host needs no persistent volume. Alternative kept from the original decision: the shared dataset, faster to build but every visitor sees and can undo the last visitor's changes until a reset, which does not fit a demo sent to employers. Cost: about 2–4 more hours, and storage paths become per request.
+
 
 ## See also
 
