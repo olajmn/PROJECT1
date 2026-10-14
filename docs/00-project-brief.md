@@ -4,7 +4,7 @@ What this project is, in short.
 
 ## 1. What it is
 
-A workspace for building things out of **nodes**. At its core, the
+**PROJECT1** is a workspace for building things out of **nodes**. At its core, the
 project is about the node itself: what a node is, what makes it the
 same node over time, and how nodes relate to each other. In use, you
 build, sort, and restructure nodes.
