@@ -133,7 +133,11 @@ export interface SavedTreeView {
 
 // 8. Demo session
 
-/** GET /api/session: true when the server runs the public demo. */
+/** GET /api/session: true when the server runs the public demo, and
+ *  then how many levels a map opens with and which project a first visit
+ *  opens (both null outside the demo). */
 export interface SessionView {
   demo: boolean;
+  map_start_depth: number | null;
+  start_project_id: number | null;
 }

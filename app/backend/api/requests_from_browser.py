@@ -153,7 +153,11 @@ class Handler(BaseHTTPRequestHandler):
         elif self.path == "/api/accounts":
             self._send_json([account_view(u) for u in load_accounts()])
         elif self.path == "/api/session":
-            self._send_json({"demo": demo.ENABLED})
+            self._send_json({
+                "demo": demo.ENABLED,
+                "map_start_depth": demo.MAP_START_DEPTH if demo.ENABLED else None,
+                "start_project_id": (demo.START_PROJECT_ID or None) if demo.ENABLED else None,
+            })
         elif self.path == "/api/model":
             self._send_json({
                 "provider": PROVIDER,

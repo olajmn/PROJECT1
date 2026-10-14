@@ -1,14 +1,10 @@
 // "Log out" at the foot of the sidebar, next to Settings — only when the
 // server runs the public demo (docs/demo.md).
 
-import { fetchSession, logOut } from "../api.js";
+import { logOut } from "../api.js";
 
-export async function installLogoutLink(nav: HTMLElement): Promise<void> {
-  try {
-    if (!(await fetchSession()).demo) return;
-  } catch {
-    return;
-  }
+export function installLogoutLink(nav: HTMLElement, demo: boolean): void {
+  if (!demo) return;
   const link = document.createElement("a");
   link.href = "/login.html";
   link.textContent = "Log out";

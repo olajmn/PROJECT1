@@ -28,6 +28,15 @@ IDLE_SECONDS = _number("DEMO_IDLE_SECONDS", 30 * 60)
 MAX_SECONDS = _number("DEMO_MAX_SECONDS", 8 * 60 * 60)
 MAX_SESSIONS = _number("DEMO_MAX_SESSIONS", 50)
 
+# How many levels below the top a project's map opens with in the demo,
+# for a visitor who has not chosen a depth with − / + yet. Outside the
+# demo the map picks a depth that fits the whole tree on screen.
+MAP_START_DEPTH = _number("DEMO_MAP_START_DEPTH", 3)
+
+# The project a first-time visitor sees opened (a project_id from the
+# seed); 0 leaves the choice to the app.
+START_PROJECT_ID = _number("DEMO_START_PROJECT_ID", 0)
+
 # Secure cookies are only sent over HTTPS. DEMO_INSECURE_COOKIE=1 is for
 # trying demo mode on http://localhost, never for the public host.
 SECURE_COOKIE = not _flag("DEMO_INSECURE_COOKIE")

@@ -26,6 +26,8 @@ The app at https://demo-one.fly.dev behind one shared password. Each login gets 
 | `TALK_PROVIDER` | `fly.toml` | `openrouter`; unset means Ollama |
 | `OPENROUTER_API_KEY` | Fly secret | key with its own credit limit |
 | `DEMO_IDLE_SECONDS`, `DEMO_MAX_SECONDS` | optional | default 30 min and 8 h |
+| `DEMO_START_PROJECT_ID` | `fly.toml` | the project a first visit opens (`56`, Project #1001) |
+| `DEMO_MAP_START_DEPTH` | optional | levels a map opens with on a first visit; default 3 |
 
 Other limits (wrong passwords per IP, sessions at once, chat messages per minute and per day, body sizes) are in `settings.py`.
 

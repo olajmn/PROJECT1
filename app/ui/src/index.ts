@@ -9,7 +9,7 @@
 //  3. Data (load / replace / applyUsers)
 //  4. Initialization
 
-import { fetchProjects, fetchAccounts } from "./api.js";
+import { fetchProjects, fetchAccounts, fetchSession } from "./api.js";
 import { installChatResize, installSidebarResize } from "./shell/columnWidths.js";
 import { installAccountsPanel } from "./panes/create/accounts/panel.js";
 import { renderAccountsBrand } from "./panes/create/accounts/brandButton.js";
@@ -27,10 +27,11 @@ import { installInputGrow } from "./panes/chat/growInput.js";
 import { installChatToggle } from "./panes/chat/chatToggle.js";
 import { installSendMessage } from "./panes/chat/sendMessage.js";
 import { installMapPane } from "./panes/canvas/mapPane.js";
-import { getActiveUserId, setActiveUserId } from "./user/activeAccount.js";
+import { getActiveUserId, getLastProjectId, setActiveUserId } from "./user/activeAccount.js";
 import { applyStoredTheme } from "./user/theme.js";
 import { toggleMapIds } from "./panes/canvas/idView.js";
 import { installLogoutLink } from "./demo/logoutLink.js";
+import { setMapStartDepth } from "./demo/mapStartDepth.js";
 import type { AccountView, ProjectView } from "./dataShapes.js";
 
 applyStoredTheme();
@@ -242,7 +243,7 @@ function replaceProject(updated: ProjectView): void {
   renderAll();
 }
 
-async function load(): Promise<void> {
+async function load(startProjectId: number | null = null): Promise<void> {
   const [loaded, allUsers] = await Promise.all([
     fetchProjects(),
     fetchAccounts(),
@@ -260,6 +261,16 @@ async function load(): Promise<void> {
     }
     selection.selectedId = want;
   } else {
+    // Demo: a first visit (nothing opened before in this browser) starts
+    // on the project the server names.
+    const activeId = getActiveUserId();
+    if (
+      startProjectId !== null
+      && activeId !== null
+      && getLastProjectId(activeId) === null
+    ) {
+      selection.selectedId = startProjectId;
+    }
     ensureSel();
   }
   renderAll();
@@ -275,9 +286,16 @@ async function load(): Promise<void> {
 
 // 4. Initialization
 
-void installLogoutLink(document.querySelector(".sidebar-more") as HTMLElement);
-
-load().catch((err) => {
-  mainEmpty.hidden = false;
-  mainEmpty.textContent = `(error: ${(err as Error).message})`;
-});
+// Demo mode decides the Log out link and how deep maps open, so it is
+// known before the first project is drawn.
+fetchSession()
+  .catch(() => ({ demo: false, map_start_depth: null, start_project_id: null }))
+  .then((session) => {
+    setMapStartDepth(session.map_start_depth);
+    installLogoutLink(document.querySelector(".sidebar-more") as HTMLElement, session.demo);
+    return load(session.start_project_id);
+  })
+  .catch((err) => {
+    mainEmpty.hidden = false;
+    mainEmpty.textContent = `(error: ${(err as Error).message})`;
+  });

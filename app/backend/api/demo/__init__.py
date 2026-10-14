@@ -6,6 +6,6 @@ request through guard() first.
 """
 
 from backend.api.demo.check import guard
-from backend.api.demo.settings import ENABLED
+from backend.api.demo.settings import ENABLED, MAP_START_DEPTH, START_PROJECT_ID
 
-__all__ = ["ENABLED", "guard"]
+__all__ = ["ENABLED", "MAP_START_DEPTH", "START_PROJECT_ID", "guard"]

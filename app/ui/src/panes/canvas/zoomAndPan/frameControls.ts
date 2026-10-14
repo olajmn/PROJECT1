@@ -41,6 +41,7 @@
  */
 
 import { setTip } from "../../../shell/tip.js";
+import { mapStartDepth } from "../../../demo/mapStartDepth.js";
 import { installMapCamera, type CameraPose } from "./panAndZoom.js";
 import { measureMapContent } from "../lines/svgHelpers.js";
 import {
@@ -115,8 +116,11 @@ export function installMapScale(
   opts: ScaleOpts = {},
 ): MapScaleHandle {
   const sticky = readSticky(projectId);
-  let grain: Grain = sticky?.grain ?? null;
-  let grainReady = sticky !== undefined;
+  // In the demo a first visit opens at a set depth, as if − / + had been
+  // used once, instead of shrinking the whole tree to fit.
+  const startDepth = sticky ? null : mapStartDepth();
+  let grain: Grain = sticky?.grain ?? startDepth;
+  let grainReady = sticky !== undefined || startDepth !== null;
   let view: MapView = sticky?.view ?? "text";
   let viewPinned = sticky?.viewPinned ?? false;
 
@@ -236,7 +240,7 @@ export function installMapScale(
   // A remembered grain means the map is deliberately not at the auto-overview,
   // so it counts as dirty — `paint()` then keeps it instead of re-picking.
   // Double-click clears dirty, which restores auto-pick as the reset gesture.
-  if (sticky) camera.markDirty();
+  if (sticky || startDepth !== null) camera.markDirty();
 
   const applyView = (next: MapView, pinned: boolean): void => {
     view = next;

@@ -13,6 +13,8 @@ primary_region = "arn"      # Stockholm; check with `fly platform regions`
   # Fly's proxy writes this header itself, so it can be trusted for
   # per-IP limits.
   DEMO_CLIENT_IP_HEADER = "Fly-Client-IP"
+  # A first visit opens "Project #1001" from app/demo_seed/.
+  DEMO_START_PROJECT_ID = "56"
 
 [http_service]
   internal_port = 8080
