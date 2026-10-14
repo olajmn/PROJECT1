@@ -2,7 +2,7 @@
 # Secrets are not here: set DEMO_PASSWORD and OPENROUTER_API_KEY with
 # `fly secrets set`.
 
-app = "ojmn"
+app = "demo-one"
 primary_region = "arn"      # Stockholm; check with `fly platform regions`
 
 [env]

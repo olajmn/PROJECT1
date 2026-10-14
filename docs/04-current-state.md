@@ -42,7 +42,7 @@ default, and then nothing changes. On:
   (`backend/storage/sandboxes.py`); the folder is deleted when the
   session ends, and all are cleared at start.
 - Trying it on `http://localhost` needs `DEMO_INSECURE_COOKIE=1`.
-- Deployed at https://ojmn.fly.dev (Fly.io app `ojmn`, one machine in
+- Deployed at https://demo-one.fly.dev (Fly.io app `demo-one`, one machine in
   `arn`; Talk on OpenRouter) since 2026-10-14. Files: `app/Dockerfile`,
   `app/.dockerignore`, `app/fly.toml`; a later change is `fly deploy`
   from `app/` ([[demo]] § 4).

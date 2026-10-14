@@ -4,7 +4,7 @@ How the public demo works, where its code lives, and how to run and update it.
 
 ## 1. What it is
 
-The app at https://ojmn.fly.dev behind one shared password. Each login gets its own copy of the demo data, deleted when the session ends. Without `DEMO_MODE` none of this runs and the app works as always.
+The app at https://demo-one.fly.dev behind one shared password. Each login gets its own copy of the demo data, deleted when the session ends. Without `DEMO_MODE` none of this runs and the app works as always.
 
 ## 2. Where the code is
 
@@ -27,7 +27,7 @@ The app at https://ojmn.fly.dev behind one shared password. Each login gets its 
 | `OPENROUTER_API_KEY` | Fly secret | key with its own credit limit |
 | `DEMO_IDLE_SECONDS`, `DEMO_MAX_SECONDS` | optional | default 30 min and 8 h |
 
-Other limits (sessions at once, Talk per minute and per day, body sizes) are in `settings.py`.
+Other limits (wrong passwords per IP, sessions at once, Talk per minute and per day, body sizes) are in `settings.py`.
 
 ## 4. Run and update
 
