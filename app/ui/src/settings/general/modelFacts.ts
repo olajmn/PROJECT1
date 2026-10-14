@@ -1,4 +1,4 @@
-// General — Model: which model answers in Talk, read from the server.
+// General — Model: which model answers in the chat, read from the server.
 
 import { fetchModel } from "../../api.js";
 import { settingsError, settingsGroup, settingsRow, settingsSection } from "../rows.js";

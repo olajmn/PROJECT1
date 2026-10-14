@@ -71,7 +71,7 @@ only). Numbers are stable ids, not rank.
 49. **A proper way to check node ids** (Step, shape open) — node ids
     are identity ([[05-decisions]] #52) and never reused (`node_id_hi`),
     but nothing lets you see or verify them. Candidates:
-    1. **Inspect:** partly done — Talk `/id` shows the selected node's
+    1. **Inspect:** partly done — the chat's `/id` shows the selected node's
        id or switches the map to ids ([[05-decisions]] #55). Still
        open: a flat overview of every node (Settings → Nodes: project,
        id, label, parent, depth), like Directory shows Local # +
@@ -134,11 +134,21 @@ only). Numbers are stable ids, not rank.
     it does today. Steps and open questions: `docs/auth-plan.md`; why:
     [[05-decisions]] #69.
 60. **Demo limits** (Question) — whether the public demo's caps fit
-    real use: 50 sessions at once; Talk 10 a minute per session, 20 per
+    real use: 50 sessions at once; chat 10 a minute per session, 20 per
     IP, 500 a day (`app/backend/api/demo/settings.py`, [[demo]]).
-61. **Zero data retention for the demo's Talk** (Question) — whether to
+61. **Zero data retention for the demo's chat** (Question) — whether to
     require ZDR at OpenRouter; the test calls went to SiliconFlow
     ([[05-decisions]] #70).
+
+62. **"Talk" left in code names** (Step, not crucial) — docs and
+    comments call it "the chat" since 2026-10-14; the old name remains
+    in identifiers: `TALK_PROVIDER` (also set in `app/fly.toml`, so a
+    rename needs a deploy), `model/brief/talk_prompt.py`, `_save_talk()`
+    in `panes/chat/reply.py`, and the demo limits `talk_per_session` /
+    `talk_per_ip` / `talk_per_day` (`TALK_PER_*`, `DEMO_TALK_PER_DAY`
+    in `api/demo/settings.py`). Rename together, with the tests, when
+    there is a reason to touch them. `05-decisions.md` keeps "Talk" as
+    history; "Talk about …" in the UI is ordinary English and stays.
 
 ### Tier 4
 
@@ -159,7 +169,7 @@ only). Numbers are stable ids, not rank.
 27. **What counts as a session / visit** (Question) — if the agent
     should understand time-with-the-user, build on `created_at` in
     project history / Logs, not server starts.
-33. **Talk only sees the map's labels** (Question) — model gets labels
+33. **The chat only sees the map's labels** (Question) — model gets labels
     + focus path, not file contents / notes behind a node. [[05-decisions]]
     #33.
 37. **Rename Status code to Current state** (Step, not crucial) —
@@ -168,12 +178,12 @@ only). Numbers are stable ids, not rank.
     Related to 34.
 38. **Click a Changes day → map + chat focus** (Step, parked) — the
     chat part is built ([[05-decisions]] #62): a day in Current state
-    selects that day's changes for Talk, framed like node About. Still
+    selects that day's changes for the chat, framed like node About. Still
     open: highlight the nodes touched that day on the map, and richer
     import text ("Imported 95 nodes under X" counts every node but does
     not say which; added and removed steps already say what and where).
     Related to 34.
-39. **Talk commands that force a SoT pass** (Step, keep in mind) —
+39. **Chat commands that force a SoT pass** (Step, keep in mind) —
     e.g. a chat "full check" that deliberately re-reads `current` (+
     events) — the product twin of Cursor `/full-check`, for the *user
     project* not this repo. Current state panel is mainly for the human;
@@ -229,5 +239,5 @@ when a path is deleted, rewired, or reclassified.
 | P4 | Tree as text: indented labels vs ASCII tree | Deliberate, one per side | `project/node/tree_as_text.py` (`tree_lines()`, for the model) vs `ui/src/panes/canvas/copyAsText.ts` (clipboard); same walk, the model side cannot run in the browser and the clipboard should not need a server round trip |
 | P5 | Event kind → word: Logs titles vs day tally | Deliberate, different grain | `project/timeline.py` `GROUPS` ("Map") vs `project/status/build_status.py` `_TALLY_WORDS` ("added", "removed", "imported"); a new event type goes in both, or it shows as Other / other |
 | P7 | Popover dismiss (close on outside click / Esc) | Five copies, all working | The node ⋯ menu (`panes/canvas/drawNodes.ts`), the confirmation (`confirmPopover.ts`), the saved-tree picker (`savedTrees/insertTree.ts`), + Add (`addMenu.ts`, copied from the picker) and the chat / menu (`panes/chat/commands/menu.ts`) each close themselves with their own code. One shared helper next to `placePopover.ts` would let a change (e.g. close on scroll) happen in one place |
-| P8 | Talk model call: local Ollama vs hosted OpenRouter | Deliberate, one per environment | `backend/model/client.py` `send_chat()` picks one by `TALK_PROVIDER`: `ollama.chat()` (default) or `openrouter.chat()` (public demo, [[05-decisions]] #70). Same model, temperature, and no-reasoning setting on both; a change to one (e.g. a new option) must be made in both |
+| P8 | Chat model call: local Ollama vs hosted OpenRouter | Deliberate, one per environment | `backend/model/client.py` `send_chat()` picks one by `TALK_PROVIDER`: `ollama.chat()` (default) or `openrouter.chat()` (public demo, [[05-decisions]] #70). Same model, temperature, and no-reasoning setting on both; a change to one (e.g. a new option) must be made in both |
 | P9 | Default theme: page script vs `theme.ts` | Deliberate, the script prevents a light flash | Every page in `app/ui/` (`index.html`, `login.html`, `settings/*.html`) sets `data-theme` in a small inline script before the CSS loads; `src/user/theme.ts` `getTheme()` decides the same default for the code. Dark unless the user chose light: a change to the default goes in both |

@@ -32,7 +32,7 @@ default, and then nothing changes. On:
 - Without a session, `/api/*` answers 401 and pages redirect to
   `ui/login.html`.
 - Add folder and the folder chooser answer 403; bodies over 256 KB (chat
-  8 KB) answer 413; Talk is limited per session, per IP, and per day
+  8 KB) answer 413; the chat is limited per session, per IP, and per day
   (429); at most 50 sessions at once.
 - Each login gets its own sandbox: a copy of `app/demo_seed/` (the
   account John Doe with "Project #1001" and "Getting in shape", copied
@@ -43,9 +43,9 @@ default, and then nothing changes. On:
   session ends, and all are cleared at start.
 - Trying it on `http://localhost` needs `DEMO_INSECURE_COOKIE=1`.
 - Deployed at https://demo-one.fly.dev (Fly.io app `demo-one`, one machine in
-  `arn`; Talk on OpenRouter) since 2026-10-14. Files: `app/Dockerfile`,
+  `arn`; the chat on OpenRouter) since 2026-10-14. Files: `app/Dockerfile`,
   `app/.dockerignore`, `app/fly.toml`; a later change is `fly deploy`
-  from `app/` ([[demo]] § 4).
+  from `app/` ([[demo]] § 5); accounts, costs, and limits in § 4.
 
 ## 2. Where things are
 
@@ -59,7 +59,7 @@ The layers and their rules are in [[03-architecture]]. By feature:
 | Add, remove, move, paste, folder | `panes/canvas/edit_map.py`, `text_to_tree.py`, `add_folder/` | `panes/canvas/` |
 | Saved trees | `project/saved_trees/`, `storage/saved_trees_persistence.py` | `panes/canvas/savedTrees/` |
 | The map as drawn | `api/answers_to_browser.py` (`map_tree()`) | `panes/canvas/drawNodes.ts`, `lines/`, `zoomAndPan/` |
-| A Talk turn | `panes/chat/reply.py`, `model/brief/conversation.py`, `talk_prompt.py` | `panes/chat/` |
+| A chat message | `panes/chat/reply.py`, `model/brief/conversation.py`, `talk_prompt.py` | `panes/chat/` |
 | Slash commands | `panes/chat/commands/` | `panes/chat/commands/` |
 | The chat thread and its About frames (node or day) | `panes/chat/screen/chat_thread.py` | `panes/chat/showOnlyThis.ts`, `statusPanel/` |
 | Current state panel | `project/status/` | `panes/chat/statusPanel/` |
@@ -91,15 +91,15 @@ Everything lives in `app/data/` as plain JSON:
 ## 4. The model
 
 - Local **Ollama**, model `qwen3.5:9b`, temperature 0.2
-  (`backend/model/client.py`), used for Talk replies only. A failed
+  (`backend/model/client.py`), used for chat replies only. A failed
   reply is not retried; the chat shows the error.
-- `TALK_PROVIDER=openrouter` sends Talk to the same model hosted on
+- `TALK_PROVIDER=openrouter` sends the chat to the same model hosted on
   OpenRouter (`qwen/qwen3.5-9b`, reasoning off, at most 400 output
   tokens; `backend/model/openrouter.py`), with the key from
   `OPENROUTER_API_KEY`. Meant for the public demo only ([[05-decisions]]
-  #70); unset, Talk uses Ollama. An unknown value stops the server at
+  #70); unset, the chat uses Ollama. An unknown value stops the server at
   start. `GET /api/model` shows the provider in use.
-- A Talk turn sends: fixed instructions (`model/brief/talk_prompt.py`:
+- A chat message sends: fixed instructions (`model/brief/talk_prompt.py`:
   role, task, behavior, limits), the project's status, its last 10
   changes (`recent_changes_text()`), every label on the map, the
   selected node's path or every change on the selected day
@@ -119,7 +119,7 @@ Everything lives in `app/data/` as plain JSON:
   shows as open.
 - Node ids are sequential per project (`p1`, `p2`, …), not globally
   unique (`TODO.md` Queue 50).
-- Talk answers from the project's names and status only; it gives no
+- The chat answers from the project's names and status only; it gives no
   general advice. It sees the last 10 changes, but their saved text is
   thin ("Imported 95 nodes" counts every node but does not say which) (`TODO.md` Queue 38). What it must handle: [[02-product]] § 2.iii.
 

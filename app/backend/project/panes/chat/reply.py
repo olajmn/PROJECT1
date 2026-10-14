@@ -3,7 +3,7 @@ You send a message, you get a reply back.
 
 Cases:
 - A slash-command (`/add`, `/select`, …): chat/commands/ runs it; same save
-  path as ordinary Talk (map-writing commands update the tree first).
+  path as an ordinary chat message (map-writing commands update the tree first).
 - Anything else: the model answers, given what
   model/brief/conversation.py puts together.
 

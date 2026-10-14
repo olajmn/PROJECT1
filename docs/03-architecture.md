@@ -62,7 +62,7 @@ One place, behind `backend/model/client.py`:
 
 | Use | Code |
 |---|---|
-| A Talk reply | `panes/chat/reply.py` |
+| A chat reply | `panes/chat/reply.py` |
 
 Everything else — adding and removing nodes, paste, folders, saved
 trees, ids, `/add`, `/select`, `/id`, logs — is deterministic.

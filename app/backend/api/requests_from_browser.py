@@ -96,7 +96,7 @@ _MODEL_UNREACHABLE = "the model is not running - start Ollama and try again"
 
 # Every POST address and the method that answers it. (\d+) is a project
 # or user id, (p\d+) a map node id, (t\d+) a saved tree id; all are
-# passed to the method in order. Map and chat paths use Project/Map/Talk names.
+# passed to the method in order. Map and chat paths use Project, Map, and chat names.
 _POST_ROUTES = [
     (r"/api/projects", "_handle_create_project"),
     (r"/api/projects/(\d+)/name", "_handle_rename_project"),

@@ -155,7 +155,7 @@ def check_guard() -> None:
                               headers={"Content-Length": "abc"})
         assert g.guard(request, "POST") and request.status == 400
 
-        # Talk: 2 a minute per session here, then 429; a minute later, fine.
+        # Chat: 2 a minute per session here, then 429; a minute later, fine.
         chat = b'{"text": "hi"}'
         for _ in range(2):
             assert g.guard(FakeRequest("/api/projects/1/chat", chat, cookie=token), "POST") is False

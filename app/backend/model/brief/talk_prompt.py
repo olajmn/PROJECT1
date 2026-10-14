@@ -1,4 +1,4 @@
-"""Talk — the fixed slots of the system text, in the order they are sent.
+"""The chat — the fixed slots of the system text, in the order they are sent.
 
 conversation.py adds the project background after them on every Send.
 The goal is predictable replies grounded in the project, not a

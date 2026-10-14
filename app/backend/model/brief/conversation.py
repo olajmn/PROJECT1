@@ -47,7 +47,7 @@ def build_messages(
 
 def past_turns(history: list[dict]) -> list[dict]:
     """Saved chat turns as alternating user/assistant messages, oldest
-    first. Map edits and the project's first record carry no Talk turn
+    first. Map edits and the project's first record carry no chat turn
     and are skipped."""
     turns: list[dict] = []
     for record in history:

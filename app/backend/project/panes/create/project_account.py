@@ -21,7 +21,7 @@ def set_project_user(project_id: int, account_id: int | None) -> dict | None:
     `account_id=None` removes the project from whichever account it
     currently has.
 
-    Unlike chat's talk() (which takes an already-resolved `latest`
+    Unlike the chat's reply() (which takes an already-resolved `latest`
     record), this resolves `project_id` itself, since the route calling
     it has no other reason to look the record up first.
 

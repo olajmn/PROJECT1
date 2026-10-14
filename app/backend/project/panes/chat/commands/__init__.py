@@ -1,4 +1,4 @@
-"""Talk slash-commands.
+"""Chat slash-commands.
 
 Route `/name` → a runner. Model briefs stay in `backend/model/`; this
 folder only decides which command ran and returns a CommandResult.
@@ -36,7 +36,7 @@ def try_command(
     """If `note` starts with `/`, run that command. Otherwise None.
 
     An unknown `/…` gets a fixed reply rather than going to the model:
-    a mistyped command (`/id¨`) sent as ordinary Talk made the model
+    a mistyped command (`/id¨`) sent as an ordinary chat message made the model
     imitate earlier command replies in the thread ("Map switched…")
     although nothing ran.
     """

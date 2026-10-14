@@ -45,7 +45,7 @@ Three different things (`docs/05-decisions.md` #52):
   and `/select` resolve it to an id (`id_at_path` in
   `panes/chat/commands/node_path.py`, first match per level).
 
-To see ids: Talk `/id` with a node selected replies with its id and
+To see ids: the chat's `/id` with a node selected replies with its id and
 path; with none selected it switches the map between showing ids and
 labels (display only — `ui/src/panes/canvas/idView.ts`).
 

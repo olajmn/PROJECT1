@@ -6,7 +6,7 @@ from backend.project.panes.chat.screen.chat_thread import thread_messages
 
 rooms = {"progression": {"steps": [{"label": "Rooms"}]}}
 
-# Only Talk turns show: the first record, map edits, and other saved
+# Only chat turns show: the first record, map edits, and other saved
 # lines without "<reply> Note: <note>" are left to Status.
 history = [
     {"name": "House", "plan": {}, "feedback": None, "event": "created"},
@@ -49,4 +49,4 @@ timed = thread_messages([
 ])
 assert timed[0]["at"] == "t1" and timed[1]["at"] == "t2"
 
-print("OK - thread_messages() shows Talk turns only")
+print("OK - thread_messages() shows chat turns only")

@@ -261,10 +261,10 @@ def save_plan(
     the map. The events tape stores event/feedback/times, not a full
     plan copy.
 
-    `map_focus` / `focus_step_id` mark this Talk turn as about a selected
+    `map_focus` / `focus_step_id` mark this chat turn as about a selected
     node (About frames + model history). They are not inherited from the
     previous current — pass them only when this save is focused.
-    `focus_day` (YYYY-MM-DD) marks a Talk turn about one day's changes
+    `focus_day` (YYYY-MM-DD) marks a chat turn about one day's changes
     instead, the same way.
 
     Returns the current record that was saved.

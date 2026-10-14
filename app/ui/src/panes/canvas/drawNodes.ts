@@ -207,7 +207,7 @@ function fillBeadUnit(
   row.appendChild(unit);
 }
 
-/** ⋯ menu: Add here / Remove / Move / Talk / Paste / saved trees. */
+/** ⋯ menu: Add here / Remove / Move / Talk about this / Paste / saved trees. */
 function attachNodeMenu(
   row: HTMLElement,
   stepId: string,

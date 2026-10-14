@@ -1,6 +1,6 @@
 /**
  * Click the map title to rename the project. The map only paints the
- * label; this file owns the edit. Talk chart does not call it.
+ * label; this file owns the edit. The chat does not call it.
  */
 
 export type RenameHandler = (name: string) => void | Promise<void>;

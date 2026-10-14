@@ -1,6 +1,6 @@
 """Tree as text — indented labels and paths. No model.
 
-For the program and the LLM (the Talk brief), not a
+For the program and the LLM (the chat brief), not a
 human Print feature. Same shape text_to_tree.py parses so every
 consumer looks at the same tree.
 """

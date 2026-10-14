@@ -1,7 +1,7 @@
 """
 The list of messages shown in the chat panel.
 
-Built from saved chat - no model call. Only Talk turns are shown: a
+Built from saved chat - no model call. Only chat turns are shown: a
 saved "<reply> Note: <note>" is one user line and one agent line. Map
 edits, renames, archive lines, and the project's first record belong
 in Status, not here — same rule as model/brief/conversation.past_turns().
@@ -14,7 +14,7 @@ _NOTE_MARKER = " Note: "
 
 
 def thread_messages(history: list[dict]) -> list[dict]:
-    """[{role, text, focus?}] oldest first - each saved Talk turn is one
+    """[{role, text, focus?}] oldest first - each saved chat turn is one
     user line (the note) and one agent line (the reply).
 
     When a turn was map-focused (Talk about this / Looking at), both

@@ -71,7 +71,7 @@ helps but does not take over.
   or Ctrl/Cmd+scroll,
   double-click to reset the view, and jump to the top (↑). Copy as
   ASCII copies the whole structure as text.
-- **Talk:** chat about the whole project, or select a node (click it, or
+- **Chat:** talk about the whole project, or select a node (click it, or
   ⋯ Talk about this) to talk about that node. Turns about a node are
   framed in the thread, and "Show only this" shows them on their own.
   With a node selected, a message of several lines is added as nodes
@@ -93,9 +93,9 @@ helps but does not take over.
 - **Settings:** General sets light or dark appearance and shows which
   model is used; Directory creates, renames, and archives accounts.
 
-### iii. What Talk should handle
+### iii. What the chat should handle
 
-The minimum the conversation must get right. Talk answers from the
+The minimum the conversation must get right. The chat answers from the
 project only: it does not invent details, change the project, or offer
 to (`backend/model/brief/talk_prompt.py`).
 

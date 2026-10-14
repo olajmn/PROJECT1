@@ -44,7 +44,7 @@ RECENT_CHANGES = 10
 # not a target.
 DAY_CHANGES = 100
 
-# Talk lines are not "changes" in the Status pulse (map/work only).
+# Chat lines are not "changes" in the Status pulse (map/work only).
 _CHAT_EVENTS = frozenset({"chat", "chat_added_nodes"})
 
 # Kept in the tape and the change lines, but not counted as a change:
