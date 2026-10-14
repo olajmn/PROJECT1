@@ -1,5 +1,5 @@
 {
-  "id": 50,
+  "id": 54,
   "user_id": 1,
   "project_id": 56,
   "account_id": 15,
@@ -1164,9 +1164,10 @@
     },
     "node_id_hi": 203
   },
-  "feedback": "Restored",
+  "feedback": "Project #1001 is a development initiative involving Statsbygg and Snøhetta that covers everything from initial concept and site analysis to construction, BIM object creation, and final handover. It includes detailed planning for architecture, materials, and systems like HVAC and electrical, along with management of contracts, authorities, and change requests. Note: whats this project about?",
   "completed": false,
   "cancelled": false,
-  "created_at": "2026-10-13T22:28:17.018+00:00",
-  "event": "restored"
+  "created_at": "2026-10-14T20:23:18.604+00:00",
+  "event": "chat",
+  "sent_at": "2026-10-14T20:23:13.212+00:00"
 }
