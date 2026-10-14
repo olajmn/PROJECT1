@@ -49,4 +49,4 @@ The demo also caps the chat at 500 messages a day (`settings.py`). Chat messages
 ## See also
 
 - [[05-decisions]] #70 — why it is built this way
-- `public-demo-plan.md` in the archive — how it was built and tested
+- How it was built and tested: the step plan `public-demo-plan.md`, in git history (removed 2026-10-14)

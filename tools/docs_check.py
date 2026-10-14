@@ -66,8 +66,8 @@ EXPECTED_DOCS = [
     # look, and where UI code lives (merged from surfaces.md +
     # visual-principles.md 2026-09-27).
     "ui.md",
-    # Temporary - the login work's step plan; moves to docs/archive/
-    # when that work is done (decision #69).
+    # Temporary - the login work's step plan; deleted when that work
+    # is done (decision #69).
     "auth-plan.md",
     # Deliberately unnumbered - how the public demo works and where its
     # code lives (decision #70).

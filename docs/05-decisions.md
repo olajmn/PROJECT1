@@ -658,6 +658,8 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 
 **Follow-up (same day, archive made deletable):** `docs/archive/` is now optional and unmaintained. Nothing outside it may link or point into it — `tools/docs_check.py` reports that as its own finding (`POINTS INTO ARCHIVE`) and no longer lists archived files; the one relevant point still reached through it (a node's depth is data, not type) lives in `app/backend/project/node/README.md`, and Suggest's one-level rule in `02-product.md` § 2. README and `COLLABORATION.md` no longer mention the folder. Checked by moving the folder out: every check and test stayed green. Deleting it needs no other change.
 
+**Follow-up (2026-10-14, archive deleted):** `docs/archive/` is removed before the repository goes public; every file in it stays in git history. From now on a finished doc is deleted, not archived.
+
 
 ## 58. 2026-09-27 — Rename `sim_user_id` → `account_id`
 

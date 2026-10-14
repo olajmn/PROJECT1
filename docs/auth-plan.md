@@ -1,6 +1,6 @@
 # Auth Plan
 
-The step-by-step plan for adding login: one user signs in and manages several accounts, and the app looks as it does today. Why it is built this way: [[05-decisions]] #69. Moves to `docs/archive/` when the work is done.
+The step-by-step plan for adding login: one user signs in and manages several accounts, and the app looks as it does today. Why it is built this way: [[05-decisions]] #69. Deleted when the work is done; git history keeps it.
 
 **Status: paused** by [[05-decisions]] #70. The public demo uses a limited shared login instead ([[demo]]); nothing below is being built until this plan is resumed.
 
@@ -28,7 +28,7 @@ One step per commit; each is read and approved before the next starts.
 4. **Guard** — one check in `Handler` before every `/api/*` route except login: no valid session gives `401`. The page files stay public, so the login screen can load.
 5. **Ownership** — the API passes the signed-in user's id down. Accounts are listed and created per user; each project, account, and saved-tree route checks that it belongs to the user, else `404`. `DEFAULT_USER_ID` stops being the source of the owner.
 6. **Login screen in the UI** — `app/ui/src/auth/`: a login form, a Log out item, and a redirect to login on any `401`. `activeAccountId` is cleared on logout.
-7. **Docs** — update `04-current-state.md` and `03-architecture.md` (an auth step in front of the API), close the TODO item, move this file to `docs/archive/`.
+7. **Docs** — update `04-current-state.md` and `03-architecture.md` (an auth step in front of the API), close the TODO item, delete this file.
 
 ## 4. Open questions
 
