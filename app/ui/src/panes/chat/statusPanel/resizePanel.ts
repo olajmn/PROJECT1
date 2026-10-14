@@ -31,8 +31,13 @@ function applyPanelHeight(panel: HTMLElement, px: number): void {
   panel.style.maxHeight = `${px}px`;
 }
 
+/** The pinned height, or NaN when none is stored: then the panel keeps
+ *  its CSS height. (A missing key must not read as 0 - Number(null) is 0,
+ *  which collapsed the panel.) */
 function storedHeight(): number {
-  const h = Number(localStorage.getItem(HEIGHT_KEY));
+  const raw = localStorage.getItem(HEIGHT_KEY);
+  if (raw === null || raw.trim() === "") return NaN;
+  const h = Number(raw);
   return Number.isFinite(h) && h >= 0 ? h : NaN;
 }
 
