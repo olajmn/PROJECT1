@@ -42,6 +42,7 @@
 
 import { setTip } from "../../../shell/tip.js";
 import { mapStartDepth } from "../../../demo/mapStartDepth.js";
+import { markHiddenSelection } from "../hiddenSelection.js";
 import { installMapCamera, type CameraPose } from "./panAndZoom.js";
 import { measureMapContent } from "../lines/svgHelpers.js";
 import {
@@ -300,6 +301,7 @@ export function installMapScale(
       );
       row.classList.toggle("has-grain-more", Boolean(child));
     });
+    markHiddenSelection(mapEl);
   };
 
   const measureNatural = (): { w: number; h: number } => {

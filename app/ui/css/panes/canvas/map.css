@@ -279,6 +279,12 @@
   background: color-mix(in srgb, var(--color-accent) 14%, var(--surface-node));
 }
 
+/* The selected node is hidden by the current depth: its nearest visible
+   ancestor shows the selection is inside it (hiddenSelection.ts). */
+.progress-row.has-hidden-selection > .progress-bead-unit {
+  border: 1px dashed var(--color-accent);
+}
+
 /* Hidden by mapScale grain (overview); still in DOM for + to reveal. */
 .progress-row.is-grain-hidden {
   display: none !important;

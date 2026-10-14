@@ -13,6 +13,7 @@
 
 import { addNode, removeNode, renameProject } from "../../api.js";
 import { getActiveUserId, setLastProjectId } from "../../user/activeAccount.js";
+import { markHiddenSelection } from "./hiddenSelection.js";
 import { displayProjectTitle } from "../create/defaultNames.js";
 import { projectChromeHash } from "../create/projectOrder.js";
 import { installTitleRename } from "../create/renameProject.js";
@@ -167,6 +168,7 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
         el.classList.remove("is-selected");
       });
       row?.classList.add("is-selected");
+      markHiddenSelection(line);
       let focus = body.querySelector(
         ".node-focus-note",
       ) as HTMLParagraphElement | null;
