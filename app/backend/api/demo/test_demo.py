@@ -62,7 +62,7 @@ def fresh_state(clock):
     """New sessions and limits on the fake clock, with small limits."""
     g.sessions = Sessions(idle=30 * 60, max_age=8 * 60 * 60, limit=2, clock=clock,
                           on_end=g._remove_sandbox)
-    g.login_attempts = RateLimit(3, 60, clock)
+    g.login_failures = RateLimit(3, 60, clock)
     g.talk_per_session = RateLimit(2, 60, clock)
     g.talk_per_ip = RateLimit(10, 60, clock)
     g.talk_per_day = RateLimit(100, 24 * 60 * 60, clock)
@@ -182,12 +182,21 @@ def check_guard() -> None:
         request = FakeRequest("/api/projects", cookie=second)
         assert g.guard(request, "GET") and request.status == 401
 
-        # Login attempts: 3 a minute per IP here (already 2 from 5.6.7.8).
-        request, _ = login("wrong", ip="9.9.9.9")
-        request, _ = login("wrong", ip="9.9.9.9")
-        request, _ = login("wrong", ip="9.9.9.9")
+        # Wrong passwords: 3 a minute per IP here. Right ones do not count.
+        g.sessions.end(second)
+        for _ in range(5):
+            request, token_ok = login(ip="9.9.9.9")
+            assert request.status == 200
+            g.sessions.end(token_ok)
+        for _ in range(3):
+            request, _ = login("wrong", ip="9.9.9.9")
+            assert request.status == 401
         request, _ = login(ip="9.9.9.9")
         assert request.status == 429
+        clock.now += 60
+        request, token_ok = login(ip="9.9.9.9")
+        assert request.status == 200
+        g.sessions.end(token_ok)
 
         # A forged client-IP header counts only when a proxy header is set.
         spoof = FakeRequest("/x", headers={"Fly-Client-IP": "7.7.7.7"})

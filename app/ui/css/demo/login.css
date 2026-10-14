@@ -2,19 +2,20 @@
  * backdrop, built from the same tokens as the rest of the UI. */
 
 body.login-body {
-  display: grid;
-  place-items: center;
   min-height: 100vh;
   margin: 0;
   background: var(--backdrop);
 }
 
 /* `main` in css/base.css is a full-height column for the app pages;
-   the login panel only wraps its content. */
+   the login panel only wraps its content. Placed at a fixed distance
+   from the top rather than centred in a grid: a password manager adds
+   its own element to the page on submit, and a centring layout moved
+   the panel up to make room for it. */
 .login-panel {
   display: block;
   height: auto;
-  margin: 0;
+  margin: 28vh auto 0;
   width: min(22rem, calc(100vw - 2rem));
   padding: var(--space-5);
   background: var(--color-bg-panel);
@@ -48,7 +49,8 @@ body.login-body {
 }
 
 .login-error {
-  min-height: 1.2em;
+  /* One full line, so a one-line message does not change the height. */
+  min-height: calc(1em * var(--line-height));
   margin: var(--space-2) 0 0;
   color: var(--color-error);
   font-size: var(--font-size-sm);

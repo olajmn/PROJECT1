@@ -61,7 +61,7 @@ sessions = Sessions(
     settings.MAX_SESSIONS,
     on_end=_remove_sandbox,
 )
-login_attempts = RateLimit(*settings.LOGIN_ATTEMPTS_PER_IP)
+login_failures = RateLimit(*settings.LOGIN_FAILURES_PER_IP)
 talk_per_session = RateLimit(*settings.TALK_PER_SESSION)
 talk_per_ip = RateLimit(*settings.TALK_PER_IP)
 talk_per_day = RateLimit(*settings.TALK_PER_DAY)
@@ -136,8 +136,9 @@ def guard(handler: BaseHTTPRequestHandler, method: str) -> bool:
 # ============================================================
 
 def _login(handler: BaseHTTPRequestHandler) -> None:
-    if not login_attempts.allow(client_ip(handler)):
-        handler.send_error(429, "Too many login attempts. Try again in a few minutes.")
+    ip = client_ip(handler)
+    if login_failures.full(ip):
+        handler.send_error(429, "Too many wrong passwords. Try again in a few minutes.")
         return
     length = _content_length(handler)
     if length is None or length > settings.LOGIN_BODY_MAX_BYTES:
@@ -150,6 +151,7 @@ def _login(handler: BaseHTTPRequestHandler) -> None:
         return
     password = str(body.get("password") or "") if isinstance(body, dict) else ""
     if not hmac.compare_digest(password.encode(), settings.PASSWORD.encode()):
+        login_failures.allow(ip)
         handler.send_error(401, "Wrong password.")
         return
     session = sessions.create()

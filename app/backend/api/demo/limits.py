@@ -23,15 +23,25 @@ class RateLimit:
         self._lock = threading.Lock()
         self._events: dict[str, deque[float]] = {}
 
+    def full(self, key: str) -> bool:
+        """True when `key` is at the limit; records nothing."""
+        with self._lock:
+            return len(self._recent(key, self._clock())) >= self._count
+
     def allow(self, key: str) -> bool:
         """Record one event for `key` and return True, or return False
         (and record nothing) when `key` is already at the limit."""
         with self._lock:
             now = self._clock()
-            events = self._events.setdefault(key, deque())
-            while events and now - events[0] >= self._window:
-                events.popleft()
+            events = self._recent(key, now)
             if len(events) >= self._count:
                 return False
             events.append(now)
             return True
+
+    def _recent(self, key: str, now: float) -> deque[float]:
+        """`key`'s events inside the window (lock held)."""
+        events = self._events.setdefault(key, deque())
+        while events and now - events[0] >= self._window:
+            events.popleft()
+        return events

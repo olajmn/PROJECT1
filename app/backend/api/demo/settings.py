@@ -43,7 +43,8 @@ CHAT_BODY_MAX_BYTES = 8 * 1024
 LOGIN_BODY_MAX_BYTES = 1024
 
 # (count, seconds): at most `count` in any `seconds`.
-LOGIN_ATTEMPTS_PER_IP = (10, 15 * 60)
+# Only wrong passwords count, so logging in and out again is never blocked.
+LOGIN_FAILURES_PER_IP = (10, 15 * 60)
 TALK_PER_SESSION = (10, 60)
 TALK_PER_IP = (20, 60)
 TALK_PER_DAY = (_number("DEMO_TALK_PER_DAY", 500), 24 * 60 * 60)
