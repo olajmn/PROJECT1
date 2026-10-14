@@ -7,11 +7,21 @@ import { applyStoredTheme } from "../user/theme.js";
 applyStoredTheme();
 
 // Every demo login gets a fresh copy of the data, so it also starts where
-// a first visit does: the browser forgets the last project and each
-// map's depth and view. Owners of these keys: user/activeAccount.ts
-// (lastProjectId:) and panes/canvas/zoomAndPan/frameControls.ts (map…).
-// Theme, column widths, and panel states are kept.
-const SESSION_KEY_PREFIXES = ["lastProjectId:", "mapGrain:", "mapView:", "mapViewPinned:"];
+// a first visit does: the browser forgets the last project, each map's
+// depth and view, and the Current state panel's height and open state
+// (so its Changes list shows). Owners of these keys:
+// user/activeAccount.ts (lastProjectId:),
+// panes/canvas/zoomAndPan/frameControls.ts (map…), and
+// panes/chat/statusPanel/ (projects.chartHeightPx, projects.statusOpen).
+// Theme and column widths are kept.
+const SESSION_KEY_PREFIXES = [
+  "lastProjectId:",
+  "mapGrain:",
+  "mapView:",
+  "mapViewPinned:",
+  "projects.chartHeightPx",
+  "projects.statusOpen",
+];
 
 function forgetLastSession(): void {
   try {

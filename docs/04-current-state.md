@@ -44,8 +44,8 @@ default, and then nothing changes. On:
 - Every login opens the project named by `DEMO_START_PROJECT_ID`, and
   maps open 3 levels deep at normal size instead of shrinking the whole
   tree to fit (`GET /api/session`, `ui/src/demo/mapStartDepth.ts`); the
-  login page clears the browser's last project and map depth
-  (`ui/src/demo/login.ts`). Outside the demo the map still picks a depth
+  login page clears the browser's last project, map depth, and Current
+  state panel height (`ui/src/demo/login.ts`). Outside the demo the map still picks a depth
   that fits.
 - Trying it on `http://localhost` needs `DEMO_INSECURE_COOKIE=1`.
 - Deployed at https://demo-one.fly.dev (Fly.io app `demo-one`, one machine in
