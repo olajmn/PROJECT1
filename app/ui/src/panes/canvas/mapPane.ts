@@ -310,6 +310,9 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
       const target = event.target as Element | null;
       if (!target) return;
       if (target.closest(".progress-row")) return;
+      // − / +, ↑, Text | Line change how the map is shown, not what is
+      // selected: a hidden selection must survive + so it can surface.
+      if (target.closest(".map-top-bar")) return;
       if (target.closest(".progress-add-form")) return;
       if (target.closest(".map-copy-row")) return;
       if (target.closest(".map-paste-form")) return;
