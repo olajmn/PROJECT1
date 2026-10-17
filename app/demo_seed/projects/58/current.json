@@ -1,9 +1,9 @@
 {
-  "id": 6,
+  "id": 4,
   "user_id": 1,
   "project_id": 58,
   "account_id": 15,
-  "account_n": 49,
+  "account_n": 3,
   "name": "Character A",
   "plan": {
     "progression": {
@@ -331,9 +331,12 @@
     },
     "node_id_hi": 87
   },
-  "feedback": "Renamed: Characther A → Character A",
+  "feedback": "This part lists two key figures in the investigator's life: Person B, who is a former mentor with an estranged status, and Person C, who is a trusted colleague. It also notes that the current conflict involves the possibility that the former mentor may be involved in the main case. Note: What's this?",
   "completed": false,
   "cancelled": false,
-  "created_at": "2026-10-17T13:24:23.665+00:00",
-  "event": "renamed"
+  "created_at": "2026-10-16T13:42:00.000+00:00",
+  "event": "chat",
+  "sent_at": "2026-10-16T13:41:48.000+00:00",
+  "map_focus": "RELATIONSHIPS",
+  "focus_step_id": "p69"
 }

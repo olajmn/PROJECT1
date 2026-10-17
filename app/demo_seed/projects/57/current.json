@@ -1,9 +1,9 @@
 {
-  "id": 93,
+  "id": 90,
   "user_id": 1,
   "project_id": 57,
   "account_id": 15,
-  "account_n": 47,
+  "account_n": 2,
   "name": "Training",
   "plan": {
     "progression": {
@@ -642,10 +642,12 @@
     },
     "node_id_hi": 168
   },
-  "feedback": "Renamed step: Training Log → Log",
+  "feedback": "This part is a time slot scheduled for Monday at 18:00 to 20:00 under the Plan section of the project. It does not specify what activities are planned for that time yet. Note: What's this?",
   "completed": false,
   "cancelled": false,
-  "created_at": "2026-10-17T13:24:58.991+00:00",
-  "event": "node_renamed",
-  "focus_step_id": "p19"
+  "created_at": "2026-10-16T13:40:00.000+00:00",
+  "event": "chat",
+  "sent_at": "2026-10-16T13:39:48.000+00:00",
+  "map_focus": "18.00-20.00",
+  "focus_step_id": "p109"
 }

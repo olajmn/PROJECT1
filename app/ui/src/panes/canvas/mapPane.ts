@@ -317,7 +317,13 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
       if (target.closest(".map-copy-row")) return;
       if (target.closest(".map-paste-form")) return;
       if (target.closest(".map-folder-form")) return;
+      // Empty map lets go of a selected node and of a selected day alike.
+      const hadDay = opts.getSelectedDay() !== null;
       clearNodeSelection(body);
+      if (hadDay) {
+        opts.setSelectedDay(null);
+        render();
+      }
     });
 
     if (!project.node) {

@@ -1,7 +1,8 @@
 // Draws a project's status: summary rows, then a day-by-day change
 // pulse (chat excluded). Node names in the summary become buttons that
 // select that node on the map; a day with changes selects that day for
-// the chat, and a second click on it lets it go.
+// the chat, and a second click on it, or a click on empty space in the
+// panel, lets it go (the map lets it go the same way, mapPane.ts).
 //
 // Contents
 //  1. drawStatus()
@@ -20,6 +21,13 @@ export function drawStatus(
 ): HTMLElement {
   const root = document.createElement("div");
   root.className = "status";
+  if (selectedDay) {
+    // Empty space lets the selected day go, like empty map lets a node go.
+    root.addEventListener("click", (event) => {
+      if ((event.target as Element).closest(".is-selectable, button")) return;
+      onDay(null);
+    });
+  }
 
   const summary = document.createElement("dl");
   summary.className = "status-summary";
