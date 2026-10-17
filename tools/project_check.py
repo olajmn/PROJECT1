@@ -53,7 +53,7 @@ from pathlib import Path
 
 # 1. Configuration
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent  # PROJECT1/ - tools/ lives directly under it
+PROJECT_ROOT = Path(__file__).resolve().parent.parent  # project010/ - tools/ lives directly under it
 APP_ROOT = PROJECT_ROOT / "app"
 DOCS_ROOT = PROJECT_ROOT / "docs"
 CURRENT_STATE = DOCS_ROOT / "04-current-state.md"
@@ -98,7 +98,7 @@ def _run(cmd: list[str], cwd: Path = APP_ROOT) -> tuple[int, str]:
 
 def git_status() -> list[str]:
     """Changed/untracked paths from `git status --porcelain`, relative
-    to the repo root (the whole PROJECT1 checkout, not just app/ -
+    to the repo root (the whole project010 checkout, not just app/ -
     one git repository spans both)."""
     code, output = _run(["git", "status", "--porcelain"], cwd=PROJECT_ROOT)
     if code != 0 or not output:
