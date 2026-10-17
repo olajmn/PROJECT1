@@ -26,6 +26,7 @@ export type NodeMenuActionId =
   | "remove"
   | "move_up"
   | "move_down"
+  | "rename"
   | "analyze"
   | "paste"
   | "save_tree"
@@ -56,6 +57,11 @@ const NODE_MENU_ACTIONS: {
     id: "move_down",
     label: "Move down",
     detail: "Swap with the node below; everything under it moves along.",
+  },
+  {
+    id: "rename",
+    label: "Rename",
+    detail: "Give this node a new name; it stays the same node.",
   },
   {
     id: "analyze",
@@ -207,7 +213,7 @@ function fillBeadUnit(
   row.appendChild(unit);
 }
 
-/** ⋯ menu: Add here / Remove / Move / Talk about this / Paste / saved trees. */
+/** ⋯ menu: Add here / Remove / Move / Rename / Talk about this / Paste / saved trees. */
 function attachNodeMenu(
   row: HTMLElement,
   stepId: string,

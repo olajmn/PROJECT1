@@ -1,6 +1,8 @@
 // About-frame isolation for the Projects chat thread: "Show only this"
-// filters to one focus (a node label, or a day of changes); leaving
-// isolation restores scroll.
+// filters to one focus (a node, or a day of changes); leaving isolation
+// restores scroll. A node's frame follows its id, not its label, and is
+// headed by the node's current name, so a rename does not split it
+// (docs/05-decisions.md #71).
 // Framing (About "…") and filter live here — message rows in messageRow.ts.
 
 // Contents
@@ -33,6 +35,8 @@ export type IsolateChatOptions = {
   threadEl: HTMLDivElement;
   /** Map a focus label to a step id when history omitted focus_step_id. */
   resolveStepId?: (label: string) => string | null;
+  /** A node's current label from the map, or null if it is gone. */
+  labelForStepId?: (stepId: string) => string | null;
   /** Re-render the workspace after isolate / show-full. */
   onChange: () => void;
 };
@@ -41,10 +45,19 @@ export type IsolateChatOptions = {
 
 type Frame = { key: string; name: string; day: string | null };
 
-/** What a message's About-frame is: its node label, or its day of
- * changes. `key` groups messages; `name` is shown. */
-function frameOf(message: ChatMessage): Frame | null {
+/** What a message's About-frame is: its node (by id when saved, else by
+ * label), or its day of changes. `key` groups messages; `name` is shown:
+ * the node's current label when the map still has it. */
+function frameOf(
+  message: ChatMessage,
+  labelForStepId?: (stepId: string) => string | null,
+): Frame | null {
   const focus = message.focus?.trim();
+  const stepId = message.focus_step_id?.trim();
+  if (stepId) {
+    const name = labelForStepId?.(stepId) || focus || stepId;
+    return { key: `id:${stepId}`, name, day: null };
+  }
   if (focus) return { key: focus, name: focus, day: null };
   const day = message.focus_day?.trim();
   if (day) return { key: `day:${day}`, name: changesDayName(day), day };
@@ -54,7 +67,9 @@ function frameOf(message: ChatMessage): Frame | null {
 // 3. Public API
 
 export function createIsolateChat(options: IsolateChatOptions): IsolateChat {
-  const { threadEl, resolveStepId, onChange } = options;
+  const { threadEl, resolveStepId, labelForStepId, onChange } = options;
+  const frameFor = (message: ChatMessage): Frame | null =>
+    frameOf(message, labelForStepId);
   let isolatedFocus: Frame | null = null;
   let preIsolationScrollTop: number | null = null;
 
@@ -85,7 +100,7 @@ export function createIsolateChat(options: IsolateChatOptions): IsolateChat {
     if (isolatedFocus) {
       threadEl.appendChild(isolationBanner());
       for (const message of messages) {
-        if (frameOf(message)?.key !== isolatedFocus.key) continue;
+        if (frameFor(message)?.key !== isolatedFocus.key) continue;
         threadEl.appendChild(messageRow(message));
       }
       threadEl.scrollTop = threadEl.scrollHeight;
@@ -96,8 +111,8 @@ export function createIsolateChat(options: IsolateChatOptions): IsolateChat {
     let sectionKey: string | null = null;
 
     for (const message of messages) {
-      const current = frameOf(message);
-      const focus = current && !current.day ? current.key : null;
+      const current = frameFor(message);
+      const focus = current && !current.day ? current.name : null;
       if ((current?.key ?? null) !== sectionKey) {
         sectionKey = current?.key ?? null;
         if (current) {

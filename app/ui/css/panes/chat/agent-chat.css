@@ -55,6 +55,15 @@
   margin: 0;
 }
 
+/* A quiet line in the thread, not a turn - e.g. a node rename
+   (messageRow.ts noteRow()). */
+.project-chat .message-note {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
 .project-chat .message .who {
   flex: 0 0 3rem;
   font-size: 0.6875rem;

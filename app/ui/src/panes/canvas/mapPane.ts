@@ -338,6 +338,9 @@ export function installMapPane(opts: MapPaneOpts): MapPane {
         render();
       },
       resolveStepId: (label) => stepIdForLabel(opts.projectMain, label),
+      labelForStepId: (stepId) => beadLabel(
+        line.querySelector(`.progress-row[data-step-id="${CSS.escape(stepId)}"]`),
+      ),
       onSelectNode: (stepId, label) => {
         markSelected(stepId, `Looking at: ${label}`);
         if (bar.paste.isOpen()) bar.paste.updatePasteHint();

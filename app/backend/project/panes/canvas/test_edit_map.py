@@ -1,5 +1,5 @@
-"""The saved text of remove_map_node(), import_map_outline() and
-move_map_node() - no files, no model. Run from app/:
+"""The saved text of remove_map_node(), import_map_outline(),
+move_map_node() and rename_map_node() - no files, no model. Run from app/:
 
     .venv/bin/python -m backend.project.panes.canvas.test_edit_map
 """
@@ -70,7 +70,27 @@ def main() -> None:
         except ValueError:
             continue
         raise AssertionError(f"{step_id} {direction} should fail")
-    print("OK - remove_map_node / import_map_outline / move_map_node saved text")
+
+    # Renaming keeps the id, place, and children; the saved line carries
+    # the id so the chat can show the rename in that node's conversation.
+    edit_map.rename_map_node(row(), "p3", "  First  ")
+    renamed = saved["plan"]["progression"]["steps"][1]
+    assert renamed["children"][0] == {"id": "p3", "label": "First", "children": []}
+    assert saved["feedback"] == "Renamed step: B1 → First", saved
+    assert saved["event"] == "node_renamed"
+    assert saved["focus_step_id"] == "p3"
+    # Same name: nothing saved, the record comes back as it was.
+    saved.clear()
+    same = row()
+    assert edit_map.rename_map_node(same, "p3", "B1") is same and not saved
+    # Empty, a sibling's name, or an unknown id: refused.
+    for step_id, label in [("p3", " "), ("p3", "B2"), ("p9", "X")]:
+        try:
+            edit_map.rename_map_node(row(), step_id, label)
+        except ValueError:
+            continue
+        raise AssertionError(f"rename {step_id} to {label!r} should fail")
+    print("OK - remove / import / move / rename map node saved text")
 
 
 if __name__ == "__main__":

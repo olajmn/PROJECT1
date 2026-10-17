@@ -44,6 +44,7 @@ GROUPS = {
     "node_added": "Map",
     "node_removed": "Map",
     "node_moved": "Map",
+    "node_renamed": "Map",
     "pasted": "Map",
     "folder_added": "Map",
     "tree_inserted": "Map",

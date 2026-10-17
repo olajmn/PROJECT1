@@ -56,7 +56,8 @@ helps but does not take over.
 - **Build the map:** add a node (`+` at the end, or ⋯ Add here) and
   remove one (⋯ Remove; a node with children asks first, since its
   children go with it). Move a node up or down among its siblings
-  (⋯ Move up / Move down; everything under it moves along). Paste an outline — bullets, a numbered list,
+  (⋯ Move up / Move down; everything under it moves along), or give it
+  a new name (⋯ Rename; it stays the same node). Paste an outline — bullets, a numbered list,
   plain lines, or an ASCII tree — with a live preview where single nodes
   can be left out. Add a folder from disk: each file and folder becomes
   a node. A name that already exists among siblings gets `(2)`,
@@ -74,6 +75,8 @@ helps but does not take over.
 - **Chat:** talk about the whole project, or select a node (click it, or
   ⋯ Talk about this) to talk about that node. Turns about a node are
   framed in the thread, and "Show only this" shows them on their own.
+  A frame follows the node, not its name: after a rename it shows the
+  new name and a line saying what the node was called before.
   With a node selected, a message of several lines is added as nodes
   under it.
 - **Current state:** the panel above the chat shows the project, when

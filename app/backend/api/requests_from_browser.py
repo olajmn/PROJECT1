@@ -21,7 +21,7 @@ server.py only starts the server; everything it answers is decided here.
 #  3. Handler
 #      - do_GET() / do_POST()
 #      - projects: create, rename, cancel, set user, timeline
-#      - map: add node, remove node, move node, paste, add folder
+#      - map: add node, remove node, move node, rename node, paste, add folder
 #      - saved trees: save, list, insert, delete
 #      - chat: message (incl. slash-commands)
 #      - accounts: create, rename, archive
@@ -58,6 +58,7 @@ from backend.project.panes.canvas.edit_map import (
     import_map_outline,
     move_map_node,
     remove_map_node,
+    rename_map_node,
 )
 from backend.project.saved_trees import (
     insert_saved_tree,
@@ -107,6 +108,7 @@ _POST_ROUTES = [
     (r"/api/projects/(\d+)/map", "_handle_add_node"),
     (r"/api/projects/(\d+)/map/(p\d+)/remove", "_handle_remove_node"),
     (r"/api/projects/(\d+)/map/(p\d+)/move-(up|down)", "_handle_move_node"),
+    (r"/api/projects/(\d+)/map/(p\d+)/rename", "_handle_rename_node"),
     (r"/api/projects/(\d+)/map/import", "_handle_paste_structure"),
     (r"/api/projects/(\d+)/map/folder", "_handle_add_folder"),
     (r"/api/projects/(\d+)/map/(p\d+)/save-tree", "_handle_save_tree"),
@@ -268,6 +270,16 @@ class Handler(BaseHTTPRequestHandler):
         if latest is None:
             return
         self._save_map_change(lambda: move_map_node(latest, node_id, direction))
+
+    def _handle_rename_node(self, project_id: int, node_id: str) -> None:
+        """A new label for one node; its id stays. No model call."""
+        text = self._read_text_body()
+        if text is None:
+            return
+        latest = self._load_project(project_id)
+        if latest is None:
+            return
+        self._save_map_change(lambda: rename_map_node(latest, node_id, text))
 
     def _handle_paste_structure(self, project_id: int) -> None:
         """Pasted outline text, or an already-parsed `nodes` tree, becomes

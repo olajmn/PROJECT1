@@ -26,7 +26,8 @@ export interface MapNode {
 // Wire identity is project_id / /api/projects. Display title is `name`.
 
 export interface ChatMessage {
-  role: "user" | "agent";
+  /** "note": a quiet line, not a turn - e.g. this node was renamed. */
+  role: "user" | "agent" | "note";
   text: string;
   /** When it was sent (you) or saved (agent), ISO time. Missing on very old lines. */
   at?: string;

@@ -840,6 +840,18 @@ Also decided the same day: `world/` remains separate from `foundation/`. World r
 **Follow-up (2026-10-13, sandbox per visitor):** Replaces the shared dataset. Each login gets its own sandbox: a fresh copy of the demo seed in its own folder, used for every request in that session and deleted when the session ends (logout, 30 minutes of inactivity, or 8 hours). Visitors never see each other's changes and nothing they do outlasts their session, so no reset command is needed. Storage keeps its JSON/JSONL format; it reads and writes under the current request's sandbox instead of one fixed `data/` folder, and outside demo mode that is `app/data/` as before. Because a sandbox only affects its own visitor, every route is allowed in demo mode except the two that reach the server's own file system (`map/folder`, `choose-folder`). A cap on sandboxes at once bounds disk use. Sandboxes are not kept across a restart, so the host needs no persistent volume. Alternative kept from the original decision: the shared dataset, faster to build but every visitor sees and can undo the last visitor's changes until a reset, which does not fit a demo sent to employers. Cost: about 2–4 more hours, and storage paths become per request.
 
 
+## 71. 2026-10-17 — Rename a node; the chat follows its id
+
+**Decision:** Nodes can be renamed (⋯ Rename; `rename_map_node()` in `panes/canvas/edit_map.py`, event `node_renamed`). The id, place, and children stay; a label a sibling already uses is refused rather than numbered, since the user chose that exact name. The chat ties a turn to its node by id: About frames group by `focus_step_id` and show the node's current name (`panes/chat/showOnlyThis.ts`), a rename of a node that was talked about appears in that conversation as a quiet note ("Renamed from … to …", `chat_thread.py`), and the model sees past turns as "<now> (then called <then>)" (`model/brief/conversation.py`). `save_plan()` now keeps `focus_step_id` without `map_focus`, so a map edit can name its node by id.
+
+**Date:** 2026-10-17
+
+**Alternatives considered:** no rename (remove and add again gives a new id and loses the node's chat and children); rewriting old chat turns to the new name (changes what was actually said); keeping frames keyed by label (a rename would split one node's conversation in two).
+
+**Why this choice:** A node's identity is its id, not its label (#52); rename makes that visible. Showing the old name in place keeps earlier answers readable instead of confusing.
+
+**Reversible?** Yes; remove the menu item and the route. Saved renames stay ordinary log lines.
+
 ## See also
 
 - [[03-architecture]]
