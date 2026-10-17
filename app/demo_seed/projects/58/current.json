@@ -9,6 +9,28 @@
     "progression": {
       "steps": [
         {
+          "id": "p88",
+          "label": "STORY",
+          "children": [
+            {
+              "id": "p89",
+              "label": "Genre: Mystery novel",
+              "children": [],
+              "ordered": true,
+              "resolved": false
+            },
+            {
+              "id": "p90",
+              "label": "Role: Protagonist",
+              "children": [],
+              "ordered": true,
+              "resolved": false
+            }
+          ],
+          "ordered": true,
+          "resolved": false
+        },
+        {
           "id": "p45",
           "label": "IDENTITY",
           "ordered": true,
@@ -329,7 +351,7 @@
         }
       ]
     },
-    "node_id_hi": 87
+    "node_id_hi": 91
   },
   "feedback": "This part lists two key figures in the investigator's life: Person B, who is a former mentor with an estranged status, and Person C, who is a trusted colleague. It also notes that the current conflict involves the possibility that the former mentor may be involved in the main case. Note: What's this?",
   "completed": false,
