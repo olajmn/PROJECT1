@@ -1,10 +1,18 @@
 # project010
 
-A local app for building things out of nodes — each node an object with
-its own identity — with a conversation that works on the structure. In
-practice: you build a project as a tree of parts (a building, a training
-plan, a folder on disk), and a chat beside it answers questions about
-that project and the part you select.
+project010 is a working application that explores how information can be
+organized in a persistent, visual structure and made available through a
+conversational interface.
+
+Can an explicit structure of information and its relationships make it
+easier for an AI to work with context over time, instead of having to
+reconstruct it from separate conversations?
+
+In practice: you build a project as a tree of parts (a building, a
+training plan, a folder on disk). The tree and its history are saved, and
+on every message the chat reads them — the whole structure, the part you
+select, and recent changes — so it answers from the project instead of
+starting from scratch.
 
 **Live demo:** https://demo-one.fly.dev — ask me for the password. Each
 visitor gets their own copy of two example projects. How the demo works:
