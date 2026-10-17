@@ -42,7 +42,7 @@ SEED_DIR = Path(__file__).resolve().parents[2] / "demo_seed"
 # Kept out of app/data/ so a sandbox can never be mistaken for real data.
 ROOT = Path(
     os.environ.get("DEMO_SANDBOX_DIR", "").strip()
-    or Path(tempfile.gettempdir()) / "project1-demo-sandboxes"
+    or Path(tempfile.gettempdir()) / "project010-demo-sandboxes"
 )
 
 # Sandbox folder names; nothing else under ROOT is ever deleted.
