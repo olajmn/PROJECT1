@@ -1,16 +1,16 @@
 {
-  "id": 54,
+  "id": 53,
   "user_id": 1,
   "project_id": 56,
   "account_id": 15,
   "account_n": 46,
-  "name": "Project #1001",
+  "name": "Building project",
   "plan": {
     "progression": {
       "steps": [
         {
           "id": "p1",
-          "label": "Project #1001",
+          "label": "Building project",
           "ordered": true,
           "resolved": false,
           "children": [
@@ -1164,10 +1164,12 @@
     },
     "node_id_hi": 203
   },
-  "feedback": "Project #1001 is a development initiative involving Statsbygg and Snøhetta that covers everything from initial concept and site analysis to construction, BIM object creation, and final handover. It includes detailed planning for architecture, materials, and systems like HVAC and electrical, along with management of contracts, authorities, and change requests. Note: whats this project about?",
+  "feedback": "Surroundings includes Buildings, Infrastructure, and Landscape as its main components. These parts help define the external environment around the site. Note: What does it include",
   "completed": false,
   "cancelled": false,
-  "created_at": "2026-10-14T20:23:18.604+00:00",
+  "created_at": "2026-10-14T20:22:45.968+00:00",
   "event": "chat",
-  "sent_at": "2026-10-14T20:23:13.212+00:00"
+  "sent_at": "2026-10-14T20:22:44.170+00:00",
+  "map_focus": "Surroundings",
+  "focus_step_id": "p6"
 }
