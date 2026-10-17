@@ -1,0 +1,339 @@
+{
+  "id": 6,
+  "user_id": 1,
+  "project_id": 58,
+  "account_id": 15,
+  "account_n": 49,
+  "name": "Character A",
+  "plan": {
+    "progression": {
+      "steps": [
+        {
+          "id": "p45",
+          "label": "IDENTITY",
+          "ordered": true,
+          "resolved": false,
+          "children": [
+            {
+              "id": "p46",
+              "label": "Character ID: C-001",
+              "ordered": true,
+              "resolved": false,
+              "children": []
+            },
+            {
+              "id": "p47",
+              "label": "Age: 26",
+              "ordered": true,
+              "resolved": false,
+              "children": []
+            },
+            {
+              "id": "p48",
+              "label": "Place of Birth: Kyoto, Japan",
+              "ordered": true,
+              "resolved": false,
+              "children": []
+            },
+            {
+              "id": "p49",
+              "label": "Occupation: Investigator",
+              "ordered": true,
+              "resolved": false,
+              "children": []
+            }
+          ]
+        },
+        {
+          "id": "p50",
+          "label": "BACKGROUND",
+          "ordered": true,
+          "resolved": false,
+          "children": [
+            {
+              "id": "p51",
+              "label": "Family Background",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p52",
+                  "label": "Parent A",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                },
+                {
+                  "id": "p53",
+                  "label": "Parent B",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "p54",
+              "label": "Education",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p55",
+                  "label": "Investigative Sciences",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "p56",
+              "label": "Formative Experience",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p57",
+                  "label": "A sibling disappeared during childhood",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "p58",
+          "label": "PERSONALITY",
+          "ordered": true,
+          "resolved": false,
+          "children": [
+            {
+              "id": "p59",
+              "label": "Strengths",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p60",
+                  "label": "Observant",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                },
+                {
+                  "id": "p61",
+                  "label": "Persistent",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "p62",
+              "label": "Weaknesses",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p63",
+                  "label": "Distrustful",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                },
+                {
+                  "id": "p64",
+                  "label": "Obsessive",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "p65",
+              "label": "Motivation",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p66",
+                  "label": "Discover the truth",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "p67",
+              "label": "Internal Conflict",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p68",
+                  "label": "Truth versus personal loyalty",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "p69",
+          "label": "RELATIONSHIPS",
+          "ordered": true,
+          "resolved": false,
+          "children": [
+            {
+              "id": "p70",
+              "label": "Person B",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p71",
+                  "label": "Relationship: Former Mentor",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                },
+                {
+                  "id": "p72",
+                  "label": "Status: Estranged",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "p73",
+              "label": "Person C",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p74",
+                  "label": "Relationship: Colleague",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                },
+                {
+                  "id": "p75",
+                  "label": "Status: Trusted",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "p76",
+          "label": "LIFE EVENTS",
+          "ordered": true,
+          "resolved": false,
+          "children": [
+            {
+              "id": "p77",
+              "label": "Age 10 — Sibling Disappears",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p78",
+                  "label": "Shapes Character's Motivation",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "p79",
+              "label": "Age 19 — Leaves Home",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p80",
+                  "label": "Begins Independent Life",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            },
+            {
+              "id": "p81",
+              "label": "Age 24 — Case Goes Unresolved",
+              "ordered": true,
+              "resolved": false,
+              "children": [
+                {
+                  "id": "p82",
+                  "label": "Loses Trust in the Institution",
+                  "ordered": true,
+                  "resolved": false,
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "p83",
+          "label": "CURRENT STATE",
+          "ordered": true,
+          "resolved": false,
+          "children": [
+            {
+              "id": "p84",
+              "label": "Location: Berlin, Germany",
+              "ordered": true,
+              "resolved": false,
+              "children": []
+            },
+            {
+              "id": "p85",
+              "label": "Active Goal: Investigate a Missing Person",
+              "ordered": true,
+              "resolved": false,
+              "children": []
+            },
+            {
+              "id": "p86",
+              "label": "Main Obstacle: Conflicting Evidence",
+              "ordered": true,
+              "resolved": false,
+              "children": []
+            },
+            {
+              "id": "p87",
+              "label": "Current Conflict: Mentor May Be Involved",
+              "ordered": true,
+              "resolved": false,
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    "node_id_hi": 87
+  },
+  "feedback": "Renamed: Characther A → Character A",
+  "completed": false,
+  "cancelled": false,
+  "created_at": "2026-10-17T13:24:23.665+00:00",
+  "event": "renamed"
+}
