@@ -10,6 +10,8 @@ add_folder/walk.py, appended the same way. Each node keeps its path.
 remove_map_node() — drop a Step by id (no LLM).
 move_map_node() — swap a Step with the sibling above or below it,
 keeping its id and everything under it (no LLM).
+rename_map_node() — give a Step a new label, keeping its id, so chat
+turns about it stay attached (docs/05-decisions.md #52, #71).
 
 Does not touch the Steps-page scratch tree.
 """
@@ -20,7 +22,8 @@ import re
 from backend.storage.project_persistence import save_plan
 from backend.project.panes.canvas.add_folder import folder_tree
 from backend.project.node import (
-    Step, find_path, from_nested_labels, unique_sibling_label,
+    Step, find_path, from_nested_labels, sibling_label_clash,
+    unique_sibling_label,
 )
 from backend.project.panes.canvas.text_to_tree import parse_outline
 
@@ -272,6 +275,49 @@ def move_map_node(latest: dict, step_id: str, direction: str) -> dict:
         project_id=latest["project_id"],
         account_id=latest.get("account_id"),
         event="node_moved",
+    )
+
+
+def rename_map_node(latest: dict, step_id: str, label: str) -> dict:
+    """
+    Give `step_id` a new label. Its id, place, and children stay, so
+    everything that points at the id (chat turns, selection) still finds
+    it. No model call. Raises on an empty label, a missing step, or a
+    label a sibling already uses: unlike add, a rename does not number
+    itself, since the user chose that exact name.
+
+    The saved line carries the node's id (`focus_step_id`), so the chat
+    can show the rename inside that node's conversation.
+    """
+    text = (label or "").strip()
+    if not text:
+        raise ValueError("step label is empty")
+    plan = copy.deepcopy(latest.get("plan") or {})
+    steps = (plan.get("progression") or {}).get("steps")
+    if not isinstance(steps, list):
+        raise ValueError("project has no nodes")
+
+    path = find_path(steps, step_id)
+    if path is None:
+        raise ValueError(f"step not found: {step_id}")
+    step = path[-1]
+    old = (step.get("label") or "").strip()
+    if text == old:
+        return latest
+    siblings = path[-2].get("children") if len(path) > 1 else steps
+    clash = sibling_label_clash([s for s in siblings if s is not step], text)
+    if clash:
+        raise ValueError(clash)
+    step["label"] = text
+
+    return save_plan(
+        latest["name"],
+        plan,
+        feedback=f"Renamed step: {old} → {text}",
+        project_id=latest["project_id"],
+        account_id=latest.get("account_id"),
+        event="node_renamed",
+        focus_step_id=step_id,
     )
 
 

@@ -1,5 +1,5 @@
 // What the ⋯ menu on a node does: Add here, Remove, Move up/down,
-// Talk about this, Paste structure, Save as tree, Insert saved tree.
+// Rename, Talk about this, Paste structure, Save as tree, Insert saved tree.
 
 // Contents
 //  1. Types
@@ -11,6 +11,7 @@ import type { NodeMenuActionId } from "./drawNodes.js";
 import { moveNode } from "../../api.js";
 import { saveTreeFromNode } from "./savedTrees/saveTree.js";
 import { openInsertTreePicker } from "./savedTrees/insertTree.js";
+import { startNodeRename } from "./renameNode.js";
 
 // 1. Types
 
@@ -65,6 +66,10 @@ export async function handleNodeMenuAction(
       error.textContent = `(error: ${(err as Error).message})`;
       ctx.line.appendChild(error);
     }
+    return;
+  }
+  if (action === "rename") {
+    startNodeRename(stepId, ctx);
     return;
   }
   if (action === "analyze") {

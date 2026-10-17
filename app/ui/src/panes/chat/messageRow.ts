@@ -1,5 +1,6 @@
 // One chat message row: "You" / "Agent" label, the text, and — when the
-// message has a time — a small time under it, like a messaging app.
+// message has a time — a small time under it, like a messaging app. A
+// "note" (e.g. a rename) is a quiet line instead.
 // Shared by the Projects chat (via showOnlyThis).
 
 import type { ChatMessage } from "../../dataShapes.js";
@@ -7,6 +8,7 @@ import type { ChatMessage } from "../../dataShapes.js";
 export function messageRow(
   message: Pick<ChatMessage, "role" | "text" | "at">,
 ): HTMLDivElement {
+  if (message.role === "note") return noteRow(message);
   const row = document.createElement("div");
   row.className = `message message-${message.role === "user" ? "you" : "agent"}`;
   const label = document.createElement("span");
@@ -28,6 +30,25 @@ export function messageRow(
     body.append(time);
   }
   row.append(label, body);
+  return row;
+}
+
+/** A quiet line inside the thread (e.g. "Renamed from … to …"): no
+ *  You / Agent label, just the text and its time. */
+function noteRow(message: Pick<ChatMessage, "text" | "at">): HTMLDivElement {
+  const row = document.createElement("div");
+  row.className = "message-note";
+  const text = document.createElement("span");
+  text.textContent = message.text;
+  row.append(text);
+  const when = message.at ? new Date(message.at) : null;
+  if (when && !Number.isNaN(when.getTime())) {
+    const time = document.createElement("time");
+    time.dateTime = message.at!;
+    time.textContent = ` · ${shortTime(when)}`;
+    time.title = when.toLocaleString();
+    row.append(time);
+  }
   return row;
 }
 

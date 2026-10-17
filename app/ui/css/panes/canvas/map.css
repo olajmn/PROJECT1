@@ -256,6 +256,20 @@
   max-width: 24rem;
 }
 
+/* ⋯ Rename on a node (renameNode.ts): the name becomes this field. */
+.progress-node-rename {
+  font: inherit;
+  color: inherit;
+  background: var(--fill-control);
+  border: none;
+  border-radius: var(--radius-control);
+  outline: none;
+  padding: 0 var(--space-1);
+  margin: 0;
+  min-width: 6rem;
+  width: 12rem;
+}
+
 /* One square around label + tools (indent spacer stays outside). */
 .progress-bead-unit {
   display: inline-flex;

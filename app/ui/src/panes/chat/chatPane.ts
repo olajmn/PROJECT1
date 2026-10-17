@@ -24,6 +24,8 @@ export type ChatPane = {
     project: ProjectView;
     onSelectNode: (stepId: string, label: string) => void;
     resolveStepId: (label: string) => string | null;
+    /** A node's current label, so chat frames show today's name. */
+    labelForStepId: (stepId: string) => string | null;
     selectedDay: string | null;
     onSelectDay: (day: string | null) => void;
   }) => void;
@@ -50,10 +52,12 @@ export function installChatPane(opts: ChatPaneOpts): ChatPane {
   );
 
   let resolveStepIdLive: ((label: string) => string | null) | null = null;
+  let labelForStepIdLive: ((stepId: string) => string | null) | null = null;
 
   const isolateChat = createIsolateChat({
     threadEl: opts.threadEl,
     resolveStepId: (label) => resolveStepIdLive?.(label) ?? null,
+    labelForStepId: (stepId) => labelForStepIdLive?.(stepId) ?? null,
     onChange: opts.onIsolateChange,
   });
 
@@ -70,11 +74,13 @@ export function installChatPane(opts: ChatPaneOpts): ChatPane {
     clearIsolate: () => isolateChat.clear(),
     fillEmpty: (placeholder) => {
       resolveStepIdLive = null;
+      labelForStepIdLive = null;
       fillPlaceholder(placeholder);
       statusPanel.fill(null, () => {});
     },
-    fillProject: ({ project, onSelectNode, resolveStepId, selectedDay, onSelectDay }) => {
+    fillProject: ({ project, onSelectNode, resolveStepId, labelForStepId, selectedDay, onSelectDay }) => {
       resolveStepIdLive = resolveStepId;
+      labelForStepIdLive = labelForStepId;
       isolateChat.fill(
         project.thread ?? [],
         (stepId, label) => onSelectNode(stepId, label),

@@ -78,7 +78,19 @@ def main() -> None:
     assert "Nothing is selected" not in day[0]["content"]
     assert day[1]["content"] == "[about: changes on 20 Sep] what changed?"
     assert day[-1]["content"] == "[about: changes on 20 Sep] and?"
-    print("OK - build_messages / past_turns / background / selected day")
+    # After a rename, past turns name the node as it is called now, and
+    # what it was called then.
+    renamed_tree = {"name": "Garden", "plan": {"progression": {"steps": [
+        {"id": "p1", "label": "Flower beds", "children": []},
+    ]}}}
+    talk = [{"feedback": "Beds hold soil. Note: what is this",
+             "map_focus": "Beds", "focus_step_id": "p1"}]
+    later = build_messages(renamed_tree, "and now?", talk)
+    assert later[1] == {"role": "user",
+                        "content": "[about: Flower beds (then called Beds)] what is this"}
+    assert past_turns(talk, {"p1": "Beds"})[0]["content"] == "[about: Beds] what is this"
+
+    print("OK - build_messages / past_turns / background / selected day / renamed node")
 
 
 if __name__ == "__main__":

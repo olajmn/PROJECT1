@@ -262,8 +262,10 @@ def save_plan(
     plan copy.
 
     `map_focus` / `focus_step_id` mark this chat turn as about a selected
-    node (About frames + model history). They are not inherited from the
-    previous current — pass them only when this save is focused.
+    node (About frames + model history); `focus_step_id` alone marks a
+    map edit on one node (a rename), for that node's chat. They are not
+    inherited from the previous current — pass them only when this save
+    is focused.
     `focus_day` (YYYY-MM-DD) marks a chat turn about one day's changes
     instead, the same way.
 
@@ -293,9 +295,10 @@ def save_plan(
     focus = (map_focus or "").strip()
     if focus:
         record["map_focus"] = focus
-        step = (focus_step_id or "").strip()
-        if step:
-            record["focus_step_id"] = step
+    # Also on its own: a node rename names its node by id only.
+    step = (focus_step_id or "").strip()
+    if step:
+        record["focus_step_id"] = step
     day = (focus_day or "").strip()
     if day:
         record["focus_day"] = day

@@ -62,12 +62,12 @@ The layers and their rules are in [[03-architecture]]. By feature:
 | Create, rename, archive, restore projects | `project/panes/create/` (`lifecycle.py`, `rename.py`) | `ui/src/panes/create/` |
 | Accounts and which one owns a project | `storage/accounts_persistence.py`, `panes/create/project_account.py` | `panes/create/accounts/`, `settings/directory/` |
 | What a node is; ids; sibling names | `project/node/` (see its `README.md`) | — |
-| Add, remove, move, paste, folder | `panes/canvas/edit_map.py`, `text_to_tree.py`, `add_folder/` | `panes/canvas/` |
+| Add, remove, move, rename, paste, folder | `panes/canvas/edit_map.py`, `text_to_tree.py`, `add_folder/` | `panes/canvas/` |
 | Saved trees | `project/saved_trees/`, `storage/saved_trees_persistence.py` | `panes/canvas/savedTrees/` |
 | The map as drawn | `api/answers_to_browser.py` (`map_tree()`) | `panes/canvas/drawNodes.ts`, `lines/`, `zoomAndPan/` |
 | A chat message | `panes/chat/reply.py`, `model/brief/conversation.py`, `talk_prompt.py` | `panes/chat/` |
 | Slash commands | `panes/chat/commands/` | `panes/chat/commands/` |
-| The chat thread and its About frames (node or day) | `panes/chat/screen/chat_thread.py` | `panes/chat/showOnlyThis.ts`, `statusPanel/` |
+| The chat thread and its About frames (node by id, or day); rename notes | `panes/chat/screen/chat_thread.py` | `panes/chat/showOnlyThis.ts`, `statusPanel/` |
 | Current state panel | `project/status/` | `panes/chat/statusPanel/` |
 | Logs and a project's timeline | `project/timeline.py`, `api/activity_log.py` | `settings/logs/` |
 | Archive (restore / delete) | `panes/create/lifecycle.py`, `storage/accounts_persistence.py` | `settings/archive/` |

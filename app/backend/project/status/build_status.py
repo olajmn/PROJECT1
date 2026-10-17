@@ -154,6 +154,7 @@ _TALLY_WORDS = {
     "node_added": "added",
     "node_removed": "removed",
     "node_moved": "moved",
+    "node_renamed": "renamed",
     "pasted": "imported",
     "tree_inserted": "imported",
     "folder_added": "imported",

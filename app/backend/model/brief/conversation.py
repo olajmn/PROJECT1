@@ -40,22 +40,31 @@ def build_messages(
     selected_day = changes_on_day_text(history, focus_day) if focus_day else None
     system = _system_text(latest, map_focus, focus_step_id, status, selected_day)
     messages = [{"role": "system", "content": system}]
-    messages.extend(past_turns(history))
+    messages.extend(past_turns(history, _labels_by_id(steps_of(latest))))
     messages.append({"role": "user", "content": _with_focus(note, _focus_tag(map_focus, focus_day))})
     return messages
 
 
-def past_turns(history: list[dict]) -> list[dict]:
+def past_turns(
+    history: list[dict],
+    current_labels: dict[str, str] | None = None,
+) -> list[dict]:
     """Saved chat turns as alternating user/assistant messages, oldest
     first. Map edits and the project's first record carry no chat turn
-    and are skipped."""
+    and are skipped.
+
+    `current_labels` ({node id: label now}) names a turn's node as it is
+    called today; when it was called something else then, the tag says
+    both, so earlier replies that use the old name still make sense."""
     turns: list[dict] = []
     for record in history:
         feedback = record.get("feedback") or ""
         if _NOTE_MARKER not in feedback:
             continue
         reply, note = feedback.split(_NOTE_MARKER, 1)
-        focus = _focus_tag(record.get("map_focus"), record.get("focus_day"))
+        focus = _focus_tag(
+            _label_now(record, current_labels or {}), record.get("focus_day"),
+        )
         turns.append({"role": "user", "content": _with_focus(note, focus)})
         turns.append({"role": "assistant", "content": reply})
     return turns[-2 * MAX_TURNS:]
@@ -124,6 +133,29 @@ def _background(
             "whole, not about a part from earlier in the conversation."
         )
     return "\n\n".join(parts)
+
+
+def _labels_by_id(steps: list) -> dict[str, str]:
+    """{node id: label} for every node in the tree."""
+    out: dict[str, str] = {}
+    stack = list(steps or [])
+    while stack:
+        step = stack.pop()
+        if isinstance(step, dict):
+            if step.get("id"):
+                out[step["id"]] = (step.get("label") or "").strip()
+            stack.extend(step.get("children") or [])
+    return out
+
+
+def _label_now(record: dict, current_labels: dict[str, str]) -> str | None:
+    """The turn's node label: "<now> (then called <then>)" after a
+    rename, else the label saved with the turn."""
+    then = (record.get("map_focus") or "").strip()
+    now = current_labels.get((record.get("focus_step_id") or "").strip(), "")
+    if then and now and now != then:
+        return f"{now} (then called {then})"
+    return then or None
 
 
 def _focus_tag(map_focus: str | None, focus_day: str | None) -> str | None:

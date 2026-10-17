@@ -49,4 +49,18 @@ timed = thread_messages([
 ])
 assert timed[0]["at"] == "t1" and timed[1]["at"] == "t2"
 
-print("OK - thread_messages() shows chat turns only")
+# Renaming a node that was talked about adds a note in its conversation;
+# renaming one that never was adds nothing.
+renamed = thread_messages([
+    {"feedback": "Outside. Note: what is this?", "map_focus": "Surroundings", "focus_step_id": "p6"},
+    {"feedback": "Renamed step: Surroundings → Landscape", "event": "node_renamed",
+     "focus_step_id": "p6", "created_at": "t3"},
+    {"feedback": "Renamed step: Site → Plot", "event": "node_renamed", "focus_step_id": "p5"},
+])
+assert renamed[2] == {
+    "role": "note", "text": "Renamed from “Surroundings” to “Landscape”",
+    "focus": "Landscape", "focus_step_id": "p6", "at": "t3",
+}
+assert len(renamed) == 3
+
+print("OK - thread_messages() shows chat turns and renames of talked-about nodes")

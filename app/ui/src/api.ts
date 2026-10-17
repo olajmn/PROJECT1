@@ -8,7 +8,7 @@
 //      - archiveProject(), setProjectUser()
 //      - fetchArchivedProjects(), restoreProject(), deleteProject()
 //  2. Map
-//      - addNode(), removeNode(), moveNode()
+//      - addNode(), removeNode(), moveNode(), renameNode()
 //      - pasteText(), previewPaste(), pasteNodes()
 //      - chooseFolder(), addFolder()
 //  3. Chat
@@ -175,6 +175,24 @@ export async function moveNode(
   if (!res.ok) {
     const detail = (await res.text()).trim();
     throw new Error(detail.slice(0, 200) || `request failed: ${res.status}`);
+  }
+  return (await res.json()) as ProjectView;
+}
+
+/** A new name for one node; its id stays. Errors carry the server's
+ *  reason (e.g. a sibling already has that name). */
+export async function renameNode(
+  projectId: number,
+  stepId: string,
+  text: string,
+): Promise<ProjectView> {
+  const res = await fetch(`/api/projects/${projectId}/map/${stepId}/rename`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) {
+    throw new Error(await httpErrorMessage(res));
   }
   return (await res.json()) as ProjectView;
 }
